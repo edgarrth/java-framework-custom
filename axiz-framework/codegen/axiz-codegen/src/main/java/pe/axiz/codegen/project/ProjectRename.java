@@ -15,7 +15,10 @@ import pe.axiz.codegen.openapi.SafeYaml;
 import pe.axiz.codegen.output.SafePaths;
 import pe.axiz.codegen.render.YamlProperties;
 
-/** Preserves identities across deployment renames, with a version-controlled doctor ledger. */
+/**
+ * Preserva las identidades al renombrar despliegues, con un registro de doctor bajo control de
+ * versiones.
+ */
 public final class ProjectRename {
   public static final String LEDGER = ".axiz/identities.yaml";
   private static final List<String> STABLE =
@@ -26,7 +29,10 @@ public final class ProjectRename {
 
   private ProjectRename() {}
 
-  /** Builds all edits before writing; explicit resources and Java packages keep their identity. */
+  /**
+   * Construye todas las ediciones previo a escribir; los recursos explícitos y los paquetes Java
+   * conservan su identidad.
+   */
   public static void apply(Path dir, ProjectManifest manifest, String name, boolean dryRun)
       throws IOException {
     if (!manifest.isService() || !ServiceRoles.validName(manifest.archetype(), name)) {
@@ -116,7 +122,8 @@ public final class ProjectRename {
       changes.put("migration.serviceAliases", aliases);
       changes.put("migration.previousAudience", old);
       changes.put("migration.currentAudience", name);
-      // Chart overrides take precedence over the packaged application configuration.
+      // Los overrides del chart tienen precedencia sobre la configuración empaquetada de la
+      // aplicación.
       Map<String, Object> identities = new LinkedHashMap<>();
       try (Stream<Path> valuesFiles = Files.list(chart)) {
         for (Path v :
@@ -170,7 +177,10 @@ public final class ProjectRename {
     }
   }
 
-  /** Identity overrides removed or modified after a rename are a failing doctor check. */
+  /**
+   * Los overrides de identidad eliminados o modificados tras un renombrado hacen fallar una
+   * verificación de doctor.
+   */
   public static List<String> problems(Path dir) throws IOException {
     dir = dir.toAbsolutePath().normalize();
     Map<String, Object> ledger = readMap(SafePaths.target(dir, LEDGER));

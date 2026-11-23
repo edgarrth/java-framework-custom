@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Check build inputs in Git's index, not only in a developer's working tree.
+"""Verifica las entradas del build en el índice de Git, no solo en el árbol de trabajo de quien desarrolla.
 
-Run from a checkout: check-build-inputs.py [repository root ...]. Works with independent Axiz
-repositories as well as the umbrella checkout. Does not stage files or change Git configuration.
+Se ejecuta desde un checkout: check-build-inputs.py [repository root ...]. Funciona con repositorios
+de Axiz independientes y también con el checkout que los agrupa. No añade archivos al stage ni modifica la configuración de Git.
 """
 from pathlib import Path
 import subprocess
@@ -48,7 +48,7 @@ def check(directory):
         require(pom)
         if not pom.is_file():
             return
-        # Trusted checked-in Maven configuration, never request XML.
+                # Configuración de Maven de confianza incluida en el repositorio, nunca XML de la petición.
         # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse
         project = ET.parse(pom).getroot()
         for module in project.findall('m:modules/m:module', NS):

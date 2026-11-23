@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-core-lock
 
-Distributed lock port with lease, background renewal and lock template; in-memory implementation.
+Puerto de lock distribuido con lease, renovación en segundo plano y plantilla de lock; implementación en memoria.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,18 +12,18 @@ Distributed lock port with lease, background renewal and lock template; in-memor
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `DistributedLock` | Distributed lock with lease: a crashed owner never blocks a resource beyond its lease. |
-| `InMemoryDistributedLock` | Lock for a single process (tests, local runs). |
-| `LockErrors` | Errors of the lock capability. |
-| `LockHandle` | An acquired lock. |
-| `LockTemplate` | Serializes work on a resource: waits up to `waitTimeout` for the lock, renews the lease in the background (virtual thread, every third of the lease) while the work runs and always releases it. |
+| `DistributedLock` | Lock distribuido con lease: un propietario caído nunca bloquea un recurso más allá de su lease. |
+| `InMemoryDistributedLock` | Lock para un solo proceso (pruebas, ejecuciones locales). |
+| `LockErrors` | Errores de la capacidad de lock. |
+| `LockHandle` | Un lock adquirido. |
+| `LockTemplate` | Serializa el trabajo sobre un recurso: espera el lock hasta `waitTimeout`, renueva el lease en segundo plano (hilo virtual, cada tercio del lease) mientras corre el trabajo y siempre lo libera. |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-lock verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl core/axiz-core-lock verify`.

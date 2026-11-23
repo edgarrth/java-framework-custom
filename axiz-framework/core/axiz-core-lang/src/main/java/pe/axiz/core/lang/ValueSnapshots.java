@@ -9,7 +9,10 @@ import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
-/** Detached immutable scalar/map/list value trees, preserving null values and bounded nesting. */
+/**
+ * Árboles de valores escalares, mapas y listas inmutables y desligados, que preservan los valores
+ * null y acotan el anidamiento.
+ */
 public final class ValueSnapshots {
   private ValueSnapshots() {}
 

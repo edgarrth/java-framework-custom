@@ -117,7 +117,8 @@ class CapabilityAdaptersTest {
             java.util.List.of(),
             java.util.List.of(),
             java.util.List.of());
-    // Deliberately no service POM or workflow tree: these operations must be no-ops.
+    // Sin POM de servicio ni árbol de workflows de forma deliberada: estas operaciones no deben
+    // tener efecto.
     assertFalse(CapabilityAdapters.required(directory, manifest));
     CapabilityAdapters.apply(directory, manifest);
     assertFalse(WorkflowBindings.required(directory, manifest));

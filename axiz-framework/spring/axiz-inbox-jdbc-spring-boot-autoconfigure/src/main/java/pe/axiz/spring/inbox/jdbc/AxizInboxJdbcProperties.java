@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 import pe.axiz.spring.jdbc.SchemaInitializer;
 
-/** JDBC storage settings for inbox. */
+/** Configuración de almacenamiento JDBC para el inbox. */
 @ConfigurationProperties("axiz.inbox")
 public record AxizInboxJdbcProperties(
     @DefaultValue("axiz_inbox") String table,

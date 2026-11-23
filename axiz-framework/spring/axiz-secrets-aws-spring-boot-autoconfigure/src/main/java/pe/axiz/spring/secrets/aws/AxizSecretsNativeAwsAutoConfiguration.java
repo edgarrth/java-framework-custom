@@ -22,7 +22,10 @@ import pe.axiz.spring.secrets.AsyncSecretSource;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerAsyncClient;
 import software.amazon.awssdk.services.ssm.SsmAsyncClient;
 
-/** Native AWS request sources; the existing synchronous sources serve bootstrap consumers only. */
+/**
+ * Fuentes nativas de solicitudes AWS; las fuentes síncronas existentes solo atienden a los
+ * consumidores del bootstrap.
+ */
 @AutoConfiguration(
     beforeName = "pe.axiz.spring.secrets.AxizSecretsAutoConfiguration",
     afterName = "pe.axiz.spring.foundation.AxizFoundationAutoConfiguration")

@@ -3,7 +3,7 @@ package pe.axiz.codegen.openapi;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.json.JsonWriter;
 
-/** Compact, bounded JSON for generator output and CLI requests. */
+/** JSON compacto y acotado para la salida del generador y las solicitudes de la CLI. */
 public final class Json {
   private Json() {}
 

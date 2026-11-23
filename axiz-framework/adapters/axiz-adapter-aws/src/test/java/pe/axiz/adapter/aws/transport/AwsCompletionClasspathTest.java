@@ -65,7 +65,8 @@ class AwsCompletionClasspathTest {
                 1,
                 1,
                 AsyncAwsTransportSettings.defaults())) {
-          // Frameworks may inspect all methods reflectively while Micrometer is absent.
+          // Los frameworks pueden inspeccionar todos los métodos por reflexión mientras Micrometer
+          // está ausente.
           AsyncAwsClients.class.getDeclaredMethods();
           AsyncAwsClients.class.getDeclaredConstructors();
           if (clients.credentialsProvider().resolveCredentials() == null)

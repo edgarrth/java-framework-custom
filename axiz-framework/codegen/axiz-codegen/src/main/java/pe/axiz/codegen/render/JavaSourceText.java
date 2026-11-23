@@ -3,11 +3,16 @@ package pe.axiz.codegen.render;
 import pe.axiz.codegen.openapi.Json;
 import pe.axiz.codegen.openapi.OpenApiLinter;
 
-/** Context-specific encoding of contract text inserted into generated Java source. */
+/**
+ * Codificación según el contexto del texto del contrato que se inserta en el código Java generado.
+ */
 public final class JavaSourceText {
   private JavaSourceText() {}
 
-  /** Keeps text inside a single Javadoc line, including Java's pre-lexical Unicode escapes. */
+  /**
+   * Mantiene el texto dentro de una sola línea Javadoc, incluidos los escapes Unicode prelexicales
+   * de Java.
+   */
   public static String javadoc(String text) {
     return text.replace("&", "&amp;")
         .replace("\\", "&#92;")
@@ -20,13 +25,17 @@ public final class JavaSourceText {
   }
 
   /**
-   * A quoted Java literal; JSON encoding also escapes backslashes, quotes and control characters.
+   * Un literal Java entre comillas; la codificación JSON también escapa barras invertidas, comillas
+   * y caracteres de control.
    */
   public static String literal(String text) {
     return Json.write(text);
   }
 
-  /** Safety validation shared by service contracts and third-party HTTP clients. */
+  /**
+   * Validación de seguridad compartida por los contratos de servicio y los clientes HTTP de
+   * terceros.
+   */
   public static String parameterLiteral(String name) {
     if (!OpenApiLinter.safeParameterName(name))
       throw new IllegalArgumentException("Unsafe OpenAPI parameter name");

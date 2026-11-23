@@ -1,12 +1,12 @@
 # axiz-core-tokenization
 
-Provider-neutral typed tokenization contracts with masked disposable values.
+Contratos de tokenización tipados y neutrales respecto del proveedor, con valores desechables enmascarados.
 
-This module owns the `pe.axiz.core.tokenization` API.
+Este módulo es dueño de la API `pe.axiz.core.tokenization`.
 
-## Selection
+## Selección
 
-Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
+Las versiones las gestiona `axiz-bom`; las aplicaciones heredan `axiz-parent-service`.
 
 ```xml
 <dependency>
@@ -15,9 +15,9 @@ Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
 </dependency>
 ```
 
-## Types
+## Tipos
 
-Public types declared by this module:
+Tipos públicos que declara este módulo:
 
 - `AsyncTokenizer`
 - `SensitiveValue`
@@ -34,22 +34,23 @@ Public types declared by this module:
 - `Tokenizer`
 - `TokenizerCapabilities`
 
-## Boundaries
+## Límites
 
-The core owns value types, policies or ports and performs no network or filesystem I/O.
-Spring composition and concrete providers belong in separate modules. Test consumers against
-these contracts without starting Spring.
+El core es dueño de tipos de valor, políticas o puertos y no realiza I/O de red ni de sistema de
+archivos. La composición con Spring y los proveedores concretos pertenecen a módulos separados.
+Los consumidores se prueban contra estos contratos sin arrancar Spring.
 
-See [tokenization](../../../axiz-docs/docs/guias/tokenizacion.md) for client/vault boundaries,
-profiles, authorization, retention and the independent field-protection flow.
+La [guía de tokenización](../../../axiz-docs/docs/guias/tokenizacion.md) describe los límites entre
+cliente y bóveda, los perfiles, la autorización, la retención y el flujo independiente de protección
+de campos.
 
-## Verification
+## Verificación
 
-From `axiz-framework`:
+Desde `axiz-framework`:
 
 ```bash
 ./mvnw -pl core/axiz-core-tokenization -am test
 ```
 
-The full acceptance gate is `./mvnw clean install -Pquality -Daxiz.it.requireDocker=true`.
-Provider integration tests live in `quality/axiz-store-integration-tests` and require Docker.
+La verificación completa es `./mvnw clean install -Pquality -Daxiz.it.requireDocker=true`.
+Las pruebas de integración de proveedores están en `quality/axiz-store-integration-tests` y requieren Docker.

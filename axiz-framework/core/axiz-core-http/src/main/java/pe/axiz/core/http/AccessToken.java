@@ -7,10 +7,10 @@ import pe.axiz.core.sensitive.Sensitive;
 import pe.axiz.core.sensitive.SensitivityLevel;
 
 /**
- * OAuth2 access token.
+ * Token de acceso OAuth2.
  *
- * @param value token value
- * @param expiresAt expiry instant
+ * @param value valor del token
+ * @param expiresAt instante de expiración
  */
 public record AccessToken(
     @Sensitive(level = SensitivityLevel.CRITICAL, mask = MaskType.FULL) String value,

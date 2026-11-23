@@ -5,7 +5,7 @@ info:
   description: Owner of payment orders (fictitious payment processor of the axiz demo).
 tags:
   - name: payment-orders
-# Callers with payments:channel, payments:read or payments:process; the service checks which.
+# Invocadores con payments:channel, payments:read o payments:process; el servicio verifica cuál.
 security: [{oauth2: []}]
 paths:
   /v1/payment-orders:

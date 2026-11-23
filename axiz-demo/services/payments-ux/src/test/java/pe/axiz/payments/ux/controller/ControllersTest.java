@@ -28,8 +28,8 @@ import pe.axiz.spring.web.ReactivePageRequestArgumentResolver;
 import reactor.core.publisher.Mono;
 
 /**
- * The channel REST adapters over the real compositions and in-memory downstream services: status
- * codes and bodies of each operation, for the customer of the token.
+ * Los adaptadores REST del canal sobre las composiciones reales y los servicios aguas abajo en
+ * memoria: códigos de estado y cuerpos de cada operación, para el cliente del token.
  */
 @ExtendWith(BlockHoundExtension.class)
 class ControllersTest {

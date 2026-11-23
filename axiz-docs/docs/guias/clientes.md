@@ -72,9 +72,9 @@ axiz:
 
 ## SOAP
 
-Para sistemas legacy, `SoapClient` sobre el `HttpClient` del JDK con timeout obligatorio,
+Para sistemas centrales, `SoapClient` sobre el `HttpClient` del JDK con timeout obligatorio,
 WS-Security UsernameToken, parseo endurecido contra XXE, faults convertidos en errores externos y
-log enmascarado. UsernameToken es autenticación legacy, por eso:
+log enmascarado. UsernameToken es un mecanismo de autenticación débil, por eso:
 
 - `password-mode` no tiene valor por defecto: `TEXT` (la clave viaja dentro de TLS) o
   `LEGACY_SHA1_DIGEST` (el digest del perfil UsernameToken 1.0, que fija SHA-1; solo cuando la

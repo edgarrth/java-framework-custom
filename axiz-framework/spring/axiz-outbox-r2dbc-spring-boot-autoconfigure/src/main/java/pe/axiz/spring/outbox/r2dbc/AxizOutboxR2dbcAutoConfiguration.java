@@ -22,7 +22,10 @@ import pe.axiz.kit.reactor.audit.ReactiveAuditChainState;
 import pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter;
 import pe.axiz.spring.outbox.OutboxRelayTransactions;
 
-/** R2DBC persistence only; scheduling and relay budgets are owned by the neutral base. */
+/**
+ * Solo persistencia R2DBC; la planificación y los presupuestos del relay pertenecen a la base
+ * neutral.
+ */
 @AutoConfiguration(
     beforeName = {
       "pe.axiz.spring.outbox.AxizOutboxAutoConfiguration",
@@ -43,7 +46,7 @@ public class AxizOutboxR2dbcAutoConfiguration {
     return new R2dbcOutboxStore(new R2dbcSql(connectionFactory), p.table(), p.statementTimeout());
   }
 
-  /** Writer used by business code: joins the caller's reactive transaction. */
+  /** Writer usado por el código de negocio: se une a la transacción reactiva del invocante. */
   @Bean
   @ConditionalOnMissingBean
   ReactiveOutboxWriter axizReactiveOutboxWriter(

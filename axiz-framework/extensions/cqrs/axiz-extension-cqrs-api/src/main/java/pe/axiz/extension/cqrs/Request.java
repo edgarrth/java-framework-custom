@@ -1,8 +1,8 @@
 package pe.axiz.extension.cqrs;
 
 /**
- * A message handled by exactly one handler.
+ * Mensaje manejado por exactamente un handler.
  *
- * @param <R> result type
+ * @param <R> tipo del resultado
  */
 public sealed interface Request<R> permits Command, Query {}

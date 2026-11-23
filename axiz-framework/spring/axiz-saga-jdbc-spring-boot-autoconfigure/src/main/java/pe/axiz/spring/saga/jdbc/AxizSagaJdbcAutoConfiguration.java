@@ -14,9 +14,10 @@ import pe.axiz.kit.jdbc.AutoCommitConnectionProvider;
 import pe.axiz.spring.jdbc.SchemaInitializer;
 
 /**
- * JDBC integration selected explicitly by installing the provider starter. The store borrows its
- * own auto-commit connections: saga state and execution leases must be committed and visible to
- * other workers at once, whether or not the orchestrator runs inside an application transaction.
+ * Integración JDBC seleccionada explícitamente al instalar el starter del proveedor. El almacén
+ * toma prestadas sus propias conexiones con auto-commit: el estado de la saga y los leases de
+ * ejecución deben confirmarse y ser visibles para los demás workers de inmediato, se ejecute o no
+ * el orquestador dentro de una transacción de la aplicación.
  */
 @AutoConfiguration(
     beforeName = "pe.axiz.spring.saga.AxizSagaAutoConfiguration",

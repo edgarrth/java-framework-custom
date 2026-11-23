@@ -15,8 +15,9 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import pe.axiz.core.errors.Problem;
 
 /**
- * Servlet 401 and 403 handling: problem body plus {@code WWW-Authenticate: Bearer}. The reason a
- * token was rejected is logged by Spring Security at debug level and never sent to the client.
+ * Manejo de 401 y 403 en servlet: cuerpo de problema más {@code WWW-Authenticate: Bearer}. Spring
+ * Security registra en nivel debug el motivo por el que se rechazó un token y nunca se envía al
+ * cliente.
  */
 public class ProblemAuthenticationEntryPoint
     implements AuthenticationEntryPoint, AccessDeniedHandler {

@@ -4,8 +4,9 @@ import java.util.Optional;
 import javax.crypto.SecretKey;
 
 /**
- * Supplies symmetric keys by id. New data is encrypted with the current key; old data keeps the id
- * of the key that encrypted it, which enables rotation without downtime.
+ * Suministra claves simétricas por id. Los datos nuevos se cifran con la clave actual; los datos
+ * existentes conservan el id de la clave que los cifró, lo que permite la rotación sin interrupción
+ * del servicio.
  */
 public interface KeyProvider {
 

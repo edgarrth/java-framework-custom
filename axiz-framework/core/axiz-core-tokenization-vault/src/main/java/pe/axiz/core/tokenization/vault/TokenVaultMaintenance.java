@@ -3,36 +3,53 @@ package pe.axiz.core.tokenization.vault;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Privileged, synchronous maintenance job port. Never exposed as a public tokenization endpoint or
- * implemented by wrapping this blocking port in a reactive executor. The operational server uses a
- * different identity that cannot write control items or scan this table.
+ * Puerto de job de mantenimiento síncrono y privilegiado. Nunca se expone como endpoint público de
+ * tokenización ni se implementa envolviendo este puerto bloqueante en un executor reactivo. El
+ * servidor operativo usa una identidad distinta que no puede escribir ítems de control ni recorrer
+ * esta tabla.
  */
 public interface TokenVaultMaintenance extends TokenVault {
-  /** Independent, strongly consistent wrapping-key control; no fallback to fingerprint keys. */
+  /**
+   * Control independiente y fuertemente consistente de las claves de envoltura; sin recurrir a las
+   * claves de huella.
+   */
   WrappingKeyState wrappingState(String keysetId);
 
-  /** Initializes a wrapping control once, with version 1 and its single write route. */
+  /**
+   * Inicializa un control de envoltura una sola vez, con la versión 1 y su única ruta de escritura.
+   */
   boolean initializeWrapping(WrappingKeyState initial);
 
-  /** Conditional transition after the governed wrapping-key rotation protocol. */
+  /** Transición condicional tras el protocolo gobernado de rotación de claves de envoltura. */
   boolean transitionWrapping(WrappingKeyTransition transition);
 
-  /** Initial state has version 1 and only its write key. Never overwrites an existing control. */
+  /**
+   * El estado inicial tiene la versión 1 y solo su clave de escritura. Nunca sobrescribe un control
+   * existente.
+   */
   boolean initialize(FingerprintKeyState initial);
 
-  /** Consistent, bounded scan of records for one keyset; empty pages can still have a cursor. */
+  /**
+   * Recorrido consistente y acotado de los registros de un keyset; las páginas vacías aún pueden
+   * tener un cursor.
+   */
   VaultScanPage scan(String keysetId, @Nullable String cursor, int limit);
 
-  /** Counts old reference items, including orphans, using the same bounded traversal semantics. */
+  /**
+   * Cuenta los ítems de referencia antiguos, incluidos los huérfanos, con la misma semántica de
+   * recorrido acotado.
+   */
   VaultReferencePage references(String keysetId, String keyId, @Nullable String cursor, int limit);
 
-  /** CAS on the entire expected control state; issued only by the governed rotation protocol. */
+  /**
+   * CAS sobre todo el estado de control esperado; lo emite solo el protocolo de rotación gobernado.
+   */
   boolean transition(VaultKeyTransition transition);
 
   /**
-   * Atomically replaces an unchanged record and its owned references under the control barrier. May
-   * add only the current write fingerprint; cannot resurrect a retired read fingerprint. Removing
-   * an old fingerprint requires retaining the current write fingerprint.
+   * Reemplaza de forma atómica un registro sin cambios y sus referencias propias bajo la barrera de
+   * control. Solo puede agregar la huella de escritura actual; no puede resucitar una huella de
+   * lectura retirada. Eliminar una huella antigua requiere conservar la huella de escritura actual.
    */
   MigrationOutcome replace(
       VaultRecord expected, VaultRecord replacement, FingerprintKeyState state);

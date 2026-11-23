@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-structure-bff-spring-boot-starter
 
-Backend for frontend: parallel composition, partial results, per-channel adaptation and read cache.
+Backend for frontend: composición en paralelo, resultados parciales, adaptación por canal y caché de lectura.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,16 +12,16 @@ Backend for frontend: parallel composition, partial results, per-channel adaptat
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `AxizBffAutoConfiguration` | BFF style: context-aware parallel composition. |
-| `Compositions` | Creates `Composer`s whose parallel tasks carry the caller's context (request metadata, tenant, MDC, trace) through Micrometer context-propagation. |
-| `ReactiveComposer` | Reactive composition for WebFlux BFFs: parts subscribe in parallel, optional parts fall back on error or timeout, nothing blocks. |
+| `AxizBffAutoConfiguration` | Estilo BFF: composición en paralelo que conserva el contexto. |
+| `Compositions` | Crea instancias de `Composer` cuyas tareas en paralelo llevan el contexto del llamador (metadatos de la petición, tenant, MDC, traza) mediante context-propagation de Micrometer. |
+| `ReactiveComposer` | Composición reactiva para BFF con WebFlux: las partes se suscriben en paralelo, las partes opcionales usan su alternativa ante error o timeout y nada bloquea. |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl structures/bff/axiz-structure-bff-spring-boot-starter verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl structures/bff/axiz-structure-bff-spring-boot-starter verify`.

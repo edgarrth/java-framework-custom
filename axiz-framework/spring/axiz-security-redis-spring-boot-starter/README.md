@@ -1,12 +1,12 @@
 # axiz-security-redis-spring-boot-starter
 
-Cluster-wide rate limiting on Redis.
+Límite de tasa a nivel de clúster sobre Redis.
 
-This module owns the `pe.axiz.spring.security.redis.starter` API. It has no application framework or provider dependency.
+Este módulo es dueño de la API `pe.axiz.spring.security.redis.starter`. No depende de frameworks de aplicación ni de proveedores.
 
-## Selection
+## Selección
 
-Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
+Las versiones las gestiona `axiz-bom`; las aplicaciones heredan `axiz-parent-service`.
 
 ```xml
 <dependency>
@@ -15,19 +15,19 @@ Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
 </dependency>
 ```
 
-This artifact composes dependencies; its wiring and operational contract are documented in
+Este artefacto compone dependencias; su configuración y su contrato operativo se documentan en
 [`axiz-security-redis-spring-boot-autoconfigure`](../axiz-security-redis-spring-boot-autoconfigure/README.md).
 
-## Catalog usage
+## Uso desde el catálogo
 
 ```bash
 axiz add security-redis
 ```
 
-Required capabilities: `security`.
+Capacidades requeridas: `security`.
 
-The catalog supplies the following properties. Environment placeholders must resolve in the
-service configuration; they are not credentials or provisioned infrastructure.
+El catálogo aporta las siguientes propiedades. Los marcadores de entorno deben resolverse en la
+configuración del servicio; no son credenciales ni infraestructura aprovisionada.
 
 ```yaml
 axiz.security.rate-limit.enabled: true
@@ -40,9 +40,9 @@ axiz.security.rate-limit.rules[0].window: 1m
 axiz.security.rate-limit.rules[0].fail-open: false
 ```
 
-## Operations
+## Operación
 
-Configure an authenticated TLS Redis/Valkey endpoint with bounded connection and command
-timeouts. Size capacity and eviction according to the capability: coordination/idempotency
-state cannot use cache eviction semantics. In-memory substitutes are limited to explicitly
-local/test/ci environments.
+Se configura un endpoint Redis/Valkey autenticado con TLS y timeouts acotados de conexión y de
+comando. La capacidad y el desalojo se dimensionan según la capacidad: el estado de coordinación o
+de idempotencia no puede usar la semántica de desalojo de una caché. Los sustitutos en memoria se
+limitan a ambientes local, test o ci declarados explícitamente.

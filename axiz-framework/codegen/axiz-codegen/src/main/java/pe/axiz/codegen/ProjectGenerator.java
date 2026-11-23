@@ -33,8 +33,8 @@ import pe.axiz.codegen.render.TemplateSet;
 import pe.axiz.codegen.render.YamlProperties;
 
 /**
- * Generates a complete project (service, library or starter) from a request: validation, context
- * and templates. Used identically by the initializr and the CLI.
+ * Genera un proyecto completo (servicio, biblioteca o starter) a partir de una solicitud:
+ * validación, contexto y plantillas. Lo usan de forma idéntica el initializr y la CLI.
  */
 public final class ProjectGenerator {
 
@@ -65,9 +65,9 @@ public final class ProjectGenerator {
   }
 
   /**
-   * Generates the project.
+   * Genera el proyecto.
    *
-   * @throws GenerationException with every problem when the request is not valid
+   * @throws GenerationException con todos los problemas cuando la solicitud no es válida
    */
   public GeneratedProject generate(ProjectRequest request) {
     RequestValidator.Result result = validator.validate(request);
@@ -97,7 +97,7 @@ public final class ProjectGenerator {
     return new GeneratedProject(request.name(), JavaFormatter.formatAll(files));
   }
 
-  /** Template context; also used by the artifact generators of the CLI. */
+  /** Contexto de las plantillas; también lo usan los generadores de artefactos de la CLI. */
   public Map<String, Object> context(
       ProjectRequest r, Archetype a, @Nullable OpenApiDocument contract) {
     Map<String, Object> c = new LinkedHashMap<>();
@@ -108,8 +108,9 @@ public final class ProjectGenerator {
     project.put("basePackage", r.basePackage());
     project.put("packagePath", Names.packagePath(r.basePackage()));
     String description = r.description().isBlank() ? a.role() : r.description().strip();
-    // descriptions land in Markdown, Javadoc, XML (content and comments) and YAML: each format
-    // gets its own escaping, so ordinary punctuation never breaks a generated file
+    // las descripciones terminan en Markdown, Javadoc, XML (contenido y comentarios) y YAML: cada
+    // formato recibe su propio escape, de modo que la puntuación ordinaria nunca rompe un archivo
+    // generado
     String text =
         description.endsWith(".")
             ? description.substring(0, description.length() - 1)
@@ -203,7 +204,8 @@ public final class ProjectGenerator {
     persistence.put("dynamodb", "dynamodb".equals(r.persistence()));
     persistence.put("none", "none".equals(r.persistence()));
     c.put("persistence", persistence);
-    // reactive styles get non-blocking handlers unless the store only has a blocking client
+    // los estilos reactivos reciben handlers no bloqueantes salvo que el almacén solo tenga un
+    // cliente bloqueante
     fw.put("reactiveHandlers", r.stack() == Stack.REACTIVE);
 
     List<Capability> resolved = catalog.resolve(capabilityNames(catalog, r, a), store);
@@ -400,7 +402,7 @@ public final class ProjectGenerator {
             case LAYERED -> fields.add(new String[] {Names.pascal(tag) + "Service", "service"});
             case BFF -> fields.add(new String[] {Names.pascal(tag) + "Composition", "composition"});
             default -> {
-              // no REST adapter
+              // sin adaptador REST
             }
           }
           List<Map<String, Object>> fieldRows = new ArrayList<>();
@@ -469,35 +471,43 @@ public final class ProjectGenerator {
     return e;
   }
 
-  /** Packages of each style with their role (package-info files of the skeleton). */
+  /** Paquetes de cada estilo con su rol (archivos package-info del esqueleto). */
   static List<Map<String, Object>> packages(Structure structure) {
-    // name and role, in order; an exhaustive switch expression: a new style must declare its own
+    // nombre y rol, en orden; una expresión switch exhaustiva: un estilo nuevo debe declarar los
+    // suyos
     List<String> p =
         switch (structure) {
           case HEXAGONAL ->
               List.of(
-                  "domain", "Domain model: plain Java, no structure dependencies.",
-                  "application.usecase", "Use cases: one class per operation, transactional.",
-                  "application.model", "Owned application contracts independent of HTTP models.",
-                  "application.port.out", "Outbound ports implemented by adapters.",
-                  "adapter.in.rest", "REST adapter generated from the OpenAPI contract.",
-                  "adapter.out", "Outbound adapters: persistence, HTTP clients, messaging.",
-                  "config", "Wiring of use cases, ports and adapters.");
+                  "domain", "Modelo de dominio: Java plano, sin dependencias de la estructura.",
+                  "application.usecase", "Casos de uso: una clase por operación, transaccionales.",
+                  "application.model",
+                      "Contratos propios de la aplicación, independientes de los modelos HTTP.",
+                  "application.port.out", "Puertos de salida implementados por los adaptadores.",
+                  "adapter.in.rest", "Adaptador REST generado a partir del contrato OpenAPI.",
+                  "adapter.out", "Adaptadores de salida: persistencia, clientes HTTP, mensajería.",
+                  "config", "Cableado de casos de uso, puertos y adaptadores.");
           case LAYERED ->
               List.of(
-                  "controller", "REST controllers generated from the OpenAPI contract.",
-                  "service", "Business services, transactional.",
-                  "repository", "Data access, persistent entities and items.",
-                  "model", "Application values and API models, independent of persistence.");
+                  "controller", "Controladores REST generados a partir del contrato OpenAPI.",
+                  "service", "Servicios de negocio, transaccionales.",
+                  "repository", "Acceso a datos, entidades persistentes y elementos.",
+                  "model",
+                      "Valores de aplicación y modelos de API, independientes de la persistencia.");
           case BFF ->
               List.of(
-                  "controller", "Channel API generated from the OpenAPI contract.",
-                  "composition", "Compositions of downstream calls, one per API tag.",
-                  "client", "HTTP clients of downstream services.");
+                  "controller", "API del canal generada a partir del contrato OpenAPI.",
+                  "composition",
+                      "Composiciones de llamadas a servicios dependientes, una por tag de la API.",
+                  "client", "Clientes HTTP de los servicios dependientes.");
           case EDA ->
-              List.of("handler", "Event handlers, one per event type.", "event", "Event payloads.");
-          case BATCH -> List.of("job", "Jobs, steps, readers, processors and writers.");
-          // platform archetypes have their own layout
+              List.of(
+                  "handler",
+                  "Handlers de eventos, uno por tipo de evento.",
+                  "event",
+                  "Payloads de eventos.");
+          case BATCH -> List.of("job", "Jobs, steps, readers, processors y writers.");
+          // los arquetipos de plataforma tienen su propia disposición
           case NONE -> List.of();
         };
     List<Map<String, Object>> out = new ArrayList<>();
@@ -512,21 +522,25 @@ public final class ProjectGenerator {
     return ops.stream().anyMatch(o -> Boolean.TRUE.equals(o.get(key)));
   }
 
-  /** Archetype starters, persistence and the requested capabilities (before requirements). */
+  /**
+   * Starters del arquetipo, persistencia y las capacidades solicitadas (sin resolver los
+   * requisitos).
+   */
   static List<String> capabilityNames(Catalog catalog, ProjectRequest r, Archetype a) {
     Set<String> names = new LinkedHashSet<>();
     String store = Catalog.store(r.persistence(), r.stack());
     for (String starter : a.starters()) {
       if (catalog.capability(starter).map(c -> c.supports(store)).orElse(false)) names.add(starter);
     }
-    // what the style starter brings: the service gets its tables, properties and resources too
+    // lo que aporta el starter del estilo: el servicio también recibe sus tablas, propiedades y
+    // recursos
     for (String implied : catalog.style(r.structure()).capabilities()) {
       if (catalog.capability(implied).map(c -> c.supports(store)).orElse(false)) {
         names.add(implied);
       }
     }
     if ("aurora".equals(r.persistence())) {
-      // JPA on servlet; R2DBC on the reactive stack, where JDBC would block the event loop
+      // JPA en servlet; R2DBC en el stack reactivo, donde JDBC bloquearía el event loop
       names.add(r.stack() == Stack.REACTIVE ? "r2dbc" : "jpa");
     }
     if ("dynamodb".equals(r.persistence())) {
@@ -536,14 +550,14 @@ public final class ProjectGenerator {
     return List.copyOf(names);
   }
 
-  /** XML element content: the markup characters become entities. */
+  /** Contenido de un elemento XML: los caracteres de marcado se convierten en entidades. */
   static String xmlText(String text) {
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
   }
 
   /**
-   * Inside an XML comment: no {@code --} anywhere (whatever the run of hyphens) and no hyphen right
-   * before the closing {@code -->}.
+   * Dentro de un comentario XML: ningún {@code --} en ninguna parte (sea cual sea la secuencia de
+   * guiones) y ningún guion justo previo al cierre {@code -->}.
    */
   static String xmlComment(String text) {
     StringBuilder b = new StringBuilder(text.length() + 4);
@@ -560,15 +574,16 @@ public final class ProjectGenerator {
     return b.toString();
   }
 
-  /** Javadoc text: HTML-escaped (doclint) and without a comment terminator. */
+  /** Texto Javadoc: con escape HTML (doclint) y sin terminador de comentario. */
   static String javadoc(String text) {
     return JavaSourceText.javadoc(text);
   }
 
   /**
-   * Structure tables the initial migration creates: those of the chosen capabilities, plus those
-   * the style starter wires on its own when the service has a JDBC database. A store that is wired
-   * always has its table, so nothing fails later on the first write or poll.
+   * Tablas de estructura que crea la migración inicial: las de las capacidades elegidas, más las
+   * que el starter del estilo cablea por su cuenta cuando el servicio tiene una base de datos JDBC.
+   * Un almacén cableado siempre tiene su tabla, por lo que nada falla más tarde en la primera
+   * escritura o consulta periódica.
    */
   static Map<String, Object> schema(Map<String, Object> caps) {
     Map<String, Object> schema = new LinkedHashMap<>();
@@ -579,7 +594,7 @@ public final class ProjectGenerator {
     return schema;
   }
 
-  /** Local infrastructure the service needs (Docker Compose, Testcontainers, README). */
+  /** Infraestructura local que necesita el servicio (Docker Compose, Testcontainers, README). */
   static Map<String, Object> infrastructure(List<Capability> caps, ProjectRequest r) {
     Set<String> names = new LinkedHashSet<>();
     for (Capability c : caps) {
@@ -646,7 +661,7 @@ public final class ProjectGenerator {
     return infra;
   }
 
-  /** application.yaml, application-local.yaml and Helm config values. */
+  /** application.yaml, application-local.yaml y los valores de configuración de Helm. */
   static Map<String, Object> configuration(
       ProjectRequest r,
       Archetype a,
@@ -739,7 +754,7 @@ public final class ProjectGenerator {
     if (caps.stream().anyMatch(cap -> cap.name().equals("r2dbc"))) {
       local.put("spring.r2dbc.url", "r2dbc:postgresql://localhost:5432/" + Names.snake(r.name()));
       local.put("spring.r2dbc.username", "app");
-      // the local PostgreSQL container has no TLS
+      // el contenedor local de PostgreSQL no tiene TLS
       local.put("spring.r2dbc.properties.sslMode", "disable");
     }
     caps.forEach(cap -> local.putAll(cap.localProperties()));

@@ -3,7 +3,10 @@ package pe.axiz.core.tokenization.vault;
 import java.util.UUID;
 import pe.axiz.core.tokenization.TokenErrors;
 
-/** Closed, bounded identifiers from authenticated context or server configuration. */
+/**
+ * Identificadores cerrados y acotados provenientes del contexto autenticado o de la configuración
+ * del servidor.
+ */
 final class VaultIdentifiers {
   private VaultIdentifiers() {}
 

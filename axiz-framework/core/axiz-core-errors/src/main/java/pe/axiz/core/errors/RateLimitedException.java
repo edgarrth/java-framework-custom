@@ -3,7 +3,9 @@ package pe.axiz.core.errors;
 import java.time.Duration;
 import java.util.Objects;
 
-/** A confirmed 429 decision with a bounded, rounded-up delay suitable for Retry-After. */
+/**
+ * Decisión 429 confirmada con un retraso acotado y redondeado hacia arriba, apto para Retry-After.
+ */
 public final class RateLimitedException extends BusinessException {
   private static final long serialVersionUID = 1L;
   private final long retryAfterSeconds;

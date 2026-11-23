@@ -1,9 +1,10 @@
 package pe.axiz.core.api;
 
 /**
- * A capability may veto generic HTTP body logging, tracing and response caching for its routes. The
- * path is relative to the application and still percent-encoded. Every policy must allow capture
- * before infrastructure buffers a body; this contract never grants access to that body.
+ * Una capacidad puede vetar el logging genérico del cuerpo HTTP, el tracing y la caché de
+ * respuestas para sus rutas. La ruta es relativa a la aplicación y sigue codificada con
+ * porcentajes. Todas las políticas deben permitir la captura antes de que la infraestructura
+ * almacene un cuerpo en buffer; este contrato nunca concede acceso a ese cuerpo.
  */
 @FunctionalInterface
 public interface HttpPayloadPolicy {

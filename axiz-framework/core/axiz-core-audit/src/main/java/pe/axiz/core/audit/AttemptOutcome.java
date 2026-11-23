@@ -1,6 +1,6 @@
 package pe.axiz.core.audit;
 
-/** What is actually known about an earlier durable attempt. A timeout is UNKNOWN. */
+/** Lo que realmente se sabe de un intento durable previo. Un timeout es UNKNOWN. */
 public enum AttemptOutcome {
   ROLLED_BACK,
   UNKNOWN

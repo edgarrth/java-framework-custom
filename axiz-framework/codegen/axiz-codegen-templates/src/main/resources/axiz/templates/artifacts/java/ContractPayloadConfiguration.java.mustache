@@ -4,7 +4,7 @@ import org.springframework.aot.hint.annotation.RegisterReflectionForBinding;
 import org.springframework.context.annotation.Configuration;
 import {{payloadPackage}}.{{className}};
 
-/** Native JSON binding metadata; the payload itself remains independent of Spring. */
+/** Metadatos nativos de binding JSON; el payload en sí sigue siendo independiente de Spring. */
 @Configuration(proxyBeanMethods = false)
 @RegisterReflectionForBinding({{className}}.class)
 class {{className}}PayloadConfiguration {}

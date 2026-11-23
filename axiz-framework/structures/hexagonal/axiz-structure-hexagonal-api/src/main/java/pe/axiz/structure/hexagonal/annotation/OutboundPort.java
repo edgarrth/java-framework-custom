@@ -6,7 +6,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** Marks an interface the application needs from the outside (repository, client, publisher). */
+/**
+ * Marca una interfaz que la aplicación necesita del exterior (repositorio, cliente, publicador).
+ */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

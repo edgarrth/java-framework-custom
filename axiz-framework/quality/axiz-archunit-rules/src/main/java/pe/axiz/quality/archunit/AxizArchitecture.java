@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-/** Composes role, stack, structure and extension rules for a service. */
+/** Compone las reglas de rol, stack, estructura y extensión para un servicio. */
 public final class AxizArchitecture {
   private final String basePackage;
   private Archetype archetype = Archetype.BUSINESS;

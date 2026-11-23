@@ -9,7 +9,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import pe.axiz.core.tokenization.TokenType;
 import pe.axiz.core.tokenization.vault.TokenTypePolicy.PanHeuristicExemption;
 
-/** Server-owned policy references. No keys, source values or request-controlled algorithms. */
+/**
+ * Referencias de políticas propiedad del servidor. Sin claves, valores de origen ni algoritmos
+ * controlados por la solicitud.
+ */
 @ConfigurationProperties("axiz.tokenization.vault")
 public record AxizTokenizationVaultProperties(Auth auth, Map<String, TypePolicy> types) {
   public AxizTokenizationVaultProperties {
@@ -20,7 +23,10 @@ public record AxizTokenizationVaultProperties(Auth auth, Map<String, TypePolicy>
     types = Map.copyOf(types);
   }
 
-  /** Tenant comes from exactly one validated claim or an explicit single-tenant deployment. */
+  /**
+   * El tenant proviene de exactamente un claim validado o de un despliegue explícito de un solo
+   * tenant.
+   */
   public record Auth(
       @Nullable String tenantClaim,
       @Nullable String fixedTenant,
@@ -38,7 +44,7 @@ public record AxizTokenizationVaultProperties(Auth auth, Map<String, TypePolicy>
     }
   }
 
-  /** A configured reference must match a registered profile's exact version. */
+  /** Una referencia configurada debe coincidir con la versión exacta de un perfil registrado. */
   public record TypePolicy(
       String profile,
       int version,
@@ -72,12 +78,15 @@ public record AxizTokenizationVaultProperties(Auth auth, Map<String, TypePolicy>
       metadataKeys.forEach(value -> identifier(value, 32));
     }
 
-    /** Named construction; required values and invariants are checked by build. */
+    /** Construcción con nombre; build comprueba los valores obligatorios y las invariantes. */
     public static Builder builder() {
       return new Builder();
     }
 
-    /** Mutable construction state; use one builder per operation, never as shared state. */
+    /**
+     * Estado mutable de construcción; se usa un builder por operación, nunca como estado
+     * compartido.
+     */
     public static final class Builder {
       private @Nullable String profile = null;
       private int version = 0;

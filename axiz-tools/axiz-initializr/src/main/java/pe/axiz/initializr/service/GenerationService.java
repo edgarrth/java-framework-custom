@@ -18,8 +18,9 @@ import pe.axiz.codegen.output.GeneratedProject;
 import pe.axiz.core.audit.Auditable;
 
 /**
- * Validates and generates projects. Generation happens in memory (no temporary directories, no
- * paths derived from user data); every generation is audited and counted by archetype and style.
+ * Valida y genera proyectos. La generación ocurre en memoria (sin directorios temporales ni rutas
+ * derivadas de datos del usuario); cada generación se audita y se contabiliza por arquetipo y
+ * estilo.
  */
 @Service
 public class GenerationService {
@@ -30,8 +31,9 @@ public class GenerationService {
   private final MeterRegistry meters;
 
   /**
-   * The only constructor, so the container has a single, unambiguous way to build the service; the
-   * generator holds no per-request state and is created once with the bundled catalog.
+   * El único constructor, para que el contenedor tenga una sola forma inequívoca de construir el
+   * servicio; el generador no guarda estado por solicitud y se crea una vez con el catálogo
+   * incluido.
    */
   public GenerationService(MeterRegistry meters) {
     this.generator = ProjectGenerator.withDefaults();
@@ -51,9 +53,9 @@ public class GenerationService {
   }
 
   /**
-   * Generates a project.
+   * Genera un proyecto.
    *
-   * @throws GenerationException with every problem when the request is not valid
+   * @throws GenerationException con todos los problemas cuando la solicitud no es válida
    */
   @Auditable(action = "generate", resource = "project", captureArguments = false)
   public GeneratedProject generate(ProjectRequest request) {

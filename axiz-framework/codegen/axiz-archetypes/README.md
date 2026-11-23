@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-archetypes
 
-Archetype definitions: role, default framework, stack, starters, persistence and deployment of each service type.
+Definiciones de arquetipos: rol, framework por defecto, stack, starters, persistencia y despliegue de cada tipo de servicio.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,4 +12,4 @@ Archetype definitions: role, default framework, stack, starters, persistence and
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).

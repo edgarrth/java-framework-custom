@@ -28,7 +28,7 @@ import pe.axiz.payments.orders.domain.PaymentErrors;
 import pe.axiz.payments.orders.domain.PaymentOrder;
 import pe.axiz.payments.orders.domain.PaymentStatus;
 
-/** {@link PaymentOrders} on Aurora PostgreSQL (JPA). */
+/** {@link PaymentOrders} sobre Aurora PostgreSQL (JPA). */
 @Component
 public class PaymentOrderPersistenceAdapter implements PaymentOrders {
 
@@ -36,7 +36,7 @@ public class PaymentOrderPersistenceAdapter implements PaymentOrders {
     return new IndexScope("duplicate-payment", "CCI_PE", customerId, "payments", "identity", 1);
   }
 
-  /** Unique index of (customer_id, request_key), see V3__payment_limits_and_request_keys.sql. */
+  /** Índice único de (customer_id, request_key), ver V3__payment_limits_and_request_keys.sql. */
   static final String REQUEST_KEY_CONSTRAINT = "payment_order_request_key";
 
   private final PaymentOrderJpaRepository repository;
@@ -57,13 +57,15 @@ public class PaymentOrderPersistenceAdapter implements PaymentOrders {
     entity.status(order.status().name(), order.statusReason());
     try {
       var stored = repository.saveAndFlush(entity);
-      // The audit listener assigns creation time and PostgreSQL persists microsecond precision.
-      // Return that exact representation so the initial response and an idempotent replay agree.
+      // El listener de auditoría asigna la fecha de creación y PostgreSQL persiste con precisión de
+      // microsegundos.
+      // Se devuelve esa representación exacta para que la respuesta inicial y una repetición
+      // idempotente coincidan.
       entityManager.refresh(stored);
       return toDomain(stored);
     } catch (DataIntegrityViolationException e) {
-      // the transaction is aborted now: classify by constraint, the client retries and gets
-      // the order the other request stored
+      // la transacción queda abortada en este punto: se clasifica por restricción, el cliente
+      // reintenta y obtiene la orden que almacenó la otra solicitud
       if (requestKey == null || !duplicateRequestKey(e)) {
         throw e;
       }

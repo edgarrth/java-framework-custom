@@ -23,16 +23,16 @@ import pe.axiz.structure.bff.spring.ReactiveComposer;
 import reactor.core.publisher.Mono;
 
 /**
- * Payment operations of the channels. Paying reads the beneficiary fresh (it must still exist and
- * match the currency), checks the currency flag and registers the order in payment-orders with the
- * caller's Idempotency-Key, so a retried channel request never creates two orders. Reading a
- * payment composes the order (required) with the beneficiary alias (optional: the screen still
- * works if beneficiaries is slow or down).
+ * Operaciones de pago de los canales. Pagar lee el beneficiario fresco (debe seguir existiendo y
+ * coincidir con la moneda), verifica el flag de la moneda y registra la orden en payment-orders con
+ * el Idempotency-Key del invocador, de modo que una solicitud reintentada del canal nunca crea dos
+ * órdenes. Leer un pago compone la orden (obligatoria) con el alias del beneficiario (opcional: la
+ * pantalla sigue funcionando si beneficiaries está lento o caído).
  */
 @Component
 public class PaymentsComposition {
 
-  /** Flag that enables payments in US dollars (PEN is always enabled). */
+  /** Flag que habilita los pagos en dólares estadounidenses (PEN siempre está habilitado). */
   static final String USD_FLAG = "payments-usd";
 
   private final PaymentOrdersClient business;
@@ -51,7 +51,7 @@ public class PaymentsComposition {
     this.timeout = timeout;
   }
 
-  /** Pays a frequent beneficiary of the signed-in customer. */
+  /** Paga a un beneficiario frecuente del cliente autenticado. */
   public Mono<PaymentView> createPayment(String idempotencyKey, PaymentRequest body) {
     return Customer.current()
         .flatMap(
@@ -80,7 +80,7 @@ public class PaymentsComposition {
             });
   }
 
-  /** A payment of the signed-in customer with its beneficiary alias (when available). */
+  /** Un pago del cliente autenticado con el alias de su beneficiario (cuando está disponible). */
   public Mono<PaymentView> getPayment(String paymentId) {
     return Customer.current()
         .flatMap(
@@ -88,7 +88,7 @@ public class PaymentsComposition {
                 business
                     .getPaymentOrder(paymentId)
                     .onErrorMap(e -> DownstreamErrors.translate(e, "payment", paymentId))
-                    // another customer's payment is reported as not found, never as forbidden
+                    // el pago de otro cliente se informa como no encontrado, nunca como prohibido
                     .filter(order -> customer.id().equals(order.customerId()))
                     .switchIfEmpty(Mono.error(() -> new NotFoundException("payment", paymentId)))
                     .flatMap(order -> withAlias(customer, order)));
@@ -138,8 +138,8 @@ public class PaymentsComposition {
   }
 
   /**
-   * The alias of the beneficiary the order paid: orders only carry the masked account, so the match
-   * is by currency and last 4 digits, and only when it is unambiguous.
+   * El alias del beneficiario al que pagó la orden: las órdenes solo llevan la cuenta enmascarada,
+   * por lo que la coincidencia se hace por moneda y últimos 4 dígitos, y solo cuando no es ambigua.
    */
   private Mono<String> aliasOf(Customer customer, PaymentOrder order) {
     String creditorCci = order.creditorCci();

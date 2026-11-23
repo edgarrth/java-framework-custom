@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-core-secrets
 
-SecretResolver port with environment and file resolvers and TTL cache.
+Puerto SecretResolver con resolvedores de entorno y de archivos y caché con TTL.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,32 +12,34 @@ SecretResolver port with environment and file resolvers and TTL cache.
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `CachingSecretResolver` | Caches resolved secrets for a TTL to avoid calling the secret store on every use while still picking up rotations. |
-| `CompositeSecretResolver` | Tries resolvers in order; the first one that has the secret wins. |
-| `SecretNotFoundException` | A required secret is not available in any source. |
-| `SecretResolver` | Resolves secrets by name. |
-| `SecretValue` | A secret value. |
-| `AsyncSecretResolver` | Native asynchronous lookup and required lookup, with cancellation of the active source. |
-| `CompositeAsyncSecretResolver` | Tries the next source only for absence; failures stop the chain. |
-| `CachingAsyncSecretResolver` | Bounded coalesced remote loads; missing and failed values are not retained. |
+| `CachingSecretResolver` | Guarda en caché los secretos resueltos durante un TTL para no llamar al almacén de secretos en cada uso, sin dejar de recoger las rotaciones. |
+| `CompositeSecretResolver` | Prueba los resolvedores en orden; gana el primero que tiene el secreto. |
+| `SecretNotFoundException` | Un secreto requerido no está disponible en ninguna fuente. |
+| `SecretResolver` | Resuelve secretos por nombre. |
+| `SecretValue` | Un valor secreto. |
+| `AsyncSecretResolver` | Búsqueda asíncrona nativa, opcional y obligatoria, con cancelación de la fuente activa. |
+| `CompositeAsyncSecretResolver` | Pasa a la siguiente fuente solo ante ausencia; los fallos detienen la cadena. |
+| `CachingAsyncSecretResolver` | Cargas remotas acotadas y agrupadas; no retiene los valores ausentes ni los fallidos. |
 
-Reactive requests use `AsyncSecretResolver`. Mounted-file lookup reads an immutable memory
-snapshot; filesystem access occurs at startup and on the refresh worker. Close the file resolver
-with its application lifecycle. Refresh failures fail closed until a successful refresh.
-Snapshots allow at most 1,000 files, 1 MiB per file and 16 MiB total. Invalid UTF-8 is rejected.
+Las peticiones reactivas usan `AsyncSecretResolver`. La búsqueda en archivos montados lee una
+instantánea inmutable en memoria; el acceso al sistema de archivos ocurre al arrancar y en el worker
+de refresco. El resolvedor de archivos se cierra junto con el ciclo de vida de la aplicación. Un
+refresco fallido falla de forma cerrada hasta el siguiente refresco exitoso. Las instantáneas
+admiten como máximo 1 000 archivos, 1 MiB por archivo y 16 MiB en total. Se rechaza el UTF-8 inválido.
 
-Logical names such as `database#password` select a JSON field in Secrets Manager. File sources
-map `/` and `#` to `.`, allowing mounted overrides such as `database.password`. Environment
-sources use their documented uppercase underscore mapping. Never log `SecretValue.reveal()`.
+Los nombres lógicos como `database#password` seleccionan un campo JSON en Secrets Manager. Las
+fuentes de archivos convierten `/` y `#` en `.`, lo que permite archivos montados como
+`database.password`. Las fuentes de entorno usan su conversión documentada a mayúsculas con guion
+bajo. `SecretValue.reveal()` nunca se escribe en un log.
 
-Related types: `EnvironmentAsyncSecretResolver`, `EnvironmentSecretResolver`, `FileSecretResolver`, `RefreshingFileSecretResolver` live in `axiz-adapter-secrets-file`.
+Tipos relacionados: `EnvironmentAsyncSecretResolver`, `EnvironmentSecretResolver`, `FileSecretResolver`, `RefreshingFileSecretResolver` están en `axiz-adapter-secrets-file`.
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-secrets verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl core/axiz-core-secrets verify`.

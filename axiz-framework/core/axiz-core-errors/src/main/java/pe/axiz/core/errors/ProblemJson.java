@@ -7,8 +7,9 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.json.JsonWriter;
 
 /**
- * Serializes problems to {@code application/problem+json}. Used by every runtime (servlet,
- * reactive, security entry points) so responses are identical whatever produced them.
+ * Serializa problemas a {@code application/problem+json}. Lo usan todos los runtimes (servlet,
+ * reactivo, puntos de entrada de seguridad) para que las respuestas sean idénticas sin importar qué
+ * las produjo.
  */
 public final class ProblemJson {
 

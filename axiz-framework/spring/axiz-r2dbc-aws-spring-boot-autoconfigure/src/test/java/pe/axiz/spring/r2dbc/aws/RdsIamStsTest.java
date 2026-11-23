@@ -22,7 +22,10 @@ import pe.axiz.spring.aws.AxizAwsIdentityAutoConfiguration;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 
-/** Uses the actual framework token factory and signer, with no AWS or database connection. */
+/**
+ * Usa la fábrica de tokens y el firmante reales del framework, sin conexión a AWS ni a la base de
+ * datos.
+ */
 class RdsIamStsTest {
   @Test
   void applicationIdentitySignsRdsTokensWithoutUsingTheWorkloadIdentity() throws Exception {

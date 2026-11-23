@@ -1,6 +1,6 @@
-# Central monorepo release orchestration. Each component has an independent version and
-# <component>-v<x.y.z> tag. GitHub App tokens allow the resulting tags to trigger publication.
-# Root release-please-config.json and .release-please-manifest.json are the only release state.
+# Orquestación central de releases del monorepo. Cada componente tiene una versión y un tag
+# <component>-v<x.y.z> independientes. Los tokens de la GitHub App permiten que los tags resultantes disparen la publicación.
+# release-please-config.json y .release-please-manifest.json en la raíz son el único estado de release.
 name: release
 on:
   workflow_call:

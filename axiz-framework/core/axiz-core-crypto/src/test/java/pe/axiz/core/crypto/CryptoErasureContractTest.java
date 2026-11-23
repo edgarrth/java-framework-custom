@@ -18,7 +18,10 @@ import javax.crypto.SecretKey;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.crypto.DataKeyProvider.DataKey;
 
-/** Examines owned buffers because a closed API alone does not prove erasure of key material. */
+/**
+ * Examina los buffers propios porque una API cerrada no prueba por sí sola el borrado del material
+ * de clave.
+ */
 class CryptoErasureContractTest {
   private static byte[] material(int size) {
     byte[] bytes = new byte[size];

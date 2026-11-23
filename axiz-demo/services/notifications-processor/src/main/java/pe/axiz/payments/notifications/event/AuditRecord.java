@@ -6,17 +6,17 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Data of {@code pe.axiz.audit.event.v1} (audit trail of the services, already sanitized by
- * sensitivity at the source). Only the fields the archive needs are mapped.
+ * Datos de {@code pe.axiz.audit.event.v1} (rastro de auditoría de los servicios, ya saneado por
+ * sensibilidad en el origen). Solo se mapean los campos que necesita el archivo.
  *
- * @param id audit event id
- * @param occurredAt ISO instant
- * @param service service that audited
- * @param action action, e.g. {@code account.debit}
- * @param resourceType resource type
- * @param resourceId resource id, if any
- * @param outcome SUCCESS or FAILURE
- * @param details sanitized details
+ * @param id id del evento de auditoría
+ * @param occurredAt instante ISO
+ * @param service servicio que auditó
+ * @param action acción, por ejemplo {@code account.debit}
+ * @param resourceType tipo de recurso
+ * @param resourceId id del recurso, si existe
+ * @param outcome SUCCESS o FAILURE
+ * @param details detalles saneados
  */
 public record AuditRecord(
     String id,

@@ -28,7 +28,7 @@ args=sys.argv[1:]
 log=Path(os.environ['LIFECYCLE_LOG'])
 with log.open('a') as stream: stream.write(json.dumps(args)+'\\n')
 state=Path('verified')
-# A native:compile invocation forks package and would re-run tests after AOT generated proxies.
+# Una invocación native:compile hace fork de package y volvería a ejecutar las pruebas tras los proxies generados por AOT.
 if state.exists() and (any(arg in {'compile','test','package','verify','install'} for arg in args) or 'native:compile' in args):
     sys.exit('Verified package must not be rebuilt while native compilation consumes its AOT output')
 if 'install' in args: state.write_text('verified')

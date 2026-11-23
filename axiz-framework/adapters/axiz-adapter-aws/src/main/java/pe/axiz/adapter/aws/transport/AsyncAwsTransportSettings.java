@@ -3,7 +3,7 @@ package pe.axiz.adapter.aws.transport;
 import java.time.Duration;
 import java.util.Objects;
 
-/** Typed native transport configuration; binding belongs to the composition layer. */
+/** Configuración tipada del transporte nativo; el enlace corresponde a la capa de composición. */
 public record AsyncAwsTransportSettings(Duration connectionTtl, Duration maxIdleTime) {
   public AsyncAwsTransportSettings {
     positive(connectionTtl);

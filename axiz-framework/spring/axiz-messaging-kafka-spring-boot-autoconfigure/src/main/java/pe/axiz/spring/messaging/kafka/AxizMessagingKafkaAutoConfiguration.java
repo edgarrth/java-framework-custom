@@ -67,9 +67,9 @@ import pe.axiz.spring.messaging.EventPublisherAdapter;
 import pe.axiz.spring.messaging.ObservedDispatcher;
 
 /**
- * Amazon MSK: IAM-authenticated idempotent producer for {@code kafka:} destinations, and listener
- * containers for {@code axiz.messaging.kafka.topics} with exponential redelivery and a dead-letter
- * topic. Enabled when bootstrap servers are configured.
+ * Amazon MSK: productor idempotente autenticado con IAM para los destinos {@code kafka:}, y
+ * contenedores de listeners para {@code axiz.messaging.kafka.topics} con reentrega exponencial y un
+ * topic de dead-letter. Se habilita cuando se configuran los bootstrap servers.
  */
 @AutoConfiguration(
     beforeName = {
@@ -280,7 +280,7 @@ public class AxizMessagingKafkaAutoConfiguration {
     };
   }
 
-  /** Listener containers, one per configured topic. */
+  /** Contenedores de listeners, uno por topic configurado. */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnListProperty("axiz.messaging.kafka.topics")
   static class ConsumerConfiguration {
@@ -334,7 +334,8 @@ public class AxizMessagingKafkaAutoConfiguration {
                     props.setMessageListener(
                         (MessageListener<String, byte[]>) record -> handle(dispatcher, record));
                     DefaultErrorHandler errors = new DefaultErrorHandler(recoverer, backOff);
-                    // busy records wait for the inbox lease instead of using the retry budget
+                    // los registros ocupados esperan el lease del inbox en lugar de consumir el
+                    // presupuesto de reintentos
                     errors.setBackOffFunction(
                         (rec, ex) -> deferred(ex) ? deferBackOff(common) : null);
                     errors.setResetStateOnExceptionChange(true);
@@ -356,7 +357,7 @@ public class AxizMessagingKafkaAutoConfiguration {
       EventDispatcher.Outcome outcome =
           dispatcher.dispatch(record.topic(), KafkaEnvelopes.from(record), attempt);
       String where = record.topic() + "@" + record.offset();
-      // exhaustive: a new decision must say how the container treats the record
+      // exhaustivo: una decisión nueva debe indicar cómo trata el contenedor el registro
       @Nullable RuntimeException failure =
           switch (outcome.decision()) {
             case ACK -> null;
@@ -380,9 +381,9 @@ public class AxizMessagingKafkaAutoConfiguration {
   }
 
   /**
-   * Fixed back-off of busy records: every {@code axiz.messaging.consumer.defer-interval} for up to
-   * {@code defer-max-wait} (longer than the inbox lease), then the record follows the failure path
-   * (dead-letter topic).
+   * Back-off fijo de los registros ocupados: cada {@code axiz.messaging.consumer.defer-interval}
+   * durante un máximo de {@code defer-max-wait} (más largo que el lease del inbox); después, el
+   * registro sigue la ruta de fallo (topic de dead-letter).
    */
   static FixedBackOff deferBackOff(AxizMessagingProperties p) {
     AxizMessagingProperties.Consumer c = p.consumer();
@@ -391,7 +392,7 @@ public class AxizMessagingKafkaAutoConfiguration {
     return new FixedBackOff(interval, attempts);
   }
 
-  /** Signals a transient failure: the error handler redelivers with backoff. */
+  /** Señala un fallo transitorio: el manejador de errores reentrega con backoff. */
   static final class RetryLaterException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
@@ -401,8 +402,9 @@ public class AxizMessagingKafkaAutoConfiguration {
   }
 
   /**
-   * Another delivery holds the record (inbox lease): it is redelivered with its own fixed back-off,
-   * long enough to outlive the lease, and never sent to the dead-letter topic for being busy.
+   * Otra entrega tiene el registro (lease del inbox): se reentrega con su propio back-off fijo, lo
+   * bastante largo para sobrevivir al lease, y nunca se envía al topic de dead-letter por estar
+   * ocupado.
    */
   static final class DeferredException extends RuntimeException {
     private static final long serialVersionUID = 1L;
@@ -412,13 +414,13 @@ public class AxizMessagingKafkaAutoConfiguration {
     }
   }
 
-  /** Signals a permanent failure: the record goes straight to the dead-letter topic. */
+  /** Señala un fallo permanente: el registro va directamente al topic de dead-letter. */
   static final class DeadLetterException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
     /**
-     * The message carries the log-safe failure description, so the dead-letter record's exception
-     * headers say why it was moved.
+     * El mensaje lleva la descripción del fallo segura para logs, de modo que las cabeceras de
+     * excepción del registro de dead-letter indican por qué se movió.
      */
     DeadLetterException(String where, @Nullable String failure) {
       super("Dead-lettering " + where + (failure != null ? ": " + failure : ""));

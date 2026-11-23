@@ -73,7 +73,10 @@ import software.amazon.awssdk.services.kms.KmsClient;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
-/** Runnable infrastructure-backed examples. The test owns resources; the runtime only uses them. */
+/**
+ * Ejemplos ejecutables respaldados por infraestructura. La prueba es dueña de los recursos; el
+ * runtime solo los usa.
+ */
 class ProtectedDataExampleTest {
   private static final String VAULT = "demo-token-vault";
   private static final String DOCUMENTS = "demo-customer-documents";
@@ -368,7 +371,8 @@ class ProtectedDataExampleTest {
     try {
       db.createTable(request);
     } catch (ResourceInUseException existing) {
-      // A timed-out create may already have committed. Accept only the expected table shape.
+      // Una creación que excedió el timeout pudo haberse confirmado. Solo se acepta la forma de
+      // tabla esperada.
       db.waiter().waitUntilTableExists(b -> b.tableName(request.tableName()));
       var table = db.describeTable(b -> b.tableName(request.tableName())).table();
       assertThat(table.keySchema()).containsExactlyElementsOf(request.keySchema());

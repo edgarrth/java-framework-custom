@@ -1,8 +1,8 @@
 # axiz-rewrite-recipes
 
-Current Java, Spring and JSpecify conventions and runtime adapter scope repair, invoked through
-`pe.axiz.UpgradeToAxiz`. Version 2.0.0 is the first Axiz release: no recipes translate unpublished
-Axiz drafts, retired selectors, artifact names or APIs.
+Convenciones vigentes de Java, Spring y JSpecify y reparación del scope de los adaptadores de runtime,
+invocadas mediante `pe.axiz.UpgradeToAxiz`. La versión 2.0.0 es la primera release de Axiz: ninguna
+receta traduce selectores, nombres de artefactos ni APIs que no hayan sido publicados.
 
 ```bash
 mvn org.openrewrite.maven:rewrite-maven-plugin:run \
@@ -10,15 +10,15 @@ mvn org.openrewrite.maven:rewrite-maven-plugin:run \
   -Drewrite.activeRecipes=pe.axiz.UpgradeToAxiz
 ```
 
-## Dependencies
+## Dependencias
 
-The recipes this artifact references come from `rewrite-spring` and `rewrite-migrate-java`
-(versions from `rewrite-recipe-bom`). Their modules disagree on a few shared libraries, so the pom
-aligns ASM on the newest version they ask for through `asm-bom`; `error_prone_annotations` and
-JetBrains annotations come from `axiz-dependencies`, like every other third-party version (the
-governance check of the framework covers this repository too). `rewrite-jackson` asks for the
-AssertJ 4.0.0-M1 milestone: it is excluded and the managed AssertJ release is declared instead,
-because the platform ships releases only. The per-Java-version parsers repeat two `package-info`
-classes (`org.openrewrite.java` and `org.openrewrite.java.isolated`); they hold only package
-annotations, so exactly those two entries are ignored by `banDuplicateClasses` and every other
-class of those jars is still checked.
+Las recetas que referencia este artefacto provienen de `rewrite-spring` y `rewrite-migrate-java`
+(versiones de `rewrite-recipe-bom`). Sus módulos difieren en algunas librerías compartidas, por lo que
+el pom alinea ASM en la versión más reciente que piden mediante `asm-bom`; `error_prone_annotations` y
+las anotaciones de JetBrains provienen de `axiz-dependencies`, como cualquier otra versión de terceros
+(el control de gobierno del framework también cubre este repositorio). `rewrite-jackson` pide el
+milestone 4.0.0-M1 de AssertJ: se excluye y en su lugar se declara la release gestionada de AssertJ,
+porque la plataforma solo distribuye releases. Los parsers por versión de Java repiten dos clases
+`package-info` (`org.openrewrite.java` y `org.openrewrite.java.isolated`); contienen solo anotaciones
+de paquete, por lo que `banDuplicateClasses` ignora exactamente esas dos entradas y sigue comprobando
+todas las demás clases de esos jars.

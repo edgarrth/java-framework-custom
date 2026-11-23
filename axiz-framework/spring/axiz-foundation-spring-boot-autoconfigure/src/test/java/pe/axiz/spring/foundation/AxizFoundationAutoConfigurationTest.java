@@ -194,7 +194,7 @@ class AxizFoundationAutoConfigurationTest {
                   Account.class.getRecordComponents()[0].getAnnotation(ValidIdentifier.class));
               assertTrue(v.isValid("AC123456", null));
               assertFalse(v.isValid("AC12", null));
-              // 2026-10-17 is a Saturday: with no weekend configured it is a business day
+              // 2026-10-17 es sábado: sin fin de semana configurado, es día hábil
               assertTrue(
                   ctx.getBean(BusinessCalendar.class).isBusinessDay(LocalDate.of(2026, 10, 17)));
               assertEquals(ZoneId.of("UTC"), ctx.getBean(TimeSettings.class).zone());
@@ -228,7 +228,7 @@ class AxizFoundationAutoConfigurationTest {
       }
       assertTrue(cause != null, json);
     }
-    // a huge numeric exponent is refused as well (by the parser itself), and at once
+    // un exponente numérico enorme también se rechaza (lo hace el propio parser), y de inmediato
     long start = System.nanoTime();
     assertThrows(
         RuntimeException.class,

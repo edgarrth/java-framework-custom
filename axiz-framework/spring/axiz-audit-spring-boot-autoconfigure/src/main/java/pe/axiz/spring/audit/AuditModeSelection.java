@@ -4,7 +4,10 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.core.env.Environment;
 import pe.axiz.core.commons.Environments;
 
-/** Startup policy for framework-owned publishers; custom publishers own their delivery policy. */
+/**
+ * Política de arranque para los publicadores propios del framework; los publicadores personalizados
+ * definen su propia política de entrega.
+ */
 final class AuditModeSelection {
   private AuditModeSelection() {}
 

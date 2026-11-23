@@ -110,8 +110,9 @@ class OutboxTest {
                         "payments", "e-2", "payment-created.v1", "payment", "p-2", "rolled back");
                     s.setRollbackOnly();
                   });
-              // Broker acknowledgement precedes the database mark and transaction commit.
-              // Observe both outcomes before asserting that the asynchronous relay completed.
+              // La confirmación del broker precede a la marca en la base de datos y al commit de la
+              // transacción. Se observan ambos resultados antes de afirmar que el relay asíncrono
+              // completó.
               Awaitility.await()
                   .atMost(Duration.ofSeconds(5))
                   .untilAsserted(

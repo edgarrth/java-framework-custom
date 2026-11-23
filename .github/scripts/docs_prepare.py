@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate versioned documentation in an isolated Git copy, without remote write credentials."""
+"""Genera la documentación versionada en una copia aislada de Git, sin credenciales de escritura remota."""
 import argparse
 import json
 import os
@@ -88,7 +88,7 @@ def prepare(root, destination, source, *, generate=True, mike='mike'):
         tree = git(work, 'rev-parse', commit+'^{tree}').decode().strip()
         files = git_files(work, commit)
         git(work, 'bundle', 'create', str(state/'site.bundle'), 'refs/heads/gh-pages')
-        # Paths were checked by git_files. Extract only regular files from Git, without links.
+                # Las rutas las verificó git_files. Solo se extraen archivos regulares de Git, sin enlaces.
         for row in files:
             target = site/row['path']; target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(git(work, 'show', commit+':'+row['path']))

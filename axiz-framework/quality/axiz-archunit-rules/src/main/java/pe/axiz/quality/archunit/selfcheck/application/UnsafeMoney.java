@@ -2,7 +2,10 @@ package pe.axiz.quality.archunit.selfcheck.application;
 
 import java.math.BigDecimal;
 
-/** Deliberately prohibited fixture, imported as bytecode by the architecture self-check only. */
+/**
+ * Fixture prohibido de forma deliberada, que solo importa como bytecode la autoverificación de
+ * arquitectura.
+ */
 public final class UnsafeMoney {
   private final double amount;
 

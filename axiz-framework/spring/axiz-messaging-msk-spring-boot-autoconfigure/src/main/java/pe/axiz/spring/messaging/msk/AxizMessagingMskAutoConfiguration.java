@@ -13,7 +13,9 @@ import pe.axiz.spring.aws.AwsIdentity;
 import pe.axiz.spring.aws.AwsService;
 import pe.axiz.spring.messaging.kafka.KafkaClientAuthentication;
 
-/** Explicit MSK IAM authentication, using the shared per-capability AWS identity owner. */
+/**
+ * Autenticación MSK IAM explícita, usando el propietario compartido de identidad AWS por capacidad.
+ */
 @AutoConfiguration(
     beforeName = "pe.axiz.spring.messaging.kafka.AxizMessagingKafkaAutoConfiguration")
 @ConditionalOnBooleanProperty(name = "axiz.messaging.enabled", matchIfMissing = true)

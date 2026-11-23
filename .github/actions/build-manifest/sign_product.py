@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Isolated signer: reconstruct identity, verify Actions authority and sign data without executing it."""
+"""Firmante aislado: reconstruye la identidad, verifica la autoridad de Actions y firma datos sin ejecutarlos."""
 import argparse
 import base64
 import json

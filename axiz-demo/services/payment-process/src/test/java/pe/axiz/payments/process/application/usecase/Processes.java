@@ -24,16 +24,19 @@ import pe.axiz.payments.process.application.saga.PaymentContext;
 import pe.axiz.payments.process.application.saga.PaymentSaga;
 import pe.axiz.payments.process.domain.PaymentInstruction;
 
-/** The payment process as the service wires it, over downstream services that always accept. */
+/**
+ * El proceso de pago tal como lo cablea el servicio, sobre servicios aguas abajo que siempre
+ * aceptan.
+ */
 public final class Processes {
 
-  /** Every downstream call, in order. */
+  /** Cada llamada aguas abajo, en orden. */
   public final List<String> calls = new ArrayList<>();
 
-  /** Saga states. */
+  /** Estados de la saga. */
   public final SagaStateStore store = new InMemorySagaStateStore();
 
-  /** The orchestrator over {@link #store}. */
+  /** El orquestador sobre {@link #store}. */
   public final SagaOrchestrator orchestrator =
       new SagaOrchestrator(
           store,
@@ -42,7 +45,7 @@ public final class Processes {
           SagaListener.none(),
           Clock.systemUTC());
 
-  /** Keeps contexts by reference. */
+  /** Conserva los contextos por referencia. */
   public final ContextCodec<PaymentContext> codec =
       new ContextCodec<>() {
         private final Map<String, PaymentContext> values = new HashMap<>();
@@ -62,11 +65,11 @@ public final class Processes {
 
   private final Downstream downstream = new Downstream();
 
-  /** The saga of the service over the recording downstream services. */
+  /** La saga del servicio sobre los servicios aguas abajo que registran las llamadas. */
   public final pe.axiz.core.saga.SagaDefinition<PaymentContext> saga =
       PaymentSaga.definition(downstream, downstream, downstream);
 
-  /** Starts processes. */
+  /** Inicia procesos. */
   public final StartPaymentProcessUseCase start =
       new StartPaymentProcessUseCase(
           orchestrator,
@@ -75,7 +78,7 @@ public final class Processes {
           codec,
           new EventMetrics(new SimpleMeterRegistry(), MetricsSettings.defaults()));
 
-  /** Reads processes. */
+  /** Lee procesos. */
   public final GetPaymentProcessUseCase get = new GetPaymentProcessUseCase(store);
 
   private final class Downstream implements PaymentOrders, Accounts, Transfers {

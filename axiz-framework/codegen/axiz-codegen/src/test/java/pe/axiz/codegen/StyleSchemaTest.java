@@ -25,9 +25,9 @@ import pe.axiz.codegen.model.Style;
 import pe.axiz.codegen.output.GeneratedProject;
 
 /**
- * A generated service starts with the tables of every store it wires, including the stores its
- * style starter brings without being chosen (an event processor on Aurora once failed at startup
- * because its inbox table was missing).
+ * Un servicio generado arranca con las tablas de cada almacén que cablea, incluidos los almacenes
+ * que aporta el starter de su estilo sin haberlos elegido (sin esto, un procesador de eventos sobre
+ * Aurora falla al arrancar por no tener su tabla inbox).
  */
 class StyleSchemaTest {
 
@@ -40,7 +40,9 @@ class StyleSchemaTest {
           "sequence", "CREATE TABLE IF NOT EXISTS axiz_sequence",
           "shedlock", "CREATE TABLE IF NOT EXISTS shedlock");
 
-  /** Store starters a style starter may carry, and the table each one needs. */
+  /**
+   * Starters de almacén que puede incluir un starter de estilo y la tabla que necesita cada uno.
+   */
   private static final Map<String, String> STORE_STARTERS =
       Map.of(
           "axiz-inbox-spring-boot-starter", "inbox",
@@ -102,7 +104,10 @@ class StyleSchemaTest {
     assertFalse(p.files().containsKey("local/localstack/init.sh"));
   }
 
-  /** Every combination: a style store on a JDBC database means its table is in V1. */
+  /**
+   * Cada combinación: un almacén del estilo sobre una base de datos JDBC implica que su tabla está
+   * en V1.
+   */
   @Test
   void everyWiredStoreHasItsTableInEveryCombination() {
     Set<Structure> checked = new TreeSet<>();
@@ -142,8 +147,9 @@ class StyleSchemaTest {
   }
 
   /**
-   * The model and the starters agree: every store starter a style starter declares is listed for
-   * that style. Optional store dependencies activate only through an explicit capability.
+   * El modelo y los starters coinciden: cada starter de almacén que declara un starter de estilo
+   * figura para ese estilo. Las dependencias opcionales de almacén solo se activan mediante una
+   * capacidad explícita.
    */
   @Test
   void stylesDeclareEveryMandatoryStoreTheirStartersCarry() throws IOException {
@@ -176,7 +182,7 @@ class StyleSchemaTest {
     }
   }
 
-  /** Not optional and not test scoped: the dependency reaches the services of the style. */
+  /** Ni opcional ni con scope de test: la dependencia llega a los servicios del estilo. */
   private static boolean carriedToServices(String xml, int from) {
     int end = xml.indexOf("</dependency>", from);
     String rest = end > 0 ? xml.substring(from, end) : "";

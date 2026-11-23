@@ -7,14 +7,14 @@ import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.render.JavaFormatter;
 
-/** CI fixture generated through the framework's public API, including real AsyncAPI payloads. */
+/** Fixture de CI generado con la API pública del framework, incluidos payloads AsyncAPI reales. */
 class GenerateReactiveNativeSample {
   public static void main(String[] args) throws Exception {
     Path output = Path.of(args[0]);
     var request =
         ProjectRequest.builder().name("sample-native-orders").groupId("pe.axiz").basePackage("pe.axiz.samples.nativeorders").description("Reactive native framework acceptance").archetype("business").structure(Structure.HEXAGONAL).stack(Stack.REACTIVE).persistence("aurora").capabilities(List.of("messaging-sqs", "audit-sqs")).openApi(Files.readString(Path.of(args[1]))).asyncApi(Files.readString(Path.of(args[2]))).frameworkVersion(args[3]).extensions(List.of()).build();
     ProjectGenerator.withDefaults().generate(request).writeTo(output, false);
-    // This acceptance fixture needs a destination during AOT; production templates require input.
+    // Este fixture de aceptación necesita un destino durante AOT; las plantillas de producción lo exigen como entrada.
     Path application = output.resolve("src/main/resources/application.yaml");
     Files.writeString(
         application,
@@ -41,7 +41,7 @@ class GenerateReactiveNativeSample {
             import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
             import software.amazon.awssdk.utils.SdkAutoCloseable;
 
-            /** Acceptance-only provider: proves the audit qualifier survives AOT. */
+            /** Proveedor solo de aceptación: prueba que el calificador de auditoría sobrevive a AOT. */
             @Configuration(proxyBeanMethods = false)
             class AcceptanceAwsIdentityConfiguration {
               @Bean
@@ -84,7 +84,7 @@ class GenerateReactiveNativeSample {
               }
             }
             """));
-    // Framework-owned native harness: it must not put adapter calls in consumer business packages.
+    // Arnés nativo del framework: no debe poner llamadas a adaptadores en los paquetes de negocio del consumidor.
     Path identityProbe =
         output.resolve("src/main/java/pe/axiz/acceptance/AwsContextIdentityProbe.java");
     Files.createDirectories(identityProbe.getParent());
@@ -148,15 +148,15 @@ class GenerateReactiveNativeSample {
             import org.springframework.context.annotation.Bean;
             import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
             import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-            /** Included only in the isolated negative graph; never imported by the sample service. */
+            /** Incluido solo en el grafo negativo aislado; el servicio de ejemplo nunca lo importa. */
             @AutoConfiguration
             public class ForeignAwsProviderConfiguration {
               @Bean AwsCredentialsProvider automaticProvider() { return () -> AwsBasicCredentials.create("foreign-fixture", "fixture"); }
             }
             """));
-    // Prepare the isolated acceptance context at build time, using the same Spring AOT API as
-    // the application. Runtime native code consumes generated bean definitions, not annotation
-    // scans.
+    // Se prepara el contexto de aceptación aislado en tiempo de build, con la misma API de Spring AOT
+    // que la aplicación. El código nativo en runtime consume definiciones de beans generadas, no
+    // escaneos de anotaciones.
     Files.writeString(
         output.resolve("src/main/java/pe/axiz/acceptance/IdentityProbeAotProcessor.java"),
         JavaFormatter.format(
@@ -175,7 +175,7 @@ class GenerateReactiveNativeSample {
             import org.springframework.javapoet.ClassName;
             import pe.axiz.spring.aws.AxizAwsIdentityAutoConfiguration;
 
-            /** Acceptance-only AOT for a second, isolated identity context. */
+            /** AOT solo de aceptación para un segundo contexto de identidad aislado. */
             public final class IdentityProbeAotProcessor implements BeanFactoryInitializationAotProcessor {
               @Override
               public BeanFactoryInitializationAotContribution processAheadOfTime(

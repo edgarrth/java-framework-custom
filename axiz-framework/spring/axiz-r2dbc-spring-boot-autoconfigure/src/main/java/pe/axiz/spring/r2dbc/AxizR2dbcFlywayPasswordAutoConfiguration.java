@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
 
-/** With IAM authentication, Flyway connects over JDBC with a token of its own. */
+/** Con autenticación IAM, Flyway se conecta sobre JDBC con un token propio. */
 @AutoConfiguration(
     after = AxizR2dbcPasswordAutoConfiguration.class,
     beforeName = "org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration")

@@ -16,8 +16,8 @@ import pe.axiz.core.metrics.Outcome;
 import pe.axiz.structure.batch.JobOutcome;
 
 /**
- * Job metrics ({@code batch.run} event with duration and records), audit of each run and one
- * summary log line. Attached to every job by the batch starter.
+ * Métricas del job (evento {@code batch.run} con duración y registros), auditoría de cada ejecución
+ * y una línea de log de resumen. El starter de batch lo adjunta a cada job.
  */
 public class ObservedJobListener implements JobExecutionListener {
 

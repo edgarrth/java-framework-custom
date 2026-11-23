@@ -1,4 +1,4 @@
--- axiz saga state (H2)
+-- estado de las sagas de axiz (H2)
 CREATE TABLE IF NOT EXISTS axiz_saga (
   saga_id    VARCHAR(64)  PRIMARY KEY,
   saga_name  VARCHAR(100) NOT NULL,

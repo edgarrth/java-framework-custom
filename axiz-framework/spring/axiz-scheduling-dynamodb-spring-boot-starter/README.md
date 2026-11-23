@@ -1,12 +1,12 @@
 # axiz-scheduling-dynamodb-spring-boot-starter
 
-Opt-in DYNAMODB scheduling.
+Scheduling opcional con DynamoDB.
 
-This module owns the `pe.axiz.spring.scheduling.dynamodb.starter` API.
+Este módulo es dueño de la API `pe.axiz.spring.scheduling.dynamodb.starter`.
 
-## Selection
+## Selección
 
-Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
+Las versiones las gestiona `axiz-bom`; las aplicaciones heredan `axiz-parent-service`.
 
 ```xml
 <dependency>
@@ -15,12 +15,12 @@ Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
 </dependency>
 ```
 
-This artifact composes dependencies; its wiring and operational contract are documented in
+Este artefacto compone dependencias; su configuración y su contrato operativo se documentan en
 [`axiz-scheduling-dynamodb-spring-boot-autoconfigure`](../axiz-scheduling-dynamodb-spring-boot-autoconfigure/README.md).
 
-## Operations
+## Operación
 
-Provide region, workload identity, TLS and least-privilege permissions for the selected AWS
-resources. Provision production tables, queues, topics, keys and buckets through reviewed IaC.
-LocalStack tests exercise behavior but do not attest deployed IAM or service durability.
-Never place long-lived credentials in generated YAML.
+Se proporcionan región, identidad de carga de trabajo, TLS y permisos mínimos para los recursos de
+AWS seleccionados. Las tablas, colas, tópicos, claves y buckets de producción se aprovisionan con IaC
+revisada. Las pruebas con LocalStack ejercitan el comportamiento, pero no certifican el IAM desplegado
+ni la durabilidad del servicio. Nunca se colocan credenciales de larga duración en el YAML generado.

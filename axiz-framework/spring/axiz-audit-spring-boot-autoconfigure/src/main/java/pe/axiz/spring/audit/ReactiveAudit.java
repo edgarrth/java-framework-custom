@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/** Reactor support for {@code @Auditable}; loaded only when Reactor is present. */
+/** Soporte de Reactor para {@code @Auditable}; solo se carga cuando Reactor está presente. */
 final class ReactiveAudit {
 
   private ReactiveAudit() {}

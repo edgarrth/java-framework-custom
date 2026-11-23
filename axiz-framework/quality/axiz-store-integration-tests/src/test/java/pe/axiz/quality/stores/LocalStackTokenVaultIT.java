@@ -109,8 +109,8 @@ import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
 /**
- * Real local DynamoDB transactions. Test DEK/admission/audit doubles do not certify KMS, IAM or
- * PCI.
+ * Transacciones reales de DynamoDB en local. Los dobles de prueba de DEK, admisión y auditoría no
+ * certifican KMS, IAM ni PCI.
  */
 @ExtendWith(BlockHoundExtension.class)
 class LocalStackTokenVaultIT {
@@ -164,7 +164,7 @@ class LocalStackTokenVaultIT {
 
   @BeforeAll
   static void start() {
-    Docker.require(); // Do not resolve or start images before this check.
+    Docker.require(); // No resolver ni iniciar imágenes previo a esta verificación.
     ReactiveInfrastructureBootstrap.initialize();
     container = TestContainerImages.localstack().withServices("dynamodb");
     container.start();
@@ -253,7 +253,10 @@ class LocalStackTokenVaultIT {
                             .build())));
   }
 
-  /** CPU test key source; the real envelope primitive still authenticates every stored value. */
+  /**
+   * Fuente de claves de prueba en CPU; la primitiva real de sobre (envelope) sigue autenticando
+   * cada valor almacenado.
+   */
   private static final class TestKeys implements DataKeyProvider {
     private final int marker;
     final AtomicInteger decryptions = new AtomicInteger();
@@ -740,8 +743,8 @@ class LocalStackTokenVaultIT {
           PutOutcome.StaleKeyState.class, fixture.store.putIfAbsent(old, state, List.of()));
       assertEquals(token, fixture.tokenize("00883344", DNI).token());
       assertEquals(DeleteOutcome.DELETED, fixture.store.delete(old));
-      // Force the same random token to reproduce an ABA incarnation instead of relying on
-      // probability.
+      // Se fuerza el mismo token aleatorio para reproducir una encarnación ABA en lugar de depender
+      // de la probabilidad.
       var fixedTokenEngine = fixture.sync(fixture.store, () -> token);
       try (var input = SensitiveValue.of("00883344")) {
         assertTrue(
@@ -760,7 +763,7 @@ class LocalStackTokenVaultIT {
                     fixture.caller, DNI, input, DOMAIN, fixture.random.operationId().toString())
                 .created());
       }
-      // Same revision, scope and fingerprints; different authenticated incarnation.
+      // Misma revisión, alcance y huellas; encarnación autenticada distinta.
       assertEquals(DeleteOutcome.CHANGED, fixture.store.delete(current));
       try (var value = fixture.engine.detokenize(fixture.caller, DNI, token, DOMAIN, "support")) {
         assertEquals("00883344", value.reveal());
@@ -859,8 +862,8 @@ class LocalStackTokenVaultIT {
                     f.nativeEngine.detokenize(f.caller, DNI, victim, DOMAIN, "support")))
             .expectErrorMatches(LocalStackTokenVaultIT::integrityFailure)
             .verify(REQUEST_TIMEOUT);
-        // Force a first read that precedes the competing write; real DynamoDB rejects the
-        // duplicate.
+        // Se fuerza una primera lectura que precede a la escritura competidora; DynamoDB real
+        // rechaza el duplicado.
         var racingStore = spy(f.store);
         doReturn(Optional.empty())
             .doCallRealMethod()

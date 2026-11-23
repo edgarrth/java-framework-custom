@@ -4,7 +4,10 @@ import java.time.Duration;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
-/** Explicit server-owned limits; no permissive defaults or request-provided budget dimensions. */
+/**
+ * Límites explícitos propiedad del servidor; sin valores por defecto permisivos ni dimensiones de
+ * presupuesto suministradas por la petición.
+ */
 public record TokenBudgetPolicy(
     Limits query,
     Limits reveal,
@@ -14,7 +17,10 @@ public record TokenBudgetPolicy(
     int clientConcurrent,
     int tenantConcurrent,
     Duration concurrencyRetryAfter) {
-  /** Each dimension has independent one-second burst, one-minute and 24-hour windows. */
+  /**
+   * Cada dimensión tiene ventanas independientes de ráfaga de un segundo, de un minuto y de 24
+   * horas.
+   */
   public record Windows(long burst, long minute, long day) {
     public Windows {
       if (burst < 1 || minute < burst || day < minute || day > 1_000_000_000L)
@@ -22,7 +28,10 @@ public record TokenBudgetPolicy(
     }
   }
 
-  /** A subject cannot reset its budget by changing clients; the client has its own aggregate. */
+  /**
+   * Un subject no puede reiniciar su presupuesto cambiando de cliente; el cliente tiene su propio
+   * agregado.
+   */
   public record Limits(Windows subject, Windows client, Windows tenant) {
     public Limits {
       Objects.requireNonNull(subject);
@@ -48,12 +57,14 @@ public record TokenBudgetPolicy(
       throw new IllegalArgumentException("Invalid token concurrency policy");
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción nominal; build verifica los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable Limits query = null;
     private @Nullable Limits reveal = null;

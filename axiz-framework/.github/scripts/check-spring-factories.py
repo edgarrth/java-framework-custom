@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""spring.factories holds only what Spring Boot cannot load from AutoConfiguration.imports.
+"""spring.factories contiene solo lo que Spring Boot no puede cargar desde AutoConfiguration.imports.
 
-Auto-configurations are declared in META-INF/spring/...AutoConfiguration.imports; spring.factories
-is kept for Boot SPI extensions (environment, config data, import filters and lifecycle). This check
-fails if a spring.factories declares another key (an auto-configuration there would be ignored by
-Boot 4) or names a class that does not exist in the module or does not implement the interface.
+Las autoconfiguraciones se declaran en META-INF/spring/...AutoConfiguration.imports; spring.factories
+se reserva para las extensiones SPI de Boot (environment, config data, filtros de importación y ciclo de vida). Esta verificación
+falla si un spring.factories declara otra clave (Boot 4 ignoraría una autoconfiguración declarada ahí)
+o nombra una clase que no existe en el módulo o que no implementa la interfaz.
 
-Usage: check-spring-factories.py <repo-root>
+Uso: check-spring-factories.py <repo-root>
 """
 import os
 import re

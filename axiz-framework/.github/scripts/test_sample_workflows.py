@@ -1,4 +1,4 @@
-"""Regressions for stale workflow releases and removed generated sample names."""
+"""Regresiones para releases de workflow obsoletas y nombres de samples generados eliminados."""
 import copy
 import importlib.util
 import json

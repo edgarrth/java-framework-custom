@@ -8,12 +8,13 @@ import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.resilience.Backoff;
 
 /**
- * Consumer retry policy: transient failures are retried with backoff up to {@code maxAttempts};
- * permanent failures (business rejections, malformed payloads) go to the DLQ immediately.
+ * Política de reintentos del consumidor: los fallos transitorios se reintentan con backoff hasta
+ * {@code maxAttempts}; los fallos permanentes (rechazos de negocio, payloads mal formados) van a la
+ * DLQ de inmediato.
  *
- * @param maxAttempts deliveries before dead-lettering
- * @param backoff delay between redeliveries
- * @param transientFailure classifier of transient failures
+ * @param maxAttempts entregas antes de enviar a dead-letter
+ * @param backoff retraso entre reentregas
+ * @param transientFailure clasificador de fallos transitorios
  */
 public record ConsumerRetryPolicy(
     int maxAttempts, Backoff backoff, Predicate<Throwable> transientFailure) {
@@ -41,12 +42,12 @@ public record ConsumerRetryPolicy(
         return false;
       if (cause instanceof AxizException ax && !ax.category().retryable()) return false;
     }
-    // Unknown failures keep the bounded delivery policy. Wrapping a known permanent/uncertain
-    // failure must never turn it into an automatic retry.
+    // Los fallos desconocidos mantienen la política de entrega acotada. Envolver un fallo conocido
+    // permanente o incierto nunca debe convertirlo en un reintento automático.
     return true;
   }
 
-  /** Decision after a failed delivery number {@code attempt} (1-based). */
+  /** Decisión tras la entrega fallida número {@code attempt} (desde 1). */
   public DeliveryDecision onFailure(Throwable failure, int attempt) {
     if (!transientFailure.test(failure)) {
       return DeliveryDecision.DEAD_LETTER;

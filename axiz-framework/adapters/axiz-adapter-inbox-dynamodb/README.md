@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-adapter-inbox-dynamodb
 
-Inbox store on DynamoDB with TTL.
+Almacén de inbox en DynamoDB con TTL.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,15 +12,15 @@ Inbox store on DynamoDB with TTL.
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `DynamoDbAsyncInboxStore` | Native asynchronous conditional writes with exact SDK cancellation; shares wire rules with the synchronous store. |
-| `DynamoDbInboxStore` | Inbox on DynamoDB. |
+| `DynamoDbAsyncInboxStore` | Escrituras condicionales asíncronas nativas con cancelación exacta del SDK; comparte las reglas de formato con el almacén síncrono. |
+| `DynamoDbInboxStore` | Inbox en DynamoDB. |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl adapters/axiz-adapter-inbox-dynamodb verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl adapters/axiz-adapter-inbox-dynamodb verify`.

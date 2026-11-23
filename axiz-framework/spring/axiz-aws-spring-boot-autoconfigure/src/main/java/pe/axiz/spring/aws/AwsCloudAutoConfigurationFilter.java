@@ -6,7 +6,10 @@ import org.springframework.boot.autoconfigure.AutoConfigurationImportFilter;
 import org.springframework.boot.autoconfigure.AutoConfigurationMetadata;
 import org.springframework.util.ClassUtils;
 
-/** Prevent generic provider autowiring in Cloud AWS; its clients use the managed configurer. */
+/**
+ * Impide el autowiring genérico del proveedor en Cloud AWS; sus clientes usan el configurador
+ * gestionado.
+ */
 public final class AwsCloudAutoConfigurationFilter
     implements AutoConfigurationImportFilter, BeanClassLoaderAware {
   private ClassLoader loader = AwsCloudAutoConfigurationFilter.class.getClassLoader();

@@ -26,7 +26,7 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 class MessagingProvidersTest {
-  /** An SQS client whose queues are always empty. */
+  /** Un cliente SQS cuyas colas siempre están vacías. */
   static final class EmptySqs implements SqsClient {
     final AtomicInteger polls = new AtomicInteger();
 

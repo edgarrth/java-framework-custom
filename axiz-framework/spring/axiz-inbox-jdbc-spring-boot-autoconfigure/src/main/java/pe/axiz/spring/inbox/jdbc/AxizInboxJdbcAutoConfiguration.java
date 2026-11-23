@@ -20,7 +20,7 @@ import pe.axiz.spring.jdbc.SchemaInitializer;
 import pe.axiz.spring.jdbc.SpringConnectionProvider;
 import pe.axiz.spring.messaging.InboxCompletion;
 
-/** JDBC inbox resources; common policies remain in the base capability. */
+/** Recursos JDBC del inbox; las políticas comunes permanecen en la capacidad base. */
 @AutoConfiguration(
     beforeName = "pe.axiz.spring.inbox.AxizInboxAutoConfiguration",
     afterName = {

@@ -27,7 +27,10 @@ import pe.axiz.payments.history.domain.PaymentHistory;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Mono;
 
-/** The REST adapter over the real query handlers: filters, masking and missing data. */
+/**
+ * El adaptador REST sobre los handlers de consulta reales: filtros, enmascaramiento y datos
+ * faltantes.
+ */
 @ExtendWith(BlockHoundExtension.class)
 class PaymentHistoryControllerTest {
 

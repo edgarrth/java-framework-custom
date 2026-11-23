@@ -8,19 +8,20 @@ import pe.axiz.core.cache.CacheKeys;
 import pe.axiz.core.security.AxizPrincipal;
 
 /**
- * Identity of token callers: issuer, subject and client of the access token. The issuer keeps two
- * trust domains apart when they reuse a subject, and the client keeps apart the applications a user
- * calls through, since a result may depend on the client (its scopes, its channel).
+ * Identidad de los invocantes con token: emisor, subject y cliente del token de acceso. El emisor
+ * separa dos dominios de confianza cuando reutilizan un subject, y el cliente separa las
+ * aplicaciones a través de las cuales llama un usuario, ya que un resultado puede depender del
+ * cliente (sus scopes, su canal).
  *
  * <ul>
- *   <li>an {@link AxizPrincipal} (axiz security starter): its issuer, subject and client;
- *   <li>a JWT principal of the Spring resource server: {@code iss}, {@code sub} and {@code azp} or
- *       {@code client_id}; a token without {@code iss} is not cached.
+ *   <li>un {@link AxizPrincipal} (starter de seguridad de axiz): su emisor, subject y cliente;
+ *   <li>un principal JWT del resource server de Spring: {@code iss}, {@code sub} y {@code azp} o
+ *       {@code client_id}; un token sin {@code iss} no se cachea.
  * </ul>
  *
- * Any other authentication returns {@code null}: its name alone is not a safe identity when a
- * service accepts more than one kind of caller, so the call runs uncached unless the service
- * declares its own {@link CacheCallerResolver}.
+ * Cualquier otra autenticación devuelve {@code null}: su nombre por sí solo no es una identidad
+ * segura cuando un servicio acepta más de un tipo de invocante, por lo que la llamada se ejecuta
+ * sin caché salvo que el servicio declare su propio {@link CacheCallerResolver}.
  */
 public class DefaultCacheCallerResolver implements CacheCallerResolver {
 
@@ -46,7 +47,7 @@ public class DefaultCacheCallerResolver implements CacheCallerResolver {
     return CacheKeys.of("token", issuer, subject, client);
   }
 
-  /** Loaded only when axiz-core-security is on the classpath. */
+  /** Solo se carga cuando axiz-core-security está en el classpath. */
   private static final class Axiz {
     static @Nullable String identity(@Nullable Object principal) {
       return principal instanceof AxizPrincipal p
@@ -55,7 +56,7 @@ public class DefaultCacheCallerResolver implements CacheCallerResolver {
     }
   }
 
-  /** Loaded only when spring-security-oauth2-core is on the classpath. */
+  /** Solo se carga cuando spring-security-oauth2-core está en el classpath. */
   private static final class Claims {
     static @Nullable String identity(@Nullable Object principal) {
       if (!(principal instanceof ClaimAccessor claims)) {

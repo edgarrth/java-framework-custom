@@ -12,7 +12,10 @@ import pe.axiz.kit.reactor.audit.ReactiveAuditChainState;
 import pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter;
 import reactor.core.publisher.Mono;
 
-/** Independent native confirmation; the transaction is created here, never borrowed via a stage. */
+/**
+ * Confirmación nativa independiente; la transacción se crea aquí y nunca se toma prestada mediante
+ * una etapa.
+ */
 final class ReactiveStrictAuditTargets {
   private ReactiveStrictAuditTargets() {}
 

@@ -8,7 +8,10 @@ import java.util.concurrent.CompletionStage;
 import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.crypto.DataKeyProvider.DataKey;
 
-/** Native asynchronous equivalent of the same bounded, context-authenticated routing format. */
+/**
+ * Equivalente asíncrono nativo del mismo formato de enrutamiento acotado y autenticado por
+ * contexto.
+ */
 public final class KeyringAsyncDataKeyProvider implements AsyncDataKeyProvider {
   private final Map<String, AsyncDataKeyProvider> providers;
   private final String writeKeyId;

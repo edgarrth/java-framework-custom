@@ -11,7 +11,7 @@ import pe.axiz.quality.archunit.Structure;
 import pe.axiz.quality.archunit.TokenizationScope;
 import pe.axiz.spring.test.BlockHoundExtension;
 
-/** Rules of the cqrs style plus the general axiz rules; breaking one fails the build. */
+/** Reglas del estilo cqrs más las reglas generales de axiz; incumplir una hace fallar el build. */
 @ExtendWith(BlockHoundExtension.class)
 class ArchitectureTest {
 

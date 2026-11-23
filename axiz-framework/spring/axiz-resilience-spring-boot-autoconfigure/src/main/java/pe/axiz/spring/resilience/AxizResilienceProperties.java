@@ -10,12 +10,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
- * Resilience policies ({@code axiz.resilience.*}). Every dependency gets the defaults unless an
- * instance with its name is declared; an instance is a complete policy (omitted fields take the
- * framework defaults, not the service defaults). Timeouts are always defined.
+ * Políticas de resiliencia ({@code axiz.resilience.*}). Toda dependencia recibe los valores por
+ * defecto salvo que se declare una instancia con su nombre; una instancia es una política completa
+ * (los campos omitidos toman los valores por defecto del framework, no los del servicio). Los
+ * timeouts siempre están definidos.
  *
- * @param defaults policy applied to any dependency without its own entry
- * @param instances policies by dependency name (HTTP client, SOAP client, ...)
+ * @param defaults política aplicada a cualquier dependencia sin entrada propia
+ * @param instances políticas por nombre de dependencia (cliente HTTP, cliente SOAP, ...)
  */
 @ConfigurationProperties("axiz.resilience")
 public record AxizResilienceProperties(
@@ -29,12 +30,12 @@ public record AxizResilienceProperties(
   }
 
   /**
-   * A complete policy.
+   * Política completa.
    *
-   * @param timeouts connect, read and total timeouts
-   * @param retry retries (only for idempotent operations)
+   * @param timeouts timeouts de conexión, lectura y total
+   * @param retry reintentos (solo para operaciones idempotentes)
    * @param circuitBreaker circuit breaker
-   * @param bulkhead concurrent call limit
+   * @param bulkhead límite de llamadas concurrentes
    */
   public record Policy(
       @DefaultValue Timeouts timeouts,
@@ -45,9 +46,9 @@ public record AxizResilienceProperties(
   /**
    * Timeouts.
    *
-   * @param connect connection timeout
-   * @param read read (response) timeout
-   * @param total overall budget including retries
+   * @param connect timeout de conexión
+   * @param read timeout de lectura (respuesta)
+   * @param total presupuesto global que incluye los reintentos
    */
   public record Timeouts(
       @DefaultValue("2s") Duration connect,
@@ -55,12 +56,12 @@ public record AxizResilienceProperties(
       @DefaultValue("15s") Duration total) {}
 
   /**
-   * Retries with exponential backoff and jitter.
+   * Reintentos con backoff exponencial y jitter.
    *
-   * @param maxAttempts attempts including the first one (1 disables retries)
-   * @param initialDelay first delay
-   * @param multiplier growth factor
-   * @param maxDelay delay cap
+   * @param maxAttempts intentos incluido el primero (1 desactiva los reintentos)
+   * @param initialDelay primer retraso
+   * @param multiplier factor de crecimiento
+   * @param maxDelay tope del retraso
    */
   public record Retry(
       @DefaultValue("3") int maxAttempts,
@@ -69,16 +70,16 @@ public record AxizResilienceProperties(
       @DefaultValue("2s") Duration maxDelay) {}
 
   /**
-   * Circuit breaker (count-based sliding window).
+   * Circuit breaker (ventana deslizante basada en conteo).
    *
-   * @param enabled whether calls go through a circuit breaker
-   * @param failureRateThreshold failure percentage that opens the circuit
-   * @param slowCallRateThreshold slow-call percentage that opens the circuit
-   * @param slowCallDuration duration from which a call is slow
-   * @param slidingWindowSize calls in the window
-   * @param minimumNumberOfCalls calls before rates are evaluated
-   * @param waitInOpenState time before trying half-open
-   * @param permittedCallsInHalfOpenState trial calls in half-open
+   * @param enabled indica si las llamadas pasan por un circuit breaker
+   * @param failureRateThreshold porcentaje de fallos que abre el circuito
+   * @param slowCallRateThreshold porcentaje de llamadas lentas que abre el circuito
+   * @param slowCallDuration duración a partir de la cual una llamada es lenta
+   * @param slidingWindowSize llamadas en la ventana
+   * @param minimumNumberOfCalls llamadas antes de evaluar las tasas
+   * @param waitInOpenState tiempo antes de intentar el estado semiabierto
+   * @param permittedCallsInHalfOpenState llamadas de prueba en estado semiabierto
    */
   public record CircuitBreaker(
       @DefaultValue("true") boolean enabled,
@@ -89,12 +90,15 @@ public record AxizResilienceProperties(
       @DefaultValue("20") int minimumNumberOfCalls,
       @DefaultValue("30s") Duration waitInOpenState,
       @DefaultValue("5") int permittedCallsInHalfOpenState) {
-    /** Named construction; required values and invariants are checked by build. */
+    /** Construcción con nombre; build comprueba los valores obligatorios y las invariantes. */
     public static Builder builder() {
       return new Builder();
     }
 
-    /** Mutable construction state; use one builder per operation, never as shared state. */
+    /**
+     * Estado mutable de construcción; se usa un builder por operación, nunca como estado
+     * compartido.
+     */
     public static final class Builder {
       private boolean enabled = false;
       private float failureRateThreshold = 0;
@@ -162,11 +166,11 @@ public record AxizResilienceProperties(
   }
 
   /**
-   * Bulkhead (semaphore).
+   * Bulkhead (semáforo).
    *
-   * @param enabled whether concurrent calls are limited
-   * @param maxConcurrentCalls concurrent calls allowed
-   * @param maxWait time a call waits for a permit
+   * @param enabled indica si se limitan las llamadas concurrentes
+   * @param maxConcurrentCalls llamadas concurrentes permitidas
+   * @param maxWait tiempo que una llamada espera un permiso
    */
   public record Bulkhead(
       @DefaultValue("true") boolean enabled,

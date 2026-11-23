@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-/** Role boundaries that apply in addition to the chosen package structure. */
+/** Límites de rol que se aplican además de la estructura de paquetes elegida. */
 public final class ArchetypeRules {
   private ArchetypeRules() {}
 

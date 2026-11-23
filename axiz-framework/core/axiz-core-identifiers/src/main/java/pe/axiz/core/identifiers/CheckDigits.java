@@ -2,7 +2,7 @@ package pe.axiz.core.identifiers;
 
 import java.math.BigInteger;
 
-/** Check digit algorithms shared by identifier types. */
+/** Algoritmos de dígito verificador compartidos por los tipos de identificador. */
 public final class CheckDigits {
 
   private static final BigInteger NINETY_SEVEN = BigInteger.valueOf(97);
@@ -13,7 +13,7 @@ public final class CheckDigits {
     return allDigits((CharSequence) value);
   }
 
-  /** Validates borrowed character storage without creating an immutable copy. */
+  /** Valida un almacenamiento de caracteres prestado sin crear una copia inmutable. */
   public static boolean allDigits(CharSequence value) {
     if (value.isEmpty()) {
       return false;
@@ -27,12 +27,12 @@ public final class CheckDigits {
     return true;
   }
 
-  /** Luhn (mod 10) validation over the full number including its check digit. */
+  /** Validación Luhn (módulo 10) sobre el número completo, incluido su dígito verificador. */
   public static boolean luhn(String digits) {
     return luhn((CharSequence) digits);
   }
 
-  /** Luhn over borrowed character storage, including its check digit. */
+  /** Luhn sobre un almacenamiento de caracteres prestado, incluido su dígito verificador. */
   public static boolean luhn(CharSequence digits) {
     if (!allDigits(digits)) {
       return false;
@@ -53,18 +53,18 @@ public final class CheckDigits {
     return sum % 10 == 0;
   }
 
-  /** ISO 7064 MOD 97-10 as used by IBAN (value already rearranged and converted). */
+  /** ISO 7064 MOD 97-10 tal como lo usa IBAN (valor ya reordenado y convertido). */
   public static int mod97(String numeric) {
     return new BigInteger(numeric).mod(NINETY_SEVEN).intValue();
   }
 
   /**
-   * Weighted modulo-11 check digit: {@code 11 - (sum(d_i * w_i) mod 11)}, where 10 maps to 0 and 11
-   * maps to 1.
+   * Dígito verificador módulo 11 ponderado: {@code 11 - (sum(d_i * w_i) mod 11)}, donde 10 se mapea
+   * a 0 y 11 se mapea a 1.
    *
-   * @param digits digits without check digit
-   * @param weights weights, same length as digits
-   * @return the check digit
+   * @param digits dígitos sin el dígito verificador
+   * @param weights pesos, de la misma longitud que los dígitos
+   * @return el dígito verificador
    */
   public static int mod11(String digits, int[] weights) {
     if (digits.length() != weights.length) {
@@ -79,11 +79,11 @@ public final class CheckDigits {
   }
 
   /**
-   * Alternating 1-2 weighted check digit with digit sum of products (the scheme used for the
-   * control digits of inter-bank account codes).
+   * Dígito verificador con pesos alternos 1-2 y suma de los dígitos de los productos (el esquema
+   * usado para los dígitos de control de los códigos de cuenta interbancarios).
    *
-   * @param digits digits without check digit
-   * @return the check digit
+   * @param digits dígitos sin el dígito verificador
+   * @return el dígito verificador
    */
   public static int alternatingWeights(String digits) {
     int sum = 0;

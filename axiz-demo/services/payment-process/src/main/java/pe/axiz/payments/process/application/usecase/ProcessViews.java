@@ -6,7 +6,10 @@ import pe.axiz.core.saga.SagaStatus;
 import pe.axiz.payments.process.domain.PaymentProcess;
 import pe.axiz.payments.process.domain.ProcessStatus;
 
-/** Turns persisted saga state into the process view (no context data leaves the service). */
+/**
+ * Convierte el estado persistido de la saga en la vista del proceso (ningún dato del contexto sale
+ * del servicio).
+ */
 final class ProcessViews {
 
   private ProcessViews() {}
@@ -26,7 +29,7 @@ final class ProcessViews {
     };
   }
 
-  /** Errors are stored as {@code step: cause} or {@code compensation step: cause}. */
+  /** Los errores se almacenan como {@code step: cause} o {@code compensation step: cause}. */
   static @Nullable String failedStep(@Nullable String error) {
     if (error == null || !error.contains(":")) {
       return null;

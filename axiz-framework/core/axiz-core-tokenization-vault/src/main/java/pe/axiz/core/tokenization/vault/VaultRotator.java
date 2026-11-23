@@ -20,9 +20,10 @@ import pe.axiz.core.tokenization.TokenErrors;
 import pe.axiz.core.tokenization.vault.VaultMaintenanceEvent.Action;
 
 /**
- * Privileged synchronous job, separate from consumer endpoints and their execution threads.
- * Progress is bounded and resumable. A lost acknowledgement is reconciled, never retried here. HMAC
- * retirement removes a read reference; it cannot disable external KMS keys or erase secrets.
+ * Job síncrono privilegiado, separado de los endpoints de consumidores y de sus hilos de ejecución.
+ * El progreso es acotado y reanudable. Un acuse perdido se reconcilia, nunca se reintenta aquí. El
+ * retiro de HMAC elimina una referencia de lectura; no puede desactivar claves externas de KMS ni
+ * borrar secretos.
  */
 public final class VaultRotator {
   private final TokenVaultMaintenance vault;
@@ -60,7 +61,10 @@ public final class VaultRotator {
     proofNanos = proofTimeout.toNanos();
   }
 
-  /** Initializes the independent wrapping control only after a successful key-generation probe. */
+  /**
+   * Inicializa el control de envoltura independiente solo tras una prueba exitosa de generación de
+   * claves.
+   */
   public boolean initializeWrapping(
       TokenCaller caller, String keyset, KeyringDataKeyProvider keys) {
     var state = new WrappingKeyState(keyset, 1, keys.writeKeyId(), List.of(keys.writeKeyId()));
@@ -75,7 +79,10 @@ public final class VaultRotator {
         });
   }
 
-  /** Prepare all readers first; activation fences even a writer still holding an old cached DEK. */
+  /**
+   * Primero se preparan todos los lectores; la activación aplica fencing incluso a un escritor que
+   * aún tiene en caché una DEK antigua.
+   */
   public boolean activateWrapping(
       TokenCaller caller, WrappingKeyState expected, KeyringDataKeyProvider nextKeys) {
     return execution.run(
@@ -100,7 +107,9 @@ public final class VaultRotator {
         });
   }
 
-  /** Removes a read route from this vault only, after authenticated verification of every row. */
+  /**
+   * Elimina una ruta de lectura solo de esta bóveda, tras la verificación autenticada de cada fila.
+   */
   public boolean retireWrapping(TokenCaller caller, WrappingKeyState expected, String obsoleteKey) {
     return execution.run(
         caller,
@@ -216,16 +225,16 @@ public final class VaultRotator {
         });
   }
 
-  /** Adds the current fingerprint and preserves every old reference until the prune phase. */
+  /** Agrega la huella actual y preserva todas las referencias antiguas hasta la fase de poda. */
   public VaultMaintenanceBatch reindex(
       TokenCaller caller, FingerprintKeyState state, @Nullable String cursor, int limit) {
     return batch(caller, Action.REINDEX, state, cursor, limit, null, null);
   }
 
   /**
-   * Uses a separately configured target encryptor, preserving token, scope, lifetime and indexes.
-   * Keep source/target decryption available throughout a mixed-ciphertext rollout. This method does
-   * not authorize retirement of a KMS key.
+   * Usa un cifrador destino configurado por separado, preservando token, alcance, vida e índices.
+   * El descifrado de origen y de destino debe mantenerse disponible durante todo un despliegue con
+   * textos cifrados mixtos. Este método no autoriza el retiro de una clave de KMS.
    */
   public VaultMaintenanceBatch reencrypt(
       TokenCaller caller,
@@ -398,8 +407,9 @@ public final class VaultRotator {
       if (nextCursor != null && nextCursor.equals(cursor)) throw new VaultIntegrityException();
       cursor = nextCursor;
     } while (cursor != null);
-    // This is not a database snapshot: removal is monotonic and every write is fenced by the
-    // same version. A stale proof cannot authorize writes after another activation/retirement.
+    // No es una instantánea de la base de datos: la eliminación es monotónica y cada escritura
+    // tiene fencing con la misma versión. Una prueba desfasada no puede autorizar escrituras
+    // después de otra activación o retiro.
     current(state);
   }
 
@@ -443,12 +453,14 @@ public final class VaultRotator {
       throw new VaultIntegrityException();
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción nominal; build verifica los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable TokenVaultMaintenance vault = null;
     private @Nullable BlindIndex indexes = null;

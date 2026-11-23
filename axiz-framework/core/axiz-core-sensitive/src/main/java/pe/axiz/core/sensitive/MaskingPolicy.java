@@ -5,14 +5,15 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Decides how a sensitive value is written to each output.
+ * Decide cómo se escribe un valor sensible en cada salida.
  *
- * <p>Default policy: CRITICAL values are always removed (full mask); HIGH values are masked in
- * every output; MEDIUM values are masked in logs and audit and shown masked in responses; LOW
- * values are shown in responses and audit and masked in logs.
+ * <p>Política por defecto: los valores CRITICAL siempre se eliminan (máscara completa); los valores
+ * HIGH se enmascaran en todas las salidas; los valores MEDIUM se enmascaran en logs y auditoría y
+ * se muestran enmascarados en las respuestas; los valores LOW se muestran en respuestas y auditoría
+ * y se enmascaran en logs.
  *
- * @param minimumLevelToMask per output, the lowest level that gets masked
- * @param fullMaskLevel from this level on, values are always fully masked
+ * @param minimumLevelToMask por salida, el nivel más bajo que se enmascara
+ * @param fullMaskLevel a partir de este nivel, los valores siempre se enmascaran por completo
  */
 public record MaskingPolicy(
     Map<OutputChannel, SensitivityLevel> minimumLevelToMask, SensitivityLevel fullMaskLevel) {
@@ -32,11 +33,11 @@ public record MaskingPolicy(
   }
 
   /**
-   * Whether a value of this level is masked on the channel (fully or partially).
+   * Indica si un valor de este nivel se enmascara en el canal (por completo o en parte).
    *
-   * @param level sensitivity of the value
-   * @param channel where the value goes
-   * @return true when {@link #apply} changes a value of this level
+   * @param level sensibilidad del valor
+   * @param channel destino del valor
+   * @return true cuando {@link #apply} cambia un valor de este nivel
    */
   public boolean masks(SensitivityLevel level, OutputChannel channel) {
     return level.compareTo(fullMaskLevel) >= 0

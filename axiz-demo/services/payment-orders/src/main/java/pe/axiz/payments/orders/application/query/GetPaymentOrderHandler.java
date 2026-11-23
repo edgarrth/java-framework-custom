@@ -5,7 +5,7 @@ import pe.axiz.extension.cqrs.QueryHandler;
 import pe.axiz.payments.orders.application.port.out.PaymentOrders;
 import pe.axiz.payments.orders.domain.PaymentOrder;
 
-/** Reads one order (read-only transaction). */
+/** Lee una orden (transacción de solo lectura). */
 public class GetPaymentOrderHandler implements QueryHandler<GetPaymentOrderQuery, PaymentOrder> {
 
   private final PaymentOrders orders;

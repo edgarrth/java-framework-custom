@@ -4,8 +4,8 @@ import java.util.Objects;
 import pe.axiz.core.audit.AuditPublisher;
 
 /**
- * Raw callback attesting durable transport acceptance; receives a sealed fact. Queue/log do not
- * qualify.
+ * Callback sin procesar que atestigua la aceptación durable del transporte; recibe un hecho
+ * sellado. La cola y el log no califican.
  */
 public record StrictAuditSink(String name, AuditPublisher publisher) {
   public StrictAuditSink {

@@ -7,7 +7,7 @@ import java.util.function.Supplier;
 import pe.axiz.core.concurrent.AsyncLoadingCache;
 import pe.axiz.core.crypto.DataKeyProvider.DataKey;
 
-/** Applies envelope-key validation to the shared bounded native loading cache. */
+/** Aplica la validación de claves de envelope a la caché de carga nativa acotada compartida. */
 final class AsyncDataKeyCache implements AutoCloseable {
   private final AsyncLoadingCache<DataKey> cache;
 

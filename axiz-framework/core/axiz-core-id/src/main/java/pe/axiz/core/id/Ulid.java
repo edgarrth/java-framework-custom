@@ -10,8 +10,9 @@ import java.util.random.RandomGenerator;
 import java.util.regex.Pattern;
 
 /**
- * Universally Unique Lexicographically Sortable Identifier: 48-bit timestamp plus 80 random bits,
- * encoded in 26 Crockford base32 characters. Monotonic within the same millisecond.
+ * Universally Unique Lexicographically Sortable Identifier: marca de tiempo de 48 bits más 80 bits
+ * aleatorios, codificados en 26 caracteres base32 de Crockford. Monotónico dentro del mismo
+ * milisegundo.
  */
 public final class Ulid implements IdGenerator {
 
@@ -30,13 +31,14 @@ public final class Ulid implements IdGenerator {
     this(clock, RANDOM);
   }
 
-  // Package-private deterministic seam; public generators always use SecureRandom.
+  // Punto de inyección determinista privado del paquete; los generadores públicos siempre usan
+  // SecureRandom.
   Ulid(Clock clock, RandomGenerator entropy) {
     this.clock = Objects.requireNonNull(clock);
     this.entropy = Objects.requireNonNull(entropy);
   }
 
-  /** Independent generator over the given clock (monotonic per generator). */
+  /** Generador independiente sobre el reloj indicado (monotónico por generador). */
   public static Ulid generator(Clock clock) {
     return new Ulid(clock);
   }
@@ -69,12 +71,13 @@ public final class Ulid implements IdGenerator {
 
   private static String encode(long time, long randHigh16, long randLow64) {
     char[] out = new char[26];
-    // 48-bit time -> 10 chars
+    // tiempo de 48 bits -> 10 caracteres
     for (int i = 9; i >= 0; i--) {
       out[i] = ALPHABET[(int) (time & 0x1F)];
       time >>>= 5;
     }
-    // 80-bit randomness -> 16 chars; process as two parts: 16 high bits + 64 low bits
+    // aleatoriedad de 80 bits -> 16 caracteres; se procesa en dos partes: 16 bits altos + 64 bits
+    // bajos
     long hi = randHigh16 & 0xFFFF;
     long lo = randLow64;
     for (int i = 25; i >= 10; i--) {
@@ -89,7 +92,7 @@ public final class Ulid implements IdGenerator {
     return value != null && FORMAT.matcher(value.toUpperCase(Locale.ROOT)).matches();
   }
 
-  /** Timestamp embedded in a ULID. */
+  /** Marca de tiempo incluida en un ULID. */
   public static Instant timestamp(String ulid) {
     if (!isValid(ulid)) {
       throw new IllegalArgumentException("Invalid ULID");

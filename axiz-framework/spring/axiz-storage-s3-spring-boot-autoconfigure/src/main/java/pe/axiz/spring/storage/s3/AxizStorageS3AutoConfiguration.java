@@ -37,7 +37,10 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
-/** Amazon S3 storage: streaming upload/download, SSE-KMS, presigned URLs with bounded validity. */
+/**
+ * Almacenamiento en Amazon S3: subida y descarga en streaming, SSE-KMS y URLs prefirmadas con
+ * validez acotada.
+ */
 @AutoConfiguration(
     beforeName = {
       "io.awspring.cloud.autoconfigure.s3.S3AutoConfiguration",
@@ -103,7 +106,8 @@ public class AxizStorageS3AutoConfiguration {
         b.serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build());
       }
       try {
-        // The presigner closes its provider; use the same fail-closed policy as the S3 client.
+        // El prefirmador cierra su proveedor; se usa la misma política de fallo cerrado que el
+        // cliente S3.
         return b.credentialsProvider(source.provider()).build();
       } catch (RuntimeException | Error failure) {
         source.close();

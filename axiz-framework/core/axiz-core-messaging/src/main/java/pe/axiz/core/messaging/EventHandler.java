@@ -1,14 +1,14 @@
 package pe.axiz.core.messaging;
 
 /**
- * Handles one event type. Handlers must be idempotent; the inbox removes duplicates but handlers
- * should still tolerate replays.
+ * Maneja un tipo de evento. Los handlers deben ser idempotentes; el inbox elimina duplicados, pero
+ * los handlers igualmente deben tolerar replays.
  *
- * @param <T> payload type
+ * @param <T> tipo del payload
  */
 public interface EventHandler<T> {
 
-  /** CloudEvents type handled, e.g. {@code pe.axiz.payments.order-placed.v1}. */
+  /** Tipo CloudEvents que se maneja, por ejemplo {@code pe.axiz.payments.order-placed.v1}. */
   String eventType();
 
   Class<T> payloadType();

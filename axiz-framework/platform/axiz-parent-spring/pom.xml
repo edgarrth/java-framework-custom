@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  axiz-parent-spring: parent of layer 3 starters, layer 4 structures and extensions and teams' Spring libraries.
-  Adds: Spring Boot management, configuration metadata and auto-configuration processors, AOT-friendly
-  defaults, Spring test support. Never repackages a fat JAR.
+  axiz-parent-spring: parent de los starters de la capa 3, las estructuras y extensiones de la capa 4 y las bibliotecas Spring de los equipos.
+  Añade: gestión de Spring Boot, procesadores de metadatos de configuración y de autoconfiguración, valores por defecto
+  compatibles con AOT, soporte de pruebas de Spring. Nunca reempaqueta un fat JAR.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -21,7 +21,7 @@
   <description>Parent for Spring Boot starters and libraries (layers 3 and 4)</description>
 
   <properties>
-    <!-- Neutral bases opt in; integrations and test aggregators retain their declared SDKs. -->
+    <!-- Las bases neutras se activan de forma explícita; las integraciones y los agregadores de pruebas conservan los SDK declarados. -->
     <axiz.provider.boundaries.skip>true</axiz.provider.boundaries.skip>
     <axiz.test.argLine>-XX:+IgnoreUnrecognizedVMOptions -XX:+AllowRedefinitionToAddDeleteMethods --enable-native-access=ALL-UNNAMED -Djava.security.egd=file:/dev/./urandom</axiz.test.argLine>
   </properties>

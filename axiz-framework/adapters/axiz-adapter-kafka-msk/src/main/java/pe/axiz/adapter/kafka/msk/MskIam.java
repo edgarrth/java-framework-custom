@@ -3,8 +3,8 @@ package pe.axiz.adapter.kafka.msk;
 import java.util.Map;
 
 /**
- * Client properties for Amazon MSK with IAM authentication. Credentials come from the default AWS
- * chain (IRSA or EKS Pod Identity); no user or password is configured.
+ * Propiedades de cliente para Amazon MSK con autenticación IAM. Las credenciales provienen de la
+ * cadena por defecto de AWS (IRSA o EKS Pod Identity); no se configura usuario ni contraseña.
  */
 public final class MskIam {
 

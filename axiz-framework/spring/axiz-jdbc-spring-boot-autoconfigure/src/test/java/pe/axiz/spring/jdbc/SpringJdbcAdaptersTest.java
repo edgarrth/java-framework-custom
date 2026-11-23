@@ -18,7 +18,10 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jdbc.datasource.init.ScriptStatementFailedException;
 
-/** The Spring adapters keep the framework's JDBC code inside Spring-managed transactions. */
+/**
+ * Los adaptadores de Spring mantienen el código JDBC del framework dentro de transacciones
+ * gestionadas por Spring.
+ */
 class SpringJdbcAdaptersTest {
 
   private final DataSource dataSource =
@@ -137,7 +140,8 @@ class SpringJdbcAdaptersTest {
     new SchemaInitializer(dataSource, "probe", SchemaInitializer.Mode.EMBEDDED)
         .afterPropertiesSet();
     assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM axiz_probe", Integer.class));
-    // the scripts are idempotent, so an ALWAYS run after a previous start is harmless
+    // los scripts son idempotentes, por lo que una ejecución ALWAYS después de un arranque previo
+    // es inofensiva
     new SchemaInitializer(dataSource, "probe", SchemaInitializer.Mode.ALWAYS).afterPropertiesSet();
   }
 

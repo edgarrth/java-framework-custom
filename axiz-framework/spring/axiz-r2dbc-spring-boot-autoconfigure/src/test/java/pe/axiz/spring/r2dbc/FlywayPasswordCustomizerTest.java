@@ -14,10 +14,13 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.mock.env.MockEnvironment;
 import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
 
-/** The startup migration authenticates with a fresh IAM token, never with a stored password. */
+/**
+ * La migración de arranque se autentica con un token IAM nuevo, nunca con una contraseña
+ * almacenada.
+ */
 class FlywayPasswordCustomizerTest {
 
-  /** Records the JDBC credentials Flyway is given, without opening a connection. */
+  /** Registra las credenciales JDBC que recibe Flyway, sin abrir una conexión. */
   static final class RecordingConfiguration extends FluentConfiguration {
     @Nullable List<String> credentials;
 

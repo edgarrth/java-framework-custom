@@ -11,7 +11,10 @@ import java.util.Optional;
 import java.util.UUID;
 import pe.axiz.core.lock.LockHandle;
 
-/** In-memory saga store for tests and local runs. State and ownership share one atomic boundary. */
+/**
+ * Almacén de sagas en memoria para pruebas y ejecuciones locales. El estado y la propiedad
+ * comparten una única frontera atómica.
+ */
 public final class InMemorySagaStateStore implements SagaStateStore {
   private final Map<String, SagaState> states = new HashMap<>();
   private final Map<String, Owner> owners = new HashMap<>();

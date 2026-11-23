@@ -85,7 +85,7 @@ class AuditIntegrityWiringTest {
                           "Audit integrity " + unkeyed + " is restricted to local/test/ci"));
     runner()
         .withPropertyValues("axiz.config.environment=prod")
-        .run(ctx -> assertThat(ctx).hasFailed()); // HASH is only the development default
+        .run(ctx -> assertThat(ctx).hasFailed()); // HASH es solo el valor por defecto de desarrollo
     runner()
         .withPropertyValues("axiz.audit.integrity.mode=NONE", "axiz.config.environment=test")
         .run(ctx -> assertThat(ctx).hasNotFailed());

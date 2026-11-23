@@ -28,7 +28,10 @@ import pe.axiz.core.secrets.SecretNotFoundException;
 import pe.axiz.core.secrets.SecretResolver;
 import pe.axiz.core.secrets.SecretValue;
 
-/** Key material comes only from the secret store; hashing and envelope encryption are wired. */
+/**
+ * El material de claves proviene solo del almacén de secretos; el hash y el cifrado de sobre quedan
+ * cableados.
+ */
 class CryptoConfigurationTest {
 
   private final ApplicationContextRunner runner =

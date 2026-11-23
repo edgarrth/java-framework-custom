@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run complete pinned scans, bind their evidence, and apply protected risk decisions."""
+"""Ejecuta escaneos fijados completos, vincula su evidencia y aplica las decisiones de riesgo protegidas."""
 import argparse
 import hashlib
 import json
@@ -15,7 +15,7 @@ from protected import from_base, git
 
 
 def review_protection(repository, branch):
-    """Confirm mandatory code-owner review; the protected bit alone is insufficient."""
+    """Confirma la revisión obligatoria de code owners; el indicador de protección por sí solo no basta."""
     endpoint = "repos/" + repository
     result = subprocess.run(["gh", "api", "--paginate", "--slurp", endpoint + "/rules/branches/"
                              + quote(branch, safe="") + "?per_page=100"],
@@ -29,7 +29,7 @@ def review_protection(repository, branch):
                 and parameters.get("require_code_owner_review") is True
                 and parameters.get("required_approving_review_count", 0) >= 1):
             return {"kind": "active-ruleset", "rule": rule}
-    # Classic protection needs Administration:read. An unreadable response cannot authorize risk.
+        # La protección clásica requiere Administration:read. Una respuesta ilegible no puede autorizar riesgo.
     result = subprocess.run(["gh", "api", endpoint + "/branches/" + quote(branch, safe="") + "/protection"],
                             capture_output=True, text=True, check=True, timeout=30)
     protection = json.loads(result.stdout)
@@ -60,12 +60,12 @@ def protected_base(root, repository, branch, requested):
 
 
 def planned_scans(root, mode, scope, metadata=None, sbom=None):
-    """Build the complete expected set from trusted build metadata, never from submitted reports."""
+    """Construye el conjunto esperado completo a partir de metadatos de build de confianza, nunca de reportes enviados."""
     scans = []
     commit = git(root, "rev-parse", "HEAD").strip()
     if not re.fullmatch(r"[0-9a-f]{40}", commit):
         raise ValueError("The scanned checkout needs an exact source commit")
-    # This is a commit identity binding, not a claim to hash all generated/untracked build files.
+        # Es una vinculación con la identidad del commit, no una pretensión de calcular el hash de todos los archivos de build generados o no versionados.
     source_digest = "sha256:" + hashlib.sha256(("git-commit:" + commit).encode()).hexdigest()
     if mode in {"source", "service"}:
         scans.append({"kind": "source", "scope": scope + ":source", "artifact": str(root),
@@ -111,7 +111,7 @@ def run_scans(scans, output):
     if json.loads(version.stdout).get("Version") != "0.76.2":
         raise ValueError("The scanner must be the pinned Trivy 0.76.2")
     empty_config, empty_ignore = output / "scanner-config.yaml", output / "scanner-ignore"
-    # Build tools are executable supply-chain dependencies, even when marked dev-only.
+        # Las herramientas de build son dependencias ejecutables de la cadena de suministro, aunque estén marcadas solo para desarrollo.
     empty_config.write_text("pkg:\n  include-dev-deps: true\n")
     empty_ignore.write_text("")
     descriptors = []
@@ -125,8 +125,8 @@ def run_scans(scans, output):
                    "--exit-code", "0", "--format", "json", "--output", str(path),
                    "--timeout", f"{minutes}m"]
         if scan["kind"] == "source":
-            # Local parent/BOM metadata is installed before scanning; runtime resolution is
-            # additionally checked by the build-generated, all-scopes Maven SBOM gate.
+                        # Los metadatos locales de parent y BOM se instalan antes del escaneo; la resolución en tiempo de ejecución
+            # se verifica además mediante el gate de SBOM de Maven generado por el build, con todos los scopes.
             command += ["--offline-scan"]
         if scan["kind"] != "sbom":
             command += ["--scanners", "vuln"]
@@ -134,7 +134,7 @@ def run_scans(scans, output):
             command += ["--platform", scan["platform"]]
         command.append(scan["artifact"])
         environment = {k: v for k, v in os.environ.items() if not k.startswith("TRIVY_")}
-        # Only registry transport credentials/cache survive; a PR cannot set severity/skip filters.
+                # Solo sobreviven las credenciales y la caché de transporte del registry; un PR no puede definir filtros de severidad u omisión.
         for key in ("TRIVY_USERNAME", "TRIVY_PASSWORD", "TRIVY_CACHE_DIR"):
             if key in os.environ:
                 environment[key] = os.environ[key]
@@ -167,7 +167,7 @@ def main():
     if not output.is_relative_to(root):
         raise ValueError("Keep scan evidence inside the checkout")
     output.mkdir(parents=True, exist_ok=True)
-    # Do not let submitted reports or symlinked output files influence a fresh trusted run.
+        # Los reportes enviados o los archivos de salida enlazados simbólicamente no pueden influir en una ejecución de confianza nueva.
     if any(output.iterdir()):
         raise ValueError("Use an empty dedicated scan evidence directory")
     try:
@@ -179,7 +179,7 @@ def main():
         (output / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
         expected = run_scans(scans, output)
         (output / "expected.json").write_text(json.dumps(expected, indent=2) + "\n")
-        # Retain release context for audit; MEDIUM/HIGH/CRITICAL always block any release.
+                # Se conserva el contexto de la release para auditoría; MEDIUM/HIGH/CRITICAL siempre bloquean cualquier release.
         release = bool(metadata and re.fullmatch(r"[0-9]+\.[0-9]+\.0", metadata.get("version", "")))
         result = evaluate(policy, history, expected, output, datetime.now(timezone.utc), release)
     except (ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError) as failure:

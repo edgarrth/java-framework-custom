@@ -56,7 +56,7 @@ class SecurityTest {
         assertThrows(AccessException.class, () -> mapper.map(claims), claim);
       }
     }
-    // A malformed primary claim cannot fall through to a valid alternative.
+    // Un claim primario mal formado no puede pasar a una alternativa válida.
     assertThrows(
         AccessException.class,
         () ->
@@ -289,7 +289,7 @@ class SecurityTest {
         IllegalArgumentException.class,
         () -> new TrustedIssuer("i", URI.create("https://idp.example/jwks"), List.of()));
     new TrustedIssuer("i", URI.create("http://keycloak.idp.svc.cluster.local/jwks"), List.of("a"));
-    // without a JWKS URI the keys are discovered from the issuer, which must then use https
+    // sin URI de JWKS las claves se descubren a partir del emisor, que entonces debe usar https
     assertTrue(
         new TrustedIssuer("https://sso.example/realms/axiz", null, List.of("a")).discovered());
     assertThrows(

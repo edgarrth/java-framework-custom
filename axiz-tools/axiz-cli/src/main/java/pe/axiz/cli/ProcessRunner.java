@@ -7,16 +7,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-/** Runs external tools (mvn, docker) with inherited output. */
+/** Ejecuta herramientas externas (mvn, docker) con salida heredada. */
 public interface ProcessRunner {
 
-  /** Runs a command in a directory and returns its exit code. */
+  /** Ejecuta un comando en un directorio y devuelve su código de salida. */
   int run(Path directory, List<String> command) throws IOException;
 
-  /** Whether an executable is on the PATH. */
+  /** Indica si un ejecutable está en el PATH. */
   boolean available(String executable);
 
-  /** Real processes. */
+  /** Procesos reales. */
   final class Local implements ProcessRunner {
 
     @Override
@@ -45,7 +45,7 @@ public interface ProcessRunner {
       }
       for (String dir : path.split(File.pathSeparator, -1)) {
         if (dir.isEmpty()) {
-          continue; // an empty entry means the current directory: never trusted
+          continue; // una entrada vacía significa el directorio actual: nunca es de confianza
         }
         for (String name : List.of(executable, executable + ".exe", executable + ".cmd")) {
           if (Files.isExecutable(Path.of(dir, name))) {

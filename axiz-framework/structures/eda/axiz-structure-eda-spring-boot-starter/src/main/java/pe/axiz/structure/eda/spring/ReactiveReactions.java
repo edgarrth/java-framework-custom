@@ -9,8 +9,8 @@ import pe.axiz.spring.outbox.ReactiveTransactionalEvents;
 import reactor.core.publisher.Mono;
 
 /**
- * Reactive {@link Reactions}: emits events in reaction to a consumed one through the R2DBC outbox,
- * inside the reactive transaction of the handler.
+ * {@link Reactions} reactivas: emite eventos en reacción a uno consumido mediante el outbox R2DBC,
+ * dentro de la transacción reactiva del handler.
  */
 public final class ReactiveReactions {
 
@@ -29,14 +29,14 @@ public final class ReactiveReactions {
   }
 
   /**
-   * Enqueues a reaction when the returned {@code Mono} is subscribed.
+   * Encola una reacción cuando se suscribe el {@code Mono} devuelto.
    *
-   * @param type event type without prefix
-   * @param aggregateType aggregate type
-   * @param aggregateId aggregate id
+   * @param type tipo de evento sin prefijo
+   * @param aggregateType tipo de agregado
+   * @param aggregateId id del agregado
    * @param payload payload
-   * @param eventId deterministic id, so redeliveries do not duplicate the reaction downstream
-   * @return the stored envelope
+   * @param eventId id determinista, para que las reentregas no dupliquen la reacción aguas abajo
+   * @return el envelope almacenado
    */
   public Mono<EventEnvelope> emit(
       String type,

@@ -1,8 +1,8 @@
 package pe.axiz.core.logging;
 
 /**
- * Standard structured-log field names (MDC keys). {@code trace_id} and {@code span_id} are filled
- * by Micrometer Tracing; the rest by the framework filters and listeners.
+ * Nombres estándar de campos de log estructurado (claves de MDC). {@code trace_id} y {@code
+ * span_id} los completa Micrometer Tracing; el resto, los filtros y listeners del framework.
  */
 public final class LogFields {
 

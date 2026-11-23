@@ -16,7 +16,10 @@ import pe.axiz.core.audit.InMemoryAuditChainState;
 import pe.axiz.kit.reactor.audit.ReactiveAuditChainState;
 import reactor.core.publisher.Mono;
 
-/** Spring callback fixtures; database atomicity is tested in the provider integration modules. */
+/**
+ * Fixtures de callbacks de Spring; la atomicidad de la base de datos se prueba en los módulos de
+ * integración del proveedor.
+ */
 final class AuditTestTransactions {
   static final Object RESOURCE = new Object();
 

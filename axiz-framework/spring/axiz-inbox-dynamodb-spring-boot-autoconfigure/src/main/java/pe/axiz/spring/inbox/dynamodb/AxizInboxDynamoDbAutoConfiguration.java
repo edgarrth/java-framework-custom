@@ -31,7 +31,8 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 /**
- * DynamoDB inbox ({@code axiz.inbox.store=dynamodb}); expired items are removed by the table TTL.
+ * Inbox en DynamoDB ({@code axiz.inbox.store=dynamodb}); el TTL de la tabla elimina los elementos
+ * expirados.
  */
 @AutoConfiguration(afterName = "pe.axiz.spring.dynamodb.AxizDynamoDbAutoConfiguration")
 @ConditionalOnClass(name = "pe.axiz.adapter.inbox.dynamodb.DynamoDbInboxStore")
@@ -44,7 +45,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 })
 public class AxizInboxDynamoDbAutoConfiguration {
 
-  /** Only without the DynamoDB starter (or another {@link DynamoDbClient} bean): same settings. */
+  /** Solo sin el starter de DynamoDB (u otro bean {@link DynamoDbClient}): misma configuración. */
   @Bean(destroyMethod = "close")
   @ConditionalOnMissingBean
   DynamoDbClient axizDynamoDbClient(

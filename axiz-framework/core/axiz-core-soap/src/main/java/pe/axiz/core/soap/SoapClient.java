@@ -13,7 +13,9 @@ import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.errors.ExternalErrorDetail;
 import pe.axiz.core.errors.ExternalServiceException;
 
-/** SOAP protocol orchestration with explicit transport, WS-Security and safe fault mapping. */
+/**
+ * Orquestación del protocolo SOAP con transporte explícito, WS-Security y mapeo seguro de faults.
+ */
 public final class SoapClient {
 
   private static final Logger LOG = LoggerFactory.getLogger(SoapClient.class);
@@ -52,17 +54,20 @@ public final class SoapClient {
   }
 
   /**
-   * Invokes an operation.
+   * Invoca una operación.
    *
-   * @param soapAction SOAP action URI
-   * @param payloadXml request payload
-   * @return response payload element
+   * @param soapAction URI de la acción SOAP
+   * @param payloadXml payload de la petición
+   * @return elemento payload de la respuesta
    */
   public Element call(String soapAction, String payloadXml) {
     return call(soapAction, payloadXml, credentials);
   }
 
-  /** Per-request credentials remain owned by the caller and must be closed after this call. */
+  /**
+   * Las credenciales por petición siguen siendo propiedad de quien llama y deben cerrarse tras esta
+   * llamada.
+   */
   public Element call(
       String soapAction, String payloadXml, SoapEnvelope.@Nullable Credentials requestCredentials) {
     String envelope = SoapEnvelope.wrap(version, payloadXml, requestCredentials, clock.instant());
@@ -77,7 +82,8 @@ public final class SoapClient {
           (System.nanoTime() - start) / 1_000_000);
       return SoapResponse.payload(system, response.status(), response.body());
     } catch (IOException e) {
-      // no answer: a timeout (HttpTimeoutException) is 504, any other transport failure 503
+      // sin respuesta: un timeout (HttpTimeoutException) es 504 y cualquier otro fallo de
+      // transporte, 503
       throw ExternalServiceException.from(
           new ExternalErrorDetail(system, -1, e.getClass().getSimpleName(), null, ""), e);
     } catch (InterruptedException e) {
@@ -86,12 +92,14 @@ public final class SoapClient {
     }
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción nominal; build verifica los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable String system = null;
     private @Nullable SoapTransport transport = null;

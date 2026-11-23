@@ -7,12 +7,13 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import javax.lang.model.SourceVersion;
 
-/** Naming conventions for generated code. */
+/** Convenciones de nombres para el código generado. */
 public final class Names {
 
   private static final Pattern WORDS = Pattern.compile("[^A-Za-z0-9]+|(?<=[a-z0-9])(?=[A-Z])");
-  // Each character is matched by exactly one alternative and a separator must be followed by a
-  // valid start, so the match is linear in the length of the text (no nested repetition).
+  // Cada carácter coincide con exactamente una alternativa y un separador debe ir seguido de un
+  // inicio válido, por lo que la coincidencia es lineal en la longitud del texto (sin repeticiones
+  // anidadas).
   private static final Pattern ARTIFACT = Pattern.compile("^[a-z](?:[a-z0-9]|-(?=[a-z0-9]))*$");
   private static final Pattern PACKAGE = Pattern.compile("^[a-z](?:[a-z0-9_]|\\.(?=[a-z]))*$");
 
@@ -28,7 +29,7 @@ public final class Names {
     return out;
   }
 
-  /** {@code create-payment} or {@code createPayment} becomes {@code CreatePayment}. */
+  /** {@code create-payment} o {@code createPayment} se convierte en {@code CreatePayment}. */
   public static String pascal(String text) {
     StringBuilder b = new StringBuilder();
     for (String w : words(text)) {
@@ -50,7 +51,7 @@ public final class Names {
     return String.join("_", words(text));
   }
 
-  /** Last segment of a dotted name (package segment safe). */
+  /** Último segmento de un nombre con puntos (seguro como segmento de paquete). */
   public static String packageSegment(String text) {
     String s = String.join("", words(text));
     return s.isEmpty() || Character.isDigit(s.charAt(0)) ? "x" + s : s;
@@ -120,8 +121,8 @@ public final class Names {
           "page");
 
   /**
-   * A safe Java identifier for a contract name: camelCase, never a keyword nor one of the names the
-   * generated code uses ({@code body}, {@code page}).
+   * Un identificador Java seguro para un nombre del contrato: camelCase, nunca una palabra
+   * reservada ni uno de los nombres que usa el código generado ({@code body}, {@code page}).
    */
   public static String identifier(String text) {
     String c = camel(text);
@@ -132,8 +133,8 @@ public final class Names {
   }
 
   /**
-   * Prefix of the error codes of a service ({@code SYSTEM-SERVICE}, followed by {@code -NNNN}): the
-   * last segment of the group and the service name, upper case and alphanumeric.
+   * Prefijo de los códigos de error de un servicio ({@code SYSTEM-SERVICE}, seguido de {@code
+   * -NNNN}): el último segmento del grupo y el nombre del servicio, en mayúsculas y alfanumérico.
    */
   public static String errorPrefix(String groupId, String name) {
     String system =

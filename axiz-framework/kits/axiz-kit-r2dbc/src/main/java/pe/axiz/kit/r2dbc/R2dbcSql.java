@@ -21,13 +21,17 @@ import reactor.util.context.Context;
 import reactor.util.context.ContextView;
 
 /**
- * {@link ReactiveSql} directly over an R2DBC {@link ConnectionFactory} (normally the pool). A call
- * uses, in order: the connection of {@link #inTransaction} (Reactor context), the connection bound
- * to the thread by {@link R2dbcTransactionRunner}, or a new connection closed after the call.
+ * {@link ReactiveSql} directamente sobre una {@link ConnectionFactory} de R2DBC (normalmente el
+ * pool). Una llamada usa, en orden: la conexión de {@link #inTransaction} (contexto de Reactor), la
+ * conexión ligada al hilo por {@link R2dbcTransactionRunner} o una conexión nueva cerrada tras la
+ * llamada.
  */
 public final class R2dbcSql implements ReactiveSql {
 
-  /** Reactor context key of factory-scoped bindings, managed by {@link #inTransaction}. */
+  /**
+   * Clave del contexto de Reactor para los enlaces con alcance de fábrica, gestionados por {@link
+   * #inTransaction}.
+   */
   public static final String CONNECTION_KEY = "pe.axiz.r2dbc.connection";
 
   private final ConnectionFactory connections;
@@ -68,20 +72,23 @@ public final class R2dbcSql implements ReactiveSql {
   }
 
   /**
-   * Runs the work in one transaction: commit when it completes, rollback on error or cancel. Calls
-   * of this instance inside the work use the transaction connection.
+   * Ejecuta el trabajo en una transacción: commit cuando termina, rollback ante error o
+   * cancelación. Las llamadas de esta instancia dentro del trabajo usan la conexión de la
+   * transacción.
    *
-   * <p>The connection is closed once in every outcome. An unconfirmed commit has an explicit
-   * unknown outcome and is never reported as a rollback. Cleanup cannot change a confirmed result.
-   * Nested work for the same factory joins the transaction; only its owner commits.
+   * <p>La conexión se cierra una vez en cada resultado. Un commit no confirmado tiene un resultado
+   * desconocido explícito y nunca se informa como rollback. La limpieza no puede cambiar un
+   * resultado confirmado. El trabajo anidado para la misma fábrica se une a la transacción; solo su
+   * propietario hace commit.
    */
   public <T> Mono<T> inTransaction(Function<ReactiveSql, Mono<T>> work) {
     return transaction(work, true);
   }
 
   /**
-   * Uses an independent connection and commit even inside an existing transaction. For durable
-   * reservations such as sequence blocks; the caller's transaction and other context are preserved.
+   * Usa una conexión y un commit independientes incluso dentro de una transacción existente. Para
+   * reservas durables como los bloques de secuencias; se preservan la transacción de quien llama y
+   * el resto del contexto.
    */
   public <T> Mono<T> inIndependentTransaction(Function<ReactiveSql, Mono<T>> work) {
     return transaction(work, false);
@@ -123,9 +130,9 @@ public final class R2dbcSql implements ReactiveSql {
   }
 
   /**
-   * Carries the transaction of an imperative worker through the entire reactive composition. Call
-   * only at the blocking boundary, on the thread owned by R2dbcTransactionRunner. Capturing each
-   * statement separately loses the binding when flatMap resumes on a driver thread.
+   * Lleva la transacción de un worker imperativo a través de toda la composición reactiva. Se llama
+   * solo en la frontera bloqueante, en el hilo propiedad de R2dbcTransactionRunner. Capturar cada
+   * sentencia por separado pierde el enlace cuando flatMap se reanuda en un hilo del driver.
    */
   public <T> Mono<T> withCallingTransaction(Mono<T> work) {
     Connection connection = BoundConnection.current(connections);

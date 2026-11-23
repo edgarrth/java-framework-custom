@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-core-sensitive
 
-Sensitivity levels, masking strategies and annotations for responses, logs and audit.
+Niveles de sensibilidad, estrategias de enmascaramiento y anotaciones para respuestas, logs y auditoría.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,24 +12,24 @@ Sensitivity levels, masking strategies and annotations for responses, logs and a
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `JsonTextMasker` | Masks values of sensitive keys inside raw JSON text (HTTP bodies in logs) without parsing it. |
-| `Mask` | Shorthand for a masked value of `SensitivityLevel#MEDIUM` with the given mask type. |
-| `MaskType` | Masking strategies. |
-| `Masker` | Masking functions. |
-| `MaskingPolicy` | Decides how a sensitive value is written to each output. |
-| `ObjectMasker` | Converts objects into masked, JSON-like structures (maps, lists, strings, numbers) for logs and audit. |
-| `OutputChannel` | Where a value is being written. |
-| `Sensitive` | Marks a field, record component or getter as sensitive. |
-| `SensitiveField` | Sensitivity metadata of a property. |
-| `SensitiveKeys` | Sensitivity by property or JSON key name, for data without annotations (maps, raw HTTP bodies, headers). |
-| `SensitivityLevel` | How harmful the disclosure of a value would be. |
+| `JsonTextMasker` | Enmascara los valores de claves sensibles dentro de texto JSON sin procesar (cuerpos HTTP en logs) sin parsearlo. |
+| `Mask` | Forma abreviada de un valor enmascarado de nivel `SensitivityLevel#MEDIUM` con el tipo de máscara indicado. |
+| `MaskType` | Estrategias de enmascaramiento. |
+| `Masker` | Funciones de enmascaramiento. |
+| `MaskingPolicy` | Decide cómo se escribe un valor sensible en cada salida. |
+| `ObjectMasker` | Convierte objetos en estructuras enmascaradas de tipo JSON (mapas, listas, textos, números) para logs y auditoría. |
+| `OutputChannel` | Dónde se está escribiendo un valor. |
+| `Sensitive` | Marca como sensible un campo, un componente de record o un getter. |
+| `SensitiveField` | Metadatos de sensibilidad de una propiedad. |
+| `SensitiveKeys` | Sensibilidad por nombre de propiedad o de clave JSON, para datos sin anotaciones (mapas, cuerpos HTTP sin procesar, cabeceras). |
+| `SensitivityLevel` | Qué tan dañina sería la divulgación de un valor. |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-sensitive verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl core/axiz-core-sensitive verify`.

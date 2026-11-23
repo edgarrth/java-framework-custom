@@ -8,9 +8,9 @@ import pe.axiz.payments.notifications.event.AuditRecord;
 import pe.axiz.payments.notifications.repository.archive.AuditArchive;
 
 /**
- * Archives the audit trail the services publish to the SQS audit queue ({@code
- * pe.axiz.audit.event.v1}). A failure leaves the message in the queue: it is retried and finally
- * moved to the dead-letter queue, never lost.
+ * Archiva el rastro de auditoría que los servicios publican en la cola SQS de auditoría ({@code
+ * pe.axiz.audit.event.v1}). Una falla deja el mensaje en la cola: se reintenta y finalmente se
+ * mueve a la cola de mensajes fallidos (dead-letter), sin perderse nunca.
  */
 @Component
 @HandlesEvent("pe.axiz.audit.event.v1")

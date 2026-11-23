@@ -43,7 +43,7 @@ class CacheTest {
     }
   }
 
-  /** Codec for tests: strings and lists of strings separated by commas. */
+  /** Codec para pruebas: cadenas y listas de cadenas separadas por comas. */
   static final class TextCodec implements ValueCodec {
     @Override
     public byte[] encode(Object value) {
@@ -67,7 +67,7 @@ class CacheTest {
     }
   }
 
-  /** L2 that can be switched off to simulate a Redis outage. */
+  /** L2 que puede apagarse para simular una caída de Redis. */
   static final class FlakyCache implements ByteCache {
     final InMemoryByteCache delegate;
     boolean down;
@@ -88,7 +88,7 @@ class CacheTest {
       return delegate.get(key);
     }
 
-    /** Like Redis: the value and its remaining time in one read. */
+    /** Como Redis: el valor y su tiempo restante en una sola lectura. */
     @Override
     public Optional<CachedValue> getWithTtl(String key) {
       check();
@@ -114,7 +114,9 @@ class CacheTest {
     }
   }
 
-  /** A tier that keeps the default {@code getWithTtl}: it cannot tell when an entry expires. */
+  /**
+   * Nivel que conserva el {@code getWithTtl} por defecto: no puede saber cuándo expira una entrada.
+   */
   static final class NoTtlCache implements ByteCache {
     final InMemoryByteCache delegate;
 
@@ -383,7 +385,7 @@ class CacheTest {
     InMemoryByteCache l2 = new InMemoryByteCache(10, clock);
     TwoLevelCache cache = new TwoLevelCache(l1, l2, Duration.ofSeconds(3));
     cache.put("rate", "old".getBytes(StandardCharsets.UTF_8), Duration.ofSeconds(10));
-    l1.evict("rate"); // another instance: only L2 has it
+    l1.evict("rate"); // otra instancia: solo L2 la tiene
     clock.now = clock.now.plusSeconds(9);
     assertTrue(cache.get("rate").isPresent());
     clock.now = clock.now.plusSeconds(2);
@@ -405,7 +407,7 @@ class CacheTest {
     clock.now = clock.now.plusSeconds(2);
     assertTrue(cache.get("k").isEmpty(), "past the L1 limit");
 
-    NoTtlCache unknown = new NoTtlCache(clock); // cannot tell the expiration: no local copy
+    NoTtlCache unknown = new NoTtlCache(clock); // no se puede saber la expiración: sin copia local
     InMemoryByteCache otherL1 = new InMemoryByteCache(10, clock);
     TwoLevelCache other = new TwoLevelCache(otherL1, unknown, Duration.ofSeconds(3));
     unknown.put("u", new byte[] {2}, Duration.ofMinutes(5));
@@ -414,7 +416,7 @@ class CacheTest {
     assertTrue(other.getWithTtl("u").orElseThrow().remaining().isEmpty());
   }
 
-  /** An L2 that answers with a fixed expiration while the read takes a controlled time. */
+  /** L2 que responde con una expiración fija mientras la lectura tarda un tiempo controlado. */
   static final class SlowL2 implements ByteCache {
     final long[] nanos;
     final long readNanos;
@@ -428,7 +430,7 @@ class CacheTest {
 
     @Override
     public Optional<CachedValue> getWithTtl(String key) {
-      nanos[0] += readNanos; // the answer arrives this much later
+      nanos[0] += readNanos; // la respuesta llega este tiempo después
       return Optional.of(answer);
     }
 
@@ -454,7 +456,8 @@ class CacheTest {
     MutableClock clock = new MutableClock();
     long[] nanos = {0};
     InMemoryByteCache l1 = new InMemoryByteCache(10, clock);
-    // L2 had 1 s left when it read the key, the answer took 1.5 s to arrive: nothing to copy
+    // a L2 le quedaba 1 s cuando leyó la clave y la respuesta tardó 1,5 s en llegar: nada que
+    // copiar
     TwoLevelCache late =
         new TwoLevelCache(
             l1,
@@ -467,7 +470,7 @@ class CacheTest {
     assertTrue(late.get("k").isPresent(), "the value was valid when L2 read it");
     assertTrue(l1.get("k").isEmpty(), "an answer with no time left is not copied");
 
-    // 10 s left, the read took 4 s: the copy lives 6 s, not 10
+    // quedan 10 s y la lectura tardó 4 s: la copia vive 6 s, no 10
     InMemoryByteCache l1b = new InMemoryByteCache(10, clock);
     TwoLevelCache slow =
         new TwoLevelCache(
@@ -495,7 +498,7 @@ class CacheTest {
           @Override
           public Optional<CachedValue> getWithTtl(String key) {
             Optional<CachedValue> measured = store.getWithTtl(key);
-            clock.now = clock.now.plusSeconds(2); // the answer arrives 2 s after L2 measured it
+            clock.now = clock.now.plusSeconds(2); // la respuesta llega 2 s tras la medición de L2
             return measured;
           }
 
@@ -519,7 +522,7 @@ class CacheTest {
             return store.evictByPrefix(prefix);
           }
         };
-    // the production constructor: only the L1 clock sees the delay
+    // el constructor de producción: solo el reloj de L1 ve el retraso
     TwoLevelCache cache = new TwoLevelCache(l1, delayed, Duration.ofSeconds(3));
     cache.put("k", new byte[] {1}, Duration.ofSeconds(10));
     clock.now = clock.now.plusSeconds(9);

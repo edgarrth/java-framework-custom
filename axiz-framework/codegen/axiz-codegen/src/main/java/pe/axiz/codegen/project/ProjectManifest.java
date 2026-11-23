@@ -21,21 +21,21 @@ import pe.axiz.codegen.openapi.SafeYaml;
 import pe.axiz.codegen.output.SafePaths;
 
 /**
- * The {@code .axiz/project.yaml} manifest of a generated project: what the CLI needs to generate
- * code coherent with the project (structure, stack, packages, capabilities and contract).
+ * El manifiesto {@code .axiz/project.yaml} de un proyecto generado: lo que la CLI necesita para
+ * generar código coherente con el proyecto (estructura, stack, paquetes, capacidades y contrato).
  *
- * @param name service name
- * @param groupId Maven group
- * @param basePackage base Java package
- * @param archetype archetype id
- * @param structure style
+ * @param name nombre del servicio
+ * @param groupId grupo de Maven
+ * @param basePackage paquete Java base
+ * @param archetype id del arquetipo
+ * @param structure estilo
  * @param stack stack
- * @param persistence {@code none}, {@code aurora} or {@code dynamodb}
- * @param axizVersion structure version
- * @param openapi contract path, relative to the project, if any
- * @param asyncapi AsyncAPI path, if any
- * @param capabilities capabilities of the project
- * @param operations operation ids generated so far
+ * @param persistence {@code none}, {@code aurora} o {@code dynamodb}
+ * @param axizVersion versión de la estructura
+ * @param openapi ruta del contrato, relativa al proyecto, si existe
+ * @param asyncapi ruta de AsyncAPI, si existe
+ * @param capabilities capacidades del proyecto
+ * @param operations ids de las operaciones generadas hasta el momento
  */
 public record ProjectManifest(
     String name,
@@ -88,7 +88,7 @@ public record ProjectManifest(
     operations = List.copyOf(operations);
   }
 
-  /** Reads the manifest of the project in {@code dir}. */
+  /** Lee el manifiesto del proyecto de {@code dir}. */
   public static ProjectManifest read(Path dir) throws IOException {
     Path file = dir.resolve(PATH);
     if (!Files.isRegularFile(file)) {
@@ -153,13 +153,13 @@ public record ProjectManifest(
                 + allowed.stream().sorted().toList());
   }
 
-  /** Writes the manifest back (same layout as the generated one). */
+  /** Vuelve a escribir el manifiesto (con la misma disposición que el generado). */
   public void write(Path dir) throws IOException {
     StringBuilder b = new StringBuilder();
     b.append(
-        "# axiz project manifest: read by the axiz CLI (generate, add, contract sync, upgrade,"
+        "# Manifiesto del proyecto axiz: lo lee la CLI axiz (generate, add, contract sync, upgrade,"
             + " doctor).\n");
-    b.append("# Keep it in version control; the CLI updates it when it changes the project.\n");
+    b.append("# Se versiona en el repositorio; la CLI lo actualiza cuando cambia el proyecto.\n");
     b.append("schema: 2\n");
     b.append("kind: ").append(isService() ? "service" : "platform").append('\n');
     b.append("name: ").append(name).append('\n');
@@ -228,7 +228,7 @@ public record ProjectManifest(
         .build();
   }
 
-  /** Changes the deployment name without changing the explicitly declared Java package. */
+  /** Cambia el nombre del despliegue sin cambiar el paquete Java declarado de forma explícita. */
   public ProjectManifest withName(String newName) {
     return ProjectManifest.builder()
         .name(newName)
@@ -308,12 +308,14 @@ public record ProjectManifest(
     }
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción con nombre; build verifica los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable String name = null;
     private @Nullable String groupId = null;

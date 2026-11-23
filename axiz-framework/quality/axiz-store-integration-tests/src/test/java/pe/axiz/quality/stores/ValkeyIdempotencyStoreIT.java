@@ -29,7 +29,10 @@ import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.test.contracts.IdempotencyStoreContract;
 import pe.axiz.test.support.MutableClock;
 
-/** Idempotency store contract on a real Valkey (ElastiCache): Lua scripts and server TTL. */
+/**
+ * Contrato del almacén de idempotencia sobre un Valkey real (ElastiCache): scripts Lua y TTL del
+ * servidor.
+ */
 class ValkeyIdempotencyStoreIT {
 
   private static final String PREFIX = "axiz:it:idem:";
@@ -75,7 +78,7 @@ class ValkeyIdempotencyStoreIT {
       var store = new RedisIdempotencyStore(before.sync(), PREFIX);
       Assertions.assertTrue(store.tryStart(record));
     }
-    // New transport/client and async implementation reopen the same external state.
+    // Un transporte y cliente nuevos y la implementación asíncrona reabren el mismo estado externo.
     var restartedClient = RedisClient.create(uri);
     try (var after = restartedClient.connect()) {
       var store = new RedisAsyncIdempotencyStore(after.async(), PREFIX, Clock.systemUTC());
@@ -124,7 +127,7 @@ class ValkeyIdempotencyStoreIT {
           @Override
           public void expire(IdempotencyStore store, String key, MutableClock clock)
               throws InterruptedException {
-            // the server expires the key by itself: wait for it
+            // el servidor expira la clave por sí mismo: se espera a que ocurra
             Awaitility.await()
                 .atMost(Duration.ofSeconds(10))
                 .until(() -> redis.exists(PREFIX + key) == 0);

@@ -1,7 +1,8 @@
 package pe.axiz.core.lock;
 
 /**
- * Receives operational failures; RuntimeException from an observer cannot change business results.
+ * Recibe los fallos operativos; una RuntimeException de un observador no puede cambiar los
+ * resultados de negocio.
  */
 @FunctionalInterface
 public interface LockObserver {

@@ -15,8 +15,9 @@ import pe.axiz.payments.networkgateway.domain.TransferOrder;
 import pe.axiz.payments.networkgateway.domain.TransferStatus;
 
 /**
- * Adapter of the inter-bank network (API key from the secret store, HTTP service group {@code
- * payment-network}). Network rejection codes become {@code TRANSFER_REJECTED} with a stable reason.
+ * Adaptador de la red interbancaria (API key del almacén de secretos, grupo de servicios HTTP
+ * {@code payment-network}). Los códigos de rechazo de la red se convierten en {@code
+ * TRANSFER_REJECTED} con un motivo estable.
  */
 @Component
 public class PaymentNetworkAdapter implements PaymentNetwork {

@@ -2,7 +2,7 @@ package pe.axiz.core.audit;
 
 import java.util.Objects;
 
-/** A previous attempt of the same fact; its full identity participates in the new seal. */
+/** Intento previo del mismo hecho; su identidad completa participa en el nuevo sello. */
 public record AttemptRef(String chainId, long sequence, String hash, AttemptOutcome outcome) {
   public AttemptRef {
     AuditIntegrity.validateChain(chainId);

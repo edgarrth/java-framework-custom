@@ -9,12 +9,12 @@ import java.nio.file.StandardOpenOption;
 import java.util.regex.Pattern;
 
 /**
- * Validation of generated relative paths and safe writes under a base directory: no absolute paths,
- * no {@code ..}, and no symbolic link followed below the base (a link planted in the destination,
- * such as {@code src -> /etc}, would otherwise redirect the write outside it). Without overwrite,
- * files are created atomically ({@code CREATE_NEW}). Threat model: the destination is a directory
- * of the user; another process able to swap its subdirectories concurrently is out of scope
- * (generate into a private directory in that case).
+ * Validación de las rutas relativas generadas y escrituras seguras bajo un directorio base: sin
+ * rutas absolutas, sin {@code ..} y sin seguir enlaces simbólicos bajo la base (un enlace colocado
+ * en el destino, como {@code src -> /etc}, redirigiría en otro caso la escritura fuera de él). Sin
+ * overwrite, los archivos se crean de forma atómica ({@code CREATE_NEW}). Modelo de amenazas: el
+ * destino es un directorio del usuario; otro proceso capaz de intercambiar sus subdirectorios de
+ * forma concurrente queda fuera de alcance (en ese caso, se genera en un directorio privado).
  */
 public final class SafePaths {
 
@@ -41,12 +41,12 @@ public final class SafePaths {
   }
 
   /**
-   * The directory that contains a file. A relative path is resolved against the working directory
-   * first, so {@code pom.xml} has a parent too.
+   * El directorio que contiene un archivo. Una ruta relativa se resuelve primero contra el
+   * directorio de trabajo, de modo que {@code pom.xml} también tiene padre.
    *
-   * @param file a file path
-   * @return its directory
-   * @throws IllegalArgumentException for a file system root, which has no parent
+   * @param file una ruta de archivo
+   * @return su directorio
+   * @throws IllegalArgumentException para una raíz del sistema de archivos, que no tiene padre
    */
   public static Path parentOf(Path file) {
     Path parent = file.toAbsolutePath().getParent();
@@ -57,10 +57,10 @@ public final class SafePaths {
   }
 
   /**
-   * The last name of a path, or an empty string for a file system root.
+   * El último nombre de una ruta, o una cadena vacía para una raíz del sistema de archivos.
    *
-   * @param path a path
-   * @return its file name
+   * @param path una ruta
+   * @return su nombre de archivo
    */
   public static String fileName(Path path) {
     Path name = path.getFileName();
@@ -68,10 +68,10 @@ public final class SafePaths {
   }
 
   /**
-   * Resolves a generated path under {@code base}, refusing any symbolic link between the base and
-   * the target (the target included). The base itself may be a link chosen by the user.
+   * Resuelve una ruta generada bajo {@code base} y rechaza cualquier enlace simbólico entre la base
+   * y el destino (incluido el destino). La base en sí puede ser un enlace elegido por el usuario.
    *
-   * @throws IOException when a component is a symbolic link
+   * @throws IOException cuando un componente es un enlace simbólico
    */
   public static Path target(Path base, String relativePath) throws IOException {
     Path root = base.toAbsolutePath().normalize();
@@ -91,9 +91,9 @@ public final class SafePaths {
   }
 
   /**
-   * Writes a generated file without following symbolic links.
+   * Escribe un archivo generado sin seguir enlaces simbólicos.
    *
-   * @return {@code false} when the file exists and {@code overwrite} is off
+   * @return {@code false} cuando el archivo existe y {@code overwrite} está desactivado
    */
   public static boolean write(Path base, String relativePath, byte[] content, boolean overwrite)
       throws IOException {
@@ -102,7 +102,7 @@ public final class SafePaths {
       return false;
     }
     Files.createDirectories(parentOf(target));
-    target(base, relativePath); // directories created concurrently must not be links either
+    target(base, relativePath); // los directorios creados en paralelo tampoco deben ser enlaces
     try {
       Files.write(
           target,
@@ -112,7 +112,7 @@ public final class SafePaths {
           StandardOpenOption.WRITE,
           LinkOption.NOFOLLOW_LINKS);
     } catch (FileAlreadyExistsException e) {
-      return false; // created by someone else between the check and the write: never clobbered
+      return false; // otro lo creó entre la verificación y la escritura: nunca se pisa
     }
     return true;
   }

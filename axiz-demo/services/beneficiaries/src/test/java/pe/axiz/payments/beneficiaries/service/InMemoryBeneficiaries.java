@@ -11,13 +11,18 @@ import pe.axiz.payments.beneficiaries.model.Beneficiary;
 import pe.axiz.payments.beneficiaries.model.BeneficiaryPolicy;
 import pe.axiz.payments.beneficiaries.repository.BeneficiaryRepository;
 
-/** In-memory repository with the same semantics as DynamoDB (active only, insertion order). */
+/**
+ * Repositorio en memoria con la misma semántica que DynamoDB (solo activos, en orden de inserción).
+ */
 public final class InMemoryBeneficiaries implements BeneficiaryRepository {
 
-  /** Every stored item, removed ones included, by {@code customerId/beneficiaryId}. */
+  /**
+   * Todos los elementos almacenados, incluidos los eliminados, por {@code
+   * customerId/beneficiaryId}.
+   */
   public final Map<String, Beneficiary> rows = new LinkedHashMap<>();
 
-  /** Single-item reads served. */
+  /** Lecturas de un solo elemento atendidas. */
   public int reads;
 
   @Override

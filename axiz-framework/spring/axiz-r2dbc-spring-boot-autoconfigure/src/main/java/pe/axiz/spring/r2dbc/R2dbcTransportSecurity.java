@@ -8,11 +8,17 @@ import org.springframework.boot.r2dbc.OptionsCapableConnectionFactory;
 import pe.axiz.core.commons.Environments;
 import pe.axiz.core.commons.net.DataTransportSecurityPolicy;
 
-/** Explicit transport validation for built factories and custom factories' final options. */
+/**
+ * Validación explícita del transporte para las fábricas construidas y las opciones finales de las
+ * fábricas personalizadas.
+ */
 public final class R2dbcTransportSecurity {
   private R2dbcTransportSecurity() {}
 
-  /** Uses the final options retained by Boot, after all options customizers have run. */
+  /**
+   * Usa las opciones finales que conserva Boot, después de que se hayan ejecutado todos los
+   * customizers de opciones.
+   */
   public static void validate(ConnectionFactory factory, DataTransportSecurityPolicy policy) {
     var configured = OptionsCapableConnectionFactory.unwrapFrom(factory);
     if (configured == null) {
@@ -22,7 +28,10 @@ public final class R2dbcTransportSecurity {
     validateOptions(configured.getOptions(), policy);
   }
 
-  /** Custom factories must call this before a constructor or warmup can perform I/O. */
+  /**
+   * Las fábricas personalizadas deben invocar esto antes de que un constructor o un
+   * precalentamiento pueda realizar E/S.
+   */
   public static void validateOptions(
       ConnectionFactoryOptions options, DataTransportSecurityPolicy policy) {
     Object driver = options.getValue(ConnectionFactoryOptions.DRIVER);
@@ -49,7 +58,8 @@ public final class R2dbcTransportSecurity {
         mode != null
             ? mode.toString().replace('_', '-').toLowerCase(Locale.ROOT).equals("verify-full")
             : Boolean.TRUE.equals(options.getValue(ConnectionFactoryOptions.SSL));
-    // Arbitrary callbacks can replace trust material or skip hostname checks after this guard.
+    // Callbacks arbitrarios pueden reemplazar el material de confianza u omitir las comprobaciones
+    // del hostname después de esta guarda.
     for (String hook :
         new String[] {
           "sslHostnameVerifier",

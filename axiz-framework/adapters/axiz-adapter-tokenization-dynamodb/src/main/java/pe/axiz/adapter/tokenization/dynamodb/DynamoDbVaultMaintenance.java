@@ -25,7 +25,8 @@ import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 import software.amazon.awssdk.services.dynamodb.model.TransactionCanceledException;
 
 /**
- * Explicit privileged adapter for an independently authorized maintenance job and borrowed client.
+ * Adaptador privilegiado explícito para un job de mantenimiento autorizado de forma independiente y
+ * un cliente prestado.
  */
 public final class DynamoDbVaultMaintenance implements TokenVaultMaintenance {
   @SuppressFBWarnings(

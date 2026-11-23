@@ -9,18 +9,18 @@ import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.resilience.TimeoutSettings;
 
 /**
- * Settings of one logical HTTP client ({@code axiz.http-client.clients.<name>}).
+ * Configuración de un cliente HTTP lógico ({@code axiz.http-client.clients.<name>}).
  *
- * @param name logical name (used in metrics, traces, logs and errors)
- * @param baseUrl base URL
- * @param timeouts mandatory timeouts
- * @param auth outbound authentication
- * @param retry retry mode
- * @param maxAttempts attempts for idempotent calls
- * @param circuitBreaker circuit breaker configuration name, or null to disable
- * @param maxConcurrentCalls bulkhead limit, or 0 to disable
- * @param propagateHeaders inbound headers forwarded to this dependency (allow-list)
- * @param maxConnections connection pool size
+ * @param name nombre lógico (usado en métricas, trazas, logs y errores)
+ * @param baseUrl URL base
+ * @param timeouts timeouts obligatorios
+ * @param auth autenticación saliente
+ * @param retry modo de reintento
+ * @param maxAttempts intentos para llamadas idempotentes
+ * @param circuitBreaker nombre de la configuración del circuit breaker, o null para desactivarlo
+ * @param maxConcurrentCalls límite del bulkhead, o 0 para desactivarlo
+ * @param propagateHeaders cabeceras entrantes reenviadas a esta dependencia (lista de permitidas)
+ * @param maxConnections tamaño del pool de conexiones
  */
 public record ClientSettings(
     String name,
@@ -57,10 +57,10 @@ public record ClientSettings(
     }
   }
 
-  /** Retry modes. */
+  /** Modos de reintento. */
   public enum RetryMode {
     NONE,
-    /** Retry only idempotent methods or calls with an Idempotency-Key. */
+    /** Reintenta solo métodos idempotentes o llamadas con un Idempotency-Key. */
     IDEMPOTENT_ONLY
   }
 
@@ -80,12 +80,14 @@ public record ClientSettings(
         .build();
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción nominal; build verifica los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable String name = null;
     private @Nullable URI baseUrl = null;

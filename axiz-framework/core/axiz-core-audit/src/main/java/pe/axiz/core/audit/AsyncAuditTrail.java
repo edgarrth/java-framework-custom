@@ -9,7 +9,10 @@ import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.sensitive.ObjectMasker;
 
-/** Sanitized audit records with native asynchronous acceptance; no executor or blocking bridge. */
+/**
+ * Registros de auditoría saneados con aceptación asíncrona nativa; sin executor ni puente
+ * bloqueante.
+ */
 public final class AsyncAuditTrail {
   private final String service;
   private final AsyncAuditEventPublisher publisher;
@@ -30,12 +33,15 @@ public final class AsyncAuditTrail {
     this.clock = Objects.requireNonNull(clock);
   }
 
-  /** Builders belong to one recording operation and must not be shared across concurrent calls. */
+  /**
+   * Los builders pertenecen a una operación de registro y no deben compartirse entre llamadas
+   * concurrentes.
+   */
   public Builder record(String action, String resourceType) {
     return new Builder(action, resourceType);
   }
 
-  /** Builder for one sanitized asynchronous record. */
+  /** Builder de un registro asíncrono saneado. */
   public final class Builder {
     private final AuditRecord record;
 

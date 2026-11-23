@@ -17,7 +17,7 @@ las referencian: un servicio no copia archivos de configuración.
 | Formato | Spotless con google-java-format (Java); `./mvnw spotless:apply` formatea (`-Pquality`) | falla con archivos sin formatear |
 | Convenciones | Checkstyle: nombres, imports, Javadoc de la API pública, APIs prohibidas (`-Pquality`) | severidad error |
 | Errores y nulos | Error Prone + NullAway sobre JSpecify, `@NullMarked` en cada paquete (`-Pquality`) | falla el build |
-| Bytecode y seguridad | SpotBugs + FindSecBugs | sin hallazgos de prioridad alta |
+| Bytecode y seguridad | SpotBugs + FindSecBugs | sin advertencias de prioridad alta |
 | Modernización | OpenRewrite (análisis estático) en modo informe en cada PR | informativo |
 | Cobertura | JaCoCo por módulo, sobre el código escrito: los modelos que genera openapi-generator llevan `@Generated` de axiz (retención en el bytecode) y JaCoCo los deja fuera, como a todo lo marcado así. Ver [Cobertura de fuentes y modelos](#cobertura-de-fuentes-y-modelos) | al menos 80 % de líneas y 70 % de ramas |
 | Calidad de pruebas | PIT en la capa 1 | al menos 81 % de mutantes eliminados |
@@ -26,7 +26,7 @@ las referencian: un servicio no copia archivos de configuración.
 | SAST | SonarQube (quality gate) y Semgrep (reglas públicas y de axiz) | sin bloqueantes ni críticos |
 | Vulnerabilidades | Trivy sobre dependencias (SBOM), filesystem e imagen | bloquea siempre MEDIUM/HIGH/CRITICAL, incluidas dependencias de desarrollo |
 | SBOM y firma | CycloneDX por artefacto; imágenes firmadas con cosign y SBOM atestado | en cada imagen |
-| Secretos | gitleaks en pre-commit (`.pre-commit-config.yaml`) y en cada PR | cero hallazgos |
+| Secretos | gitleaks en pre-commit (`.pre-commit-config.yaml`) y en cada PR | cero detecciones |
 | Licencias | dependency review con licencias denegadas (AGPL, GPL-3.0, SSPL) | falla el PR |
 | Otros linters | Spectral (OpenAPI, AsyncAPI), actionlint, kubeconform y kube-linter, markdownlint (docs), título Conventional Commits | falla el PR |
 | Neutralidad de origen | guardia de nombres con la lista de identificadores prohibidos (secreto de la organización) | cero coincidencias |

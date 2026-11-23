@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Every concrete workflow tag has one updater or an exact independent-data declaration."""
+"""Cada tag concreto de workflow tiene un único actualizador o una declaración exacta de datos independientes."""
 import argparse
 from collections import Counter
 import json

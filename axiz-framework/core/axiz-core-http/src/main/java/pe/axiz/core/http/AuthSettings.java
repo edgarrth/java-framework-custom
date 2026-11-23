@@ -6,17 +6,17 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Outbound authentication settings. Secrets are referenced by name (resolved through the
- * SecretResolver), never written in configuration.
+ * Configuración de autenticación saliente. Los secretos se referencian por nombre (resueltos
+ * mediante el SecretResolver), nunca se escriben en la configuración.
  *
- * @param type authentication type
- * @param tokenUri token endpoint for client credentials
- * @param clientId OAuth2 client id
- * @param clientSecretRef secret name of the client secret
- * @param scopes requested scopes
- * @param audience requested audience (some providers need it)
- * @param apiKeyHeader header carrying the API key
- * @param apiKeyRef secret name of the API key
+ * @param type tipo de autenticación
+ * @param tokenUri endpoint de tokens para client credentials
+ * @param clientId id de cliente OAuth2
+ * @param clientSecretRef nombre del secreto del client secret
+ * @param scopes scopes solicitados
+ * @param audience audiencia solicitada (algunos proveedores la necesitan)
+ * @param apiKeyHeader cabecera que lleva la API key
+ * @param apiKeyRef nombre del secreto de la API key
  */
 public record AuthSettings(
     AuthType type,
@@ -44,7 +44,7 @@ public record AuthSettings(
         }
       }
       default -> {
-        // nothing to validate
+        // nada que validar
       }
     }
   }
@@ -62,12 +62,14 @@ public record AuthSettings(
         .build();
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción nominal; build verifica los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable AuthType type = null;
     private @Nullable URI tokenUri = null;

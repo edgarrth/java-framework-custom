@@ -18,8 +18,9 @@ import pe.axiz.spring.foundation.lifecycle.WorkerLifecycle;
 import pe.axiz.spring.foundation.lifecycle.WorkerStatus;
 
 /**
- * Background relay on a virtual thread: polls, publishes in batches while there is work, sleeps
- * otherwise, and purges published records periodically. Each run is an observation.
+ * Relay en segundo plano sobre un hilo virtual: sondea, publica por lotes mientras hay trabajo,
+ * duerme en caso contrario y purga periódicamente los registros publicados. Cada ejecución es una
+ * observación.
  */
 public final class OutboxRelayRunner implements SmartLifecycle, WorkerStatus {
 
@@ -91,7 +92,7 @@ public final class OutboxRelayRunner implements SmartLifecycle, WorkerStatus {
     return lifecycle.isRunning();
   }
 
-  /** Runs one batch; returns how many records were handled. */
+  /** Ejecuta un lote; devuelve cuántos registros se procesaron. */
   public int runOnce() {
     return Observation.createNotStarted(AxizObservations.OUTBOX_RELAY, observations)
         .observe(() -> relay.relayOnce().total());

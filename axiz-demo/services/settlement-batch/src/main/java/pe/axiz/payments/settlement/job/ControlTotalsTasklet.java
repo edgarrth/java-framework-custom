@@ -12,8 +12,9 @@ import pe.axiz.core.storage.StoredObject;
 import pe.axiz.structure.batch.FixedWidthRecordReader;
 
 /**
- * First step: reads the whole file and checks the trailer's record count and total before anything
- * is loaded, so a truncated or tampered file fails the job without partial data.
+ * Primer paso: lee el archivo completo y verifica la cantidad de registros y el total del trailer
+ * sin haber cargado nada, de modo que un archivo truncado o manipulado hace fallar el job sin datos
+ * parciales.
  */
 public class ControlTotalsTasklet implements Tasklet {
 
@@ -38,7 +39,7 @@ public class ControlTotalsTasklet implements Tasklet {
     return RepeatStatus.FINISHED;
   }
 
-  /** Reads the object and verifies its control totals; returns the number of detail lines. */
+  /** Lee el objeto y verifica sus totales de control; devuelve la cantidad de líneas de detalle. */
   static long verify(ObjectStorage storage, String key) throws Exception {
     StoredObject object =
         storage

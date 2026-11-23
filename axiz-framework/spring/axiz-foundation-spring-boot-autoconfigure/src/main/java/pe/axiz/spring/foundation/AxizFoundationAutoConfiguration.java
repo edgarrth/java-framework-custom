@@ -33,7 +33,10 @@ import pe.axiz.core.time.TimeSettings;
 import pe.axiz.spring.foundation.lifecycle.WorkerLifecycle;
 import pe.axiz.spring.foundation.lifecycle.WorkerStatus;
 
-/** Clock, business calendar, id generation, identifier registry and Money JSON support. */
+/**
+ * Reloj, calendario de negocio, generación de ids, registro de identificadores y soporte JSON de
+ * Money.
+ */
 @AutoConfiguration(
     beforeName = "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration")
 @EnableConfigurationProperties(AxizFoundationProperties.class)
@@ -140,7 +143,10 @@ public class AxizFoundationAutoConfiguration {
     return builder.build();
   }
 
-  /** Runs before bean initialization, so clients never seed on an event loop. */
+  /**
+   * Se ejecuta antes de la inicialización de los beans, de modo que los clientes nunca generan
+   * semillas en un event loop.
+   */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
   static class ReactiveRandomConfiguration {
@@ -150,7 +156,7 @@ public class AxizFoundationAutoConfiguration {
     }
   }
 
-  /** Money (de)serialization as {@code {"amount":"150.00","currency":"PEN"}}. */
+  /** Serialización y deserialización de Money como {@code {"amount":"150.00","currency":"PEN"}}. */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnClass(name = "tools.jackson.databind.json.JsonMapper")
   static class JacksonConfiguration {

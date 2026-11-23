@@ -23,7 +23,10 @@ import pe.axiz.spring.secrets.AsyncSecretSource;
 import pe.axiz.spring.secrets.AxizSecretsProperties;
 import pe.axiz.spring.secrets.SecretSource;
 
-/** Mounted files and environment sources, ahead of remote sources by explicit bean order. */
+/**
+ * Archivos montados y fuentes del entorno, por delante de las fuentes remotas mediante un orden
+ * explícito de beans.
+ */
 @AutoConfiguration(beforeName = "pe.axiz.spring.secrets.AxizSecretsAutoConfiguration")
 @ConditionalOnBooleanProperty(name = "axiz.secrets.enabled", matchIfMissing = true)
 @EnableConfigurationProperties({AxizSecretsFileProperties.class, AxizSecretsProperties.class})
@@ -80,7 +83,7 @@ public class AxizSecretsFileAutoConfiguration {
     }
   }
 
-  /** Owns the refresher without publishing an extra resolver candidate. */
+  /** Posee el refrescador sin publicar un candidato adicional de resolvedor. */
   static final class MountedSecretFiles implements AutoCloseable {
     private final RefreshingFileSecretResolver resolver;
 

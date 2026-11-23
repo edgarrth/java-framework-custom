@@ -71,7 +71,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
-/** Actual R2DBC transactions, native callbacks and a single pooled PostgreSQL connection. */
+/** Transacciones R2DBC reales, callbacks nativos y una única conexión PostgreSQL de pool. */
 @ExtendWith(BlockHoundExtension.class)
 @Timeout(60)
 class PostgresAuditBoundaryIT {
@@ -418,8 +418,8 @@ class PostgresAuditBoundaryIT {
                     AuditChainVerifier.verify(List.of(fallback), null, null).integrity());
                 try (var connection = source.getConnection()) {
                   var ref = fallback.integrity().previousAttempt();
-                  // Match the actual attempt by decoding; fact id is deliberately not the outbox
-                  // id.
+                  // Se identifica el intento real decodificando; el id del hecho no es, de forma
+                  // deliberada, el id del outbox.
                   try (var all = connection.createStatement();
                       var rows = all.executeQuery("SELECT envelope FROM axiz_outbox")) {
                     boolean found = false;

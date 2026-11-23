@@ -19,9 +19,10 @@ import pe.axiz.core.observability.LoggingStructuredEventEmitter;
 import pe.axiz.core.observability.StructuredEventEmitter;
 
 /**
- * Framework observations: architecture-point spans with business attributes, structured events,
- * PII-safe attributes, request context on spans and no observations for probes. Runs after Boot's
- * observation and metrics auto-configurations so the registry already exists.
+ * Observaciones del framework: spans en los puntos de la arquitectura con atributos de negocio,
+ * eventos estructurados, atributos seguros frente a PII, contexto de la solicitud en los spans y
+ * sin observaciones para las sondas. Se ejecuta después de las autoconfiguraciones de observación y
+ * métricas de Boot, de modo que el registro ya existe.
  */
 @AutoConfiguration(
     afterName = {
@@ -33,7 +34,7 @@ import pe.axiz.core.observability.StructuredEventEmitter;
 @EnableConfigurationProperties(AxizObservabilityProperties.class)
 public class AxizObservabilityAutoConfiguration {
 
-  /** Business, validation and security errors are rejections, not errors. */
+  /** Los errores de negocio, de validación y de seguridad son rechazos, no errores. */
   public static final Function<Throwable, Boolean> REJECTIONS =
       t ->
           t instanceof AxizException a
@@ -63,7 +64,7 @@ public class AxizObservabilityAutoConfiguration {
         registry.getIfAvailable(() -> ObservationRegistry.NOOP), sanitizer);
   }
 
-  /** Registry customizations, applied only where Boot manages the registry. */
+  /** Personalizaciones del registro, aplicadas solo donde Boot gestiona el registro. */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnClass(
       name =

@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-saga-spring-boot-starter
 
-Saga orchestrator with persistent state on PostgreSQL and recovery of stale sagas.
+Orquestador de sagas con estado persistido en PostgreSQL y recuperación de sagas detenidas.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,15 +12,15 @@ Saga orchestrator with persistent state on PostgreSQL and recovery of stale saga
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Technical payload protection
+## Protección técnica del payload
 
-`axiz.saga.context-protection=envelope` opts into authenticated payload encryption;
-`none` is the default. Envelope mode requires the matching synchronous/native
-`EnvelopeEncryptor` and fails startup when it is absent. Protected records cannot
-be read in `none` mode; migration and retained read keys must be planned before
-changing the mode. See [technical storage protection](../../../axiz-docs/docs/guias/proteccion-de-almacenes-tecnicos.md).
+`axiz.saga.context-protection=envelope` activa el cifrado autenticado del payload;
+`none` es el valor por defecto. El modo envelope requiere el `EnvelopeEncryptor` síncrono o nativo
+correspondiente y hace fallar el arranque cuando falta. Los registros protegidos no se pueden
+leer en modo `none`; la migración de datos y las claves de lectura retenidas se planifican antes
+de cambiar el modo. Se recomienda revisar la [protección de almacenes técnicos](../../../axiz-docs/docs/guias/proteccion-de-almacenes-tecnicos.md).
 
-JDBC is a separate integration: install `axiz-saga-jdbc-spring-boot-starter`.
-The neutral base requires a `SagaStateStore`; it does not install a database provider.
+JDBC es una integración separada: se instala `axiz-saga-jdbc-spring-boot-starter`.
+La base neutral requiere un `SagaStateStore`; no instala un proveedor de base de datos.

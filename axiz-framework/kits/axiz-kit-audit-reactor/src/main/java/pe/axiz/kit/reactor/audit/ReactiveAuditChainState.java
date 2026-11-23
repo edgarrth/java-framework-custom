@@ -6,19 +6,23 @@ import pe.axiz.core.audit.AuditIntegrity;
 import pe.axiz.core.audit.ChainCheckpoint;
 import reactor.core.publisher.Mono;
 
-/** Native chain state. Advance joins the caller's transaction; checkpoint reads committed state. */
+/**
+ * Estado de cadena nativo. Advance se une a la transacción de quien llama; checkpoint lee el estado
+ * confirmado.
+ */
 public interface ReactiveAuditChainState {
   /**
-   * Identity of the transaction resource, used to reject an unrelated outbox/transaction manager.
+   * Identidad del recurso de transacción, usada para rechazar un outbox o gestor de transacciones
+   * no relacionado.
    */
   @Nullable Object transactionResource();
 
-  /**
-   * Locks and advances the chain in the active reactive transaction; never opens an independent
-   * one.
-   */
+  /** Bloquea y avanza la cadena en la transacción reactiva activa; nunca abre una independiente. */
   Mono<AuditIntegrity> advance(String chainId, UnaryOperator<AuditIntegrity> step);
 
-  /** Reads committed state in an independent transaction, never an in-flight business head. */
+  /**
+   * Lee el estado confirmado en una transacción independiente, nunca una cabeza de negocio en
+   * curso.
+   */
   Mono<ChainCheckpoint> checkpoint(String chainId);
 }

@@ -2,7 +2,7 @@ package pe.axiz.core.messaging;
 
 import java.util.concurrent.CompletionStage;
 
-/** Native asynchronous publication; successful completion is the broker acknowledgement. */
+/** Publicación asíncrona nativa; la finalización exitosa es el acuse del broker. */
 public interface AsyncEventPublisher {
   CompletionStage<PublishResult> publish(String destination, EventEnvelope event);
 

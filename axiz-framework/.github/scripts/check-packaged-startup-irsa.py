@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Start the actual beneficiaries Boot JAR with production starters and managed AWS identity."""
+"""Arranca el JAR de Boot real de beneficiaries con los starters de producción y la identidad de AWS gestionada."""
 from contextlib import closing
 import argparse
 import hashlib
@@ -79,7 +79,7 @@ def main():
                     command += ['--axiz.config.environment=prod']
                 log_path = output / f'packaged-startup-{mode}.log'
                 with log_path.open('w') as log:
-                    # Validated local JAR, fixed JVM options, argv list and sanitized IRSA fixture environment.
+                                        # JAR local validado, opciones de JVM fijas, lista argv y entorno de fixture de IRSA saneado.
                     # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-tainted-env-args.dangerous-subprocess-use-tainted-env-args
                     process = subprocess.Popen(command, env=environment, stdout=log, stderr=subprocess.STDOUT)
                     try:

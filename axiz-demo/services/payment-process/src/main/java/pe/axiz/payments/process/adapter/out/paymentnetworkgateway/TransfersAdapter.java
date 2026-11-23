@@ -8,8 +8,8 @@ import pe.axiz.payments.process.application.port.out.Transfers;
 import pe.axiz.payments.process.domain.PaymentInstruction;
 
 /**
- * Inter-bank transfers through payment-network-gateway. The idempotency key makes a retry after a
- * timeout return the first outcome instead of sending the money twice.
+ * Transferencias interbancarias mediante payment-network-gateway. La clave de idempotencia hace que
+ * un reintento tras un timeout devuelva el primer resultado en lugar de enviar el dinero dos veces.
  */
 @Component
 public class TransfersAdapter implements Transfers {

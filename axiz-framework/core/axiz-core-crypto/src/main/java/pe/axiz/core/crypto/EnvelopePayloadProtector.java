@@ -3,7 +3,8 @@ package pe.axiz.core.crypto;
 import java.util.Objects;
 
 /**
- * AES-GCM payload protection delegates key management and authenticated binding to the envelope.
+ * La protección de payload AES-GCM delega la gestión de claves y el enlace autenticado en el
+ * envelope.
  */
 public final class EnvelopePayloadProtector implements PayloadProtector {
   private final EnvelopeEncryptor envelope;

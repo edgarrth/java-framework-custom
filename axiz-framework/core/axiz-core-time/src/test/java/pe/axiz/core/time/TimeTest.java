@@ -16,8 +16,8 @@ import org.junit.jupiter.api.Test;
 
 class TimeTest {
 
-  // Fictitious calendar for tests: weekends, 1 Jan, 1 May, 28-29 Jul recurring and one-off
-  // 2026-12-08
+  // Calendario ficticio para pruebas: fines de semana, 1 de enero, 1 de mayo, 28-29 de julio
+  // recurrentes y el puntual 2026-12-08
   private final BusinessCalendar calendar =
       BusinessCalendar.builder(TimeSettings.DEFAULT_ZONE)
           .recurringHoliday(MonthDay.of(1, 1))
@@ -31,7 +31,7 @@ class TimeTest {
   void businessDays() {
     assertFalse(calendar.isBusinessDay(LocalDate.of(2026, 7, 28)));
     assertTrue(calendar.isHoliday(LocalDate.of(2027, 5, 1)));
-    assertFalse(calendar.isBusinessDay(LocalDate.of(2026, 10, 10))); // Saturday
+    assertFalse(calendar.isBusinessDay(LocalDate.of(2026, 10, 10))); // sábado
     assertEquals(LocalDate.of(2026, 7, 30), calendar.nextBusinessDay(LocalDate.of(2026, 7, 27)));
     assertEquals(
         LocalDate.of(2026, 7, 27), calendar.previousBusinessDay(LocalDate.of(2026, 7, 30)));
@@ -66,17 +66,18 @@ class TimeTest {
   @Test
   void cutoffMovesLateOperationsToNextBusinessDay() {
     CutoffTime cutoff = new CutoffTime(LocalTime.of(15, 0), calendar);
-    // Lima is UTC-5: 19:59Z is 14:59 local, 20:00Z is 15:00 local
+    // Lima es UTC-5: 19:59Z son las 14:59 locales y 20:00Z son las 15:00 locales
     assertEquals(
         LocalDate.of(2026, 10, 9), cutoff.processingDate(Instant.parse("2026-10-09T19:59:00Z")));
     assertTrue(cutoff.isBeforeCutoff(Instant.parse("2026-10-09T19:59:00Z")));
     assertEquals(
         LocalDate.of(2026, 10, 12), cutoff.processingDate(Instant.parse("2026-10-09T20:00:00Z")));
     assertFalse(cutoff.isBeforeCutoff(Instant.parse("2026-10-09T20:00:00Z")));
-    // Saturday morning -> Monday
+    // sábado por la mañana -> lunes
     assertEquals(
         LocalDate.of(2026, 10, 12), cutoff.processingDate(Instant.parse("2026-10-10T14:00:00Z")));
-    // 02:00Z on the 10th is still Friday 21:00 in Lima, after cut-off -> Monday
+    // las 02:00Z del día 10 siguen siendo el viernes a las 21:00 en Lima, después del corte ->
+    // lunes
     assertEquals(
         LocalDate.of(2026, 10, 12), cutoff.processingDate(Instant.parse("2026-10-10T02:00:00Z")));
   }
@@ -93,7 +94,7 @@ class TimeTest {
     assertEquals(
         LocalDate.of(2026, 10, 10),
         due.afterCalendarDays(LocalDate.of(2026, 10, 1), 9, DueDates.Adjustment.NONE));
-    // 2026-10-31 is Saturday: following goes to November, modified following stays in October
+    // 2026-10-31 es sábado: following pasa a noviembre y modified following se queda en octubre
     assertEquals(
         LocalDate.of(2026, 10, 30),
         due.adjust(LocalDate.of(2026, 10, 31), DueDates.Adjustment.MODIFIED_FOLLOWING));

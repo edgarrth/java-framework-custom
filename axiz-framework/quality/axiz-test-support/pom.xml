@@ -40,7 +40,7 @@
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-core</artifactId>
     </dependency>
-    <!-- FakeR2dbc: only for modules that test R2DBC stores -->
+    <!-- FakeR2dbc: solo para módulos que prueban almacenes R2DBC -->
     <dependency>
       <groupId>org.reactivestreams</groupId>
       <artifactId>reactive-streams</artifactId>

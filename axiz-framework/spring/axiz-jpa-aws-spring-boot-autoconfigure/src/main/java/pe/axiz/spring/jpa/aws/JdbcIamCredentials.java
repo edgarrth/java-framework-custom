@@ -13,7 +13,10 @@ import pe.axiz.spring.aws.AwsService;
 import software.amazon.jdbc.profile.ConfigurationProfileBuilder;
 import software.amazon.jdbc.profile.DriverConfigurationProfiles;
 
-/** Pool-scoped identity bridge with deterministic removal on pool/context shutdown. */
+/**
+ * Puente de identidad con ámbito de pool y eliminación determinista al apagar el pool o el
+ * contexto.
+ */
 final class JdbcIamCredentials implements DestructionAwareBeanPostProcessor, DisposableBean {
   private final AwsIdentity identity;
 

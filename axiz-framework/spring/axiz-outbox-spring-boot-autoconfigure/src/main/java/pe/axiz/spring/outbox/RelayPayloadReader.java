@@ -10,7 +10,8 @@ import pe.axiz.core.crypto.CryptoException;
 import pe.axiz.core.crypto.PayloadProtector;
 
 /**
- * Read-only bridge for the explicitly imperative background relay; never a reactive request path.
+ * Puente de solo lectura para el relay en segundo plano explícitamente imperativo; nunca una ruta
+ * de solicitud reactiva.
  */
 final class RelayPayloadReader implements PayloadProtector {
   private final AsyncPayloadProtector delegate;

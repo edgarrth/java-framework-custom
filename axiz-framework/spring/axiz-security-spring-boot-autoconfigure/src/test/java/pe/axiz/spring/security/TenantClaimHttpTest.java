@@ -44,7 +44,10 @@ import pe.axiz.core.security.TrustedIssuer;
 import pe.axiz.spring.tenancy.AxizTenancyAutoConfiguration;
 import reactor.core.publisher.Mono;
 
-/** Real signed bearer tokens: invalid tenant claims cannot be replaced by a trusted header. */
+/**
+ * Tokens bearer firmados reales: los claims de tenant inválidos no pueden reemplazarse por una
+ * cabecera de confianza.
+ */
 class TenantClaimHttpTest {
   private static final String ISSUER = "https://tenant-fixture.example";
   private static final KeyPair KEY = key();

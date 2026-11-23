@@ -58,8 +58,8 @@ import software.amazon.awssdk.services.kms.model.GenerateDataKeyResponse;
 import software.amazon.awssdk.services.kms.model.KmsException;
 
 /**
- * Real KMS key operations, rotation/cache bounds, cold crypto, refresh and reconnect under
- * BlockHound.
+ * Operaciones reales de claves KMS, límites de rotación y caché, criptografía en frío, renovación y
+ * reconexión bajo BlockHound.
  */
 @ExtendWith(BlockHoundExtension.class)
 class LocalStackKmsIT {

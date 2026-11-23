@@ -11,8 +11,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
- * {@code @Scheduled} with ShedLock: annotate tasks with {@code @SchedulerLock(name = ...)} so only
- * one replica runs them. Lock times come from the database clock.
+ * {@code @Scheduled} con ShedLock: las tareas se anotan con {@code @SchedulerLock(name = ...)} para
+ * que solo una réplica las ejecute. Los tiempos de lock provienen del reloj de la base de datos.
  */
 @AutoConfiguration(
     afterName = {
@@ -20,9 +20,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
       "pe.axiz.spring.scheduling.r2dbc.AxizSchedulingR2dbcAutoConfiguration",
       "pe.axiz.spring.scheduling.dynamodb.AxizSchedulingDynamoDbAutoConfiguration"
     },
-    // @EnableScheduling must be seen before Boot decides whether to create its TaskScheduler
-    // (virtual threads, graceful shutdown); otherwise Spring falls back to a private
-    // single-thread scheduler ("No TaskScheduler/ScheduledExecutorService bean found")
+    // @EnableScheduling debe detectarse antes de que Boot decida si crea su TaskScheduler (hilos
+    // virtuales, apagado ordenado); de lo contrario, Spring recurre a un scheduler privado de un
+    // solo hilo ("No TaskScheduler/ScheduledExecutorService bean found")
     beforeName = "org.springframework.boot.autoconfigure.task.TaskSchedulingAutoConfiguration")
 @ConditionalOnBooleanProperty(name = "axiz.scheduling.enabled", matchIfMissing = true)
 @EnableConfigurationProperties(AxizSchedulingProperties.class)

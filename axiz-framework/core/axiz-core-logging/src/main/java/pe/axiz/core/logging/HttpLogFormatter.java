@@ -15,9 +15,9 @@ import pe.axiz.core.sensitive.ObjectMasker;
 import pe.axiz.core.sensitive.OutputChannel;
 
 /**
- * Formats HTTP request/response logs: only allow-listed headers are written (Authorization and
- * Cookie never), JSON bodies are masked by key and then truncated; a body that cannot be masked
- * safely is not written.
+ * Formatea los logs de petición y respuesta HTTP: solo se escriben las cabeceras permitidas (nunca
+ * Authorization ni Cookie), los cuerpos JSON se enmascaran por clave y luego se truncan; un cuerpo
+ * que no puede enmascararse de forma segura no se escribe.
  */
 public final class HttpLogFormatter {
 
@@ -38,7 +38,7 @@ public final class HttpLogFormatter {
     this.jsonMasker = new JsonTextMasker(masker);
   }
 
-  /** Allow-listed headers with masked values. */
+  /** Cabeceras permitidas con valores enmascarados. */
   public Map<String, String> headers(
       Collection<String> names, Function<String, @Nullable String> lookup) {
     Map<String, String> out = new LinkedHashMap<>();
@@ -56,11 +56,11 @@ public final class HttpLogFormatter {
   }
 
   /**
-   * What is written for a body too large to be masked: its type and size only.
+   * Lo que se escribe para un cuerpo demasiado grande para enmascararse: solo su tipo y tamaño.
    *
-   * @param contentType content type of the message
-   * @param bytes size of the body
-   * @return the summary
+   * @param contentType content type del mensaje
+   * @param bytes tamaño del cuerpo
+   * @return el resumen
    */
   public String omitted(@Nullable String contentType, long bytes) {
     return "<"
@@ -71,23 +71,23 @@ public final class HttpLogFormatter {
   }
 
   /**
-   * Masked and truncated body of a message that was read whole; non-JSON bodies are summarized by
-   * type and size. See {@link #body(String, String, boolean)}.
+   * Cuerpo enmascarado y truncado de un mensaje leído completo; los cuerpos que no son JSON se
+   * resumen por tipo y tamaño. Ver {@link #body(String, String, boolean)}.
    */
   public String body(@Nullable String contentType, @Nullable String body) {
     return body(contentType, body, true);
   }
 
   /**
-   * Masked and truncated body. The JSON is masked first and cut afterwards, so a cut never leaves
-   * part of a sensitive value in clear. A body that was not read whole ({@code complete} false, for
-   * example because it is larger than what the filter keeps) or that is not one valid JSON value is
-   * not written: only its type, its size and the reason.
+   * Cuerpo enmascarado y truncado. Primero se enmascara el JSON y después se corta, de modo que un
+   * corte nunca deja en claro parte de un valor sensible. Un cuerpo que no se leyó completo ({@code
+   * complete} false, por ejemplo porque es mayor que lo que conserva el filtro) o que no es un
+   * único valor JSON válido no se escribe: solo su tipo, su tamaño y el motivo.
    *
-   * @param contentType content type of the message
-   * @param body the body, or the part of it that was kept
-   * @param complete whether {@code body} is the whole body
-   * @return what can be written to the log
+   * @param contentType content type del mensaje
+   * @param body el cuerpo, o la parte que se conservó
+   * @param complete indica si {@code body} es el cuerpo completo
+   * @return lo que puede escribirse en el log
    */
   public String body(@Nullable String contentType, @Nullable String body, boolean complete) {
     if (body == null || body.isEmpty()) {

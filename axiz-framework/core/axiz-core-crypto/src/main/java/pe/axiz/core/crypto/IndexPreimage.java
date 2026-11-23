@@ -4,7 +4,10 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-/** Fixed wire contract: AXIZ-INDEX, version, count, then eight UTF-8 length-framed parts. */
+/**
+ * Contrato de red fijo: AXIZ-INDEX, versión, cantidad y luego ocho partes UTF-8 delimitadas por
+ * longitud.
+ */
 final class IndexPreimage {
   private static final byte[] MAGIC = "AXIZ-INDEX".getBytes(StandardCharsets.US_ASCII);
 

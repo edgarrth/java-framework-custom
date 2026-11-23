@@ -1,5 +1,5 @@
 # axiz-parent-test
 
-Test-support libraries: fixtures and contract suites. This parent is only for quality modules and is never a runtime contract.
+Librerías de soporte de pruebas: fixtures y suites de contrato. Este parent es solo para módulos de calidad y nunca es un contrato de runtime.
 
-Inherits all core formatting, static-analysis, test, coverage and mutation gates.
+Hereda todos los controles del núcleo de formato, análisis estático, pruebas, cobertura y mutación.

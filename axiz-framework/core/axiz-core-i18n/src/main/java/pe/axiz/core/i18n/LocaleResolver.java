@@ -6,8 +6,9 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Chooses the response locale from an {@code Accept-Language} header among the supported ones (RFC
- * 4647 lookup with quality values). Invalid headers fall back to the default locale.
+ * Elige el locale de la respuesta a partir de una cabecera {@code Accept-Language} entre los
+ * soportados (búsqueda RFC 4647 con valores de calidad). Las cabeceras inválidas recurren al locale
+ * por defecto.
  */
 public final class LocaleResolver {
 

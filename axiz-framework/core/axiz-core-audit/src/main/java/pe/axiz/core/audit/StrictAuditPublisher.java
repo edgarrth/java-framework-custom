@@ -1,9 +1,10 @@
 package pe.axiz.core.audit;
 
 /**
- * Confirms durable acceptance before returning. Failure must propagate; an in-memory queue or a log
- * write cannot satisfy this contract. Implementations seal the final immutable fact and use a
- * finite confirmation deadline. Failure or interruption does not prove that nothing was stored.
+ * Confirma la aceptación durable antes de retornar. El fallo debe propagarse; una cola en memoria o
+ * una escritura en log no pueden cumplir este contrato. Las implementaciones sellan el hecho
+ * inmutable final y usan un plazo de confirmación finito. Un fallo o una interrupción no prueba que
+ * no se haya almacenado nada.
  */
 @FunctionalInterface
 public interface StrictAuditPublisher {

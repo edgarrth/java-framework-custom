@@ -1,6 +1,6 @@
 package pe.axiz.core.tokenization;
 
-/** Each operation requires its own permission on the server. */
+/** Cada operación requiere su propio permiso en el servidor. */
 public enum TokenOperation {
   TOKENIZE,
   LOOKUP,

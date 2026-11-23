@@ -10,7 +10,10 @@ import org.springframework.web.reactive.function.client.WebClient;
 import pe.axiz.core.http.ClientSettings;
 import tools.jackson.databind.json.JsonMapper;
 
-/** Startup-owned programmatic WebClients sharing named credentials and resilience policies. */
+/**
+ * WebClients programáticos propiedad del arranque que comparten credenciales con nombre y políticas
+ * de resiliencia.
+ */
 public final class AxizWebClients implements AutoCloseable {
   private final HttpClientRegistry registry;
   private final Supplier<WebClient.Builder> builders;
@@ -27,7 +30,10 @@ public final class AxizWebClients implements AutoCloseable {
     this.mappers = Objects.requireNonNull(mappers);
   }
 
-  /** Raw statuses/headers for a bounded protocol decoder; retries must be explicitly NONE. */
+  /**
+   * Estados y cabeceras sin procesar para un decodificador de protocolo acotado; los reintentos
+   * deben ser explícitamente NONE.
+   */
   public WebClient exchangeClient(String name) {
     var settings =
         registry.find(name).orElseThrow(() -> new IllegalArgumentException("Unknown HTTP client"));
@@ -36,7 +42,10 @@ public final class AxizWebClients implements AutoCloseable {
     return builder.build();
   }
 
-  /** Configures a declarative client with standard error translation. Called at bootstrap. */
+  /**
+   * Configura un cliente declarativo con la traducción de errores estándar. Se invoca en el
+   * bootstrap.
+   */
   public void configure(ClientSettings settings, WebClient.Builder builder) {
     configure(settings, builder, true);
   }

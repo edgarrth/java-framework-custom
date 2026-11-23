@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-core-inbox
 
-Idempotent consumer contracts and orchestration; storage belongs to the provider adapters.
+Contratos y orquestación del consumidor idempotente; el almacenamiento pertenece a los adaptadores de proveedor.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,46 +12,48 @@ Idempotent consumer contracts and orchestration; storage belongs to the provider
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `InboxDeduplicator` | Connects the inbox to the event dispatcher: a message is processed once per consumer within the retention period. |
-| `InboxException` | Inbox persistence failure. |
-| `InboxStore` | Registry of consumed messages per consumer (idempotent consumer pattern). |
-| `AsyncInboxStore` | CompletionStage port with the same owner fencing, leases and retention semantics. |
+| `InboxDeduplicator` | Conecta el inbox con el despachador de eventos: un mensaje se procesa una vez por consumidor dentro del periodo de retención. |
+| `InboxException` | Fallo de persistencia del inbox. |
+| `InboxStore` | Registro de los mensajes consumidos por consumidor (patrón de consumidor idempotente). |
+| `AsyncInboxStore` | Puerto CompletionStage con la misma semántica de exclusión del propietario, leases y retención. |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-inbox verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl core/axiz-core-inbox verify`.
 
 ## JDBC
 
-The JDBC implementation and SQL resources live in `axiz-adapter-inbox-jdbc`; this module contains
-framework-neutral contracts and orchestration, and `TransactionRunner` lives in
-`pe.axiz.core.commons.tx`. A service adds the JDBC adapter of a capability with `axiz add` (or the
-Initializr); see [JDBC boundaries](../../docs/architecture/JDBC.md).
+La implementación JDBC y los recursos SQL están en `axiz-adapter-inbox-jdbc`; este módulo contiene contratos y
+orquestación neutrales respecto del framework, y `TransactionRunner` está en `pe.axiz.core.commons.tx`. Un servicio agrega el
+adaptador JDBC de una capacidad con `axiz add` (o con el Initializr); ver
+[límites JDBC](../../docs/architecture/JDBC.md).
 
-## Retention and recovery
+## Retención y recuperación
 
-Require `lease > 0` and `retention > lease`. The lease deadline must be after acquisition and the
-retention deadline strictly after the lease. A takeover renews both deadlines and fences the old
-owner. Purging removes completed records only; an in-progress record is recovered through its
-lease, never deleted by retention. A handler must finish within its lease or enforce participant
-fencing/idempotency itself; the inbox does not cancel a late external effect.
+Se exige `lease > 0` y `retention > lease`. El plazo del lease debe ser posterior a la adquisición y
+el de retención estrictamente posterior al del lease. Una toma de control renueva ambos plazos y
+excluye al propietario anterior. La purga elimina solo registros completados; un registro en curso
+se recupera mediante su lease y nunca lo borra la retención. Un handler termina dentro de su lease
+o aplica por sí mismo la exclusión o idempotencia del participante; el inbox no cancela un efecto
+externo tardío.
 
-DynamoDB keeps `expiresAt` for in-progress records and adds `ttl` only when processing completes.
-Completion requires `expiresAt`; a record without it fails closed. Monitor and recover abandoned
-in-progress records explicitly.
+DynamoDB conserva `expiresAt` en los registros en curso y agrega `ttl` solo cuando el procesamiento
+termina. Completar requiere `expiresAt`; un registro sin ese atributo falla de forma cerrada. Los
+registros en curso abandonados se monitorean y recuperan de forma explícita.
 
-The retention horizon is measured from successful acquisition/takeover, not from completion.
-The supported processing window ends before the lease deadline, which is strictly earlier than
-retention. A handler exceeding that window needs participant idempotency/fencing and reconciliation;
-it must not assume that the inbox provides exactly-once external effects. Inbox time arguments are
-trusted server times: synchronize nodes with monitored NTP and budget the maximum clock skew when
-choosing leases. A lease alone cannot prove termination of a suspended or partitioned handler.
+El horizonte de retención se mide desde la adquisición o toma de control exitosa, no desde la
+finalización. La ventana de procesamiento soportada termina antes del plazo del lease, que es
+estrictamente anterior a la retención. Un handler que excede esa ventana necesita idempotencia o
+exclusión del participante y conciliación; no debe suponer que el inbox da efectos externos
+exactamente una vez. Los argumentos de tiempo del inbox son horas confiables del servidor: los nodos
+se sincronizan con NTP monitoreado y al elegir los leases se presupuesta el desfase máximo del reloj.
+Un lease por sí solo no prueba que un handler suspendido o aislado haya terminado.
 
 ### Inventario de registros abandonados en DynamoDB
 

@@ -3,7 +3,10 @@ package pe.axiz.adapter.tokenization.redis;
 import java.util.Objects;
 import java.util.UUID;
 
-/** Server-owned deployment instance and process incarnation; never supplied by a request. */
+/**
+ * Instancia de despliegue y encarnación de proceso propiedad del servidor; nunca la suministra una
+ * petición.
+ */
 public record TokenBudgetOwner(String instance, UUID incarnation) {
   private static final TokenBudgetOwner PROCESS =
       new TokenBudgetOwner("process-" + UUID.randomUUID(), UUID.randomUUID());
@@ -14,7 +17,10 @@ public record TokenBudgetOwner(String instance, UUID incarnation) {
     Objects.requireNonNull(incarnation);
   }
 
-  /** Default identity shared by all budgets in this JVM; log deployment mapping at startup. */
+  /**
+   * Identidad por defecto compartida por todos los presupuestos de esta JVM; el mapeo del
+   * despliegue se registra en log al arrancar.
+   */
   public static TokenBudgetOwner process() {
     return PROCESS;
   }

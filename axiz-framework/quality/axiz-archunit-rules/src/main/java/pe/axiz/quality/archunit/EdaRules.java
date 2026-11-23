@@ -7,7 +7,10 @@ import com.tngtech.archunit.lang.ArchRule;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Event-driven style: handlers live in {@code handler}, never expose HTTP controllers. */
+/**
+ * Estilo orientado a eventos: los handlers residen en {@code handler} y nunca exponen controladores
+ * HTTP.
+ */
 public final class EdaRules {
 
   private EdaRules() {}

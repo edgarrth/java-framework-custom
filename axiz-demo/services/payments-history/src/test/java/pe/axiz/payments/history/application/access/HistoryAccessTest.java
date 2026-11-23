@@ -20,7 +20,7 @@ import pe.axiz.payments.history.application.query.ListCustomerPaymentsQuery;
 import pe.axiz.payments.history.domain.PaymentHistory;
 import pe.axiz.spring.test.BlockHoundExtension;
 
-/** Who may read the payment history: the owner, or a service with payments:read. */
+/** Quién puede leer el historial de pagos: el propietario o un servicio con payments:read. */
 @ExtendWith(BlockHoundExtension.class)
 class HistoryAccessTest {
 
@@ -58,7 +58,7 @@ class HistoryAccessTest {
         .doesNotThrowAnyException();
   }
 
-  /** Another customer's payment and a missing one look the same: ids cannot be probed. */
+  /** El pago de otro cliente y uno inexistente se ven igual: no se pueden sondear ids. */
   @Test
   void othersGetNotFound() {
     assertThatThrownBy(() -> get.check(new GetPaymentQuery("p-1"), customer("C-2002")).block(T))

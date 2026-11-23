@@ -10,7 +10,7 @@ import pe.axiz.core.tokenization.TokenizationResult;
 import pe.axiz.core.tokenization.TokenizerCapabilities;
 import reactor.core.publisher.Mono;
 
-/** Consumer's Reactor API. Calls are executed with the identity of each subscription. */
+/** API de Reactor del consumidor. Las llamadas se ejecutan con la identidad de cada suscripción. */
 public interface ReactiveTokenizer {
   TokenizerCapabilities capabilities();
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Retain original signed manifest bytes in the final release, including safe retries."""
+"""Conserva los bytes originales del manifiesto firmado en la release final, incluidos los reintentos seguros."""
 import argparse
 import hashlib
 import json
@@ -48,7 +48,7 @@ def retain(repository, tag, manifest_hash, bundle, publish=False):
         else:
             raise ValueError("Published release lacks the verified signed manifest; prepare it as a draft before promotion")
     if publish and release["draft"]:
-        # A partially completed previous attempt is compared and reused, never clobbered.
+                # Un intento previo completado parcialmente se compara y se reutiliza, nunca se sobrescribe.
         with tempfile.TemporaryDirectory(prefix="axiz-release-manifest-") as temporary:
             files = []
             for name, content in missing:

@@ -1,7 +1,7 @@
-# Settlement Batch: defaults shared by every environment.
-# Environment values come from the ConfigMaps axiz-common, settlement-batch and settlement-batch-errors
-# (mounted as files by the chart) and secrets from files mounted by the ExternalSecret. ${VAR:default}
-# placeholders only serve local runs and tests: never write environment values or secrets here.
+# Settlement Batch: valores por defecto compartidos por todos los entornos.
+# Los valores de entorno provienen de los ConfigMaps axiz-common, settlement-batch y settlement-batch-errors
+# (montados como archivos por el chart) y los secretos de archivos montados por el ExternalSecret. Los placeholders
+# ${VAR:default} solo sirven para ejecuciones locales y pruebas: nunca se escriben aquí valores de entorno ni secretos.
 spring:
   application:
     name: settlement-batch

@@ -21,7 +21,10 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-/** First real native request on the adapter's own minimal classpath, without Spring or Reactor. */
+/**
+ * Primera petición nativa real sobre el classpath mínimo propio del adaptador, sin Spring ni
+ * Reactor.
+ */
 class StandaloneAsyncAwsTest {
   @Test
   @Timeout(20)

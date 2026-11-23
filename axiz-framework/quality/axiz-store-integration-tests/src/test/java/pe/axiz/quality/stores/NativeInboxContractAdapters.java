@@ -6,7 +6,10 @@ import pe.axiz.adapter.inbox.r2dbc.ReactiveInboxStore;
 import pe.axiz.core.inbox.AsyncInboxStore;
 import pe.axiz.core.inbox.InboxStore.Acquisition;
 
-/** Test-only bridge lets both native contracts run the same ownership/retention assertions. */
+/**
+ * Un puente exclusivo de pruebas permite que ambos contratos nativos ejecuten las mismas aserciones
+ * de propiedad y retención.
+ */
 final class NativeInboxContractAdapters {
   private NativeInboxContractAdapters() {}
 

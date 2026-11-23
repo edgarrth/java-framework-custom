@@ -18,9 +18,9 @@ import tools.jackson.databind.ser.BeanPropertyWriter;
 import tools.jackson.databind.ser.ValueSerializerModifier;
 
 /**
- * Masks properties annotated with {@link Sensitive} or {@link Mask} in JSON responses, following
- * the {@link OutputChannel#RESPONSE} policy. Values below the masking threshold keep their JSON
- * type; masked values are written as strings.
+ * Enmascara las propiedades anotadas con {@link Sensitive} o {@link Mask} en las respuestas JSON,
+ * según la política de {@link OutputChannel#RESPONSE}. Los valores por debajo del umbral de
+ * enmascaramiento conservan su tipo JSON; los valores enmascarados se escriben como texto.
  */
 public final class SensitiveJacksonModule extends SimpleModule {
 

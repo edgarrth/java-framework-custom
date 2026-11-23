@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Require framework gates in build and a separate deployment with an external producer identity."""
+"""Exige los gates del framework en el build y un despliegue separado con una identidad de productor externa."""
 import re
 import sys
 from pathlib import Path

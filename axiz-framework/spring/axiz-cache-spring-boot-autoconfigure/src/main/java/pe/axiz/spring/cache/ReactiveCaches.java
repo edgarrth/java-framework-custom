@@ -7,8 +7,8 @@ import pe.axiz.spring.foundation.ReactiveStages;
 import reactor.core.publisher.Mono;
 
 /**
- * Programmatic Mono facade over native asynchronous cache I/O. Keys include the chosen
- * caller/tenant scope.
+ * Fachada programática de Mono sobre la E/S asíncrona nativa de la caché. Las claves incluyen el
+ * ámbito elegido de invocante o tenant.
  */
 public final class ReactiveCaches extends AsyncCacheSettings {
   public ReactiveCaches(String prefix, AsyncByteCache store, AxizCacheProperties properties) {

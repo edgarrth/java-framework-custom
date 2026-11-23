@@ -20,9 +20,9 @@ import pe.axiz.core.http.AsyncHttpExchange;
 import pe.axiz.core.http.ClientCredentialsExchange;
 
 /**
- * OAuth2 client credentials with cache and early renewal: the token is renewed when less than
- * {@code renewBefore} remains. Only one thread renews at a time; others keep using the still-valid
- * token.
+ * Credenciales de cliente OAuth2 con caché y renovación anticipada: el token se renueva cuando
+ * queda menos de {@code renewBefore}. Solo un hilo renueva a la vez; los demás siguen usando el
+ * token aún válido.
  */
 public final class ClientCredentialsTokenProvider implements AccessTokenProvider {
 
@@ -66,7 +66,7 @@ public final class ClientCredentialsTokenProvider implements AccessTokenProvider
       return current;
     }
     if (current != null && clock.instant().isBefore(current.expiresAt()) && !lock.tryLock()) {
-      return current; // another thread is renewing; the current token is still valid
+      return current; // otro hilo está renovando; el token actual sigue siendo válido
     }
     if (!lock.isHeldByCurrentThread()) {
       lock.lock();
@@ -115,12 +115,14 @@ public final class ClientCredentialsTokenProvider implements AccessTokenProvider
         clock.instant());
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción nominal; build verifica los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable HttpClient http = null;
     private @Nullable URI tokenUri = null;

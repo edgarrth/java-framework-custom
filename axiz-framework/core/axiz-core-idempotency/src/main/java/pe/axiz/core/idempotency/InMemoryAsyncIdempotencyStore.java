@@ -8,7 +8,8 @@ import java.util.concurrent.CompletionStage;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Single-process CPU-only store. Shared environments must use a native remote asynchronous store.
+ * Almacén de un solo proceso y solo de CPU. Los entornos compartidos deben usar un almacén remoto
+ * asíncrono nativo.
  */
 public final class InMemoryAsyncIdempotencyStore implements AsyncIdempotencyStore {
   private final InMemoryIdempotencyStore records;

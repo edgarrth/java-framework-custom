@@ -1,11 +1,12 @@
 package pe.axiz.structure.hexagonal;
 
 /**
- * An application use case (inbound port implementation). It runs in one transaction; domain events
- * raised while it runs are published when that transaction commits.
+ * Caso de uso de la aplicación (implementación de un puerto de entrada). Se ejecuta en una
+ * transacción; los eventos de dominio lanzados durante su ejecución se publican cuando esa
+ * transacción hace commit.
  *
- * @param <I> input (a command or query record)
- * @param <O> output
+ * @param <I> entrada (un record de comando o consulta)
+ * @param <O> salida
  */
 @FunctionalInterface
 public interface UseCase<I, O> {

@@ -3,7 +3,7 @@ package pe.axiz.test.contracts;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
-/** Minimal assertions so the contracts do not depend on a test library. */
+/** Aserciones mínimas para que los contratos no dependan de una biblioteca de pruebas. */
 final class Expect {
 
   private Expect() {}

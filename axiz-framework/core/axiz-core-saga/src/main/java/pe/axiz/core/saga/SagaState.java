@@ -5,16 +5,16 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Persisted state of a saga instance.
+ * Estado persistido de una instancia de saga.
  *
- * @param sagaId instance id
- * @param sagaName definition name
- * @param status status
- * @param stepIndex next step to execute (running) or last step to compensate (compensating)
- * @param context encoded context
- * @param error last error
- * @param updatedAt last update
- * @param version optimistic lock version
+ * @param sagaId id de la instancia
+ * @param sagaName nombre de la definición
+ * @param status estado
+ * @param stepIndex siguiente paso a ejecutar (en ejecución) o último paso a compensar (compensando)
+ * @param context contexto codificado
+ * @param error último error
+ * @param updatedAt última actualización
+ * @param version versión del bloqueo optimista
  */
 public record SagaState(
     String sagaId,
@@ -53,12 +53,14 @@ public record SagaState(
         .build();
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción nominal; build verifica los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable String sagaId = null;
     private @Nullable String sagaName = null;

@@ -10,7 +10,9 @@ import org.springframework.core.env.MapPropertySource;
 import pe.axiz.spring.config.AxizConfigEnvironmentPostProcessor;
 import pe.axiz.spring.config.ConfigurationImports;
 
-/** Selects Parameter Store before mounted ConfigMaps and before any remote access. */
+/**
+ * Selecciona Parameter Store antes de los ConfigMaps montados y antes de cualquier acceso remoto.
+ */
 public final class AxizConfigAwsEnvironmentPostProcessor
     implements EnvironmentPostProcessor, Ordered {
   @Override

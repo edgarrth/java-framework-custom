@@ -8,7 +8,7 @@ import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
-/** SQS consumer queues and bounded polling/visibility policy. */
+/** Colas de consumo SQS y política acotada de sondeo y visibilidad. */
 @ConfigurationProperties("axiz.messaging.sqs")
 public record AxizMessagingSqsProperties(
     @DefaultValue List<String> queues,

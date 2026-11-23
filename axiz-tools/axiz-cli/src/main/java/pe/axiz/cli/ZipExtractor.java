@@ -12,7 +12,10 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import pe.axiz.codegen.output.SafePaths;
 
-/** Extracts a generated project ZIP safely: no entry may escape the target, with size limits. */
+/**
+ * Extrae de forma segura el ZIP de un proyecto generado: ninguna entrada puede escapar del destino,
+ * con límites de tamaño.
+ */
 final class ZipExtractor {
 
   static final long MAX_TOTAL = 50L * 1024 * 1024;
@@ -21,9 +24,9 @@ final class ZipExtractor {
   private ZipExtractor() {}
 
   /**
-   * Extracts {@code zip} into {@code target}, dropping the single root folder of the archive.
+   * Extrae {@code zip} en {@code target}, descartando la única carpeta raíz del archivo.
    *
-   * @return number of files written
+   * @return cantidad de archivos escritos
    */
   static int extract(byte[] zip, Path target, boolean overwrite) throws IOException {
     Path base = target.toAbsolutePath().normalize();
@@ -46,7 +49,8 @@ final class ZipExtractor {
         int slash = name.indexOf('/');
         String relative = slash < 0 ? name : name.substring(slash + 1);
         if (relative.isEmpty() || e.isDirectory()) {
-          // getNextEntry drains unread data; bound that data too, including directory entries.
+          // getNextEntry drena los datos no leídos; esos datos también se acotan, incluidas las
+          // entradas de directorio.
           if (in.read() != -1) throw new IOException("Directory entry contains data");
           continue;
         }
@@ -70,8 +74,9 @@ final class ZipExtractor {
           throw new IOException("Archive directory conflicts with a file");
       }
     }
-    // Validate the entire archive before touching existing project files. SafePaths checks links
-    // again when writing; concurrent hostile replacement of the user's directory is out of scope.
+    // Se valida el archivo completo previo a tocar los archivos existentes del proyecto. SafePaths
+    // vuelve a verificar los enlaces al escribir; el reemplazo hostil y concurrente del directorio
+    // del usuario queda fuera de alcance.
     int written = 0;
     for (var file : contents.entrySet())
       if (SafePaths.write(base, file.getKey(), file.getValue(), overwrite)) written++;

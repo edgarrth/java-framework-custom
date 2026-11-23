@@ -26,7 +26,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
-/** {@code axiz generate <type> <name>}: code that follows the style of the project. */
+/** {@code axiz generate <type> <name>}: código que sigue el estilo del proyecto. */
 @Command(
     mixinStandardHelpOptions = true,
     name = "generate",
@@ -83,7 +83,8 @@ class GenerateCommand extends BaseCommand implements Callable<Integer> {
           HttpClientGenerator.generate(
               manifest, name, Files.readString(contract, StandardCharsets.UTF_8));
       write(layout, r.files());
-      // the first real client replaces the placeholder the http-client capability adds
+      // el primer cliente real reemplaza el marcador provisional que agrega la capacidad
+      // http-client
       if (CapabilityAdder.mergeYaml(
           layout.target("src/main/resources/application.yaml"),
           r.properties(),
@@ -161,7 +162,7 @@ class GenerateCommand extends BaseCommand implements Callable<Integer> {
     String migration = Migrations.next(layout.module());
     ArtifactGenerator.Result r = generator.generate(manifest, type, name, options, null, migration);
     if (type.equals("error-code")) {
-      // the errors class may exist already: generate again appending to it
+      // la clase de errores puede existir ya: se genera de nuevo agregando al final
       for (String path : r.created().keySet()) {
         Path existing = layout.target(path);
         if (Files.exists(existing)) {
@@ -218,7 +219,7 @@ class GenerateCommand extends BaseCommand implements Callable<Integer> {
   private void write(ProjectLayout layout, Map<String, byte[]> files) throws IOException {
     for (String path : files.keySet()) layout.target(path);
     for (Map.Entry<String, byte[]> e : files.entrySet()) {
-      // validated path, no symbolic link followed inside the project
+      // ruta validada, sin seguir enlaces simbólicos dentro del proyecto
       if (!SafePaths.write(layout.root(), layout.relative(e.getKey()), e.getValue(), force)) {
         warn("Exists, not overwritten: " + e.getKey());
         continue;

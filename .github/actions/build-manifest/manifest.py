@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build and verify the immutable build identity. Signature verification belongs to the consuming workflow."""
+"""Construye y verifica la identidad inmutable del build. La verificación de la firma corresponde al workflow consumidor."""
 import argparse
 import hashlib
 import json
@@ -63,7 +63,7 @@ def verify_maven_files(artifacts, root):
 
 
 def validate_maven_arguments(arguments):
-    # Extra flags cannot silently narrow tests, alter publication, inject credentials or bypass gates.
+        # Los flags adicionales no pueden reducir pruebas en silencio, alterar la publicación, inyectar credenciales ni saltarse gates.
     allowed = re.compile(r"^-D(?:user\.timezone=[A-Za-z0-9_+:/.-]+|file\.encoding=UTF-8|"
                          r"project\.build\.outputTimestamp=[0-9]+|axiz\.it\.requireDocker=true|"
                          r"axiz\.api\.baseline=[0-9]+\.[0-9]+\.[0-9]+)$")

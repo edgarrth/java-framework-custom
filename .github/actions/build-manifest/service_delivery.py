@@ -1,4 +1,4 @@
-"""Transfer a tested service as data to an isolated GHCR publisher; never execute project code."""
+"""Transfiere un servicio probado como datos a un publicador de GHCR aislado; nunca ejecuta código del proyecto."""
 import argparse
 import hashlib
 import json
@@ -89,7 +89,7 @@ def validate_transfer(root, data, destination):
 
 
 def publish(data, public, root, output):
-    """Actions attests the worker; files never establish that tests succeeded."""
+    """Actions certifica al worker; los archivos nunca establecen que las pruebas terminaron con éxito."""
     service, variant = data["parameters"]["service"], data["parameters"]["variant"]
     receipt = authority.obtain(data["source"], data["build"]["run_id"], data["build"]["run_attempt"],
                                f"compile-service:{service}:{variant}", "service-compile")
@@ -106,7 +106,7 @@ def publish(data, public, root, output):
     output.mkdir(parents=True)
     with tempfile.TemporaryDirectory(prefix="axiz-service-data-", dir=os.environ["RUNNER_TEMP"]) as temporary:
         temporary = Path(temporary)
-        # CLI credentials are private to this invocation and removed on success and failure.
+                # Las credenciales de la CLI son privadas de esta invocación y se eliminan tanto si termina bien como si falla.
         credentials = temporary / "credentials"
         credentials.mkdir(mode=0o700)
         docker_config = credentials / "docker"
@@ -117,7 +117,7 @@ def publish(data, public, root, output):
         transfer = download(receipt, f"service-transfer-{service}-{variant}-{data['build']['run_attempt']}",
                             receipt["producer_job"], temporary / "transfer")
         images, chart = validate_transfer(transfer, data, temporary / "oci")
-        # All validation finishes before acquiring registry write access or uploading bytes.
+                # Toda la validación termina antes de obtener acceso de escritura al registry o de subir bytes.
         client = oci_publish.Registry(image.removeprefix("ghcr.io/"),
                                       os.environ["REGISTRY_USERNAME"], os.environ["REGISTRY_PASSWORD"])
         image_digest = oci_publish.publish(client, images, tag)

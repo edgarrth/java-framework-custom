@@ -8,8 +8,8 @@ import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.observability.AxizAttributes;
 
 /**
- * Adds request context to every observation as high-cardinality attributes: they reach spans but
- * never become metric tags.
+ * Añade el contexto de la solicitud a cada observación como atributos de alta cardinalidad: llegan
+ * a los spans, pero nunca se convierten en etiquetas de métricas.
  */
 public class RequestContextObservationFilter implements ObservationFilter {
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Resolve public build parameters and the actual immutable reusable-workflow identity."""
+"""Resuelve los parámetros públicos del build y la identidad inmutable real del workflow reutilizable."""
 import argparse
 import base64
 import json
@@ -82,7 +82,7 @@ def resolve_workflow(tag):
     if release.get("tag_name") != tag or release.get("immutable") is not True or release.get("draft") is not False:
         raise ValueError("Workflow release must exist, be immutable and not be a draft")
     obj = api("repos/edgarrth/java-framework-custom/git/ref/tags/" + tag)["object"]
-    # Annotated tags can point to other tags; reject cycles instead of looping forever.
+        # Los tags anotados pueden apuntar a otros tags; se rechazan los ciclos en lugar de iterar indefinidamente.
     seen = set()
     while obj["type"] == "tag":
         if obj["sha"] in seen:
@@ -95,8 +95,8 @@ def resolve_workflow(tag):
 
 
 def oidc_claims():
-    # Claims are obtained directly from GitHub over authenticated TLS. Consumers independently
-    # verify the cosign signature; decoding a downloaded JWT is never a signature check.
+        # Los claims se obtienen directamente de GitHub mediante TLS autenticado. Los consumidores verifican
+    # de forma independiente la firma de cosign; decodificar un JWT descargado nunca es una verificación de firma.
     url = os.environ["ACTIONS_ID_TOKEN_REQUEST_URL"]
     if urllib.parse.urlsplit(url).scheme != "https":
         raise ValueError("OIDC request must use TLS")
@@ -146,8 +146,8 @@ def main():
         raise ValueError("A framework source build cannot consume another framework candidate")
     bind_candidate(data, candidate, candidate_hash)
     tag = os.environ["WORKFLOWS_TAG"]
-    # Worker preparation is unprivileged. This is unsigned metadata, not an OIDC attestation.
-    # A separate signer must establish the identity and gates from its own trusted context.
+        # La preparación del worker no tiene privilegios. Son metadatos sin firmar, no una atestación OIDC.
+    # Un firmante separado debe establecer la identidad y los gates desde su propio contexto de confianza.
     paths = {"maven-library": "lib-build", "service": "service-build", "native-component": "native"}
     identity = {"repository": "edgarrth/java-framework-custom", "path": ".github/workflows/" + paths[kind] + ".yaml",
                 "ref": "refs/tags/" + tag, "sha": resolve_workflow(tag)}

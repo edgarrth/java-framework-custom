@@ -4,7 +4,10 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey;
 
-/** Customer directory fence. No account value or unsalted account hash is stored here. */
+/**
+ * Barrera (fence) del directorio del cliente. Aquí no se almacena ningún valor de cuenta ni hash de
+ * cuenta sin sal.
+ */
 @DynamoDbBean
 public class DirectoryVersion {
   static final String KEY = "!directory";

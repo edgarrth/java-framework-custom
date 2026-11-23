@@ -29,7 +29,7 @@
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-secrets</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kit-audit-reactor</artifactId><version>${project.version}</version><optional>true</optional></dependency>
 
-    <!-- Driver-independent transaction error evidence; no R2DBC driver or store is pulled. -->
+    <!-- Evidencia de errores transaccionales independiente del driver; no se incorpora ningún driver ni almacén de R2DBC. -->
     <dependency><groupId>io.r2dbc</groupId><artifactId>r2dbc-spi</artifactId><optional>true</optional></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kit-outbox-reactor</artifactId><version>${project.version}</version></dependency>
 
@@ -61,7 +61,7 @@
       <groupId>org.springframework</groupId>
       <artifactId>spring-aop</artifactId>
     </dependency>
-    <!-- durable audit: events written to the outbox in the business transaction -->
+    <!-- auditoría durable: eventos escritos en el outbox dentro de la transacción de negocio -->
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-core-outbox</artifactId>

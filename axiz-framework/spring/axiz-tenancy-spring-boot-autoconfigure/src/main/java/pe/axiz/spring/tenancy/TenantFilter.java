@@ -18,8 +18,8 @@ import pe.axiz.core.errors.ValidationException;
 import pe.axiz.core.tenancy.TenantContext;
 
 /**
- * Binds the tenant for the request (runs after authentication). Missing tenants are rejected with a
- * 400 problem when tenancy is required.
+ * Vincula el tenant a la solicitud (se ejecuta después de la autenticación). Los tenants ausentes
+ * se rechazan con un problema 400 cuando el tenancy es obligatorio.
  */
 public class TenantFilter extends OncePerRequestFilter {
 

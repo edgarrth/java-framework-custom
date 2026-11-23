@@ -5,18 +5,20 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Stored state of an idempotency key.
+ * Estado almacenado de una clave de idempotencia.
  *
- * @param key scoped key (operation + caller + Idempotency-Key)
- * @param fingerprint hash of the request (method, path, query and body)
- * @param status processing status
- * @param owner token of the execution that holds the key; only that execution may complete or
- *     release it, so a request whose lock expired cannot overwrite the result of the next owner
- * @param response stored response once completed
- * @param leaseUntil execution lease deadline, independent of retention
- * @param retainUntil deduplication retention deadline
- * @param resolutionVersion optimistic version, fenced by the execution owner across key reuse
- * @param failure bounded diagnostic without request or integration content
+ * @param key clave con alcance (operación + llamador + Idempotency-Key)
+ * @param fingerprint hash de la petición (método, ruta, query y cuerpo)
+ * @param status estado de procesamiento
+ * @param owner token de la ejecución que tiene la clave; solo esa ejecución puede completarla o
+ *     liberarla, de modo que una petición cuyo lock expiró no puede sobrescribir el resultado del
+ *     siguiente propietario
+ * @param response respuesta almacenada una vez completada
+ * @param leaseUntil plazo del lease de ejecución, independiente de la retención
+ * @param retainUntil plazo de retención para la deduplicación
+ * @param resolutionVersion versión optimista, con fencing del propietario de la ejecución ante la
+ *     reutilización de la clave
+ * @param failure diagnóstico acotado sin contenido de la petición ni de la integración
  */
 public record IdempotencyRecord(
     String key,
@@ -40,7 +42,9 @@ public record IdempotencyRecord(
       throw new IllegalArgumentException("diagnostic too long");
   }
 
-  /** Retention deadline; expiry never means an execution lease can be taken over. */
+  /**
+   * Plazo de retención; su expiración nunca significa que pueda tomarse el lease de una ejecución.
+   */
   public Instant expiresAt() {
     return retainUntil;
   }
@@ -84,25 +88,25 @@ public record IdempotencyRecord(
         .build();
   }
 
-  /** {@code true} when {@code candidate} holds this in-progress record. */
+  /** {@code true} cuando {@code candidate} tiene este registro en curso. */
   public boolean heldBy(String candidate) {
     return status == Status.IN_PROGRESS && candidate.equals(owner);
   }
 
-  /** Processing status. */
+  /** Estado de procesamiento. */
   public enum Status {
     IN_PROGRESS,
     COMPLETED,
     UNKNOWN
   }
 
-  /** Named construction of a complete immutable stored snapshot. */
+  /** Construcción nominal de una instantánea almacenada completa e inmutable. */
   public static Builder builder(
       String key, String fingerprint, Instant leaseUntil, Instant retainUntil) {
     return new Builder(key, fingerprint, leaseUntil, retainUntil);
   }
 
-  /** Mutable construction state; build validates and creates an independent immutable value. */
+  /** Estado mutable de construcción; build valida y crea un valor inmutable independiente. */
   public static final class Builder {
     private final String key;
     private final String fingerprint;

@@ -3,7 +3,7 @@ package pe.axiz.quality.archunit.sample.guarded.domain;
 import java.time.Clock;
 import java.time.Instant;
 
-/** The intended form: time comes from an injected clock. */
+/** La forma prevista: el tiempo proviene de un reloj inyectado. */
 public class InjectedTime {
   private final Clock clock;
 

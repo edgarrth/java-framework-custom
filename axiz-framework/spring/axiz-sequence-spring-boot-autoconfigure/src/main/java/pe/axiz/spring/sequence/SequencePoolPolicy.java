@@ -5,7 +5,10 @@ import java.util.Objects;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.core.env.Environment;
 
-/** Bounds resources used for sequence reservations independently of business pools. */
+/**
+ * Acota los recursos usados para las reservas de secuencias con independencia de los pools de
+ * negocio.
+ */
 public record SequencePoolPolicy(int maximum, Duration acquireTimeout) {
   public SequencePoolPolicy {
     if (maximum < 1 || maximum > 32 || acquireTimeout.toMillis() < 250)

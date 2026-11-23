@@ -75,7 +75,8 @@ import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
 /**
- * Real PostgreSQL proves business and outbox commit or roll back together across thread changes.
+ * PostgreSQL real prueba que el negocio y el outbox se confirman o hacen rollback juntos a través
+ * de cambios de hilo.
  */
 @ExtendWith(BlockHoundExtension.class)
 class PostgresReactiveUseCaseIT {
@@ -204,9 +205,10 @@ class PostgresReactiveUseCaseIT {
 
   @Test
   void driverRejectsBackslashQuotedLiteralsInsteadOfExecutingMisparsedSql() {
-    // PostgreSQL accepts this grammar, and NamedSql preserves it. The pinned R2DBC driver's
-    // own lexer does not recognize backslash-escaped quotes. Keep the limitation executable;
-    // application values should use bind parameters, never SQL-literal rewriting.
+    // PostgreSQL acepta esta gramática y NamedSql la preserva. El lexer propio del driver R2DBC
+    // fijado no reconoce las comillas escapadas con barra invertida. Se mantiene la limitación como
+    // algo ejecutable; los valores de la aplicación deben usar parámetros de binding, nunca
+    // reescritura de literales SQL.
     var sql = new R2dbcSql(connections);
     for (String literal :
         List.of("E'firstit\\'s :hidden'", "E'first' -- continuation\n'it\\'s :hidden'")) {
@@ -255,7 +257,7 @@ class PostgresReactiveUseCaseIT {
         .then(() -> target.written.asMono().block(T))
         .thenCancel()
         .verify(T);
-    // A fresh query waits for asynchronous rollback without blocking an I/O worker.
+    // Una consulta nueva espera el rollback asíncrono sin bloquear un worker de E/S.
     Mono.defer(
             () ->
                 sql.query(

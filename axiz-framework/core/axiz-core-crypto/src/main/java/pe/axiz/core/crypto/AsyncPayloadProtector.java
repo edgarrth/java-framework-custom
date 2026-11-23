@@ -6,9 +6,10 @@ import java.util.concurrent.CompletionStage;
 import pe.axiz.core.concurrent.Stages;
 
 /**
- * Native asynchronous technical storage protection; no executor of blocking key operations.
- * Implementations snapshot input arrays before returning, because callers may immediately clear
- * them. Returned arrays belong to the recipient; cancellation must clear undelivered results.
+ * Protección técnica de almacenamiento asíncrona nativa; sin executor para operaciones de clave
+ * bloqueantes. Las implementaciones toman un snapshot de los arrays de entrada antes de retornar,
+ * porque quienes llaman pueden limpiarlos de inmediato. Los arrays devueltos pertenecen al
+ * receptor; la cancelación debe limpiar los resultados no entregados.
  */
 public interface AsyncPayloadProtector {
   CompletionStage<byte[]> protect(byte[] plaintext, String context, String binding);
@@ -47,7 +48,10 @@ public interface AsyncPayloadProtector {
         });
   }
 
-  /** CPU-only identity mode, explicitly selected. Protected records always fail closed. */
+  /**
+   * Modo identidad solo de CPU, seleccionado de forma explícita. Los registros protegidos siempre
+   * fallan en cerrado.
+   */
   AsyncPayloadProtector NONE =
       new AsyncPayloadProtector() {
         @Override

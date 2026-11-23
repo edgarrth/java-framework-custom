@@ -27,10 +27,11 @@ import pe.axiz.kit.r2dbc.ReactiveSql;
 import pe.axiz.spring.foundation.ConditionalOnConfiguredProperty;
 
 /**
- * Reactive relational persistence on Aurora PostgreSQL: a {@link ReactiveSql} that joins the
- * reactive transaction of the caller, the axiz column converters ({@code EncryptedText}, {@code
- * Money}) for Spring Data R2DBC, and an optional reader endpoint. The connection pool, the
- * transaction manager and the R2DBC observations come from Spring Boot; Flyway migrates over JDBC.
+ * Persistencia relacional reactiva sobre Aurora PostgreSQL: un {@link ReactiveSql} que se une a la
+ * transacción reactiva del invocante, los converters de columnas de axiz ({@code EncryptedText},
+ * {@code Money}) para Spring Data R2DBC y un endpoint de lectura opcional. El pool de conexiones,
+ * el gestor de transacciones y las observaciones de R2DBC provienen de Spring Boot; Flyway migra
+ * sobre JDBC.
  */
 @AutoConfiguration(
     afterName = {
@@ -102,7 +103,7 @@ public class AxizR2dbcAutoConfiguration {
     return new EncryptionContextValidator(context, properties.encryptionContext());
   }
 
-  /** axiz column types for Spring Data R2DBC entities. */
+  /** Tipos de columna de axiz para entidades de Spring Data R2DBC. */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnClass(name = "org.springframework.data.r2dbc.convert.R2dbcCustomConversions")
   static class ConversionsConfiguration {

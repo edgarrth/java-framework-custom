@@ -1,4 +1,4 @@
-# {{project.name}} in {{item.name}}
+# {{project.name}} en {{item.name}}
 environment: {{item.name}}
 
 serviceAccount:
@@ -20,14 +20,14 @@ autoscaling:
   targetCPUUtilizationPercentage: 70
 {{#item.prod}}
 topologySpread:
-  whenUnsatisfiable: DoNotSchedule   # replicas in different zones, always
+  whenUnsatisfiable: DoNotSchedule   # réplicas en zonas distintas, siempre
 {{/item.prod}}
 {{/archetype.deployment}}
 
 networkPolicy:
   egress:
-    # destinations outside the cluster this service reaches in {{item.name}} (VPC endpoints of
-    # the AWS services it uses, databases, brokers, partners), with their ports
+    # destinos fuera del clúster a los que este servicio llega en {{item.name}} (VPC endpoints de
+    # los servicios de AWS que usa, bases de datos, brokers, socios), con sus puertos
     cidrs: []
 
 externalSecret:
@@ -37,12 +37,12 @@ config:
   axiz.config.environment: {{item.name}}
   management.tracing.sampling.probability: "{{item.samplingProbability}}"
 {{#caps.audit}}
-  # the audit chain is sealed with a keyed HMAC outside local/test/ci (secret audit-hmac-key)
+  # la cadena de auditoría se sella con un HMAC con clave fuera de local/test/ci (secreto audit-hmac-key)
   axiz.audit.integrity.mode: HMAC
   axiz.audit.integrity.hmac-secret: audit-hmac-key
   axiz.audit.integrity.hmac-key-id: v1
 {{/caps.audit}}
-  # Keys this service needs in {{item.name}} (set their values, then remove the comment):
+  # Claves que este servicio necesita en {{item.name}} (se definen sus valores y luego se elimina el comentario):
 {{#config.configMapKeys}}
   # {{.}}:
 {{/config.configMapKeys}}

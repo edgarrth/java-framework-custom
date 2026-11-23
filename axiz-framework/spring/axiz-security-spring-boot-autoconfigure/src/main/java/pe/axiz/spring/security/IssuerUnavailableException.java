@@ -3,7 +3,7 @@ package pe.axiz.spring.security;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.AuthenticationException;
 
-/** Unavailable verification infrastructure, without provider text or credentials. */
+/** Infraestructura de verificación no disponible, sin texto del proveedor ni credenciales. */
 public final class IssuerUnavailableException extends AuthenticationException {
   private static final long serialVersionUID = 1L;
   private final long retryAfterSeconds;
@@ -17,7 +17,7 @@ public final class IssuerUnavailableException extends AuthenticationException {
     return retryAfterSeconds;
   }
 
-  /** Looks through framework wrappers, with a finite bound even for cyclic causes. */
+  /** Recorre los wrappers del framework, con un límite finito incluso para causas cíclicas. */
   static @Nullable IssuerUnavailableException find(Throwable failure) {
     Throwable current = failure;
     for (int i = 0; i < 16 && current != null; i++, current = current.getCause()) {

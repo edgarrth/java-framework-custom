@@ -30,8 +30,8 @@ import pe.axiz.core.secrets.SecretResolver;
 import pe.axiz.spring.foundation.ConditionalOnConfiguredProperty;
 
 /**
- * Field encryption with keys from the secret store, blind indexes, and password hashing (Argon2id
- * by default). Only AEAD and modern schemes are offered.
+ * Cifrado de campos con claves del almacén de secretos, índices ciegos y hash de contraseñas
+ * (Argon2id por defecto). Solo se ofrecen AEAD y esquemas modernos.
  */
 @AutoConfiguration(afterName = "pe.axiz.spring.secrets.AxizSecretsAutoConfiguration")
 @EnableConfigurationProperties(AxizCryptoProperties.class)
@@ -68,7 +68,7 @@ public class AxizCryptoAutoConfiguration {
     };
   }
 
-  /** Field encryption, active when a current key id is configured. */
+  /** Cifrado de campos, activo cuando se configura un id de clave actual. */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnConfiguredProperty("axiz.crypto.fields.current-key-id")
   @ConditionalOnBean(SecretResolver.class)
@@ -121,7 +121,7 @@ public class AxizCryptoAutoConfiguration {
     }
   }
 
-  /** Search keys do not require field encryption to be enabled. */
+  /** Las claves de búsqueda no requieren que el cifrado de campos esté habilitado. */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnBean(SecretResolver.class)
   @ConditionalOnConfiguredProperty("axiz.crypto.fields.index-current-key-id")
@@ -156,7 +156,7 @@ public class AxizCryptoAutoConfiguration {
     }
   }
 
-  /** Spring Security crypto encoders, isolated so the class is optional. */
+  /** Codificadores de cifrado de Spring Security, aislados para que la clase sea opcional. */
   static final class SpringEncoders {
 
     private SpringEncoders() {}

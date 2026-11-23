@@ -5,7 +5,8 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 import pe.axiz.core.crypto.PayloadProtectionMode;
 
 /**
- * Protection of serialized saga state; envelope mode requires explicit key-provider configuration.
+ * Protección del estado serializado de la saga; el modo envelope requiere una configuración
+ * explícita del proveedor de claves.
  */
 @ConfigurationProperties("axiz.saga")
 public record AxizSagaProtectionProperties(

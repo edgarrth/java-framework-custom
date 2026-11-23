@@ -4,7 +4,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Publishes to several publishers; a failing one does not prevent the others. */
+/** Publica en varios publicadores; uno que falla no impide los demás. */
 public final class CompositeAuditPublisher implements AuditPublisher {
 
   private static final Logger LOG = LoggerFactory.getLogger(CompositeAuditPublisher.class);

@@ -7,16 +7,16 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Result of a {@link Composer} run.
+ * Resultado de una ejecución de {@link Composer}.
  *
- * @param values value of every part (fallback for degraded optional parts)
- * @param degraded optional parts that failed or timed out
+ * @param values valor de cada parte (el valor alternativo para las partes opcionales degradadas)
+ * @param degraded partes opcionales que fallaron o agotaron el tiempo
  */
 public record Composition(Map<String, @Nullable Object> values, List<String> degraded) {
 
-  // An explicit canonical constructor, not a compact one: javac does not write the @Nullable of a
-  // type argument on the parameters of a compact constructor, so callers in other modules would
-  // see Map<String, Object> and NullAway would reject a map with null values.
+  // Constructor canónico explícito, no compacto: javac no escribe el @Nullable de un argumento de
+  // tipo en los parámetros de un constructor compacto, así que los llamadores de otros módulos
+  // verían Map<String, Object> y NullAway rechazaría un mapa con valores null.
   public Composition(Map<String, @Nullable Object> values, List<String> degraded) {
     this.values = Collections.unmodifiableMap(new LinkedHashMap<>(values));
     this.degraded = List.copyOf(degraded);

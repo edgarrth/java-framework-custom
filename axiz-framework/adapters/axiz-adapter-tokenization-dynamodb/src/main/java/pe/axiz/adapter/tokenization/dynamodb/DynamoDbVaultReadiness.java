@@ -23,11 +23,15 @@ import software.amazon.awssdk.services.dynamodb.model.TransactGetItemsRequest;
 import software.amazon.awssdk.services.dynamodb.model.TransactGetItemsResponse;
 
 /**
- * Read-only startup verification with the operational identity. No token reads, maintenance rights,
- * table creation, key initialization, permission simulation or remote key generation.
+ * Verificación de arranque de solo lectura con la identidad operativa. Sin lecturas de tokens,
+ * permisos de mantenimiento, creación de tablas, inicialización de claves, simulación de permisos
+ * ni generación remota de claves.
  */
 public final class DynamoDbVaultReadiness {
-  /** Identifiers of installed key material, not the material itself or a claim of remote access. */
+  /**
+   * Identificadores del material de claves instalado, no el material en sí ni una afirmación de
+   * acceso remoto.
+   */
   public record Keys(
       Set<String> keysets,
       Set<String> fingerprints,
@@ -80,7 +84,8 @@ public final class DynamoDbVaultReadiness {
     var sorted = keys.keysets().stream().sorted().toList();
     var batches = new ArrayList<List<String>>();
     var reads = new ArrayList<TransactGetItemsRequest>();
-    // Keep C/E for each keyset in the same snapshot; at most 100 reads per transaction.
+    // Se mantienen C/E de cada keyset en la misma instantánea; como máximo 100 lecturas por
+    // transacción.
     for (int offset = 0; offset < sorted.size(); offset += 50) {
       var batch = List.copyOf(sorted.subList(offset, Math.min(offset + 50, sorted.size())));
       batches.add(batch);
@@ -111,7 +116,10 @@ public final class DynamoDbVaultReadiness {
     }
   }
 
-  /** Native reads; no blocking wait or executor. The Spring startup caller bounds its wait. */
+  /**
+   * Lecturas nativas; sin espera bloqueante ni executor. Quien llama en el arranque de Spring acota
+   * su espera.
+   */
   public CompletionStage<Void> verify(DynamoDbAsyncClient client) {
     return Stages.recover(
         Stages.call(
@@ -166,7 +174,8 @@ public final class DynamoDbVaultReadiness {
 
   private static void expiration(DescribeTimeToLiveResponse response) {
     var description = response.timeToLiveDescription();
-    // DISABLING may still delete rows. Unknown/absent states are not evidence of safety.
+    // DISABLING aún puede borrar filas. Los estados desconocidos o ausentes no son evidencia de
+    // seguridad.
     if (description == null || description.timeToLiveStatus() != TimeToLiveStatus.DISABLED)
       throw unavailable();
   }

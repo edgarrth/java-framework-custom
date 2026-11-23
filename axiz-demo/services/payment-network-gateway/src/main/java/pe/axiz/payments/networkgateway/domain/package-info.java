@@ -1,4 +1,4 @@
-/** Domain model: plain Java, no structure dependencies. */
+/** Modelo de dominio: Java plano, sin dependencias de la estructura. */
 @NullMarked
 package pe.axiz.payments.networkgateway.domain;
 

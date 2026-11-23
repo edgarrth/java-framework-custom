@@ -11,7 +11,8 @@ import org.springframework.core.Ordered;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Applies transport/no-store rules before authentication, including errors and unmapped methods.
+ * Aplica las reglas de transporte y no-store antes de la autenticación, incluidos los errores y los
+ * métodos sin mapeo.
  */
 final class ServletVaultGuard extends OncePerRequestFilter implements Ordered {
   private final VaultHttpPolicy policy;

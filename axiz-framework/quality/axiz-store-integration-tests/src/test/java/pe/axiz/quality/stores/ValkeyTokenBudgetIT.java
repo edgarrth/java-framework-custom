@@ -57,7 +57,10 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
-/** Actual shared Redis scripts, cancellation-compatible native calls and store outage. */
+/**
+ * Scripts reales compartidos de Redis, llamadas nativas compatibles con la cancelación y caída del
+ * almacén.
+ */
 @ExtendWith(BlockHoundExtension.class)
 class ValkeyTokenBudgetIT {
   private static final Duration DEADLINE = Duration.ofSeconds(15);
@@ -190,7 +193,8 @@ class ValkeyTokenBudgetIT {
           IllegalStateException.class, () -> recovery.reconcile(SCOPE, abandoned, evidence));
       process.destroyForcibly();
       assertTrue(process.waitFor(5, TimeUnit.SECONDS));
-      // Process death alone does not prove that accepted remote effects have ended.
+      // La muerte del proceso por sí sola no prueba que hayan terminado los efectos remotos
+      // aceptados.
       assertThrows(
           IllegalStateException.class, () -> recovery.reconcile(SCOPE, abandoned, evidence));
       assertTrue(journal.isEmpty());
@@ -204,7 +208,7 @@ class ValkeyTokenBudgetIT {
               new TokenBudgetOwner("surviving-instance", UUID.randomUUID()));
       var active = activeBudget.acquire(CALLER, TokenOperation.LOOKUP, SCOPE);
       try {
-        terminal.set(true); // Represents the trusted verifier's durable provider reconciliation.
+        terminal.set(true); // Representa la conciliación durable del verificador confiable.
         assertEquals(
             RedisTokenBudgetRecovery.Stage.RELEASED,
             recovery.reconcile(SCOPE, abandoned, evidence));
@@ -271,7 +275,8 @@ class ValkeyTokenBudgetIT {
         assertEquals(reservation.encoded(), first.sync().hget(tenantKey, lease));
         if (partial) assertNull(first.sync().hget(fields[5], lease));
         else assertEquals("changed-owner", first.sync().hget(fields[5], lease));
-        // Restore only this deliberately corrupted fixture before normal owner cleanup.
+        // Se restaura solo este fixture corrompido de forma deliberada previo a la limpieza normal
+        // del propietario.
         first.sync().hset(fields[5], lease, reservation.encoded());
       } finally {
         permit.close();
@@ -279,7 +284,7 @@ class ValkeyTokenBudgetIT {
     }
   }
 
-  /** Isolated JVM killed by its parent after Redis acknowledges the reservation. */
+  /** JVM aislada que su padre termina después de que Redis confirma la reserva. */
   public static final class CrashingOwner {
     public static void main(String[] args) throws Exception {
       RedisClient owned = RedisClient.create(args[0]);
@@ -352,7 +357,7 @@ class ValkeyTokenBudgetIT {
                     limited.retryAfterSeconds() >= 1 && limited.retryAfterSeconds() <= 86400);
               })
           .verify(DEADLINE);
-      // Revelation and metadata have their own explicitly configured groups.
+      // La revelación y los metadatos tienen sus propios grupos configurados de forma explícita.
       synchronous.acquire(CALLER, TokenOperation.DETOKENIZE, SCOPE).close();
       synchronous.acquire(CALLER, TokenOperation.DESCRIBE, SCOPE).close();
       synchronous.beforeWrite(CALLER, SCOPE);

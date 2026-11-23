@@ -65,7 +65,8 @@ class AxizArchitectureTest {
     assertTrue(report.contains("bean name 'settlementJob' is defined by"), report);
     assertTrue(report.contains("@Bean SettlementJob.settlementJob()"), report);
     assertTrue(report.contains("bean name 'payments'"), report);
-    // explicit names, auto-configurations (registered by class name) and clean classes pass
+    // los nombres explícitos, las autoconfiguraciones (registradas por nombre de clase) y las
+    // clases limpias pasan
     assertFalse(report.contains("'stepsConfiguration'"), report);
     assertFalse(report.contains("'clean'"), report);
     assertFalse(report.contains("jobsAutoConfiguration"), report);
@@ -205,7 +206,7 @@ class AxizArchitectureTest {
         "paymentsSupport",
         BeanNames.defaultName(beans.get("pe.axiz.quality.archunit.sample.beans.PaymentsSupport")));
     ClassFileImporter importer = new ClassFileImporter();
-    // two capitals keep the name as is; nested classes keep the outer name
+    // dos mayúsculas conservan el nombre tal cual; las clases anidadas conservan el nombre externo
     assertEquals("URLDecoder", BeanNames.defaultName(importer.importClass(URLDecoder.class)));
     assertEquals("map.Entry", BeanNames.defaultName(importer.importClass(Entry.class)));
   }

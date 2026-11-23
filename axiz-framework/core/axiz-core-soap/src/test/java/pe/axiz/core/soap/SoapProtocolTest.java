@@ -15,7 +15,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-/** What goes on the wire: HTTP headers per SOAP version, envelope and WS-Security token. */
+/** Lo que viaja por la red: cabeceras HTTP por versión de SOAP, envelope y token WS-Security. */
 class SoapProtocolTest {
 
   private static final String SOAP11 = "http://schemas.xmlsoap.org/soap/envelope/";
@@ -66,8 +66,8 @@ class SoapProtocolTest {
     String created = "2026-11-09T00:00:00Z";
     for (String text : new String[] {"", "páss\uD83D\uDD10漢字", "bad\uD800"}) {
       char[] password = text.toCharArray();
-      // SOAP WS-Security SHA-1 digest interoperability fixture; production requires explicit
-      // LEGACY_SHA1_DIGEST mode.
+      // Fixture de interoperabilidad del digest SHA-1 de SOAP WS-Security; producción exige el modo
+      // explícito LEGACY_SHA1_DIGEST.
       // nosemgrep: java.lang.security.audit.crypto.use-of-sha1.use-of-sha1
       var reference = MessageDigest.getInstance("SHA-1");
       reference.update(nonce);
@@ -95,8 +95,8 @@ class SoapProtocolTest {
     String created = one(doc, WsSecurity.WSU, "Created").getTextContent();
     assertEquals("2026-10-24T10:15:30Z", created, "whole seconds");
 
-    // SOAP WS-Security SHA-1 digest interoperability fixture; production requires explicit
-    // LEGACY_SHA1_DIGEST mode.
+    // Fixture de interoperabilidad del digest SHA-1 de SOAP WS-Security; producción exige el modo
+    // explícito LEGACY_SHA1_DIGEST.
     // nosemgrep: java.lang.security.audit.crypto.use-of-sha1.use-of-sha1
     MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
     sha1.update(nonceBytes);

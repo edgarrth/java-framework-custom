@@ -40,7 +40,7 @@ class JarModulesTest(unittest.TestCase):
         observed = gate.verify([self.root])
         self.assertEqual(["pe.axiz.example", None], [row["module"] for row in observed["jars"]])
         self.assertTrue(all(len(row["sha256"]) == 64 for row in observed["jars"]))
-        # A stale, unrelated artifact must not enter the reactor inventory.
+                # Un artefacto obsoleto y no relacionado no debe entrar en el inventario del reactor.
         (self.root / "stale.jar").write_bytes(b"not a jar")
         self.assertEqual(2, len(gate.verify([self.root])["jars"]))
 

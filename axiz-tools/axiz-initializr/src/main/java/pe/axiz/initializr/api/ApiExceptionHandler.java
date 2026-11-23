@@ -14,8 +14,9 @@ import pe.axiz.initializr.service.PublicationException;
 import pe.axiz.initializr.service.PublicationInputException;
 
 /**
- * Generation problems as RFC 9457 problem details with every problem and lint finding, and the
- * missing GitHub authorization as a problem the UI can act on (the API never redirects).
+ * Problemas de generación como problem details de RFC 9457 con todos los problemas y hallazgos de
+ * lint, y la falta de autorización de GitHub como un problema sobre el que la UI puede actuar (la
+ * API nunca redirige).
  */
 @RestControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -72,9 +73,9 @@ public class ApiExceptionHandler {
   }
 
   /**
-   * The user has not authorized GitHub yet. Handled here, before the OAuth client support would
-   * answer the API call with a redirect to GitHub (which a {@code fetch} cannot follow) and
-   * remember the POST to replay it as a GET after the authorization.
+   * El usuario todavía no autorizó GitHub. Se atiende aquí, previo a que el soporte de cliente
+   * OAuth responda la llamada a la API con una redirección a GitHub (que un {@code fetch} no puede
+   * seguir) y recuerde el POST para reproducirlo como un GET tras la autorización.
    */
   @ExceptionHandler(ClientAuthorizationRequiredException.class)
   ProblemDetail authorizationRequired(ClientAuthorizationRequiredException e) {

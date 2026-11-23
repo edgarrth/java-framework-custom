@@ -1,9 +1,9 @@
-# Local dependencies of payment-orders (docker compose up -d, or axiz local up).
-# Development only: no value here is a real credential.
+# Dependencias locales de payment-orders (docker compose up -d, o axiz local up).
+# Solo para desarrollo: ningún valor de este archivo es una credencial real.
 name: payment-orders
 
 services:
-  # Grafana, Tempo, Loki, Prometheus and an OpenTelemetry collector (OTLP 4317/4318)
+  # Grafana, Tempo, Loki, Prometheus y un colector de OpenTelemetry (OTLP 4317/4318)
   otel-lgtm:
     image: axiz-local/otel-lgtm:2026.11-r1
     build: {context: ../../local/images/otel-lgtm}
@@ -49,7 +49,7 @@ services:
     volumes:
       - ./local/localstack:/etc/localstack/init/ready.d:ro
 
-  # OIDC provider for local tokens (realm axiz, client local-client)
+  # Proveedor OIDC para tokens locales (realm axiz, cliente local-client)
   keycloak:
     image: axiz-local/keycloak:26.8.2-r1
     build: {context: ../../local/images/keycloak}

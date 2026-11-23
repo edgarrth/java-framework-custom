@@ -51,8 +51,8 @@ class LeaseDeadlineTest {
         (IdempotencyService.Proceed) async.begin("scope", key, "fp").toCompletableFuture().join();
     try (var syncLease = sync.startLease(first);
         var asyncLease = async.startLease(second)) {
-      // Construction at the exact minimum must not reject an already-reserved execution.
-      // Renewal timing is tested separately with realistic deadlines.
+      // La construcción en el mínimo exacto no debe rechazar una ejecución ya reservada. La
+      // temporización de la renovación se prueba por separado con plazos realistas.
     }
   }
 

@@ -127,7 +127,7 @@ class GitOpsTest(unittest.TestCase):
         self.assertEqual("succeeded", outcome.pop("result"))
         self.assertEqual(hashlib.sha256(self.record.read_bytes()).hexdigest(), outcome.pop("outcome_record_sha256"))
         self.assertEqual(requested, outcome)
-        # A rerun cannot replace evidence from an earlier attempt.
+                # Una reejecución no puede reemplazar la evidencia de un intento anterior.
         self.write_record("failed")
         with self.assertRaisesRegex(ValueError, "cannot be overwritten"):
             self.apply(outcome=True)
@@ -173,7 +173,7 @@ class GitOpsTest(unittest.TestCase):
             if "push" in command:
                 attempts.append(command)
                 if len(attempts) == 1:
-                    # Another service updates the destination after our clone.
+                                        # Otro servicio actualiza el destino después del clonado propio.
                     (self.root / "other-service.yaml").write_text("preserve: true\n")
                     gitops.git(self.root, "add", ".")
                     gitops.git(self.root, "-c", "user.name=test", "-c", "user.email=test@example.com", "commit", "-m", "concurrent")

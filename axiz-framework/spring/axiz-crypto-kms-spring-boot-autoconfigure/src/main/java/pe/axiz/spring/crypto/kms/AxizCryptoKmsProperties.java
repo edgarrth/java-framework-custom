@@ -9,12 +9,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
- * KMS envelope encryption.
+ * Cifrado de sobre con KMS.
  *
- * @param keyId KMS key id, ARN or alias
- * @param dataKeyMaxAge how long a data key is reused for encryption
- * @param dataKeyMaxUses how many encryptions a data key serves
- * @param keyRing optional immutable route identifiers to immutable KMS key ARNs for dual reads
+ * @param keyId id, ARN o alias de la clave KMS
+ * @param dataKeyMaxAge tiempo durante el cual se reutiliza una clave de datos para cifrar
+ * @param dataKeyMaxUses número de cifrados que atiende una clave de datos
+ * @param keyRing identificadores de ruta inmutables opcionales hacia ARN inmutables de claves KMS
+ *     para lecturas duales
  */
 @ConfigurationProperties("axiz.crypto.kms")
 public record AxizCryptoKmsProperties(
@@ -54,7 +55,8 @@ public record AxizCryptoKmsProperties(
             "key/(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|mrk-[0-9a-f]{32})")) {
       return false;
     }
-    // Validate partition segments separately, without nested regex repetition.
+    // Se validan los segmentos de partición por separado, sin repetición anidada en la expresión
+    // regular.
     String[] partition = fields[1].split("-", -1);
     if (!partition[0].equals("aws")) return false;
     for (int i = 1; i < partition.length; i++) {

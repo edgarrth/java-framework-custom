@@ -7,8 +7,8 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.util.function.SingletonSupplier;
 
 /**
- * Resolves the real interceptor on first use, so infrastructure advisors do not force early
- * initialization of application beans.
+ * Resuelve el interceptor real en el primer uso, para que los advisors de infraestructura no
+ * fuercen la inicialización temprana de los beans de la aplicación.
  */
 final class LazyInterceptor implements MethodInterceptor {
 

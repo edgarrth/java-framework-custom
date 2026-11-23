@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-core-i18n
 
-Message resolution from multiple bundles with locale fallback.
+Resolución de mensajes desde varios paquetes con respaldo de locale.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,18 +12,18 @@ Message resolution from multiple bundles with locale fallback.
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `BundleMessageResolver` | Message resolver over several `ResourceBundle` base names (UTF-8 properties). |
-| `CompositeMessageResolver` | Chains resolvers; the first one that knows the key wins (service before framework). |
-| `LocaleResolver` | Chooses the response locale from an `Accept-Language` header among the supported ones (RFC 4647 lookup with quality values). |
-| `MessageFormatter` | Replaces `{name`} placeholders. |
-| `MessageResolver` | Resolves localized messages with named parameters (`{name`}). |
+| `BundleMessageResolver` | Resolvedor de mensajes sobre varios nombres base de `ResourceBundle` (properties en UTF-8). |
+| `CompositeMessageResolver` | Encadena resolvedores; gana el primero que conoce la clave (el servicio antes que el framework). |
+| `LocaleResolver` | Elige el locale de la respuesta desde la cabecera `Accept-Language` entre los soportados (búsqueda RFC 4647 con valores de calidad). |
+| `MessageFormatter` | Reemplaza los marcadores `{name`}. |
+| `MessageResolver` | Resuelve mensajes localizados con parámetros nombrados (`{name}`). |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-i18n verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl core/axiz-core-i18n verify`.

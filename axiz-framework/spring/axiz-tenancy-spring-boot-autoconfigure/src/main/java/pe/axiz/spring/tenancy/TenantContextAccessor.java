@@ -4,7 +4,7 @@ import io.micrometer.context.ThreadLocalAccessor;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.tenancy.TenantContext;
 
-/** Propagates {@link TenantContext} across threads and Reactor operators (context-propagation). */
+/** Propaga {@link TenantContext} entre hilos y operadores de Reactor (context-propagation). */
 public class TenantContextAccessor implements ThreadLocalAccessor<String> {
 
   public static final String KEY = "axiz.tenant";

@@ -16,8 +16,9 @@ import pe.axiz.payments.ux.composition.model.PaymentView;
 import reactor.core.publisher.Mono;
 
 /**
- * REST adapter of the {@code payments} operations of the contract (src/main/openapi). Requests with
- * a repeated Idempotency-Key replay the first response (Redis store shared by replicas).
+ * Adaptador REST de las operaciones {@code payments} del contrato (src/main/openapi). Las
+ * solicitudes con un Idempotency-Key repetido reproducen la primera respuesta (almacén Redis
+ * compartido por las réplicas).
  */
 @RestController
 @PreAuthorize("hasAuthority('SCOPE_payments:channel')")
@@ -29,7 +30,7 @@ public class PaymentsController {
     this.composition = composition;
   }
 
-  /** Pays a frequent beneficiary (POST /v1/payments). */
+  /** Paga a un beneficiario frecuente (POST /v1/payments). */
   @Idempotent
   @PostMapping("/v1/payments")
   public Mono<ResponseEntity<PaymentView>> createPayment(
@@ -40,7 +41,7 @@ public class PaymentsController {
         .map(result -> ResponseEntity.status(201).body(result));
   }
 
-  /** A payment with its beneficiary (GET /v1/payments/{paymentId}). */
+  /** Un pago con su beneficiario (GET /v1/payments/{paymentId}). */
   @GetMapping("/v1/payments/{paymentId}")
   public Mono<ResponseEntity<PaymentView>> getPayment(@PathVariable("paymentId") String paymentId) {
     return composition.getPayment(paymentId).map(result -> ResponseEntity.status(200).body(result));

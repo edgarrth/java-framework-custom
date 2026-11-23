@@ -1,12 +1,12 @@
 # axiz-lock-redis-spring-boot-autoconfigure
 
-Lock integration for redis.
+Integración de locks con Redis.
 
-This module owns the `pe.axiz.spring.lock.redis` API. It has no application framework or provider dependency.
+Este módulo es dueño de la API `pe.axiz.spring.lock.redis`. No depende de frameworks de aplicación ni de proveedores.
 
-## Selection
+## Selección
 
-Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
+Las versiones las gestiona `axiz-bom`; las aplicaciones heredan `axiz-parent-service`.
 
 ```xml
 <dependency>
@@ -15,34 +15,35 @@ Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
 </dependency>
 ```
 
-The paired starter selects this provider. Application code uses the capability ports; do not
-import auto-configuration classes into controllers, application services or domain models.
+El starter asociado selecciona este proveedor. El código de aplicación usa los puertos de la
+capacidad; las clases de autoconfiguración no se importan en controladores, servicios de
+aplicación ni modelos de dominio.
 
-## Types
+## Tipos
 
-Public types declared by this module:
+Tipos públicos que declara este módulo:
 
 - `AxizLockRedisAutoConfiguration`
 - `AxizLockRedisProperties`
 
-## Configuration
+## Configuración
 
-Owned property prefixes: `axiz.lock.*`.
+Prefijos de propiedades propios: `axiz.lock.*`.
 
-## Operations
+## Operación
 
-Configure an authenticated TLS Redis/Valkey endpoint with bounded connection and command
-timeouts. Size capacity and eviction according to the capability: coordination/idempotency
-state cannot use cache eviction semantics. In-memory substitutes are limited to explicitly
-local/test/ci environments.
+Se configura un endpoint Redis/Valkey autenticado con TLS y timeouts acotados de conexión y de
+comando. La capacidad y el desalojo se dimensionan según la capacidad: el estado de coordinación o
+de idempotencia no puede usar la semántica de desalojo de una caché. Los sustitutos en memoria se
+limitan a ambientes local, test o ci declarados explícitamente.
 
-## Verification
+## Verificación
 
-From `axiz-framework`:
+Desde `axiz-framework`:
 
 ```bash
 ./mvnw -pl spring/axiz-lock-redis-spring-boot-autoconfigure -am test
 ```
 
-The full acceptance gate is `./mvnw clean install -Pquality -Daxiz.it.requireDocker=true`.
-Provider integration tests live in `quality/axiz-store-integration-tests` and require Docker.
+La verificación completa es `./mvnw clean install -Pquality -Daxiz.it.requireDocker=true`.
+Las pruebas de integración de proveedores están en `quality/axiz-store-integration-tests` y requieren Docker.

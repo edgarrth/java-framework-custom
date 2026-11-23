@@ -16,9 +16,9 @@ import software.amazon.awssdk.services.sns.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sns.model.PublishRequest;
 
 /**
- * Publishes CloudEvents (structured JSON) to Amazon SNS topics (fan-out). The {@code ce_type}
- * attribute enables subscription filter policies. FIFO topics use the subject as group and the
- * event id as deduplication id. Destinations are topic ARNs.
+ * Publica CloudEvents (JSON estructurado) en tópicos de Amazon SNS (fan-out). El atributo {@code
+ * ce_type} habilita las políticas de filtro de suscripción. Los tópicos FIFO usan el subject como
+ * grupo y el id del evento como id de deduplicación. Los destinos son ARN de tópicos.
  */
 public final class SnsEventPublisher implements EventPublisher, BoundedPublisher {
 

@@ -10,7 +10,7 @@ import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
 
-/** Shared test data. */
+/** Datos de prueba compartidos. */
 public final class Fixtures {
 
   private Fixtures() {}

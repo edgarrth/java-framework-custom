@@ -13,12 +13,12 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /**
- * Generated files kept in memory until written. Paths are validated so nothing can be written
- * outside the target directory, whatever the request contained.
+ * Archivos generados que se mantienen en memoria hasta su escritura. Las rutas se validan para que
+ * nada pueda escribirse fuera del directorio de destino, sin importar lo que contenga la solicitud.
  */
 public final class GeneratedProject {
 
-  /** Fixed entry time of generated archives (reproducible output). */
+  /** Momento fijo de las entradas de los archivos comprimidos generados (salida reproducible). */
   static final LocalDateTime ZIP_TIME = LocalDateTime.of(2000, 1, 1, 0, 0);
 
   private final String rootName;
@@ -35,14 +35,14 @@ public final class GeneratedProject {
     return rootName;
   }
 
-  /** Copy of the generated files (path to content); changing it does not alter this project. */
+  /** Copia de los archivos generados (ruta a contenido); modificarla no altera este proyecto. */
   public Map<String, byte[]> files() {
     Map<String, byte[]> copy = new TreeMap<>();
     files.forEach((path, content) -> copy.put(path, content.clone()));
     return copy;
   }
 
-  /** Generated paths, sorted. */
+  /** Rutas generadas, ordenadas. */
   public Set<String> paths() {
     return files.keySet();
   }
@@ -55,14 +55,15 @@ public final class GeneratedProject {
     return new String(b, StandardCharsets.UTF_8);
   }
 
-  /** Size in bytes of every generated file. */
+  /** Tamaño en bytes de cada archivo generado. */
   public long totalBytes() {
     return files.values().stream().mapToLong(b -> b.length).sum();
   }
 
   /**
-   * Writes a ZIP whose entries live under {@code <rootName>/}. The archive is reproducible: entries
-   * are sorted and carry a fixed timestamp, so the same project always produces the same bytes.
+   * Escribe un ZIP cuyas entradas residen bajo {@code <rootName>/}. El archivo es reproducible: las
+   * entradas se ordenan y llevan una marca de tiempo fija, por lo que el mismo proyecto siempre
+   * produce los mismos bytes.
    */
   public void writeZip(OutputStream out) throws IOException {
     try (ZipOutputStream zip = new ZipOutputStream(out)) {
@@ -77,10 +78,11 @@ public final class GeneratedProject {
   }
 
   /**
-   * Writes the files under {@code directory}; existing files are kept unless {@code overwrite}.
-   * Symbolic links below the directory are never followed (see {@link SafePaths#write}).
+   * Escribe los archivos bajo {@code directory}; los archivos existentes se conservan salvo con
+   * {@code overwrite}. Los enlaces simbólicos bajo el directorio nunca se siguen (ver {@link
+   * SafePaths#write}).
    *
-   * @return number of files written
+   * @return cantidad de archivos escritos
    */
   public int writeTo(Path directory, boolean overwrite) throws IOException {
     int written = 0;

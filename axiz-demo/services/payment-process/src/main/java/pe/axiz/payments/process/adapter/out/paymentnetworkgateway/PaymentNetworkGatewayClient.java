@@ -7,7 +7,7 @@ import org.springframework.web.service.annotation.PostExchange;
 import pe.axiz.payments.process.adapter.out.paymentnetworkgateway.model.Transfer;
 import pe.axiz.payments.process.adapter.out.paymentnetworkgateway.model.TransferRequest;
 
-/** Calls the payment network gateway through the configured HTTP service group. */
+/** Invoca el gateway de la red de pagos mediante el grupo de servicios HTTP configurado. */
 @HttpExchange
 public interface PaymentNetworkGatewayClient {
   @PostExchange("/v1/transfers")

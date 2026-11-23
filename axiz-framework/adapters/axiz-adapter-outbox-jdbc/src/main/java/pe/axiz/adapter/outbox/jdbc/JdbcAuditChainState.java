@@ -18,7 +18,10 @@ import pe.axiz.core.audit.ChainCheckpoint;
 import pe.axiz.kit.jdbc.ConnectionProvider;
 import pe.axiz.kit.sql.SqlIdentifiers;
 
-/** A chain head locked in the caller's JDBC transaction, committed atomically with its outbox. */
+/**
+ * Cabeza de cadena bloqueada en la transacción JDBC de quien llama, confirmada de forma atómica con
+ * su outbox.
+ */
 @SuppressFBWarnings(
     value = "SQL_INJECTION_JDBC",
     justification =
@@ -96,7 +99,8 @@ public final class JdbcAuditChainState implements AuditChainState {
         try {
           statement.executeUpdate();
         } catch (SQLException concurrentInsert) {
-          // H2 MERGE can race on a new chain. Undo only this initializer, never business work.
+          // El MERGE de H2 puede competir sobre una cadena nueva. Se deshace solo este
+          // inicializador, nunca el trabajo de negocio.
           initialization.recoverConcurrentInsert(concurrentInsert);
         }
       }
@@ -156,7 +160,8 @@ public final class JdbcAuditChainState implements AuditChainState {
   @Override
   public ChainCheckpoint checkpoint(String chainId) {
     AuditIntegrity initial = AuditIntegrity.initial(chainId);
-    // Deliberately bypass the transaction-bound provider: an uncommitted head is not evidence.
+    // Se omite deliberadamente el proveedor ligado a la transacción: una cabeza sin commit no es
+    // evidencia.
     try (Connection connection = committedConnections.getConnection()) {
       if (!connection.getAutoCommit())
         throw new IllegalStateException(

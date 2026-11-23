@@ -9,9 +9,10 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Minimal, strict JSON parser (RFC 8259) producing {@code Map<String, Object>}, {@code List},
- * {@code String}, {@code BigDecimal}, {@code Boolean} and {@code null}. For small documents read by
- * layer 1 (token responses, secret payloads, stored envelopes); input size and depth are bounded.
+ * Parser JSON mínimo y estricto (RFC 8259) que produce {@code Map<String, Object>}, {@code List},
+ * {@code String}, {@code BigDecimal}, {@code Boolean} y {@code null}. Para documentos pequeños
+ * leídos por la capa 1 (respuestas de tokens, payloads de secretos, envelopes almacenados); el
+ * tamaño y la profundidad de la entrada están acotados.
  */
 public final class JsonReader {
 
@@ -34,9 +35,9 @@ public final class JsonReader {
   }
 
   /**
-   * Reads the numeric format emitted by JsonWriter.writeCanonical without losing decimal scale,
-   * negative zero or scientific notation. Keys and whitespace need not be ordered canonically.
-   * Other numeric spellings are rejected; ordinary JSON should use parse instead.
+   * Lee el formato numérico emitido por JsonWriter.writeCanonical sin perder la escala decimal, el
+   * cero negativo ni la notación científica. No es necesario que las claves y los espacios sigan el
+   * orden canónico. Se rechazan otras escrituras numéricas; el JSON ordinario debe usar parse.
    */
   public static @Nullable Object parseCanonical(String json) {
     return parse(json, true);
@@ -56,7 +57,7 @@ public final class JsonReader {
     return v;
   }
 
-  /** Parses a JSON object. */
+  /** Parsea un objeto JSON. */
   @SuppressWarnings("unchecked")
   public static Map<String, @Nullable Object> parseObject(String json) {
     Object v = parse(json);
@@ -297,7 +298,7 @@ public final class JsonReader {
     return new JsonException(message + " at position " + pos);
   }
 
-  /** Malformed JSON. */
+  /** JSON mal formado. */
   public static final class JsonException extends IllegalArgumentException {
     private static final long serialVersionUID = 1L;
 

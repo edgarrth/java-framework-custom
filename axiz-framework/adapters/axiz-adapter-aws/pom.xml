@@ -37,9 +37,9 @@
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>regions</artifactId>
     </dependency>
-    <!-- Runtime web identity support must reach consumers that do not use Kafka. -->
+    <!-- El soporte de web identity en tiempo de ejecución debe llegar a los consumidores que no usan Kafka. -->
     <dependency><groupId>software.amazon.awssdk</groupId><artifactId>sts</artifactId></dependency>
-    <!-- a real client to check what configured() applies -->
+    <!-- un cliente real para verificar lo que aplica configured() -->
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>dynamodb</artifactId>

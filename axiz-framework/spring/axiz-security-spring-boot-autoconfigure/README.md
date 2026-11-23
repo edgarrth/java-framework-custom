@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-security-spring-boot-autoconfigure
 
-OAuth2 resource server with issuer allow-list, claim mapping, method security, headers and rate limit (auto-configuration).
+Resource server OAuth2 con lista de emisores permitidos, mapeo de claims, seguridad de métodos, cabeceras y límite de tasa (autoconfiguración).
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,97 +12,101 @@ OAuth2 resource server with issuer allow-list, claim mapping, method security, h
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `AudienceValidator` | Accepts a token only when one of its audiences is configured for its issuer. |
-| `AxizAuthentication` | Authentication backed by a validated JWT whose principal is an `AxizPrincipal`, so controllers can declare `@AuthenticationPrincipal AxizPrincipal caller`. |
-| `AxizJwtConverter` | Maps a validated JWT to an `AxizAuthentication` with scope and role authorities. |
-| `AxizSecurityAutoConfiguration` | OAuth2 resource server for servlet and reactive services: issuer allow-list with per-issuer JWKS, audience and algorithm checks, claims mapped to `AxizPrincipal`, method security, security headers, protected actuator, problem responses for 401/403/429 and optional per-caller rate limits. |
-| `AxizSecurityProperties` | Resource server settings (`axiz.security.*`). |
-| `CallerContextFilter` | Adds the authenticated caller (client, subject, tenant) to the request context after token validation, so logs, audit, metrics and outbound calls see it. |
-| `CallerContextWebFilter` | Reactive counterpart of `CallerContextFilter`: enriches the Reactor context. |
-| `ProblemAuthenticationEntryPoint` | Servlet 401 and 403 handling: problem body plus `WWW-Authenticate: Bearer`. |
-| `RateLimitFilter` | Per-caller rate limit after authentication. |
-| `RateLimitRules` | Resolves the rate-limit rule and key of a request; the key always comes from the token. |
-| `RateLimitWebFilter` | Reactive rate limit; the limiter call runs off the event loop. |
-| `ReactiveProblemHandlers` | Reactive 401 and 403 handling with problem bodies. |
-| `SecurityProblems` | Renders 401, 403 and 429 responses as RFC 9457 problems with catalog codes. |
-| `TrustedIssuerDecoders` | One decoder per trusted issuer, created lazily and reused. |
+| `AudienceValidator` | Acepta un token solo cuando una de sus audiencias está configurada para su emisor. |
+| `AxizAuthentication` | Autenticación respaldada por un JWT validado cuyo principal es un `AxizPrincipal`, de modo que los controladores pueden declarar `@AuthenticationPrincipal AxizPrincipal caller`. |
+| `AxizJwtConverter` | Mapea un JWT validado a un `AxizAuthentication` con autoridades de scope y de rol. |
+| `AxizSecurityAutoConfiguration` | Resource server OAuth2 para servicios servlet y reactivos: lista de emisores permitidos con JWKS por emisor, comprobación de audiencia y algoritmo, claims mapeados a `AxizPrincipal`, seguridad de métodos, cabeceras de seguridad, actuator protegido, respuestas de problema para 401/403/429 y límites de tasa opcionales por llamador. |
+| `AxizSecurityProperties` | Configuración del resource server (`axiz.security.*`). |
+| `CallerContextFilter` | Agrega el llamador autenticado (cliente, sujeto, tenant) al contexto de la petición después de validar el token, para que lo vean los logs, la auditoría, las métricas y las llamadas salientes. |
+| `CallerContextWebFilter` | Equivalente reactivo de `CallerContextFilter`: enriquece el contexto de Reactor. |
+| `ProblemAuthenticationEntryPoint` | Manejo servlet de 401 y 403: cuerpo de problema más `WWW-Authenticate: Bearer`. |
+| `RateLimitFilter` | Límite de tasa por llamador después de la autenticación. |
+| `RateLimitRules` | Resuelve la regla y la clave de límite de tasa de una petición; la clave siempre proviene del token. |
+| `RateLimitWebFilter` | Límite de tasa reactivo; la llamada al limitador se ejecuta fuera del event loop. |
+| `ReactiveProblemHandlers` | Manejo reactivo de 401 y 403 con cuerpos de problema. |
+| `SecurityProblems` | Representa las respuestas 401, 403 y 429 como problemas RFC 9457 con códigos del catálogo. |
+| `TrustedIssuerDecoders` | Un decoder por emisor confiable, creado de forma diferida y reutilizado. |
 
-Related types: `AxizSecurityRedisAutoConfiguration` live in `axiz-security-redis-spring-boot-autoconfigure`.
+Tipos relacionados: `AxizSecurityRedisAutoConfiguration` están en `axiz-security-redis-spring-boot-autoconfigure`.
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-security-spring-boot-autoconfigure verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl spring/axiz-security-spring-boot-autoconfigure verify`.
 
-## Effective authorization coverage
+## Cobertura efectiva de autorización
 
-Coverage classifies the effective `@PreAuthorize` expression structurally, using the same annotation
-scanner as Spring Security (including annotation templates). Startup never evaluates SpEL or calls
-application policy beans. Constants and authentication predicates alone do not establish a permission
-barrier. To declare an endpoint that requires only non-anonymous authentication, use
-`pe.axiz.core.security.AuthenticatedAccess`; Axiz installs a prior interceptor in both stacks.
-It accepts authenticated JWTs without authorities and remember-me authentication, and rejects anonymous
-access. It cannot be combined with `@PublicEndpoint`, a public path, or an always-true expression.
+La cobertura clasifica estructuralmente la expresión `@PreAuthorize` efectiva, con el mismo escáner de
+anotaciones que Spring Security (incluidas las plantillas de anotaciones). El arranque nunca evalúa SpEL
+ni llama a beans de políticas de la aplicación. Las constantes y los predicados de autenticación por sí
+solos no establecen una barrera de permisos. Para declarar un endpoint que solo requiere autenticación no
+anónima se usa `pe.axiz.core.security.AuthenticatedAccess`; Axiz instala un interceptor previo en ambas
+pilas. Acepta JWTs autenticados sin autoridades y la autenticación remember-me, y rechaza el acceso
+anónimo. No se puede combinar con `@PublicEndpoint`, una ruta pública ni una expresión siempre verdadera.
 
-The supported grammar includes boolean literals, `and`, `or`, `not`, `permitAll()`, `denyAll()`, the
-four authentication predicates, literal role/authority checks, `hasPermission(...)`, and
-`@bean.method(...)` policies with literal, principal, authentication or variable/property arguments.
-Comparisons, constructors, type references, indexing, assignments and arbitrary method chains fail
-startup even in development `warn` mode. Negative authority checks are exclusions and do not alone
-prove permission coverage. Dynamic policies remain the application's responsibility and require
-negative authorization tests. `@Secured` attributes are literal authorities, not legacy voter tokens.
+La gramática admitida incluye literales booleanos, `and`, `or`, `not`, `permitAll()`, `denyAll()`, los
+cuatro predicados de autenticación, comprobaciones literales de rol o autoridad, `hasPermission(...)` y
+políticas `@bean.method(...)` con argumentos literales, de principal, de autenticación o de variable o
+propiedad. Las comparaciones, constructores, referencias de tipo, indexaciones, asignaciones y cadenas
+arbitrarias de métodos hacen fallar el arranque incluso en el modo `warn` de desarrollo. Las
+comprobaciones negativas de autoridad son exclusiones y por sí solas no prueban la cobertura de permisos.
+Las políticas dinámicas son responsabilidad de la aplicación y requieren pruebas de autorización
+negativas. Los atributos de `@Secured` son autoridades literales, no tokens de un voter.
 
-HTTP integration tests include the error handlers: unauthenticated method denials return 401 in
-both stacks; authenticated callers lacking the required permissions receive 403. An effective
-explicit HTTP rule or public declaration remains an independent coverage source.
+Las pruebas de integración HTTP incluyen los handlers de error: las denegaciones de métodos sin
+autenticación devuelven 401 en ambas pilas; los llamadores autenticados sin los permisos requeridos
+reciben 403. Una regla HTTP explícita efectiva o una declaración pública sigue siendo una fuente de
+cobertura independiente.
 
-At application-ready time each MVC/WebFlux business endpoint needs a prior authorization rule.
-The framework checks the mapped bean's own proxy and pointcut: an annotation or a global advisor
-that is not attached to that proxy does not count. `@PostAuthorize` alone does not count.
-`@PreAuthorize`, enabled `@Secured`/`@RolesAllowed`, and specific rules compiled from
-`axiz.security.authorization.rules` are supported. Required authorities within a rule are ANDed.
-Default `anyRequest().authenticated()` does not declare endpoint permission.
+Cuando la aplicación queda lista, cada endpoint de negocio MVC/WebFlux necesita una regla de autorización
+previa. El framework comprueba el proxy y el pointcut propios del bean mapeado: no cuentan una anotación
+ni un advisor global que no estén vinculados a ese proxy. `@PostAuthorize` por sí solo no cuenta. Se
+admiten `@PreAuthorize`, `@Secured`/`@RolesAllowed` habilitados y las reglas específicas compiladas desde
+`axiz.security.authorization.rules`. Las autoridades requeridas dentro de una regla se combinan con AND.
+El `anyRequest().authenticated()` por defecto no declara permisos del endpoint.
 
-A `@PublicEndpoint` additionally requires an effective matching permit-all path from
-`axiz.security.public-paths`. GET endpoints also need authorization of their implicit HEAD route.
-`axiz.security.authorization.unprotected=fail` is the default; `warn` is for development only.
-Spring Boot/springdoc infrastructure mappings are excluded from the business coverage scan and
-keep their own configured HTTP security policies.
+Un `@PublicEndpoint` requiere además una ruta permit-all efectiva y coincidente en
+`axiz.security.public-paths`. Los endpoints GET también necesitan autorización de su ruta HEAD implícita.
+`axiz.security.authorization.unprotected=fail` es el valor por defecto; `warn` es solo para desarrollo.
+Los mappings de infraestructura de Spring Boot y springdoc se excluyen del escaneo de cobertura de negocio
+y conservan sus propias políticas de seguridad HTTP configuradas.
 
-Custom filter chains may contain arbitrary authorization managers; the framework cannot certify
-their private DSL state from configuration declarations. With a custom chain, declare effective
-prior method authorization on business endpoints. Property-based HTTP coverage is trusted only
-when the actual installed chain is the framework chain. Tests should verify denials before any
-application invocation, in addition to startup coverage.
+Las cadenas de filtros personalizadas pueden contener authorization managers arbitrarios; el framework no
+puede certificar su estado privado de DSL a partir de las declaraciones de configuración. Con una cadena
+personalizada se declara una autorización de método previa y efectiva en los endpoints de negocio. La
+cobertura HTTP basada en propiedades solo se considera confiable cuando la cadena instalada realmente es
+la cadena del framework. Las pruebas deben verificar las denegaciones antes de cualquier invocación de la
+aplicación, además de la cobertura al arranque.
 
-CQRS `axiz.cqrs.authorization.unprotected` also defaults to `fail`. Bus coverage is a declaration
-check; permissions on a particular resource remain the service's responsibility.
+En CQRS, `axiz.cqrs.authorization.unprotected` también vale `fail` por defecto. La cobertura del bus es una
+comprobación de declaraciones; los permisos sobre un recurso particular son responsabilidad del servicio.
 
-## Rate-limit outage policy
+## Política ante caídas del límite de tasa
 
-Every rule must explicitly declare `axiz.security.rate-limit.rules[].fail-open` when rate limiting
-is enabled; there is no global outage policy. A missing rule policy fails startup.
-`false` returns a 503 Problem if the store is unavailable; `true` allows the request. Exceeding a
-healthy store's quota still returns 429. The framework never interprets an outage as quota exhaustion.
+Cada regla debe declarar explícitamente `axiz.security.rate-limit.rules[].fail-open` cuando el límite de
+tasa está habilitado; no existe una política global ante caídas. Una regla sin política hace fallar el
+arranque. `false` devuelve un Problem 503 si el almacén no está disponible; `true` permite la petición.
+Superar la cuota de un almacén sano sigue devolviendo 429. El framework nunca interpreta una caída como
+agotamiento de la cuota.
 
-### Reactive problem rendering
+### Renderizado reactivo de problemas
 
-Synchronous message resolvers run on the context-owned `axizSecurityRenderingScheduler`:
-four workers and 64 queued tasks per worker, isolated from Reactor's shared pool. Override this
-named bean for measured capacity requirements; Spring disposes it at shutdown. These internal
-schedulers are not default autowiring candidates. Manual construction requires an explicit
-application-owned scheduler. Saturation returns a static RFC 9457 HTTP 503 with `no-store` and
-`Retry-After` of at least one second, preserving a longer quota or issuer pause already set on
-the response, without invoking the resolver on the event loop. The 503 fallback removes
-`WWW-Authenticate` because saturation is not an authentication or authorization decision.
+Los resolvedores de mensajes síncronos se ejecutan en `axizSecurityRenderingScheduler`, propiedad del
+contexto: cuatro workers y 64 tareas encoladas por worker, aislados del pool compartido de Reactor. Este
+bean con nombre se reemplaza cuando hay requisitos de capacidad medidos; Spring lo libera al cierre. Estos
+schedulers internos no son candidatos de autowiring por defecto. La construcción manual requiere un
+scheduler explícito propio de la aplicación. La saturación devuelve un HTTP 503 RFC 9457 estático con
+`no-store` y un `Retry-After` de al menos un segundo, conservando una pausa mayor de cuota o de emisor ya
+fijada en la respuesta, sin invocar al resolvedor en el event loop. El respaldo 503 elimina
+`WWW-Authenticate`, porque la saturación no es una decisión de autenticación ni de autorización.
 
-`ReactiveRenderContext` takes request metadata from Reactor, then the exchange, and the current
-Observation from Reactor's observation key. It never imports identity or trace IDs from the
-subscribing thread or a residual worker context. It clears MDC, opens that observation's scope,
-installs validated correlation/request IDs for rendering, and restores prior worker state in
-`finally`, including resolver failures. HTTP response writing follows the render scope.
+`ReactiveRenderContext` toma los metadatos de la petición de Reactor, luego del exchange, y la
+Observation actual de la clave de observación de Reactor. Nunca importa identidad ni IDs de traza del hilo
+suscriptor ni de un contexto residual del worker. Limpia el MDC, abre el scope de esa observación, instala
+IDs de correlación y de petición validados para el renderizado y restaura el estado previo del worker en
+`finally`, incluidos los fallos del resolvedor. La escritura de la respuesta HTTP sigue al scope de renderizado.

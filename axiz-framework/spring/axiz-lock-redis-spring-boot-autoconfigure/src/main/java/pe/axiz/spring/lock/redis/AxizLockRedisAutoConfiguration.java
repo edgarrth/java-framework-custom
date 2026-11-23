@@ -19,7 +19,7 @@ import pe.axiz.core.lock.AsyncDistributedLock;
 import pe.axiz.core.lock.DistributedLock;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 
-/** Redis locks (SET NX PX with owner token, atomic release and renewal). */
+/** Locks en Redis (SET NX PX con token de propietario, liberación y renovación atómicas). */
 @AutoConfiguration(
     beforeName = "pe.axiz.spring.lock.AxizLockAutoConfiguration",
     afterName = "org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration")
@@ -34,9 +34,9 @@ import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 @ConditionalOnBooleanProperty(name = "axiz.lock.enabled", matchIfMissing = true)
 public class AxizLockRedisAutoConfiguration {
 
-  // no destroy method: the connection belongs to the factory's RedisClient, which closes it when
-  // the factory stops (a lifecycle phase that runs before beans are destroyed); closing it again
-  // made Lettuce warn "Connection is already closed" at every shutdown
+  // sin método destroy: la conexión pertenece al RedisClient de la fábrica, que la cierra cuando la
+  // fábrica se detiene (una fase del ciclo de vida que se ejecuta antes de destruir los beans);
+  // cerrarla otra vez hace que Lettuce advierta "Connection is already closed" en cada apagado
   @Bean(destroyMethod = "")
   StatefulRedisConnection<String, String> axizLockRedisConnection(
       LettuceConnectionFactory factory) {

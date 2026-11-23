@@ -9,7 +9,7 @@ import java.util.Set;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
-/** Closes the physical connection before releasing a wrapper with an uncertain transaction. */
+/** Cierra la conexión física antes de liberar un wrapper con una transacción incierta. */
 final class DiscardConnection {
   private DiscardConnection() {}
 
@@ -25,7 +25,7 @@ final class DiscardConnection {
             if (!(delegate instanceof Connection next) || next == physical) break;
             physical = next;
           }
-          // r2dbc-pool validates on release and invalidates a closed physical connection.
+          // r2dbc-pool valida al liberar e invalida una conexión física cerrada.
           if (physical == connection) return Mono.from(physical.close());
           return closePhysical(physical)
               .doOnError(
@@ -47,9 +47,9 @@ final class DiscardConnection {
                         valid -> {
                           if (!valid)
                             return Mono
-                                .empty(); // Pool release will invalidate the closed delegate.
-                          // A failed close with a still-live connection cannot safely be recycled
-                          // by the SPI.
+                                .empty(); // La liberación al pool invalidará el delegado cerrado.
+                          // Un cierre fallido con una conexión aún viva no puede reciclarse de
+                          // forma segura mediante el SPI.
                           return Mono.error(
                               new IllegalStateException(
                                   "R2DBC physical connection could not be discarded"));

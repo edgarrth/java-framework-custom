@@ -43,7 +43,7 @@ class ServletClasspathTest {
       Class.forName("reactor.core.publisher.Mono");
       throw new IllegalStateException("The fixture must exclude Reactor");
     } catch (ClassNotFoundException expected) {
-      // The same reflection performed by Spring's persistence annotation post-processor.
+      // La misma reflexión que realiza el post-processor de anotaciones de persistencia de Spring.
       if (TrustedIssuerDecoders.class.getDeclaredMethods().length == 0)
         throw new IllegalStateException("Decoder bean metadata is missing");
     }

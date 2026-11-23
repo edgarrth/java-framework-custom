@@ -31,7 +31,8 @@ class PaymentNotificationHandlerTest {
           sent::add,
           new EventMetrics(
               new SimpleMeterRegistry(),
-              // the custom tag the service declares in axiz.metrics.tags (application.yaml)
+              // la etiqueta personalizada que el servicio declara en axiz.metrics.tags
+              // (application.yaml)
               MetricsSettings.defaults()
                   .withCustomTags(TagPolicy.allowed("medium", Set.of("email", "sms", "push")))));
 

@@ -1,8 +1,8 @@
 package pe.axiz.extension.cqrs;
 
 /**
- * Intent to change state; implemented by records.
+ * Intención de cambiar el estado; la implementan records.
  *
- * @param <R> result type ({@code Void} when there is none)
+ * @param <R> tipo del resultado ({@code Void} cuando no hay)
  */
 public non-sealed interface Command<R> extends Request<R> {}

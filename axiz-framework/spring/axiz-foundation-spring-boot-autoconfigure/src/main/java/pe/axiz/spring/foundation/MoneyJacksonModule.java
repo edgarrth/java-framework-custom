@@ -13,8 +13,9 @@ import tools.jackson.databind.module.SimpleModule;
 import tools.jackson.databind.ser.std.StdSerializer;
 
 /**
- * Jackson module for {@link Money}: the amount is written as a string so clients never parse it as
- * a binary floating point number. Reading accepts the object form or {@code "PEN 150.00"}.
+ * Módulo de Jackson para {@link Money}: el monto se escribe como texto para que los clientes nunca
+ * lo interpreten como un número binario de punto flotante. La lectura acepta la forma de objeto o
+ * {@code "PEN 150.00"}.
  */
 public final class MoneyJacksonModule extends SimpleModule {
 
@@ -65,7 +66,8 @@ public final class MoneyJacksonModule extends SimpleModule {
           if (token == JsonToken.VALUE_NUMBER_INT
               || token == JsonToken.VALUE_NUMBER_FLOAT
               || token == JsonToken.VALUE_STRING) {
-            // Read the lexeme, not getDecimalValue(): conversion must follow the length guard.
+            // Se lee el lexema, no getDecimalValue(): la conversión debe ocurrir después de la
+            // guarda de longitud.
             String literal = p.getString();
             if (literal.length() > Money.MAX_TEXT_LENGTH) {
               return ctxt.reportInputMismatch(Money.class, "Money amount is too long");

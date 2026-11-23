@@ -10,7 +10,7 @@ import pe.axiz.core.errors.ErrorDefinition;
 import pe.axiz.core.errors.ProblemFactory;
 import pe.axiz.core.errors.ProblemJson;
 
-/** Renders 401, 403 and 429 responses as RFC 9457 problems with catalog codes. */
+/** Representa las respuestas 401, 403 y 429 como problemas RFC 9457 con códigos del catálogo. */
 public class SecurityProblems {
 
   private final @Nullable ProblemFactory factory;

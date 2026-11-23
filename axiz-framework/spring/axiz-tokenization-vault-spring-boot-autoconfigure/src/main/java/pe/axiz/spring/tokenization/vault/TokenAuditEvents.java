@@ -13,7 +13,10 @@ import pe.axiz.core.audit.AuditEvent.Outcome;
 import pe.axiz.core.commons.TransactionOutcome;
 import pe.axiz.core.tokenization.vault.TokenAuditEntry;
 
-/** One allowlisted mapping for both stacks; sealing belongs to the confirmed audit publisher. */
+/**
+ * Un único mapeo con lista permitida para ambas pilas; el sellado corresponde al publicador de
+ * auditoría confirmada.
+ */
 final class TokenAuditEvents {
   private final String service;
   private final Supplier<UUID> ids;

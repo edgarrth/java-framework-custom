@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mandatory API gate: reviewed first-release signatures or a genuine published v2 baseline."""
+"""Gate obligatorio de API: firmas revisadas de la primera release o una línea base v2 publicada real."""
 import argparse
 import base64
 import hashlib
@@ -24,7 +24,7 @@ def sha(data):
 
 
 def public_api(jar):
-    """Inspect actual class-file signatures; do not compare a JAR to itself as a baseline."""
+    """Inspecciona las firmas reales de los archivos de clase; no compara un JAR consigo mismo como línea base."""
     with zipfile.ZipFile(jar) as archive:
         names = sorted(name[:-6].replace("/", ".") for name in archive.namelist()
                        if name.endswith(".class") and not name.endswith(("package-info.class", "module-info.class"))
@@ -85,7 +85,7 @@ def package_pages(path, opener):
 
 
 def published_versions(registry, coordinates, opener=None):
-    """Authenticate and enumerate GitHub Packages; 401/403/404 never mean an empty registry."""
+    """Autentica y enumera GitHub Packages; 401/403/404 nunca significan un registry vacío."""
     if opener is None:
         opener = urllib.request.build_opener(NoRedirect()).open
     repository = registry_repository(registry)

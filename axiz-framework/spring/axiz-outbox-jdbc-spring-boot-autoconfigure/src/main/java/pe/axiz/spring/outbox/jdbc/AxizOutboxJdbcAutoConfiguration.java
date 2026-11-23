@@ -27,7 +27,10 @@ import pe.axiz.spring.jdbc.SpringTransactionRunner;
 import pe.axiz.spring.jdbc.SqlDialects;
 import pe.axiz.spring.outbox.OutboxRelayTransactions;
 
-/** JDBC persistence only; scheduling and relay budgets are owned by the neutral base. */
+/**
+ * Solo persistencia JDBC; la planificación y los presupuestos del relay pertenecen a la base
+ * neutral.
+ */
 @AutoConfiguration(
     beforeName = {
       "pe.axiz.spring.outbox.AxizOutboxAutoConfiguration",
@@ -91,7 +94,7 @@ public class AxizOutboxJdbcAutoConfiguration {
       ObjectProvider<Clock> clock,
       OutboxWriteTracing tracing,
       @Qualifier("axizOutboxPayloadProtector") PayloadProtector protection) {
-    // every write keeps the trace of the caller: the relay continues it when it publishes
+    // cada escritura conserva la traza del invocante: el relay la continúa cuando publica
     return new OutboxWriter(store, clock.getIfAvailable(Clock::systemUTC), tracing, protection);
   }
 

@@ -57,7 +57,10 @@ import pe.axiz.core.storage.ObjectStorage;
 import pe.axiz.core.storage.ObjectMetadata;
 {{/fw.batch}}
 
-/** Startup and unfinished-operation contracts, independent of the sensitive-data canary. */
+/**
+ * Contratos de arranque y de operaciones sin terminar, independientes del canario de datos
+ * sensibles.
+ */
 class {{project.className}}ApplicationTest extends {{project.className}}ApplicationTestSupport {
 
 {{#caps.web}}
@@ -111,7 +114,7 @@ class {{project.className}}ApplicationTest extends {{project.className}}Applicat
   }
 {{/requiresScopes}}
 
-  /** Replace this 501 assertion with the business contract when implementing this operation. */
+  /** Esta aserción 501 se reemplaza por el contrato de negocio al implementar esta operación. */
   @Test
   void {{methodName}}ExplicitlyReportsItsUnimplementedContract(
       @Autowired {{#stack.servlet}}MockMvc{{/stack.servlet}}{{#stack.reactive}}{{#caps.security}}ApplicationContext{{/caps.security}}{{^caps.security}}WebTestClient{{/caps.security}}{{/stack.reactive}} client) throws Exception {

@@ -17,8 +17,8 @@ import pe.axiz.core.inbox.InboxStore;
 import pe.axiz.core.messaging.Deduplicator;
 
 /**
- * Inbox: the messaging dispatcher skips event ids a consumer already processed. Storage is Aurora
- * (JDBC by default, R2DBC for reactive services) or DynamoDB with TTL.
+ * Inbox: el dispatcher de mensajería omite los ids de evento que un consumidor ya procesó. El
+ * almacenamiento es Aurora (JDBC por defecto, R2DBC para servicios reactivos) o DynamoDB con TTL.
  */
 @AutoConfiguration(
     afterName = {
@@ -31,8 +31,8 @@ import pe.axiz.core.messaging.Deduplicator;
 public class AxizInboxAutoConfiguration {
 
   /**
-   * Fails startup (before consumers start) when the inbox table lacks a column this version needs,
-   * instead of failing every message later.
+   * Hace fallar el arranque (antes de que inicien los consumidores) cuando a la tabla del inbox le
+   * falta una columna que esta versión necesita, en lugar de hacer fallar después cada mensaje.
    */
   @Bean
   SmartInitializingSingleton axizInboxSchemaCheck(ObjectProvider<InboxStore> store) {

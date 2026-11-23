@@ -5,9 +5,9 @@ import java.util.Map;
 import pe.axiz.core.errors.BusinessException;
 
 /**
- * Per-customer rules of beneficiaries.
+ * Reglas de beneficiarios por cliente.
  *
- * @param maxPerCustomer active beneficiaries a customer may have
+ * @param maxPerCustomer beneficiarios activos que puede tener un cliente
  */
 public record BeneficiaryPolicy(int maxPerCustomer) {
 
@@ -17,7 +17,9 @@ public record BeneficiaryPolicy(int maxPerCustomer) {
     }
   }
 
-  /** Apply inside the repository's customer snapshot/transaction boundary. */
+  /**
+   * Se aplica dentro del límite de snapshot y transacción del cliente que define el repositorio.
+   */
   public void checkRegistration(List<Beneficiary> active, String cci) {
     if (active.stream().anyMatch(b -> b.sameAccount(cci)))
       throw new BusinessException(BeneficiaryErrors.DUPLICATE_ACCOUNT, "duplicate account");

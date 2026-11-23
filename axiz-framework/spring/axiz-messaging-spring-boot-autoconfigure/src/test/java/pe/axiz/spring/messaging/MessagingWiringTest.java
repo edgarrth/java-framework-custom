@@ -26,7 +26,7 @@ class MessagingWiringTest {
 
   public record Note(String text) {}
 
-  /** A payload whose property cannot be read. */
+  /** Payload cuya propiedad no puede leerse. */
   public static final class Unwritable {
     public String getValue() {
       throw new IllegalStateException("not readable");

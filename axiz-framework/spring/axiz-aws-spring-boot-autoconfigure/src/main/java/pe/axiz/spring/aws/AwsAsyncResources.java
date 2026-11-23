@@ -8,7 +8,10 @@ import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
 import pe.axiz.adapter.observability.aws.AwsCompletionMetrics;
 
-/** Spring composition of context identity, native transport and optional context metrics. */
+/**
+ * Composición en Spring de la identidad del contexto, el transporte nativo y las métricas
+ * opcionales del contexto.
+ */
 public final class AwsAsyncResources {
   private AwsAsyncResources() {}
 

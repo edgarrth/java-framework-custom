@@ -9,7 +9,7 @@ import pe.axiz.core.saga.SagaStatus;
 import pe.axiz.payments.process.domain.PaymentProcess;
 import pe.axiz.payments.process.domain.ProcessStatus;
 
-/** What a process looks like from the outside: its status and, when it failed, which step. */
+/** Cómo se ve un proceso desde fuera: su estado y, cuando falló, en qué paso. */
 class ProcessViewsTest {
 
   static SagaState state(SagaStatus status, String error) {

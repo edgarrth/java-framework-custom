@@ -4,18 +4,25 @@ import java.security.MessageDigest;
 import java.util.Arrays;
 import org.jspecify.annotations.Nullable;
 
-/** Port for envelope encryption data keys (AWS KMS in production). */
+/** Puerto para las claves de datos del cifrado envelope (AWS KMS en producción). */
 public interface DataKeyProvider {
 
-  /** Transfers a new owned data key; the caller closes it after use or cache retirement. */
+  /**
+   * Transfiere una clave de datos nueva y propia; quien llama la cierra tras usarla o al retirarla
+   * de la caché.
+   */
   DataKey generate(String context);
 
-  /** Decrypts to a fresh owned buffer which the caller clears; never return a shared key array. */
+  /**
+   * Descifra en un buffer nuevo y propio que quien llama limpia; nunca se devuelve un array de
+   * clave compartido.
+   */
   byte[] decrypt(byte[] encryptedKey, String context);
 
   /**
-   * Data key pair. The arrays are copied on the way in and out; equality compares the encrypted key
-   * only, in constant time, and the plaintext never appears in {@link #toString()}.
+   * Par de claves de datos. Los arrays se copian a la entrada y a la salida; la igualdad compara
+   * solo la clave cifrada, en tiempo constante, y el texto plano nunca aparece en {@link
+   * #toString()}.
    */
   final class DataKey implements AutoCloseable {
     private final byte[] plaintext;
@@ -23,17 +30,17 @@ public interface DataKeyProvider {
     private boolean closed;
 
     /**
-     * Creates a data key pair.
+     * Crea un par de claves de datos.
      *
-     * @param plaintext 32-byte key, keep only in memory
-     * @param encrypted key encrypted by the master key
+     * @param plaintext clave de 32 bytes, se conserva solo en memoria
+     * @param encrypted clave cifrada con la clave maestra
      */
     public DataKey(byte[] plaintext, byte[] encrypted) {
       this.plaintext = plaintext.clone();
       this.encrypted = encrypted.clone();
     }
 
-    /** A copy of the 32-byte plaintext key. */
+    /** Copia de la clave en texto plano de 32 bytes. */
     public synchronized byte[] plaintext() {
       if (closed) throw new CryptoException("Data key has been closed");
       return plaintext.clone();
@@ -53,7 +60,8 @@ public interface DataKeyProvider {
     }
 
     /**
-     * Clears this instance only; callers retain responsibility for their input and output copies.
+     * Limpia solo esta instancia; quienes llaman siguen siendo responsables de sus copias de
+     * entrada y salida.
      */
     @Override
     public synchronized void close() {
@@ -61,7 +69,7 @@ public interface DataKeyProvider {
       closed = true;
     }
 
-    /** A copy of the key encrypted by the master key. */
+    /** Copia de la clave cifrada con la clave maestra. */
     public byte[] encrypted() {
       return encrypted.clone();
     }

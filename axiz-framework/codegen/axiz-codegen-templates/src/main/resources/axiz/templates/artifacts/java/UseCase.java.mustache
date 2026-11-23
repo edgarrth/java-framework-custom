@@ -4,15 +4,18 @@ import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.errors.CoreErrors;
 import pe.axiz.structure.hexagonal.annotation.UseCase;
 
-/** {{artifact.titleJavadoc}}: runs in a transaction with an observation; domain events publish at commit. */
+/**
+ * {{artifact.titleJavadoc}}: se ejecuta en una transacción con una observación; los eventos de
+ * dominio se publican en el commit.
+ */
 @UseCase
 public class {{artifact.className}}UseCase
     implements pe.axiz.structure.hexagonal.UseCase<{{artifact.className}}UseCase.Input, {{artifact.className}}UseCase.Output> {
 
-  /** Input of the use case. */
+  /** Entrada del caso de uso. */
   public record Input(String id) {}
 
-  /** Result of the use case. */
+  /** Resultado del caso de uso. */
   public record Output(String id) {}
 
   @Override

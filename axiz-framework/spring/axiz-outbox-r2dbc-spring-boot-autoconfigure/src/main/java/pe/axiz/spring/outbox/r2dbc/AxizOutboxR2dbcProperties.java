@@ -4,7 +4,7 @@ import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
-/** R2DBC schema and statement settings. */
+/** Configuración del esquema y de las sentencias R2DBC. */
 @ConfigurationProperties("axiz.outbox")
 public record AxizOutboxR2dbcProperties(
     @DefaultValue("axiz_outbox") String table,

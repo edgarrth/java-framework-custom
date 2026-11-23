@@ -15,22 +15,22 @@ import pe.axiz.core.idempotency.IdempotencyService;
 import pe.axiz.core.idempotency.Idempotent;
 import pe.axiz.core.idempotency.StoredResponse;
 
-/** Shared rules of the servlet and reactive implementations. */
+/** Reglas compartidas por las implementaciones servlet y reactiva. */
 final class IdempotencySupport {
 
-  /** Request attribute holding the {@link IdempotencyService.Proceed} of this execution. */
+  /** Atributo de solicitud que contiene el {@link IdempotencyService.Proceed} de esta ejecución. */
   static final String KEY_ATTRIBUTE = "axiz.idempotency.key";
 
   static final String FINGERPRINT_ATTRIBUTE = "axiz.idempotency.fingerprint";
   static final Set<String> UNSAFE = Set.of("POST", "PUT", "PATCH", "DELETE");
 
-  /** Response headers replayed with the stored body. */
+  /** Cabeceras de respuesta reproducidas con el cuerpo almacenado. */
   static final List<String> REPLAYED_HEADERS =
       List.of("Content-Type", "Location", "ETag", StoredResponse.BODY_OMITTED_HEADER);
 
   private IdempotencySupport() {}
 
-  /** The rule on the method, or on its class. */
+  /** Devuelve la regla del método o de su clase. */
   static @Nullable Idempotent annotation(Method method, Class<?> targetClass) {
     Idempotent a = AnnotatedElementUtils.findMergedAnnotation(method, Idempotent.class);
     return a != null
@@ -38,14 +38,15 @@ final class IdempotencySupport {
         : AnnotatedElementUtils.findMergedAnnotation(targetClass, Idempotent.class);
   }
 
-  /** Stable operation name: handler class and method. */
+  /** Nombre estable de la operación: clase y método del handler. */
   static String operation(Method method, Class<?> targetClass) {
     return ClassUtils.getUserClass(targetClass).getName() + "#" + method.getName();
   }
 
   /**
-   * Keys are unique per operation and per caller: token issuer, tenant, calling application and end
-   * user. A key reused by another caller starts its own execution and never sees this response.
+   * Las claves son únicas por operación y por invocante: emisor del token, tenant, aplicación
+   * invocante y usuario final. Una clave reutilizada por otro invocante inicia su propia ejecución
+   * y nunca ve esta respuesta.
    */
   static String scope(String operation, @Nullable RequestMetadata m) {
     return m == null
@@ -53,7 +54,10 @@ final class IdempotencySupport {
         : IdempotencyService.scope(operation, m.issuer(), m.tenantId(), m.clientId(), m.subject());
   }
 
-  /** Response kept for replay; bodies above {@code maxResponseSize} are not stored. */
+  /**
+   * Respuesta conservada para reproducción; los cuerpos mayores que {@code maxResponseSize} no se
+   * almacenan.
+   */
   static StoredResponse stored(
       int status, Map<String, String> headers, byte[] body, int maxResponseSize) {
     return body.length > maxResponseSize

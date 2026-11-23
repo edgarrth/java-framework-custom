@@ -1,6 +1,9 @@
 package pe.axiz.core.tokenization.vault;
 
-/** Technical alert when the durable uncertainty log also fails; accepts no exception or value. */
+/**
+ * Alerta técnica cuando el registro durable de incertidumbre también falla; no acepta excepciones
+ * ni valores.
+ */
 @FunctionalInterface
 public interface TokenReconciliationAlarm {
   void failed(UncertainTokenOperation operation);

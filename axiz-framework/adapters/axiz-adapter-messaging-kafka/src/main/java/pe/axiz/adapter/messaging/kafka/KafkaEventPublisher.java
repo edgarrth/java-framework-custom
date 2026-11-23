@@ -16,14 +16,15 @@ import pe.axiz.core.messaging.PublishException;
 import pe.axiz.core.messaging.PublishResult;
 
 /**
- * Publishes CloudEvents (binary mode) to Amazon MSK. The key is the subject (aggregate) so events
- * of the same aggregate stay ordered; each send waits for the broker acknowledgement. Destinations
- * are {@code kafka:<topic>} (the documented form of {@code axiz.messaging.destinations}) or a bare
- * topic name (anything that is not an SQS URL or an SNS ARN).
+ * Publica CloudEvents (modo binario) en Amazon MSK. La clave es el subject (agregado), de modo que
+ * los eventos de un mismo agregado se mantienen ordenados; cada envío espera la confirmación del
+ * broker. Los destinos son {@code kafka:<topic>} (la forma documentada de {@code
+ * axiz.messaging.destinations}) o un nombre de tópico simple (cualquier cosa que no sea una URL de
+ * SQS ni un ARN de SNS).
  */
 public final class KafkaEventPublisher implements EventPublisher, BoundedPublisher {
 
-  /** Scheme of Kafka destinations: {@code kafka:payments} is the topic {@code payments}. */
+  /** Esquema de los destinos Kafka: {@code kafka:payments} es el tópico {@code payments}. */
   public static final String SCHEME = "kafka:";
 
   private final Producer<String, byte[]> producer;
@@ -37,7 +38,7 @@ public final class KafkaEventPublisher implements EventPublisher, BoundedPublish
     this.bound = PublishBound.unbounded();
   }
 
-  /** Uses the effective max.block.ms of the same producer, plus the acknowledgement wait. */
+  /** Usa el max.block.ms efectivo del mismo productor, más la espera de confirmación. */
   public KafkaEventPublisher(
       Producer<String, byte[]> producer, Duration maxBlock, Duration timeout) {
     this.producer = Objects.requireNonNull(producer);
@@ -57,7 +58,7 @@ public final class KafkaEventPublisher implements EventPublisher, BoundedPublish
     return KafkaEventRecords.isDestination(destination);
   }
 
-  /** The topic of a destination, without the {@code kafka:} scheme. */
+  /** Tópico de un destino, sin el esquema {@code kafka:}. */
   static String topic(String destination) {
     if (!KafkaEventRecords.isDestination(destination))
       throw new IllegalArgumentException("Invalid Kafka destination");

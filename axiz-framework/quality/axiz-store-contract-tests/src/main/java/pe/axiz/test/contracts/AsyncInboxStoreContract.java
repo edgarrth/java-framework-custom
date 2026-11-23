@@ -16,11 +16,15 @@ import pe.axiz.core.inbox.AsyncInboxStore;
 import pe.axiz.core.inbox.InboxStore;
 
 /**
- * Reuses the ownership/expiry contract for native stores. The JUnit driver waits with a deadline;
- * submissions execute on the supplied nonblocking executor so BlockHound checks the full I/O path.
+ * Reutiliza el contrato de propiedad y expiración para los almacenes nativos. El driver de JUnit
+ * espera con un plazo; los envíos se ejecutan en el executor no bloqueante provisto para que
+ * BlockHound verifique toda la ruta de E/S.
  */
 public final class AsyncInboxStoreContract {
-  /** Isolated backend; server-managed TTL stores opt out of explicit purge checks. */
+  /**
+   * Backend aislado; los almacenes con TTL gestionado por el servidor quedan excluidos de las
+   * verificaciones de purga explícita.
+   */
   public interface Backend {
     AsyncInboxStore create();
 

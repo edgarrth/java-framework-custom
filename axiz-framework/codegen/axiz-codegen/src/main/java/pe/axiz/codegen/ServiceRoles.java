@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 
-/** Closed naming and synchronous communication matrix for supported service roles. */
+/** Matriz cerrada de nombres y de comunicación síncrona para los roles de servicio soportados. */
 public final class ServiceRoles {
   private ServiceRoles() {}
 

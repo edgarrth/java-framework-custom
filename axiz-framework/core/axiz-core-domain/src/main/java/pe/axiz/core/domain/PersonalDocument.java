@@ -7,20 +7,20 @@ import pe.axiz.core.identifiers.IdentifierType;
 import pe.axiz.core.identifiers.peru.PeruIdentifiers;
 
 /**
- * Identity document of a person or company (DNI, RUC or foreigner card).
+ * Documento de identidad de una persona o empresa (DNI, RUC o carné de extranjería).
  *
- * @param type document type
- * @param number normalized number
+ * @param type tipo de documento
+ * @param number número normalizado
  */
 public record PersonalDocument(Type type, String number) implements ValueObject {
 
-  /** Supported document types. */
+  /** Tipos de documento soportados. */
   public enum Type {
     DNI,
     RUC,
     CE;
 
-    /** Validation and masking rules of the document type. */
+    /** Reglas de validación y enmascaramiento del tipo de documento. */
     IdentifierType identifier() {
       return switch (this) {
         case DNI -> PeruIdentifiers.DNI;

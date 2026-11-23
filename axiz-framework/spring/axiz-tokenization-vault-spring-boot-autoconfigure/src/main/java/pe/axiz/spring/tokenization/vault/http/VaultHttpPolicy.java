@@ -12,7 +12,7 @@ import pe.axiz.core.api.HttpPayloadPolicy;
 import pe.axiz.core.tokenization.TokenErrors;
 import pe.axiz.core.tokenization.TokenOperation;
 
-/** Fixed route and transport policy shared by servlet, reactive, logging and idempotency. */
+/** Política fija de rutas y transporte compartida por servlet, reactivo, logging e idempotencia. */
 final class VaultHttpPolicy implements HttpPayloadPolicy {
   static final int MAX_BODY = 65536;
   private static final PathPattern ROOT = PathPatternParser.defaultInstance.parse("/v1/tokens");

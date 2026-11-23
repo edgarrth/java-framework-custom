@@ -12,7 +12,10 @@ import pe.axiz.core.tokenization.vault.TokenBudgetPolicy.Windows;
 import pe.axiz.core.tokenization.vault.TokenCaller;
 import pe.axiz.core.tokenization.vault.VaultScope;
 
-/** Server identities only; no source value, fingerprint, token, purpose or request identifier. */
+/**
+ * Solo identidades del servidor; sin valor de origen, huella, token, propósito ni identificador de
+ * petición.
+ */
 final class BudgetKeys {
   record Counter(String key, long limit, Duration window) {}
 

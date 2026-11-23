@@ -15,7 +15,10 @@ import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Mono;
 {{/fw.reactiveHandlers}}
 
-/** A partial scope grant must never bypass the contract through a direct bus invocation. */
+/**
+ * Una concesión parcial de alcances nunca debe eludir el contrato mediante una invocación directa
+ * al bus.
+ */
 {{#fw.reactiveHandlers}}
 @ExtendWith(BlockHoundExtension.class)
 {{/fw.reactiveHandlers}}

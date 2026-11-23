@@ -8,15 +8,15 @@ import pe.axiz.core.sensitive.Sensitive;
 import pe.axiz.core.sensitive.SensitivityLevel;
 
 /**
- * What a payment process has to execute: debit the customer's account and send the transfer.
+ * Lo que un proceso de pago debe ejecutar: debitar la cuenta del cliente y enviar la transferencia.
  *
- * @param orderId payment order (also the process id: one process per order)
- * @param operationNumber operation number, the reference shown to the customer and the core
- * @param debtorAccount account to debit
- * @param creditorCci destination account
- * @param amount positive amount
- * @param customerId holder of the debtor account: the core rejects the debit when the account is
- *     not theirs (null only for processes started before it was recorded)
+ * @param orderId orden de pago (también el id del proceso: un proceso por orden)
+ * @param operationNumber número de operación, la referencia que se muestra al cliente y al core
+ * @param debtorAccount cuenta que se debita
+ * @param creditorCci cuenta de destino
+ * @param amount monto positivo
+ * @param customerId titular de la cuenta deudora: el core rechaza el débito cuando la cuenta no le
+ *     pertenece (null solo en procesos iniciados sin ese dato registrado)
  */
 public record PaymentInstruction(
     String orderId,
@@ -37,7 +37,9 @@ public record PaymentInstruction(
     }
   }
 
-  /** Idempotency key of one downstream call of this process (stable across retries). */
+  /**
+   * Clave de idempotencia de una llamada aguas abajo de este proceso (estable entre reintentos).
+   */
   public String keyFor(String step) {
     return "pp-" + orderId + "-" + step;
   }

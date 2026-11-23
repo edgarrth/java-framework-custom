@@ -8,7 +8,7 @@ import pe.axiz.quality.archunit.Stack;
 import pe.axiz.quality.archunit.Structure;
 import pe.axiz.quality.archunit.TokenizationScope;
 
-/** Rules of the eda style plus the general axiz rules; breaking one fails the build. */
+/** Reglas del estilo eda más las reglas generales de axiz; incumplir una hace fallar el build. */
 class ArchitectureTest {
 
   @Test

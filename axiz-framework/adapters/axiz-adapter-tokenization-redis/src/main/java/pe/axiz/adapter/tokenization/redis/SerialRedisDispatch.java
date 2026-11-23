@@ -12,7 +12,7 @@ import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
-/** One accepted native command at a time; no monitor, blocking worker or wait for I/O. */
+/** Un único comando nativo aceptado a la vez; sin monitor, worker bloqueante ni espera de E/S. */
 final class SerialRedisDispatch {
   private final int capacity;
   private final long timeoutNanos;
@@ -20,7 +20,7 @@ final class SerialRedisDispatch {
   private final AtomicInteger pending = new AtomicInteger();
   private final AtomicInteger work = new AtomicInteger();
   private final ConcurrentLinkedQueue<Task<?>> queue = new ConcurrentLinkedQueue<>();
-  // Only the drain owner reads or writes this reference.
+  // Solo el dueño del drenado lee o escribe esta referencia.
   private @Nullable Task<?> active;
 
   SerialRedisDispatch(int capacity, Duration timeout) {
@@ -88,8 +88,9 @@ final class SerialRedisDispatch {
         return;
       }
       try {
-        // Register only after dispatch returns. A completion cannot start another writer while
-        // Lettuce is still leaving its original command submission's critical section.
+        // Se registra solo después de que dispatch retorna. Una finalización no puede iniciar otro
+        // escritor mientras Lettuce sigue saliendo de la sección crítica del envío del comando
+        // original.
         CompletionStage<T> source = action.get();
         source.whenComplete(
             (value, failure) -> {

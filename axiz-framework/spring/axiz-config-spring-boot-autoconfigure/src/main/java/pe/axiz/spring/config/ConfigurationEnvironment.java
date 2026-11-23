@@ -3,7 +3,7 @@ package pe.axiz.spring.config;
 import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 
-/** Canonical logical environment used consistently by bootstrap integrations. */
+/** Entorno lógico canónico que las integraciones de bootstrap usan de forma consistente. */
 public final class ConfigurationEnvironment {
   private ConfigurationEnvironment() {}
 

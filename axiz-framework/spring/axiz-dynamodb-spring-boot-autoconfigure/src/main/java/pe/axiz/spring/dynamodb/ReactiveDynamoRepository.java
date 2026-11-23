@@ -11,7 +11,10 @@ import reactor.core.publisher.Mono;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncTable;
 import software.amazon.awssdk.enhanced.dynamodb.model.TransactWriteItemsEnhancedRequest;
 
-/** Cold, cancellable Reactor facade. An absent item completes empty; failures remain failures. */
+/**
+ * Fachada de Reactor fría y cancelable. Un elemento ausente completa vacío; los fallos siguen
+ * siendo fallos.
+ */
 public final class ReactiveDynamoRepository<T> {
   @SuppressFBWarnings(
       value = "EI_EXPOSE_REP2",

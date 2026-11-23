@@ -11,7 +11,7 @@ import java.util.Objects;
 import pe.axiz.core.soap.SoapTransport;
 import pe.axiz.core.soap.SoapVersion;
 
-/** Bounded SOAP transport. The caller owns and closes the injected HTTP client. */
+/** Transporte SOAP acotado. Quien llama es dueño del cliente HTTP inyectado y lo cierra. */
 public final class JdkSoapTransport implements SoapTransport {
   private static final long DEFAULT_MAX_RESPONSE_BYTES = 1_048_576;
   private final HttpClient http;

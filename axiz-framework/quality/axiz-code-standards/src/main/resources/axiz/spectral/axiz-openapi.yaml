@@ -1,4 +1,4 @@
-# Spectral ruleset for axiz contracts (OpenAPI 3.1 and AsyncAPI). Usage: spectral lint -r axiz-openapi.yaml openapi.yaml
+# Ruleset de Spectral para los contratos de axiz (OpenAPI 3.1 y AsyncAPI). Uso: spectral lint -r axiz-openapi.yaml openapi.yaml
 extends:
   - [spectral:oas, recommended]
   - [spectral:asyncapi, recommended]

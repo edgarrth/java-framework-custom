@@ -12,7 +12,7 @@ import pe.axiz.core.money.Money;
 import pe.axiz.payments.orders.application.port.out.PaymentOrders;
 import pe.axiz.payments.orders.domain.PaymentOrder;
 
-/** In-memory {@link PaymentOrders}: orders, request keys and daily reservations. */
+/** {@link PaymentOrders} en memoria: órdenes, claves de solicitud y reservas diarias. */
 public final class InMemoryPaymentOrders implements PaymentOrders {
   public final Map<String, PaymentOrder> rows = new HashMap<>();
   public final Map<String, String> requestKeys = new HashMap<>();

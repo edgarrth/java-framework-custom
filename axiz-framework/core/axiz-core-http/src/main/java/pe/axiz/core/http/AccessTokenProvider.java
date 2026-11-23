@@ -1,6 +1,6 @@
 package pe.axiz.core.http;
 
-/** Supplies access tokens for outbound calls. */
+/** Suministra tokens de acceso para las llamadas salientes. */
 @FunctionalInterface
 public interface AccessTokenProvider {
 

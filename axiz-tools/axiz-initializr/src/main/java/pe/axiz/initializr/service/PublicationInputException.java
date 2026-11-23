@@ -2,9 +2,12 @@ package pe.axiz.initializr.service;
 
 import java.util.Objects;
 
-/** Closed set of safe input errors, detected before consuming delegated authorization. */
+/**
+ * Conjunto cerrado de errores de entrada seguros, detectados previo a consumir la autorización
+ * delegada.
+ */
 public final class PublicationInputException extends IllegalArgumentException {
-  /** Request field needing correction; no generated content is included. */
+  /** Campo de la solicitud que requiere corrección; no se incluye contenido generado. */
   public enum Field {
     DESCRIPTION,
     FILES,

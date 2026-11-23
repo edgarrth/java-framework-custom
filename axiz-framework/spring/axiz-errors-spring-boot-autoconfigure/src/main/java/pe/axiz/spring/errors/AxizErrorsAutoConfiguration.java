@@ -24,8 +24,8 @@ import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
 /**
- * RFC 9457 error responses for servlet and reactive applications, backed by the error catalog.
- * Internal exception messages are never returned to clients.
+ * Respuestas de error RFC 9457 para aplicaciones servlet y reactivas, respaldadas por el catálogo
+ * de errores. Los mensajes internos de las excepciones nunca se devuelven a los clientes.
  */
 @AutoConfiguration(
     beforeName = {
@@ -79,7 +79,8 @@ public class AxizErrorsAutoConfiguration {
   }
 
   /**
-   * Spring MVC: controller advice and the error controller used for filter and container errors.
+   * Spring MVC: controller advice y el controlador de errores usado para los errores de filtros y
+   * del contenedor.
    */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
@@ -99,7 +100,7 @@ public class AxizErrorsAutoConfiguration {
     }
   }
 
-  /** WebFlux: exception handler that runs before Boot's default one. */
+  /** WebFlux: manejador de excepciones que se ejecuta antes del de Boot por defecto. */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
   @ConditionalOnClass(name = "org.springframework.web.reactive.DispatcherHandler")

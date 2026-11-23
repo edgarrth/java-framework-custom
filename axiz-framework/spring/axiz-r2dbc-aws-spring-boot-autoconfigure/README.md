@@ -1,12 +1,12 @@
 # axiz-r2dbc-aws-spring-boot-autoconfigure
 
-AWS IAM credentials for R2DBC writer and reader pools.
+Credenciales IAM de AWS para los pools R2DBC de escritura y lectura.
 
-This module owns the `pe.axiz.spring.r2dbc.aws` API.
+Este módulo es dueño de la API `pe.axiz.spring.r2dbc.aws`.
 
-## Selection
+## Selección
 
-Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
+Las versiones las gestiona `axiz-bom`; las aplicaciones heredan `axiz-parent-service`.
 
 ```xml
 <dependency>
@@ -15,50 +15,51 @@ Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
 </dependency>
 ```
 
-The paired starter selects this provider. Application code uses the capability ports; do not
-import auto-configuration classes into controllers, application services or domain models.
+El starter asociado selecciona este proveedor. El código de aplicación usa los puertos de la
+capacidad; las clases de autoconfiguración no se importan en controladores, servicios de
+aplicación ni modelos de dominio.
 
-## Types
+## Tipos
 
-Public types declared by this module:
+Tipos públicos que declara este módulo:
 
 - `AxizR2dbcAwsEnvironmentPostProcessor`
 - `AxizR2dbcAwsProperties`
 - `AxizR2dbcIamAutoConfiguration`
 
-## Configuration
+## Configuración
 
-Owned property prefixes: `axiz.r2dbc.iam.*`.
+Prefijos de propiedades propios: `axiz.r2dbc.iam.*`.
 
-## Catalog usage
+## Uso desde el catálogo
 
 ```bash
 axiz add r2dbc-aws
 ```
 
-Required capabilities: `r2dbc`.
+Capacidades requeridas: `r2dbc`.
 
-The catalog supplies the following properties. Environment placeholders must resolve in the
-service configuration; they are not credentials or provisioned infrastructure.
+El catálogo aporta las siguientes propiedades. Los marcadores de entorno deben resolverse en la
+configuración del servicio; no son credenciales ni infraestructura aprovisionada.
 
 ```yaml
 axiz.r2dbc.iam.enabled: ${AXIZ_R2DBC_IAM:true}
 ```
 
-## Operations
+## Operación
 
-Provide region, workload identity, TLS and least-privilege permissions for the selected AWS
-resources. Provision production tables, queues, topics, keys and buckets through reviewed IaC.
-LocalStack tests exercise behavior but do not attest deployed IAM or service durability.
-Never place long-lived credentials in generated YAML.
+Se proporcionan región, identidad de carga de trabajo, TLS y permisos mínimos para los recursos de
+AWS seleccionados. Las tablas, colas, tópicos, claves y buckets de producción se aprovisionan con IaC
+revisada. Las pruebas con LocalStack ejercitan el comportamiento, pero no certifican el IAM desplegado
+ni la durabilidad del servicio. Nunca se colocan credenciales de larga duración en el YAML generado.
 
-## Verification
+## Verificación
 
-From `axiz-framework`:
+Desde `axiz-framework`:
 
 ```bash
 ./mvnw -pl spring/axiz-r2dbc-aws-spring-boot-autoconfigure -am test
 ```
 
-The full acceptance gate is `./mvnw clean install -Pquality -Daxiz.it.requireDocker=true`.
-Provider integration tests live in `quality/axiz-store-integration-tests` and require Docker.
+La verificación completa es `./mvnw clean install -Pquality -Daxiz.it.requireDocker=true`.
+Las pruebas de integración de proveedores están en `quality/axiz-store-integration-tests` y requieren Docker.

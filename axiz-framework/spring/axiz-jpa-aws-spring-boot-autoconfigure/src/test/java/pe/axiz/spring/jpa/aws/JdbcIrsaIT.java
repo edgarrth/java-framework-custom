@@ -28,8 +28,8 @@ import software.amazon.jdbc.HostSpecBuilder;
 import software.amazon.jdbc.hostavailability.SimpleHostAvailabilityStrategy;
 
 /**
- * The wrapper's actual plugin chain connects/reconnects using temporary IAM tokens, never node
- * credentials.
+ * La cadena real de plugins del wrapper conecta y reconecta usando tokens IAM temporales, nunca
+ * credenciales del nodo.
  */
 class JdbcIrsaIT {
   @Test

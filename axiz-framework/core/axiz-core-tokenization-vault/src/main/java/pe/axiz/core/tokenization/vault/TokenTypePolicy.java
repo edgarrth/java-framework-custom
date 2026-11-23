@@ -9,7 +9,7 @@ import pe.axiz.core.tokenization.TokenErrors;
 import pe.axiz.core.tokenization.TokenProfile;
 import pe.axiz.core.tokenization.TokenType;
 
-/** Server-owned versioned type policy; never sourced from request fields. */
+/** Política de tipos versionada propiedad del servidor; nunca proviene de campos de la petición. */
 public record TokenTypePolicy(
     TokenType type,
     TokenProfile profile,
@@ -54,7 +54,10 @@ public record TokenTypePolicy(
     if (profile.cardData() && panException != null) throw TokenErrors.failure(TokenErrors.INVALID);
   }
 
-  /** Reviewed, version-bound exception for legitimate identifiers matching the PAN heuristic. */
+  /**
+   * Excepción revisada y ligada a una versión para identificadores legítimos que coinciden con la
+   * heurística de PAN.
+   */
   public record PanHeuristicExemption(String reason, String reviewReference, int profileVersion) {
     public PanHeuristicExemption {
       VaultIdentifiers.identifier(reason, 128);
@@ -63,12 +66,14 @@ public record TokenTypePolicy(
     }
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción nominal; build verifica los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable TokenType type = null;
     private @Nullable TokenProfile profile = null;

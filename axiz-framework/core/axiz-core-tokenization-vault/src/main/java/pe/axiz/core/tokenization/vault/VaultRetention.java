@@ -11,9 +11,10 @@ import pe.axiz.core.tokenization.TokenErrors;
 import pe.axiz.core.tokenization.vault.VaultMaintenanceEvent.Action;
 
 /**
- * Explicit privileged retention job. Deletes expired associations and their owned references in one
- * conditional store operation, without decryption or asynchronous TTL. Run on a dedicated
- * maintenance worker; the operational HTTP identity must not receive scan or control-write IAM.
+ * Job de retención privilegiado y explícito. Borra las asociaciones expiradas y sus referencias
+ * propias en una única operación condicional del almacén, sin descifrado ni TTL asíncrono. Se
+ * ejecuta en un worker de mantenimiento dedicado; la identidad HTTP operativa no debe recibir IAM
+ * de recorrido ni de escritura de control.
  */
 public final class VaultRetention {
   private final TokenVaultMaintenance vault;
@@ -44,9 +45,10 @@ public final class VaultRetention {
   }
 
   /**
-   * Visits one bounded page. The cutoff comes from the server clock, never a consumer timestamp.
-   * Persist a returned cursor only after success; repeated traversals safely cover concurrent
-   * rotation/deletion. Unknown write acknowledgements are reconciled and never retried here.
+   * Visita una página acotada. El corte proviene del reloj del servidor, nunca de una marca de
+   * tiempo del consumidor. Un cursor devuelto se persiste solo tras el éxito; los recorridos
+   * repetidos cubren de forma segura la rotación o el borrado concurrentes. Los acuses de escritura
+   * desconocidos se reconcilian y nunca se reintentan aquí.
    */
   public VaultRetentionBatch purge(
       TokenCaller caller, FingerprintKeyState state, @Nullable String cursor, int limit) {
@@ -109,12 +111,14 @@ public final class VaultRetention {
       throw TokenErrors.failure(TokenErrors.UNAVAILABLE);
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción nominal; build verifica los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable TokenVaultMaintenance vault = null;
     private @Nullable VaultMaintenanceAccess access = null;

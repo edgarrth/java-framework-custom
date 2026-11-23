@@ -1,6 +1,8 @@
-"""Reviewed stdlib-only controls embedded into privileged documentation jobs.
+"""Controles revisados, solo con la librería estándar, incrustados en los jobs privilegiados de
+documentación.
 
-Never import executable code from a checkout or a downloaded artifact in those jobs.
+En esos jobs nunca se importa código ejecutable desde una copia del repositorio ni desde un
+artefacto descargado.
 """
 import base64
 from datetime import datetime, timezone

@@ -21,7 +21,8 @@ import pe.axiz.adapter.outbox.jdbc.JdbcOutboxPreflight;
 import pe.axiz.quality.containers.TestContainerImages;
 
 /**
- * Runs the actual doctor command using a SELECT-only PostgreSQL account and the current v2 schema.
+ * Ejecuta el comando doctor real con una cuenta de PostgreSQL de solo SELECT y el esquema v2
+ * vigente.
  */
 @Timeout(60)
 class DoctorOutboxPreflightIT {

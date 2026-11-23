@@ -13,10 +13,10 @@ import org.slf4j.LoggerFactory;
 import pe.axiz.core.outbox.OutboxStore;
 
 /**
- * Pending-record count for the {@code axiz.outbox.pending} gauge when the store blocks on a
- * reactive driver: a scrape never runs the query on its own thread (which may be an event loop); it
- * reads the last value and, when it is older than {@code maxAge}, starts one refresh on a virtual
- * thread. Reports NaN until the first refresh completes.
+ * Conteo de registros pendientes para el gauge {@code axiz.outbox.pending} cuando el almacén se
+ * bloquea sobre un driver reactivo: un scraping nunca ejecuta la consulta en su propio hilo (que
+ * puede ser un event loop); lee el último valor y, cuando es más antiguo que {@code maxAge}, inicia
+ * un refresco en un hilo virtual. Informa NaN hasta que completa el primer refresco.
  */
 public final class CachedPendingCount {
 
@@ -50,11 +50,12 @@ public final class CachedPendingCount {
     this.clock = Objects.requireNonNull(clock);
   }
 
-  /** Last known value; triggers a background refresh when stale. */
+  /** Último valor conocido; dispara un refresco en segundo plano cuando está desactualizado. */
   public double value() {
     Sample s = last.get();
     if (s.at().plus(maxAge).isBefore(clock.instant()) && refreshing.compareAndSet(false, true)) {
-      // A previous refresh may have finished between reading the sample and acquiring the flag.
+      // Un refresco previo puede haber terminado entre la lectura de la muestra y la adquisición
+      // del flag.
       s = last.get();
       if (s.at().plus(maxAge).isBefore(clock.instant())) {
         Thread.ofVirtual().name("axiz-outbox-pending").start(this::refresh);
@@ -65,7 +66,7 @@ public final class CachedPendingCount {
     return s.value();
   }
 
-  /** Queries the store now (blocking). */
+  /** Consulta el almacén en este momento (bloqueante). */
   void refresh() {
     try {
       last.set(new Sample(query.applyAsLong(store), clock.instant()));

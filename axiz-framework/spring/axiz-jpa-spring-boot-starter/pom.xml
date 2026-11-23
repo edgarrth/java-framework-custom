@@ -15,7 +15,7 @@
   <description>Aurora PostgreSQL with Hibernate 7: base entities, auditing, encryption, read replicas and safe defaults</description>
 
   <properties>
-    <!-- dependencies only: the jar holds just the manifest, by design (no "JAR will be empty" warning) -->
+    <!-- solo dependencias: el jar contiene únicamente el manifiesto, por diseño (sin la advertencia "JAR will be empty") -->
     <maven.jar.forceCreation>true</maven.jar.forceCreation>
     <axiz.module.name>pe.axiz.spring.jpa.starter</axiz.module.name>
   </properties>
@@ -46,8 +46,8 @@
       <groupId>net.ttddyy.observation</groupId>
       <artifactId>datasource-micrometer-spring-boot</artifactId>
       <exclusions>
-        <!-- micrometer-tracing brings aopalliance 1.0, whose classes spring-aop already ships:
-             excluded so services pass BanDuplicateClasses. -->
+        <!-- micrometer-tracing incorpora aopalliance 1.0, cuyas clases ya incluye spring-aop:
+             se excluye para que los servicios superen BanDuplicateClasses. -->
         <exclusion>
           <groupId>aopalliance</groupId>
           <artifactId>aopalliance</artifactId>

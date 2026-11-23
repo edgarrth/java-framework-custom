@@ -22,9 +22,10 @@ import pe.axiz.core.errors.RateLimitedException;
 import pe.axiz.core.id.CorrelationIds;
 
 /**
- * Turns any failure into a problem and logs it once with bounded diagnostic metadata. Exception
- * messages, throwable objects and request paths may contain secrets and are never logged. Server
- * errors use ERROR; failed dependencies and denied access WARN; conflicts INFO; other errors DEBUG.
+ * Convierte cualquier fallo en un problema y lo registra una vez con metadatos de diagnóstico
+ * acotados. Los mensajes de excepción, los objetos throwable y las rutas de solicitud pueden
+ * contener secretos y nunca se registran. Los errores del servidor usan ERROR; las dependencias
+ * fallidas y el acceso denegado, WARN; los conflictos, INFO; los demás errores, DEBUG.
  */
 public class ProblemResponder {
 
@@ -42,7 +43,7 @@ public class ProblemResponder {
     this.factory = Objects.requireNonNull(factory);
   }
 
-  /** Builds the problem and logs the failure. */
+  /** Construye el problema y registra el fallo. */
   public Problem problem(
       Throwable failure, Locale locale, @Nullable String path, @Nullable String correlationId) {
     AxizException axiz = factory.toAxizException(failure);
@@ -62,7 +63,8 @@ public class ProblemResponder {
   }
 
   /**
-   * Zero means no explicit delay; never use an arbitrary provider message or parameter as a header.
+   * Cero significa sin retraso explícito; nunca se usa como cabecera un mensaje o parámetro
+   * arbitrario del proveedor.
    */
   static long retryAfterSeconds(Throwable failure) {
     Throwable current = failure;
@@ -74,7 +76,7 @@ public class ProblemResponder {
     return 0;
   }
 
-  /** Applies only validated correlation metadata and a typed, bounded 429 delay. */
+  /** Aplica solo metadatos de correlación validados y un retraso 429 tipado y acotado. */
   public void headers(HttpHeaders headers, Problem problem, Throwable failure) {
     String correlation = problem.correlationId();
     if (correlation != null) headers.set(StandardHeaders.CORRELATION_ID, correlation);

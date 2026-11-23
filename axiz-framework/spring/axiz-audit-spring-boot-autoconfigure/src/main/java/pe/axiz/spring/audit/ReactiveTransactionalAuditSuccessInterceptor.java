@@ -12,7 +12,10 @@ import pe.axiz.core.commons.TransactionOutcome;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/** Success stays inside the business transaction while failure is handled by the outer advice. */
+/**
+ * El éxito permanece dentro de la transacción de negocio mientras el advice externo gestiona el
+ * fallo.
+ */
 final class ReactiveTransactionalAuditSuccessInterceptor implements MethodInterceptor {
   private final BooleanSupplier durable;
 

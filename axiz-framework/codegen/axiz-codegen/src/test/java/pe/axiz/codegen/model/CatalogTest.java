@@ -138,12 +138,15 @@ class CatalogTest {
     }
   }
 
-  /** Inside the structure repository every referenced axiz artifact must exist as a module. */
+  /**
+   * Dentro del repositorio de la estructura, cada artefacto de axiz referenciado debe existir como
+   * módulo.
+   */
   @Test
   void referencedAxizArtifactsExist() throws IOException {
     Path root = Path.of("").toAbsolutePath().getParent().getParent();
     if (!Files.isDirectory(root.resolve("spring")) || !Files.isDirectory(root.resolve("core"))) {
-      return; // packaged outside the repository
+      return; // empaquetado fuera del repositorio
     }
     Set<String> modules;
     try (Stream<Path> s =

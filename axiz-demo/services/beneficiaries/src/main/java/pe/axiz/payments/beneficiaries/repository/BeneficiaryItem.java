@@ -10,7 +10,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbConve
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey;
 
-/** Persistence-only representation: the account is an authenticated ciphertext. */
+/** Representación exclusiva de persistencia: la cuenta es un texto cifrado autenticado. */
 @DynamoDbBean
 public class BeneficiaryItem {
   private String customerId = "";

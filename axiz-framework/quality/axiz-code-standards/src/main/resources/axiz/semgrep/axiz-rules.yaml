@@ -1,4 +1,4 @@
-# axiz Semgrep rules (section 16 anti-patterns). Run: semgrep --config axiz-rules.yaml --error
+# Reglas de Semgrep de axiz (antipatrones de la sección 16). Ejecución: semgrep --config axiz-rules.yaml --error
 rules:
   - id: axiz-weak-cipher-mode
     languages: [java]

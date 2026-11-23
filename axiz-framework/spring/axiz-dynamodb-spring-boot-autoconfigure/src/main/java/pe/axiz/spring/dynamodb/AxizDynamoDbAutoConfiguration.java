@@ -27,8 +27,9 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 /**
- * One DynamoDB client per application (observed, default credentials chain, optional region and
- * LocalStack endpoint from {@code axiz.aws.*}), the enhanced client and the repository factory.
+ * Un cliente DynamoDB por aplicación (observado, cadena de credenciales por defecto, región
+ * opcional y endpoint de LocalStack tomados de {@code axiz.aws.*}), el cliente mejorado y la
+ * fábrica de repositorios.
  */
 @EnableConfigurationProperties(AxizAwsCompletionProperties.class)
 @AutoConfiguration(

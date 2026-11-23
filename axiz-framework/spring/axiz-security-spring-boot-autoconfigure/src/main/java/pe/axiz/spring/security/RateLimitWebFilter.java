@@ -16,7 +16,7 @@ import pe.axiz.spring.foundation.ReactiveStages;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 
-/** Reactive rate limit; the limiter uses native asynchronous I/O. */
+/** Límite de tasa reactivo; el limitador usa E/S asíncrona nativa. */
 public final class RateLimitWebFilter implements WebFilter {
 
   private final AsyncRateLimiter limiter;

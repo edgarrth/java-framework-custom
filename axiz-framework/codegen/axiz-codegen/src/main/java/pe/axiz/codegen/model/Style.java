@@ -3,16 +3,16 @@ package pe.axiz.codegen.model;
 import java.util.List;
 
 /**
- * Capabilities selected for an architectural style, so that a generated service is consistent with
- * what actually starts: its migrations, properties and local resources come from the same model as
- * its dependencies.
+ * Capacidades seleccionadas para un estilo arquitectónico, de modo que un servicio generado sea
+ * coherente con lo que realmente arranca: sus migraciones, propiedades y recursos locales provienen
+ * del mismo modelo que sus dependencias.
  *
- * @param capabilities capabilities added to every service of the style whose store supports them
- *     (for example, inbox for event processors with persistence)
+ * @param capabilities capacidades que se agregan a cada servicio del estilo cuyo almacén las
+ *     soporta (por ejemplo, inbox para los procesadores de eventos con persistencia)
  */
 public record Style(List<String> capabilities) {
 
-  /** Structure tables a migration can create: the SQL partials of the generator. */
+  /** Tablas de estructura que una migración puede crear: los parciales SQL del generador. */
   public static final List<String> TABLES =
       List.of("outbox", "inbox", "saga", "sequence", "shedlock");
 

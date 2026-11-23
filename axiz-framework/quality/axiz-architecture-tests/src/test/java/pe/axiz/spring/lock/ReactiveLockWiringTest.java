@@ -33,7 +33,10 @@ import reactor.core.publisher.Mono;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-/** Real auto-configuration selects native ports and fails closed when no shared store exists. */
+/**
+ * La autoconfiguración real selecciona puertos nativos y falla de forma cerrada cuando no existe un
+ * almacén compartido.
+ */
 class ReactiveLockWiringTest {
   private static ReactiveWebApplicationContextRunner reactive() {
     return new ReactiveWebApplicationContextRunner()
@@ -116,7 +119,8 @@ class ReactiveLockWiringTest {
   @Test
   @ResourceLock(Resources.SYSTEM_PROPERTIES)
   void frameworkOwnsAndClosesTheDefaultAsyncClientAtStartup() {
-    // Test-only credentials resolve locally; no AWS request is made.
+    // Las credenciales exclusivas de prueba se resuelven localmente; no se realiza ninguna
+    // solicitud a AWS.
     TestPropertyValues.of("aws.accessKeyId=local-test", "aws.secretAccessKey=local-test")
         .applyToSystemProperties(
             () ->

@@ -5,8 +5,8 @@ import org.springframework.core.env.StandardEnvironment;
 import org.springframework.core.io.FileSystemResource;
 
 /**
- * Effective Spring binding of delivered main/local config, without starting Kafka or contacting
- * AWS.
+ * Enlace efectivo de Spring de la configuración main/local entregada, sin arrancar Kafka ni
+ * contactar a AWS.
  */
 class CheckKafkaIamProfiles {
   public static void main(String[] args) throws Exception {

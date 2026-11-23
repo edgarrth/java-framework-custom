@@ -8,7 +8,10 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.util.StringUtils;
 
-/** Appends convention imports in precedence order while retaining explicit imports once. */
+/**
+ * Añade las importaciones por convención en orden de precedencia y conserva una sola vez las
+ * importaciones explícitas.
+ */
 public final class ConfigurationImports {
   private ConfigurationImports() {}
 

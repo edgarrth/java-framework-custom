@@ -52,7 +52,10 @@ import pe.axiz.core.errors.RateLimitedException;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-/** Every failure reaches the client as an RFC 9457 problem with a stable code and no internals. */
+/**
+ * Todo fallo llega al cliente como un problema RFC 9457 con un código estable y sin detalles
+ * internos.
+ */
 class ProblemResponsesTest {
 
   @Test
@@ -247,7 +250,7 @@ class ProblemResponsesTest {
           var first = new IllegalStateException("password=secret-canary-123 " + canary);
           var second = new IllegalArgumentException("token=secret-nested-456", first);
           first.initCause(
-              second); // cyclic cause graphs must not trigger traversal or leak messages
+              second); // los grafos de causas cíclicos no se recorren ni filtran mensajes
           responder.problem(first, Locale.ENGLISH, "/cards/" + canary, "safe-correlation");
           responder.problem(
               new AccessDeniedException("password=secret-denied-789"),

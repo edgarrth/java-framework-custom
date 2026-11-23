@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-scheduling-spring-boot-starter
 
-Single execution per cluster for scheduled tasks with ShedLock (JDBC or DynamoDB).
+Ejecución única por clúster de tareas programadas con ShedLock (JDBC o DynamoDB).
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,4 +12,4 @@ Single execution per cluster for scheduled tasks with ShedLock (JDBC or DynamoDB
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).

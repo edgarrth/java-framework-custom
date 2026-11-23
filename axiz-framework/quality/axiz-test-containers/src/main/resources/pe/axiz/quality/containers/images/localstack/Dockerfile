@@ -12,7 +12,7 @@ COPY --from=distribution /etc/localstack /etc/localstack
 ENV PATH=/opt/code/localstack/.venv/bin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
     PYTHONUNBUFFERED=1 LANG=C.UTF-8 LOCALSTACK_BUILD_VERSION=4.14.0 \
     SERVICES=dynamodb,s3,sqs,sns,kms,secretsmanager,ssm,sts,iam
-# The source image pins unchanged dependencies; every updated wheel/sdist is hash locked.
+# La imagen de origen fija las dependencias sin cambios; cada wheel o sdist actualizado está bloqueado por hash.
 COPY requirements.lock /opt/axiz/requirements.lock
 COPY build-requirements.lock /opt/axiz/build-requirements.lock
 RUN python -m pip install --no-cache-dir --no-deps --require-hashes -r /opt/axiz/build-requirements.lock \
@@ -20,7 +20,7 @@ RUN python -m pip install --no-cache-dir --no-deps --require-hashes -r /opt/axiz
  && python -m pip uninstall -y kclpy-ext \
  && python -m pip check \
  && python -m pip uninstall -y pip
-# DynamoDB Local is the only Java service in this dedicated Axiz emulator.
+# DynamoDB Local es el único servicio Java de este emulador dedicado de Axiz.
 RUN sed -i 's/self.java_version = "21"/self.java_version = "25"/' /opt/code/localstack/localstack-core/localstack/services/dynamodb/packages.py \
  && sed -i '/JAVA_VERSIONS = {/a\    "25": "25.0.5+1",' /opt/code/localstack/localstack-core/localstack/packages/java.py \
  && ln -s /usr/lib/jvm/java-25-openjdk /usr/lib/localstack/java/25
@@ -128,7 +128,7 @@ RUN set -eu; \
     curl -fLsS --retry 3 -o /usr/lib/localstack/dynamodb-local/2/DynamoDBLocal_lib/netty-transport-udt-4.1.jar https://repo.maven.apache.org/maven2/io/netty/netty-transport-udt/4.1.137.Final/netty-transport-udt-4.1.137.Final.jar; \
     printf '%s\n' '28a7fd7a93e51565008747e8929af9f1182f4494cbdd01fe54d5d79081f51b38  /usr/lib/localstack/dynamodb-local/2/DynamoDBLocal_lib/netty-transport-udt-4.1.jar' | sha256sum -c -;
 
-# Application code and bundled executables stay immutable to the runtime user.
+# El código de la aplicación y los ejecutables incluidos permanecen inmutables para el usuario de ejecución.
 RUN addgroup -g 1000 localstack \
  && adduser -D -u 1000 -G localstack -h /home/localstack localstack \
  && mkdir -p /var/lib/localstack/.cache /home/localstack/.cache \

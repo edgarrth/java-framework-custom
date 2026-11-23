@@ -30,9 +30,9 @@ import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
 /**
- * Reactive counterpart of {@link AxizRestClientInterceptor}, without blocking: credentials that
- * need I/O use native asynchronous ports, errors are translated from the response body and retries
- * use Reactor's backoff for idempotent calls only.
+ * Contraparte reactiva de {@link AxizRestClientInterceptor}, sin bloquear: las credenciales que
+ * necesitan E/S usan puertos asíncronos nativos, los errores se traducen desde el cuerpo de la
+ * respuesta y los reintentos usan el backoff de Reactor solo para llamadas idempotentes.
  */
 public final class AxizExchangeFilter implements ExchangeFilterFunction {
 
@@ -72,8 +72,9 @@ public final class AxizExchangeFilter implements ExchangeFilterFunction {
             request.url(),
             settings.auth().type() != AuthType.NONE,
             "HTTP client " + settings.name());
-    // token relay: in a reactive service the inbound token lives in the Reactor context, not in a
-    // thread-local, so it is read here, on the subscriber's context, before switching threads
+    // token relay: en un servicio reactivo, el token entrante vive en el contexto de Reactor y no
+    // en un thread-local, por lo que se lee aquí, en el contexto del suscriptor, antes de cambiar
+    // de hilo
     Mono<Optional<String>> relayed =
         auth.relay() && OutboundAuth.SECURITY
             ? ReactiveRelay.token().map(Optional::of).defaultIfEmpty(Optional.empty())
@@ -124,11 +125,11 @@ public final class AxizExchangeFilter implements ExchangeFilterFunction {
     }
   }
 
-  /** Spring Security access, isolated so the dependency stays optional. */
+  /** Acceso a Spring Security, aislado para que la dependencia siga siendo opcional. */
   static final class ReactiveRelay {
     private ReactiveRelay() {}
 
-    /** Bearer token of the inbound request, from the reactive security context. */
+    /** Token bearer de la solicitud entrante, tomado del contexto de seguridad reactivo. */
     static Mono<String> token() {
       return ReactiveSecurityContextHolder.getContext()
           .mapNotNull(SecurityContext::getAuthentication)
@@ -233,8 +234,9 @@ public final class AxizExchangeFilter implements ExchangeFilterFunction {
                               ? Mono.delay(resilience.delay((int) s.totalRetries() + 1))
                               : Mono.error(s.failure());
                         })))
-        // like the servlet client: a transport failure becomes a dependency error, so the service
-        // answers 504 (timeout) or 503 (refused or reset connection) instead of an unknown failure
+        // igual que el cliente servlet: un fallo de transporte se convierte en un error de
+        // dependencia, de modo que el servicio responde 504 (timeout) o 503 (conexión rechazada o
+        // reiniciada) en lugar de un fallo desconocido
         .onErrorMap(e -> !(e instanceof AxizException), e -> transport(settings, e));
   }
 

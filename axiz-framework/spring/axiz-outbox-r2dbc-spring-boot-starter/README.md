@@ -1,12 +1,12 @@
 # axiz-outbox-r2dbc-spring-boot-starter
 
-R2DBC outbox integration with the shared relay.
+Integración del outbox R2DBC con el relay compartido.
 
-This module owns the `pe.axiz.spring.outbox.r2dbc.starter` API.
+Este módulo es dueño de la API `pe.axiz.spring.outbox.r2dbc.starter`.
 
-## Selection
+## Selección
 
-Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
+Las versiones las gestiona `axiz-bom`; las aplicaciones heredan `axiz-parent-service`.
 
 ```xml
 <dependency>
@@ -15,12 +15,12 @@ Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
 </dependency>
 ```
 
-This artifact composes dependencies; its wiring and operational contract are documented in
+Este artefacto compone dependencias; su configuración y su contrato operativo se documentan en
 [`axiz-outbox-r2dbc-spring-boot-autoconfigure`](../axiz-outbox-r2dbc-spring-boot-autoconfigure/README.md).
 
-## Operations
+## Operación
 
-Provision the capability schema through migrations and configure a bounded connection pool
-with verified TLS. Transactional composition requires the same effective resource identity,
-not merely two clients pointing to the same database. Select the native R2DBC provider for
-reactive flows; JDBC executes on the imperative path.
+El esquema de la capacidad se aprovisiona con migraciones y se configura un pool de conexiones
+acotado con TLS verificado. La composición transaccional requiere la misma identidad efectiva del
+recurso, no solo dos clientes que apunten a la misma base de datos. Para flujos reactivos se
+selecciona el proveedor R2DBC nativo; JDBC se ejecuta en la ruta imperativa.

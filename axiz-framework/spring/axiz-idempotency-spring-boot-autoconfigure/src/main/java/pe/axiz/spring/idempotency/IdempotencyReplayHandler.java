@@ -9,8 +9,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import pe.axiz.core.idempotency.StoredResponse;
 
 /**
- * Writes a stored response for an {@link IdempotentReplay} (servlet and reactive stacks): stored
- * status, replayed headers and the original bytes, plus {@code Idempotent-Replayed: true}.
+ * Escribe una respuesta almacenada para un {@link IdempotentReplay} (pilas servlet y reactiva):
+ * estado almacenado, cabeceras reproducidas y los bytes originales, más {@code Idempotent-Replayed:
+ * true}.
  */
 @ControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE)

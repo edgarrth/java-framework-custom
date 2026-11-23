@@ -19,7 +19,10 @@ import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsResponse
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse;
 
-/** One invocation owns its SDK cancellation binding; no thread-local or shared request state. */
+/**
+ * Una invocación es dueña de su enlace de cancelación del SDK; sin estado de petición thread-local
+ * ni compartido.
+ */
 final class NativeDynamoCall<T> extends CompletableFuture<T> implements DynamoDbAsyncClient {
   private final DynamoDbAsyncClient delegate;
   private final AtomicReference<CompletableFuture<?>> nativeRequest = new AtomicReference<>();
@@ -110,7 +113,7 @@ final class NativeDynamoCall<T> extends CompletableFuture<T> implements DynamoDb
     return delegate.serviceName();
   }
 
-  /** The application owns the borrowed transport. */
+  /** La aplicación es dueña del transporte prestado. */
   @Override
   public void close() {}
 }

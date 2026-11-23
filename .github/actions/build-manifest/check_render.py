@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Require each service workload to use the approved repository and content digest."""
+"""Exige que cada workload de servicio use el repositorio aprobado y el digest de contenido."""
 import argparse
 from pathlib import Path
 
@@ -21,9 +21,9 @@ def check(documents, service, repository, digest):
         for container in spec.get("containers", []):
             reference = container.get("image", "")
             image, separator, content_digest = reference.partition("@")
-            # A readable tag before @digest is allowed, but cannot select the content.
+                        # Se admite un tag legible antes de @digest, pero no puede seleccionar el contenido.
             image_repository = image.rsplit("/", 1)[0] + "/" + image.rsplit("/", 1)[1].split(":", 1)[0] if "/" in image else image.split(":", 1)[0]
-            # nameOverride can preserve an existing workload identity during a service rename.
+                        # nameOverride puede conservar una identidad de workload existente durante el renombrado de un servicio.
             if container.get("name") != service and image_repository != repository:
                 continue
             if separator != "@" or content_digest != digest or image_repository != repository:

@@ -6,7 +6,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-/** CPU-only single-process lease store, for local/test environments. */
+/** Almacén de leases de un solo proceso y solo de CPU, para entornos locales o de prueba. */
 public final class InMemoryAsyncDistributedLock implements AsyncDistributedLock {
   private final InMemoryDistributedLock locks;
 

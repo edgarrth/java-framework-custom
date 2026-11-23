@@ -1,6 +1,9 @@
 package pe.axiz.core.tokenization.vault;
 
-/** Confirmed outcomes of revision-fenced maintenance; a missing acknowledgement is an exception. */
+/**
+ * Resultados confirmados de un mantenimiento con fencing por revisión; la falta de acuse es una
+ * excepción.
+ */
 public enum MigrationOutcome {
   MIGRATED,
   UNCHANGED,

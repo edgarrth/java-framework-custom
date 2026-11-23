@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-foundation-spring-boot-starter
 
-Money, time and business calendar, ids and identifier validation for Spring Boot.
+Dinero, tiempo y calendario de negocio, identificadores y validación de documentos para Spring Boot.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,4 +12,4 @@ Money, time and business calendar, ids and identifier validation for Spring Boot
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).

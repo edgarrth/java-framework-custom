@@ -6,9 +6,9 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Single subscription download. Chunks remain valid after delivery. Closing aborts the download,
- * including an unconsumed response, and is idempotent. Never aggregate an unbounded object in
- * memory.
+ * Descarga de suscripción única. Los chunks siguen siendo válidos tras la entrega. Cerrar aborta la
+ * descarga, incluida una respuesta no consumida, y es idempotente. Nunca se agrega en memoria un
+ * objeto no acotado.
  */
 public final class AsyncStoredObject implements AutoCloseable {
   private final String key;

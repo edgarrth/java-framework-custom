@@ -12,7 +12,7 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import pe.axiz.spring.aws.AxizAwsIdentityAutoConfiguration;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-/** Scheduled-task locks on DynamoDB for services without a relational database. */
+/** Locks de tareas programadas sobre DynamoDB para servicios sin base de datos relacional. */
 class SchedulingDynamoDbTest {
 
   private final ApplicationContextRunner runner =

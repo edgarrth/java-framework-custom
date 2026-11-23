@@ -1,17 +1,19 @@
 # axiz-redis-spring-boot-autoconfigure
 
-Shared REDIS transport guard, installed by the capabilities that use this technology. It does not create business clients or add a new store selector.
+Protección de transporte Redis compartida, instalada por las capacidades que usan esta tecnología. No crea clientes de negocio ni agrega un nuevo selector de almacén.
 
-Outside explicit local/test/ci environments, require TLS with certificate and hostname verification. Local plaintext additionally requires `axiz.transport.allow-insecure-data-stores=true`; the environment alone is insufficient. Never include connection URLs, credentials or secret names in failure diagnostics.
+Fuera de los entornos explícitos local/test/ci se exige TLS con verificación del certificado y del hostname. El texto plano local requiere además `axiz.transport.allow-insecure-data-stores=true`; el entorno por sí solo no basta. Los diagnósticos de fallo nunca incluyen URLs de conexión, credenciales ni nombres de secretos.
 
-Validate final client settings before the first connection. Custom factories that connect during construction must invoke their transport validation before constructing/starting clients; a post-processor cannot undo earlier I/O. Lettuce uses SSL with `SslVerifyMode.FULL`; the guard runs before factory initialization. SSL bundles and connection details are validated through the final client configuration.
+La configuración final del cliente se valida antes de la primera conexión. Las fábricas personalizadas que se conectan durante su construcción deben invocar la validación de transporte antes de construir o iniciar los clientes; un post-processor no puede deshacer la I/O previa. Lettuce usa SSL con `SslVerifyMode.FULL`; la protección se ejecuta antes de la inicialización de la fábrica. Los SSL bundles y los connection details se validan mediante la configuración final del cliente.
 
-## Transport contract
+## Contrato de transporte
 
-Managed clients require encryption and certificate and hostname verification. The final native
-options are checked before managed initialization; property names alone are not a transport proof.
-`axiz.transport.allow-insecure-data-stores=true` only permits an explicit `local`, `test` or `ci`
-environment. It never weakens production validation. Configure trust material for each destination.
+Los clientes gestionados exigen cifrado y verificación de certificado y de nombre de host. Las
+opciones nativas finales se comprueban antes de la inicialización gestionada; los nombres de
+propiedad por sí solos no prueban el transporte. `axiz.transport.allow-insecure-data-stores=true` solo admite un ambiente
+`local`, `test` o `ci` explícito y nunca debilita la validación de producción. El material de confianza se
+configura para cada destino.
 
-Redis defaults to SSL. Lettuce must use full peer verification; client customizers cannot disable
-it in production. Local containers without TLS require an explicit SSL override and the local exception.
+Redis usa SSL por defecto. Lettuce debe usar la verificación completa del par; los customizers del cliente
+no pueden desactivarla en producción. Los contenedores locales sin TLS requieren una sobrescritura SSL
+explícita y la excepción local.

@@ -13,7 +13,10 @@ import pe.axiz.core.tokenization.TokenizationResult;
 import pe.axiz.core.tokenization.TokenizerCapabilities;
 import pe.axiz.spring.foundation.ReactiveStages;
 
-/** Future facade for client-credentials authentication, independent of thread-local identity. */
+/**
+ * Fachada de futures para la autenticación con client credentials, independiente de la identidad
+ * thread-local.
+ */
 final class AsyncRemoteTokenizer implements AsyncTokenizer {
   private final ReactiveTokenizer delegate;
 

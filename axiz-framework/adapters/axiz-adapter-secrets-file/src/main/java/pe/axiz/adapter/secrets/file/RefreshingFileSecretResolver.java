@@ -24,9 +24,10 @@ import pe.axiz.core.secrets.AsyncSecretResolver;
 import pe.axiz.core.secrets.SecretValue;
 
 /**
- * Mounted-secret snapshots loaded at startup and refreshed independently of requests on one owned
- * background worker. Request resolution performs no filesystem I/O. Refresh errors fail closed.
- * Limits: 1000 files, 1 MiB per file and 16 MiB per snapshot, with strict UTF-8 decoding.
+ * Instantáneas de secretos montados cargadas al arrancar y renovadas de forma independiente de las
+ * peticiones en un único worker propio en segundo plano. La resolución de peticiones no hace E/S de
+ * sistema de archivos. Los errores de renovación fallan en cerrado. Límites: 1000 archivos, 1 MiB
+ * por archivo y 16 MiB por instantánea, con decodificación UTF-8 estricta.
  */
 public final class RefreshingFileSecretResolver implements AsyncSecretResolver, AutoCloseable {
   private static final int MAX_FILES = 1000;
@@ -97,7 +98,7 @@ public final class RefreshingFileSecretResolver implements AsyncSecretResolver, 
         try {
           FileSecretResolver.fileName(name);
         } catch (IllegalArgumentException invalid) {
-          continue; // Kubernetes metadata names are not logical secret names.
+          continue; // Los nombres de metadatos de Kubernetes no son nombres lógicos de secretos.
         }
         try {
           if (!Files.readAttributes(entry, BasicFileAttributes.class).isRegularFile()) continue;
@@ -117,7 +118,7 @@ public final class RefreshingFileSecretResolver implements AsyncSecretResolver, 
                     if (previous != null) previous.close();
                   });
         } catch (NoSuchFileException removed) {
-          // A file removed during an atomic rotation is absent in this snapshot.
+          // Un archivo eliminado durante una rotación atómica está ausente en esta instantánea.
         }
       }
       Map<String, SecretValue> result = Map.copyOf(values);

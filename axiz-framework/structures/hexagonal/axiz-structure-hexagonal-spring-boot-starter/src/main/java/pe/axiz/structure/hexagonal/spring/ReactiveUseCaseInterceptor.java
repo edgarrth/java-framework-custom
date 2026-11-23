@@ -21,7 +21,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * Defers invocation and keeps transaction, observation, errors and cancellation in the publisher.
+ * Difiere la invocación y mantiene la transacción, la observación, los errores y la cancelación en
+ * el publisher.
  */
 public final class ReactiveUseCaseInterceptor implements MethodInterceptor {
   private final Supplier<@Nullable ReactiveTransactionManager> transactions;
@@ -29,12 +30,12 @@ public final class ReactiveUseCaseInterceptor implements MethodInterceptor {
   private final SingletonSupplier<ObservationRegistry> observations;
 
   /**
-   * Creates the interceptor.
+   * Crea el interceptor.
    *
-   * @param transactions the reactive transaction manager, if any
-   * @param observations the observation registry, resolved on first use: an advisor is created
-   *     before bean post-processors run, and resolving the registry then would leave it without its
-   *     tracing and metrics handlers
+   * @param transactions el gestor de transacciones reactivo, si existe
+   * @param observations el registro de observaciones, resuelto en el primer uso: un advisor se crea
+   *     antes de que corran los post-processors de beans, y resolver el registro en ese momento lo
+   *     dejaría sin sus handlers de tracing y métricas
    */
   public ReactiveUseCaseInterceptor(
       Supplier<@Nullable ReactiveTransactionManager> transactions,

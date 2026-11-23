@@ -26,7 +26,10 @@ import pe.axiz.spring.resilience.AxizResilienceAutoConfiguration;
 import pe.axiz.spring.soap.AxizSoapAutoConfiguration;
 import pe.axiz.spring.soap.SoapClients;
 
-/** Loopback peers exercise actual HTTP/XML transports. Production peers require TLS. */
+/**
+ * Los pares de loopback ejercitan transportes HTTP y XML reales. Los pares de producción exigen
+ * TLS.
+ */
 class OutboundRecipesTest {
   @Test
   void httpRetriesSafeOperationsButNeverReplaysAnUnkeyedPayment(TestReporter evidence)

@@ -1,6 +1,6 @@
 package pe.axiz.payments.orders.application.port.out;
 
-/** Human-readable operation numbers (unique per day). */
+/** Números de operación legibles para personas (únicos por día). */
 public interface OperationNumbers {
 
   String next();

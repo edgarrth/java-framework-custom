@@ -1,4 +1,4 @@
--- axiz saga state (Aurora PostgreSQL)
+-- estado de las sagas de axiz (Aurora PostgreSQL)
 CREATE TABLE IF NOT EXISTS axiz_saga (
   saga_id    VARCHAR(64)  PRIMARY KEY,
   saga_name  VARCHAR(100) NOT NULL,

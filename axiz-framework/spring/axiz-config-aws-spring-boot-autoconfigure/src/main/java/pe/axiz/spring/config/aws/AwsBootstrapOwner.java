@@ -6,7 +6,8 @@ import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry;
 import org.springframework.context.ConfigurableApplicationContext;
 
 /**
- * Owns only resources created by this bootstrap; explicitly registered extensions stay borrowed.
+ * Posee solo los recursos creados por este bootstrap; las extensiones registradas explícitamente
+ * siguen siendo prestadas.
  */
 final class AwsBootstrapOwner implements AutoCloseable {
   record Lease(Object provider, Runnable release) {}

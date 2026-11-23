@@ -11,7 +11,8 @@ import com.tngtech.archunit.lang.SimpleConditionEvent;
 import org.junit.jupiter.api.Test;
 
 /**
- * Named construction is the public contract; record canonical constructors remain JVM contracts.
+ * La construcción con nombre es el contrato público; los constructores canónicos de los records
+ * siguen siendo contratos de la JVM.
  */
 class ConstructionContractsTest {
   @Test

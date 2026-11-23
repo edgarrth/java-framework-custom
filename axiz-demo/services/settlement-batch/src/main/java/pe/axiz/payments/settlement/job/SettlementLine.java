@@ -7,15 +7,15 @@ import pe.axiz.core.sensitive.Sensitive;
 import pe.axiz.core.sensitive.SensitivityLevel;
 
 /**
- * One settled (or returned) transfer of the network settlement file.
+ * Una transferencia liquidada (o devuelta) del archivo de liquidación de la red.
  *
- * @param endToEndId operation number sent with the transfer
- * @param transferId network id
- * @param creditorCci destination account
- * @param amount amount
- * @param currency currency code
- * @param status SETTLED or RETURNED
- * @param settledAt settlement time (network local time)
+ * @param endToEndId número de operación enviado con la transferencia
+ * @param transferId id en la red
+ * @param creditorCci cuenta de destino
+ * @param amount monto
+ * @param currency código de moneda
+ * @param status SETTLED o RETURNED
+ * @param settledAt momento de la liquidación (hora local de la red)
  */
 public record SettlementLine(
     String endToEndId,

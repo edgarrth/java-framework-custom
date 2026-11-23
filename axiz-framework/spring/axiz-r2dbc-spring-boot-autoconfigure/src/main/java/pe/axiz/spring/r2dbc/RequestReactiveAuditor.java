@@ -7,10 +7,10 @@ import pe.axiz.core.context.RequestMetadata;
 import reactor.core.publisher.Mono;
 
 /**
- * Auditor of {@code createdBy}/{@code updatedBy} for reactive code: the end user, or the calling
- * application for machine-to-machine requests, read from the request metadata that the web and
- * security starters put in the Reactor context (or the thread-local of a consumer thread); {@code
- * unattributed} otherwise.
+ * Auditor de {@code createdBy}/{@code updatedBy} para código reactivo: el usuario final, o la
+ * aplicación invocante en solicitudes de máquina a máquina, leído de los metadatos de la solicitud
+ * que los starters web y de seguridad colocan en el contexto de Reactor (o el thread-local de un
+ * hilo consumidor); {@code unattributed} en otro caso.
  */
 public class RequestReactiveAuditor implements ReactiveAuditorAware<String> {
 

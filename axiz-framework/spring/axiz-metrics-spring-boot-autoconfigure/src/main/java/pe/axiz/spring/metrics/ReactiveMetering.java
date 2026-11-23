@@ -12,7 +12,7 @@ import pe.axiz.core.metrics.Outcome;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/** Reactor support for {@code @Metered}; loaded only when Reactor is present. */
+/** Soporte de Reactor para {@code @Metered}; solo se carga cuando Reactor está presente. */
 final class ReactiveMetering {
 
   private ReactiveMetering() {}
@@ -94,7 +94,7 @@ final class ReactiveMetering {
       try {
         s.describe(m);
       } catch (RuntimeException ignored) {
-        // metrics never break the operation
+        // las métricas nunca rompen la operación
       }
     }
   }

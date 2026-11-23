@@ -1,50 +1,53 @@
 # axiz-jdbc-spring-boot-autoconfigure
 
-Spring side of JDBC for the capabilities that use it (outbox, inbox, saga, sequence, scheduling):
-transaction-bound connections and runners, explicit schema initialization, SQL dialects and the
-shared transport guard. It does not create business clients or add a new store selector.
+Lado Spring de JDBC para las capacidades que lo usan (outbox, inbox, saga, sequence, scheduling):
+conexiones y ejecutores ligados a la transacción, inicialización explícita del esquema, dialectos SQL y la
+protección de transporte compartida. No crea clientes de negocio ni agrega un nuevo selector de almacén.
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `SpringConnectionProvider` | Connection provider bound to Spring transactions: inside a transaction the transaction's connection is returned and left open on release. |
-| `SpringTransactionRunner` | Runs work in a new or joined Spring transaction; checked exceptions roll back too. |
-| `SchemaInitializer` | Creates framework tables from `axiz/sql/<name>-<dialect>.sql` (development and tests). |
-| `SqlDialects` | Detects the database product to choose SQL dialects (PostgreSQL in clusters, H2 in tests). |
-| `JdbcDataSourceTlsValidator` | Extension point that validates the transport of a custom data source before it connects. |
-| `AxizJdbcTransportAutoConfiguration` | Fail-closed TLS validation of managed JDBC clients and Flyway. |
+| `SpringConnectionProvider` | Proveedor de conexiones ligado a las transacciones de Spring: dentro de una transacción devuelve la conexión de la transacción y la deja abierta al liberarla. |
+| `SpringTransactionRunner` | Ejecuta trabajo en una transacción de Spring nueva o existente; las excepciones checked también provocan rollback. |
+| `SchemaInitializer` | Crea las tablas del framework desde `axiz/sql/<name>-<dialect>.sql` (desarrollo y pruebas). |
+| `SqlDialects` | Detecta el producto de base de datos para elegir los dialectos SQL (PostgreSQL en clústeres, H2 en pruebas). |
+| `JdbcDataSourceTlsValidator` | Punto de extensión que valida el transporte de un data source personalizado antes de que se conecte. |
+| `AxizJdbcTransportAutoConfiguration` | Validación TLS de cierre seguro (fail-closed) de los clientes JDBC gestionados y de Flyway. |
 
-Stores whose writes must be visible to other workers at once (saga state and leases) use
-`AutoCommitConnectionProvider` from `axiz-kit-jdbc` instead of `SpringConnectionProvider`.
+Los almacenes cuyas escrituras deben ser visibles de inmediato para otros workers (estado de sagas y
+leases) usan `AutoCommitConnectionProvider` de `axiz-kit-jdbc` en lugar de `SpringConnectionProvider`.
 
-## Transport guard
+## Protección del transporte
 
-Outside explicit local/test/ci environments, require TLS with certificate and hostname verification. Local plaintext additionally requires `axiz.transport.allow-insecure-data-stores=true`; the environment alone is insufficient. Never include connection URLs, credentials or secret names in failure diagnostics.
+Fuera de los entornos explícitos local/test/ci se exige TLS con verificación del certificado y del hostname. El texto plano local requiere además `axiz.transport.allow-insecure-data-stores=true`; el entorno por sí solo no basta. Los diagnósticos de fallo nunca incluyen URLs de conexión, credenciales ni nombres de secretos.
 
-Validate final client settings before the first connection. Custom factories that connect during construction must invoke their transport validation before constructing/starting clients; a post-processor cannot undo earlier I/O. JDBC extension point: `JdbcDataSourceTlsValidator`; PostgreSQL URL/properties validation: `JdbcTransportSecurity.validate`. Flyway validates its own final URL and properties before migration. CA configuration is destination-specific; no RDS CA is imposed on other databases.
+La configuración final del cliente se valida antes de la primera conexión. Las fábricas personalizadas que se conectan durante su construcción deben invocar la validación de transporte antes de construir o iniciar los clientes; un post-processor no puede deshacer la I/O previa. Punto de extensión JDBC: `JdbcDataSourceTlsValidator`; validación de URL y propiedades de PostgreSQL: `JdbcTransportSecurity.validate`. Flyway valida su propia URL y sus propiedades finales antes de migrar. La configuración de CA es específica de cada destino; no se impone una CA de RDS a otras bases de datos.
 
-## Transport contract
+## Contrato de transporte
 
-Managed clients require encryption and certificate and hostname verification. The final native
-options are checked before managed initialization; property names alone are not a transport proof.
-`axiz.transport.allow-insecure-data-stores=true` only permits an explicit `local`, `test` or `ci`
-environment. It never weakens production validation. Configure trust material for each destination.
+Los clientes gestionados exigen cifrado y verificación de certificado y de nombre de host. Las
+opciones nativas finales se comprueban antes de la inicialización gestionada; los nombres de
+propiedad por sí solos no prueban el transporte. `axiz.transport.allow-insecure-data-stores=true` solo admite un ambiente
+`local`, `test` o `ci` explícito y nunca debilita la validación de producción. El material de confianza se
+configura para cada destino.
 
-Hikari JDBC URLs take precedence over data-source properties. Flyway own connection settings
-are checked independently. Custom data sources supply `JdbcDataSourceTlsValidator`; their factory
-must validate before a constructor or warmup can connect. Return Hikari pools unstarted.
+Las URLs JDBC de Hikari tienen precedencia sobre las propiedades del data source. La configuración de
+conexión propia de Flyway se comprueba por separado. Los data sources personalizados aportan
+`JdbcDataSourceTlsValidator`; su fábrica debe validar antes de que un constructor o un precalentamiento
+pueda conectarse. Los pools de Hikari se devuelven sin iniciar.
 
-Boot's separate Flyway `SimpleDriverDataSource` is supported for the native PostgreSQL and AWS
-wrapper drivers. Its effective URL and connection properties are validated without opening a
-connection. Other drivers and custom subclasses use the explicit validator extension point.
+Se admite el `SimpleDriverDataSource` separado de Flyway de Boot para los drivers nativos de PostgreSQL y
+el wrapper de AWS. Su URL efectiva y sus propiedades de conexión se validan sin abrir una conexión. Otros
+drivers y subclases personalizadas usan el punto de extensión explícito del validador.
 
-The `datasource-micrometer` observation wrappers delegate validation to their actual data source,
-including Spring and JDK proxies. The guard checks the target's current options again before
-Flyway uses it; wrapping an insecure or opaque source does not authorize it. Missing targets and
-wrapping cycles fail startup. Validation never calls `getConnection`.
+Los wrappers de observación de `datasource-micrometer` delegan la validación a su data source real,
+incluidos los proxies de Spring y del JDK. La protección vuelve a comprobar las opciones actuales del
+destino antes de que Flyway lo use; envolver una fuente insegura u opaca no la autoriza. Los destinos
+faltantes y los ciclos de envoltura hacen fallar el arranque. La validación nunca llama a `getConnection`.
 
-PostgreSQL uses the native `LibPQFactory` or `DefaultJavaSSLFactory` with verified TLS.
-Arbitrary `sslfactory` and `sslhostnameverifier` implementations cannot establish that guarantee
-from a mode string and are rejected by the native validator. A custom data-source integration
-must explicitly validate its trust material and hostname verification through the extension point.
+PostgreSQL usa el `LibPQFactory` nativo o `DefaultJavaSSLFactory` con TLS verificado. Las
+implementaciones arbitrarias de `sslfactory` y `sslhostnameverifier` no pueden establecer esa garantía a
+partir de una cadena de modo y el validador nativo las rechaza. Una integración de data source
+personalizada debe validar explícitamente su material de confianza y la verificación del hostname
+mediante el punto de extensión.

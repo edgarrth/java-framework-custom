@@ -14,7 +14,10 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
 import org.springframework.web.util.WebUtils;
 
-/** Session-bound GitHub authorization, with an absolute five-minute lifetime and removal on use. */
+/**
+ * Autorización de GitHub ligada a la sesión, con una vida absoluta de cinco minutos y eliminación
+ * al usarse.
+ */
 public final class EphemeralAuthorizedClients implements OAuth2AuthorizedClientRepository {
   private static final String DEADLINE = EphemeralAuthorizedClients.class.getName() + ".deadline";
   private static final Duration LIFETIME = Duration.ofMinutes(5);
@@ -25,7 +28,7 @@ public final class EphemeralAuthorizedClients implements OAuth2AuthorizedClientR
     this.clock = Objects.requireNonNull(clock);
   }
 
-  // The generic return-only signature is imposed by Spring Security's repository contract.
+  // La firma genérica que solo devuelve la impone el contrato de repositorio de Spring Security.
   @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
   @Override
   public <T extends OAuth2AuthorizedClient> @Nullable T loadAuthorizedClient(
@@ -88,8 +91,8 @@ public final class EphemeralAuthorizedClients implements OAuth2AuthorizedClientR
   }
 
   /**
-   * Takes the authorization out of the session after local validation and before any remote
-   * publication.
+   * Retira la autorización de la sesión tras la validación local y previo a cualquier publicación
+   * remota.
    */
   public @Nullable OAuth2AuthorizedClient consume(
       Authentication principal, HttpServletRequest request, HttpServletResponse response) {

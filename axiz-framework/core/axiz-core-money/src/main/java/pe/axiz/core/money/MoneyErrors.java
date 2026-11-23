@@ -3,7 +3,7 @@ package pe.axiz.core.money;
 import pe.axiz.core.errors.ErrorCategory;
 import pe.axiz.core.errors.ErrorDefinition;
 
-/** Errors of the money capability. */
+/** Errores de la capacidad de dinero. */
 public final class MoneyErrors {
 
   public static final ErrorDefinition CURRENCY_MISMATCH =

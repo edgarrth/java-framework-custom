@@ -14,9 +14,8 @@ import org.slf4j.LoggerFactory;
 import pe.axiz.core.commons.tx.TransactionRunner;
 
 /**
- * Plain JDBC transactions for technology adapters and tests: binds a connection to the current
- * thread for the duration of {@link #inTransaction(Callable)} and hands it out through {@link
- * #get()}.
+ * Transacciones JDBC simples para adaptadores tecnológicos y pruebas: liga una conexión al hilo
+ * actual durante {@link #inTransaction(Callable)} y la entrega mediante {@link #get()}.
  */
 public final class JdbcTransactions implements TransactionRunner, ConnectionProvider {
 
@@ -31,8 +30,8 @@ public final class JdbcTransactions implements TransactionRunner, ConnectionProv
   }
 
   /**
-   * Connections bound to the current thread, per data source (identity): every instance working on
-   * the same data source joins the same transaction.
+   * Conexiones ligadas al hilo actual, por data source (identidad): todas las instancias que
+   * trabajan sobre el mismo data source se unen a la misma transacción.
    */
   private static final ThreadLocal<@Nullable IdentityHashMap<DataSource, Connection>> BOUND =
       new ThreadLocal<>();
@@ -51,7 +50,7 @@ public final class JdbcTransactions implements TransactionRunner, ConnectionProv
   @Override
   public <T> T inTransaction(Callable<T> work) throws Exception {
     if (bound() != null) {
-      return work.call(); // join the running transaction
+      return work.call(); // se une a la transacción en curso
     }
     Connection connection = dataSource.getConnection();
     boolean autoCommit = true;
@@ -123,7 +122,8 @@ public final class JdbcTransactions implements TransactionRunner, ConnectionProv
 
   private static void cleanupFailure(@Nullable Throwable primary, Throwable failure) {
     if (primary != null && primary != failure) primary.addSuppressed(failure);
-    // Driver exception messages can contain SQL and values; log only the cleanup event.
+    // Los mensajes de excepción del driver pueden contener SQL y valores; solo se registra en log
+    // el evento de limpieza.
     LoggerFactory.getLogger(JdbcTransactions.class)
         .warn(
             "JDBC transaction cleanup failed; discard the connection; do not retry confirmed"

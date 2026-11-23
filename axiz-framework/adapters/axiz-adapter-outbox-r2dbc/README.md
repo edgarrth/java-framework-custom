@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-adapter-outbox-r2dbc
 
-Transactional outbox on Aurora PostgreSQL over R2DBC: non-blocking writer and relay store.
+Outbox transaccional en Aurora PostgreSQL sobre R2DBC: escritor no bloqueante y almacén del relay.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,43 +12,45 @@ Transactional outbox on Aurora PostgreSQL over R2DBC: non-blocking writer and re
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `R2dbcOutboxStore` | Outbox store on Aurora PostgreSQL over R2DBC, same table as the JDBC store (`axiz/sql/outbox-postgresql.sql`). |
+| `R2dbcOutboxStore` | Almacén de outbox en Aurora PostgreSQL sobre R2DBC, con la misma tabla que el almacén JDBC (`axiz/sql/outbox-postgresql.sql`). |
 
-Related types: `ReactiveOutboxWriter` live in `axiz-kit-outbox-reactor`.
+Tipos relacionados: `ReactiveOutboxWriter` están en `axiz-kit-outbox-reactor`.
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl adapters/axiz-adapter-outbox-r2dbc verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl adapters/axiz-adapter-outbox-r2dbc verify`.
 
-## PostgreSQL operational limits and failure tests
+## Límites operativos de PostgreSQL y pruebas de fallos
 
-Set bounded connection, statement and lock waits for the relay's workload. Consider
-`idle_in_transaction_session_timeout` for abandoned transactions and, on PostgreSQL 17+,
-`transaction_timeout` for their total duration. Apply role/session values compatible with all
-transactions using that role, including business work; Axiz does not change global server settings.
-See [PostgreSQL 17 client defaults](https://www.postgresql.org/docs/17/runtime-config-client.html).
-Server timeouts complement client cancellation and cleanup; they do not replace them.
+Las esperas de conexión, sentencia y lock se acotan según la carga del relay. Conviene
+`idle_in_transaction_session_timeout` para transacciones abandonadas y, desde PostgreSQL 17,
+`transaction_timeout` para su duración total. Los valores de rol o de sesión deben ser compatibles
+con todas las transacciones que usan ese rol, incluido el trabajo de negocio; Axiz no cambia la
+configuración global del servidor. Ver los
+[valores por defecto del cliente de PostgreSQL 17](https://www.postgresql.org/docs/17/runtime-config-client.html).
+Los timeouts del servidor complementan la cancelación y la limpieza del cliente; no las reemplazan.
 
-The PostgreSQL integration fixture limits connection/read/query/lock waits, explicitly bounds
-schema setup, and gives the failsafe fork a final process deadline. It uses Netty's supported
-`io.netty.allocator.type=pooled` JVM option **only in this module's test forks**, avoiding the adaptive
-allocator's magazine contention under load. BlockHound remains installed, with a negative test
-that still rejects application blocking; no application/package-wide allowance is introduced.
-The production driver's allocator configuration is unchanged.
+El fixture de integración con PostgreSQL limita las esperas de conexión, lectura, consulta y lock,
+acota de forma explícita la creación del esquema y da al fork de failsafe un plazo final de proceso.
+Se usa la opción JVM soportada de Netty `io.netty.allocator.type=pooled` **solo en los forks de prueba
+de este módulo**, para evitar la contención del allocator adaptativo bajo carga. BlockHound sigue
+instalado, con una prueba negativa que rechaza el bloqueo en la aplicación; no se agrega ninguna
+excepción a nivel de aplicación o de paquete. La configuración del allocator del driver en
+producción no cambia.
 
-Fault injection uses the driver's public `CodecRegistrar`: a real locked outbox row causes a
-client decoding exception or Error while PostgreSQL stays up. An independent JDBC connection
-checks the captured backend PID and locks within three seconds, before the fixture's 30-second
-idle-transaction safety net. This regression covers those decoding paths; it does not establish
-that every driver pipeline error has identical cleanup, nor reproduce the exact adaptive allocator
-incident. Driver versions and actual results are recorded in the implementation report.
+La inyección de fallos usa el `CodecRegistrar` público del driver: una fila real del outbox
+bloqueada provoca una excepción o un Error de decodificación en el cliente mientras PostgreSQL sigue
+activo. Una conexión JDBC independiente comprueba el PID del backend capturado y sus locks en menos
+de tres segundos, antes de la red de seguridad de 30 segundos del fixture para transacciones
+inactivas. Esta prueba cubre esas rutas de decodificación; no establece que cada error del pipeline
+del driver tenga la misma limpieza ni reproduce el comportamiento exacto del allocator adaptativo.
 
-A failed transaction rolls back database changes. `SKIP LOCKED` lets other relays pass locked
-rows; it does not prevent duplicate sends. Delivery remains at-least-once and consumers must be
-idempotent.
+Una transacción fallida revierte los cambios en la base. `SKIP LOCKED` permite que otros relays
+pasen de largo las filas bloqueadas; no evita envíos duplicados. La entrega sigue siendo al menos
+una vez y los consumidores deben ser idempotentes.

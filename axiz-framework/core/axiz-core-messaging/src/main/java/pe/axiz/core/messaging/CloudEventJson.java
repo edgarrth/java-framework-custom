@@ -14,9 +14,10 @@ import pe.axiz.core.json.JsonReader;
 import pe.axiz.core.json.JsonWriter;
 
 /**
- * CloudEvents JSON format (structured mode), used where transport attributes are limited (SQS, SNS)
- * and for outbox storage. EventEnvelope contains encoded binary bytes: structured serialization
- * uses data_base64 and retains their declared media type, preserving signatures and numeric bytes.
+ * Formato JSON de CloudEvents (modo estructurado), usado donde los atributos de transporte son
+ * limitados (SQS, SNS) y para el almacenamiento en el outbox. EventEnvelope contiene bytes binarios
+ * codificados: la serialización estructurada usa data_base64 y conserva su media type declarado,
+ * preservando firmas y bytes numéricos.
  */
 public final class CloudEventJson {
 

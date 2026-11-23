@@ -38,7 +38,10 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.msk.auth.iam.internals.AWSCredentialsCallback;
 
-/** Local credential contracts. These tests never claim a managed RDS/MSK authentication. */
+/**
+ * Contratos de credenciales locales. Estas pruebas nunca afirman una autenticación administrada de
+ * RDS o MSK.
+ */
 class IdentityRecipesTest {
   private static AwsCredentialsProvider identity() {
     return () -> AwsSessionCredentials.create("ASIADEMO", "synthetic-secret", "synthetic-session");

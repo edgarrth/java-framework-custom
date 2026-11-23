@@ -154,7 +154,8 @@ class ProjectCommandsTest {
     assertTrue(Files.readString(p.resolve("pom.xml")).contains("<version>2.2.0</version>"));
     assertEquals("2.2.0", ProjectManifest.read(p).axizVersion());
     List<String> command = h.processes.commands.get(0);
-    // generated projects ship the Maven wrapper, so the recipes run through it
+    // los proyectos generados incluyen el Maven wrapper, por lo que las recetas se ejecutan
+    // mediante este
     Path executable = Path.of(command.get(0));
     assertTrue(executable.isAbsolute());
     assertEquals(

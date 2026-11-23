@@ -11,16 +11,16 @@ import org.springframework.util.unit.DataSize;
 import pe.axiz.core.api.HeaderDefinition;
 
 /**
- * Web conventions ({@code axiz.web.*}).
+ * Convenciones web ({@code axiz.web.*}).
  *
- * @param headers business header catalog: validation and propagation allow-list
- * @param excludedPaths path patterns ({@code PathPattern} syntax) where header validation is
- *     skipped
- * @param channelHeader header that carries the origin channel, if the service uses one
- * @param pagination paging limits
- * @param apiVersion native Spring API versioning
- * @param cors CORS policy
- * @param json JSON output conventions
+ * @param headers catálogo de cabeceras de negocio: validación y lista permitida de propagación
+ * @param excludedPaths patrones de ruta (sintaxis {@code PathPattern}) donde se omite la validación
+ *     de cabeceras
+ * @param channelHeader cabecera que lleva el canal de origen, si el servicio usa uno
+ * @param pagination límites de paginación
+ * @param apiVersion versionado nativo de la API de Spring
+ * @param cors política CORS
+ * @param json convenciones de salida JSON
  */
 @ConfigurationProperties("axiz.web")
 public record AxizWebProperties(
@@ -50,14 +50,14 @@ public record AxizWebProperties(
   }
 
   /**
-   * One header of the catalog.
+   * Una cabecera del catálogo.
    *
-   * @param name header name
-   * @param required whether requests must carry it
-   * @param pattern validation regex
-   * @param propagate whether it is forwarded to outbound calls and messages
-   * @param sensitive whether it is masked in logs and audit
-   * @param maxLength maximum length
+   * @param name nombre de la cabecera
+   * @param required indica si las solicitudes deben llevarla
+   * @param pattern expresión regular de validación
+   * @param propagate indica si se reenvía a las llamadas salientes y a los mensajes
+   * @param sensitive indica si se enmascara en los logs y la auditoría
+   * @param maxLength longitud máxima
    */
   public record Header(
       String name,
@@ -75,22 +75,22 @@ public record AxizWebProperties(
   }
 
   /**
-   * Paging limits.
+   * Límites de paginación.
    *
-   * @param defaultSize page size when the client sends none
-   * @param maxSize largest accepted page size
+   * @param defaultSize tamaño de página cuando el cliente no envía ninguno
+   * @param maxSize tamaño de página más grande aceptado
    */
   public record Pagination(@DefaultValue("20") int defaultSize, @DefaultValue("200") int maxSize) {}
 
   /**
-   * API versioning through a request header.
+   * Versionado de la API mediante una cabecera de la solicitud.
    *
-   * @param enabled whether versioning is configured
-   * @param header header carrying the version
-   * @param defaultVersion version assumed when the header is absent; when the header is optional
-   *     and this is empty, the lowest supported version
-   * @param supported supported versions
-   * @param required whether the header is mandatory
+   * @param enabled indica si se configura el versionado
+   * @param header cabecera que lleva la versión
+   * @param defaultVersion versión asumida cuando la cabecera está ausente; cuando la cabecera es
+   *     opcional y esto está vacío, la versión admitida más baja
+   * @param supported versiones admitidas
+   * @param required indica si la cabecera es obligatoria
    */
   public record ApiVersion(
       @DefaultValue("false") boolean enabled,
@@ -111,9 +111,10 @@ public record AxizWebProperties(
     }
 
     /**
-     * Version of a request without the header. Spring WebFlux finds no handler for such a request
-     * when there is no default version (every route answers 404), so an optional header always has
-     * one: the configured default or the lowest supported version.
+     * Versión de una solicitud sin la cabecera. Spring WebFlux no encuentra ningún handler para una
+     * solicitud así cuando no hay versión por defecto (todas las rutas responden 404), por lo que
+     * una cabecera opcional siempre tiene una: la configurada por defecto o la versión admitida más
+     * baja.
      */
     public @Nullable String effectiveDefaultVersion() {
       if (defaultVersion != null && !defaultVersion.isBlank()) {
@@ -125,7 +126,10 @@ public record AxizWebProperties(
       return supported.stream().min(ApiVersion::compareVersions).orElse(null);
     }
 
-    /** Compares dotted numeric versions ("1" < "1.1" < "2" < "10"); other text compares as text. */
+    /**
+     * Compara versiones numéricas con puntos ("1" < "1.1" < "2" < "10"); el resto del texto se
+     * compara como texto.
+     */
     static int compareVersions(String a, String b) {
       String[] x = a.split("\\.", -1);
       String[] y = b.split("\\.", -1);
@@ -145,17 +149,17 @@ public record AxizWebProperties(
   }
 
   /**
-   * CORS policy, disabled unless declared.
+   * Política CORS, desactivada salvo que se declare.
    *
-   * @param enabled whether CORS mappings are registered
-   * @param pathPattern paths covered
-   * @param allowedOrigins exact origins
-   * @param allowedOriginPatterns origin patterns
-   * @param allowedMethods methods
-   * @param allowedHeaders request headers
-   * @param exposedHeaders response headers visible to the browser
-   * @param allowCredentials whether credentials are allowed
-   * @param maxAge pre-flight cache duration
+   * @param enabled indica si se registran los mapeos CORS
+   * @param pathPattern rutas cubiertas
+   * @param allowedOrigins orígenes exactos
+   * @param allowedOriginPatterns patrones de origen
+   * @param allowedMethods métodos
+   * @param allowedHeaders cabeceras de la solicitud
+   * @param exposedHeaders cabeceras de la respuesta visibles para el navegador
+   * @param allowCredentials indica si se permiten credenciales
+   * @param maxAge duración de la caché del pre-flight
    */
   public record Cors(
       @DefaultValue("false") boolean enabled,
@@ -175,12 +179,15 @@ public record AxizWebProperties(
       exposedHeaders = List.copyOf(exposedHeaders);
     }
 
-    /** Named construction; required values and invariants are checked by build. */
+    /** Construcción con nombre; build comprueba los valores obligatorios y las invariantes. */
     public static Builder builder() {
       return new Builder();
     }
 
-    /** Mutable construction state; use one builder per operation, never as shared state. */
+    /**
+     * Estado mutable de construcción; se usa un builder por operación, nunca como estado
+     * compartido.
+     */
     public static final class Builder {
       private boolean enabled = false;
       private @Nullable String pathPattern = null;
@@ -255,15 +262,16 @@ public record AxizWebProperties(
   }
 
   /**
-   * JSON reading and writing of the service's own API.
+   * Lectura y escritura JSON de la API propia del servicio.
    *
-   * @param includeNulls whether null properties are written
-   * @param maxNumberLength longest number accepted
-   * @param maxStringLength longest string accepted
-   * @param maxNestingDepth deepest nesting accepted
-   * @param rejectUnknownProperties whether a request body with a property its type does not declare
-   *     is rejected (400) instead of silently ignored (OWASP API3, mass assignment). HTTP clients
-   *     and event consumers keep reading other parties' payloads tolerantly.
+   * @param includeNulls indica si se escriben las propiedades nulas
+   * @param maxNumberLength número más largo aceptado
+   * @param maxStringLength cadena más larga aceptada
+   * @param maxNestingDepth anidamiento más profundo aceptado
+   * @param rejectUnknownProperties indica si un cuerpo de solicitud con una propiedad que su tipo
+   *     no declara se rechaza (400) en lugar de ignorarse en silencio (OWASP API3, asignación
+   *     masiva). Los clientes HTTP y los consumidores de eventos siguen leyendo de forma tolerante
+   *     los payloads de terceros.
    */
   public record Json(
       @DefaultValue("false") boolean includeNulls,
@@ -283,7 +291,8 @@ public record AxizWebProperties(
   }
 
   /**
-   * First matching path overrides the default body size; streaming is counted without buffering.
+   * La primera ruta que coincide sobrescribe el tamaño de cuerpo por defecto; el streaming se
+   * cuenta sin almacenar en búfer.
    */
   public record BodyLimit(String path, DataSize maxSize) {
     public BodyLimit {
@@ -292,12 +301,14 @@ public record AxizWebProperties(
     }
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción con nombre; build comprueba los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable List<Header> headers = List.of();
     private @Nullable List<String> excludedPaths = List.of();

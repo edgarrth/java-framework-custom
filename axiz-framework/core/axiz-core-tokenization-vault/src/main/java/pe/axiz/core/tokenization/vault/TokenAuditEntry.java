@@ -10,7 +10,8 @@ import pe.axiz.core.tokenization.TokenOperation;
 import pe.axiz.core.tokenization.TokenType;
 
 /**
- * Allowlisted evidence; no original value, index, ciphertext, credentials or arbitrary exception.
+ * Evidencia de una lista de permitidos; sin valor original, índice, texto cifrado, credenciales ni
+ * excepción arbitraria.
  */
 public record TokenAuditEntry(
     TokenOperation operation,
@@ -22,7 +23,9 @@ public record TokenAuditEntry(
     Result result,
     String tokenReference,
     Instant at) {
-  /** Closed result catalog, with presence information only after authorization. */
+  /**
+   * Catálogo cerrado de resultados, con información de presencia solo después de la autorización.
+   */
   public enum Result {
     CREATED,
     FOUND,
@@ -51,7 +54,7 @@ public record TokenAuditEntry(
     if (purpose != null) purpose = VaultIdentifiers.identifier(purpose, 64);
   }
 
-  /** Discards the full token before creating the audit snapshot. */
+  /** Descarta el token completo antes de crear la instantánea de auditoría. */
   public static TokenAuditEntry of(
       TokenOperation operation,
       TokenCaller caller,
@@ -80,12 +83,14 @@ public record TokenAuditEntry(
     return "TokenAuditEntry[" + operation + ", " + result + "]";
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción nominal; build verifica los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable TokenOperation operation = null;
     private @Nullable TokenCaller caller = null;

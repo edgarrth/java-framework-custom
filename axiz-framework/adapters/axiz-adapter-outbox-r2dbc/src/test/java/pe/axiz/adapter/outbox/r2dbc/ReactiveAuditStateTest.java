@@ -33,8 +33,9 @@ class ReactiveAuditStateTest {
 
   private static R2dbcSql active(FakeR2dbc db) {
     var sql = spy(new R2dbcSql(db));
-    // Transaction semantics are exercised against PostgreSQL in PostgresAuditChainIT.
-    // Here the caller's transaction state is controlled to test chain protocol failures.
+    // La semántica transaccional se ejercita contra PostgreSQL en PostgresAuditChainIT. Aquí se
+    // controla el estado de la transacción de quien llama para probar los fallos del protocolo de
+    // cadena.
     doReturn(Mono.just(true)).when(sql).isTransactionActive();
     return sql;
   }

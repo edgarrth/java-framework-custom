@@ -6,11 +6,11 @@ import org.springframework.util.ClassUtils;
 import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
 import pe.axiz.spring.aws.AwsIdentity;
 
-/** AWS IAM provider selection with clear classpath diagnostics. */
+/** Selección del proveedor IAM de AWS con diagnósticos claros del classpath. */
 final class IamTokens {
   private IamTokens() {}
 
-  /** A token provider for the host and port of an R2DBC URL. */
+  /** Proveedor de tokens para el host y el puerto de una URL R2DBC. */
   static DatabasePasswordProvider provider(
       String r2dbcUrl,
       String username,

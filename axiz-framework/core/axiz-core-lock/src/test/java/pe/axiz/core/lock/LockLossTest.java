@@ -18,10 +18,11 @@ import java.util.function.IntFunction;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.errors.BusinessException;
 
-/** A lease lost while the work runs never ends in a success. */
+/** Un lease perdido mientras corre el trabajo nunca termina en éxito. */
 class LockLossTest {
 
-  // Real scheduler integration needs room for instrumentation and concurrent CI work.
+  // La integración real con el scheduler necesita margen para la instrumentación y el trabajo
+  // concurrente de CI.
   private static final Duration LEASE = Duration.ofSeconds(1);
 
   @Test
@@ -73,7 +74,7 @@ class LockLossTest {
     assertEquals(0, handle.renewals.get());
   }
 
-  /** A handle whose renewals answer what the test says; counts them. */
+  /** Handle cuyas renovaciones responden lo que indica la prueba; las cuenta. */
   static final class ScriptedHandle implements LockHandle {
     final AtomicInteger renewals = new AtomicInteger();
     final AtomicBoolean released = new AtomicBoolean();
@@ -257,8 +258,8 @@ class LockLossTest {
   void anAcquisitionThatAnswersAfterItsLeaseIsReleasedAndNeverRunsTheWork() {
     InMemoryDistributedLock store = new InMemoryDistributedLock(Clock.systemUTC());
     AtomicInteger attempts = new AtomicInteger();
-    // the store grants the lease at once, but its answer arrives after the lease ran out; by then
-    // the in-memory store, like Redis, already lets another owner take it
+    // el almacén concede el lease de inmediato, pero su respuesta llega cuando el lease ya se
+    // agotó; para entonces el almacén en memoria, como Redis, permite que otro propietario lo tome
     DistributedLock slow =
         (resource, lease) -> {
           attempts.incrementAndGet();

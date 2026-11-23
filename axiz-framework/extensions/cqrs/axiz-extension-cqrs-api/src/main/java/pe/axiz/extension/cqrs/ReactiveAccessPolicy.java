@@ -3,10 +3,11 @@ package pe.axiz.extension.cqrs;
 import org.reactivestreams.Publisher;
 
 /**
- * Non-blocking authorization contract, independent of Spring and Reactor. The publisher completes
- * empty to allow access or fails to deny it, before idempotency, transactions and the handler.
+ * Contrato de autorización no bloqueante, independiente de Spring y de Reactor. El publisher
+ * termina vacío para permitir el acceso o falla para denegarlo, antes de la idempotencia, las
+ * transacciones y el handler.
  *
- * @param <R> request type (or a shared supertype)
+ * @param <R> tipo de petición (o un supertipo compartido)
  */
 public interface ReactiveAccessPolicy<R> {
 

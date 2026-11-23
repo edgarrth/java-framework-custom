@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-logging-spring-boot-starter
 
-Structured JSON logging, operation logging with masking and HTTP request logs.
+Logs JSON estructurados, registro de operaciones con enmascaramiento y logs de peticiones HTTP.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,4 +12,4 @@ Structured JSON logging, operation logging with masking and HTTP request logs.
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).

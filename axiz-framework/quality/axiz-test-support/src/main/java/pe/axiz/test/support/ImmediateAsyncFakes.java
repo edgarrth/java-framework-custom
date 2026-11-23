@@ -10,8 +10,8 @@ import java.util.concurrent.CompletionStage;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Adapts an in-memory protocol fake to an SDK's asynchronous interface for deterministic contract
- * tests.
+ * Adapta un fake de protocolo en memoria a la interfaz asíncrona de un SDK para pruebas de contrato
+ * deterministas.
  */
 public final class ImmediateAsyncFakes {
   private ImmediateAsyncFakes() {}
@@ -47,7 +47,7 @@ public final class ImmediateAsyncFakes {
                         return Objects.requireNonNull(failure.getCause()).toString();
                       }
                     }
-                    // The protocol fake already finished before this future was returned.
+                    // El fake de protocolo ya terminó cuando se devolvió este future.
                     if (m.getName().equals("await")) return future.isDone();
                     try {
                       return m.invoke(future, a);

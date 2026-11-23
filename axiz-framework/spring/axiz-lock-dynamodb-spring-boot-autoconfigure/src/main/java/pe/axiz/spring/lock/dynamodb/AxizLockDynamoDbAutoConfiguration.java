@@ -31,7 +31,7 @@ import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-/** DynamoDB locks (conditional writes with lease expiry). */
+/** Locks en DynamoDB (escrituras condicionales con expiración del lease). */
 @AutoConfiguration(
     beforeName = "pe.axiz.spring.lock.AxizLockAutoConfiguration",
     afterName = "pe.axiz.spring.dynamodb.AxizDynamoDbAutoConfiguration")
@@ -44,7 +44,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 @ConditionalOnBooleanProperty(name = "axiz.lock.enabled", matchIfMissing = true)
 public class AxizLockDynamoDbAutoConfiguration {
 
-  /** Only without the DynamoDB starter (or another {@link DynamoDbClient} bean): same settings. */
+  /** Solo sin el starter de DynamoDB (u otro bean {@link DynamoDbClient}): misma configuración. */
   @Bean(destroyMethod = "close")
   @ConditionalOnMissingBean
   @ConditionalOnImperativeApplication

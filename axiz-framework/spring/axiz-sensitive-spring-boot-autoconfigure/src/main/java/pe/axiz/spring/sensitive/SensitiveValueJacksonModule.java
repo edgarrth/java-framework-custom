@@ -6,7 +6,10 @@ import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.ValueSerializer;
 import tools.jackson.databind.module.SimpleModule;
 
-/** Intrinsically sensitive types never expose their internals through a generic mapper. */
+/**
+ * Los tipos intrínsecamente sensibles nunca exponen sus detalles internos a través de un mapper
+ * genérico.
+ */
 public final class SensitiveValueJacksonModule extends SimpleModule {
   private static final long serialVersionUID = 1L;
 

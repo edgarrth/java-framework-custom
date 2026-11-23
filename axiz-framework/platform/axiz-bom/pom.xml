@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  axiz-bom: versions of every axiz artifact (generated from the reactor). Import it to use axiz
-  modules without versions. Third-party versions live in axiz-dependencies.
+  axiz-bom: versiones de cada artefacto de axiz (generado a partir del reactor). Se importa para usar los
+  módulos de axiz sin versiones. Las versiones de terceros residen en axiz-dependencies.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">

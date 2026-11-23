@@ -2,7 +2,7 @@ package pe.axiz.quality.archunit;
 
 import java.util.Locale;
 
-/** Service stack. */
+/** Stack del servicio. */
 public enum Stack {
   SERVLET,
   REACTIVE;

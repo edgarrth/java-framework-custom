@@ -4,7 +4,10 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Base64;
 
-/** Shared versioned wire format; bounded parsing never trusts the payload for its row binding. */
+/**
+ * Formato de red versionado compartido; el parseo acotado nunca confía en el payload para su enlace
+ * con la fila.
+ */
 final class PayloadProtection {
   static final int MAX_PLAIN = 16 * 1024 * 1024;
   private static final int MAX_STORED = MAX_PLAIN + 65_600;

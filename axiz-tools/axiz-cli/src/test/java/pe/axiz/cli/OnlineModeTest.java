@@ -26,8 +26,8 @@ import org.junit.jupiter.api.io.TempDir;
 import pe.axiz.codegen.openapi.Json;
 
 /**
- * {@code axiz new --server}: the request the CLI sends to the initializr (JSON body, the user's
- * token) and how it unpacks the answer or reports a refusal.
+ * {@code axiz new --server}: la solicitud que la CLI envía al initializr (cuerpo JSON, token del
+ * usuario) y cómo desempaqueta la respuesta o informa un rechazo.
  */
 class OnlineModeTest {
 

@@ -4,7 +4,7 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.config.ConfigDataResource;
 
-/** Resource delegated to Cloud AWS after managed bootstrap policy has been applied. */
+/** Recurso delegado a Cloud AWS después de aplicar la política del bootstrap gestionado. */
 public final class AxizParameterStoreResource extends ConfigDataResource {
   private final Object delegate;
 

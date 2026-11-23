@@ -98,8 +98,8 @@ class ProjectGeneratorTest {
                     List.of("outbox", "messaging-" + transport)));
         String config = project.text("src/main/resources/application.yaml");
         assertTrue(config.contains("mode: DURABLE"), config);
-        assertTrue(config.contains("Audit convention:"));
-        assertTrue(config.contains("same transactional resource"));
+        assertTrue(config.contains("Convención de auditoría:"));
+        assertTrue(config.contains("mismo recurso transaccional"));
         assertTrue(
             config.contains(
                 transport.equals("kafka")
@@ -152,7 +152,7 @@ class ProjectGeneratorTest {
     }
   }
 
-  /** Every valid archetype x structure x stack x persistence combination. */
+  /** Cada combinación válida de arquetipo x estructura x stack x persistencia. */
   private List<ProjectRequest> combinations() {
     List<ProjectRequest> out = new ArrayList<>();
     for (Archetype a : generator.catalog().archetypes()) {
@@ -183,7 +183,8 @@ class ProjectGeneratorTest {
         String path = e.getKey();
         String text = new String(e.getValue(), StandardCharsets.UTF_8);
         if (!path.contains("/templates/")) {
-          // GitHub expressions (${{ ... }}) are legitimate; any other {{ is an unrendered tag
+          // Las expresiones de GitHub (${{ ... }}) son legítimas; cualquier otro {{ es una etiqueta
+          // sin renderizar
           assertFalse(UNRENDERED.matcher(text).find(), where + " unrendered mustache in " + path);
         }
         if (path.endsWith(".java")) {
@@ -194,7 +195,7 @@ class ProjectGeneratorTest {
         }
         if ((path.endsWith(".yaml") || path.endsWith(".yml")) && !path.contains("/templates/")) {
           for (Object ignored : yaml.loadAll(text)) {
-            // parses
+            // se analiza
           }
         }
       }
@@ -308,8 +309,9 @@ class ProjectGeneratorTest {
             .contains("release.yaml@" + WorkflowRelease.expected()));
     assertTrue(p.files().containsKey("release-please-config.json"));
     assertTrue(p.files().containsKey(".release-please-manifest.json"));
-    // nothing released yet; the first release is the version the pom targets (release-please
-    // would propose 1.0.0 without initial-version; .github/scripts/release-version computes it)
+    // sin releases publicadas: la primera release es la versión a la que apunta el pom
+    // (release-please propondría 1.0.0 sin initial-version; .github/scripts/release-version la
+    // calcula)
     assertTrue(p.text(".release-please-manifest.json").contains("\"0.0.0\""));
     assertEquals("0.0.0", p.text("version.txt").strip());
     assertTrue(
@@ -394,7 +396,7 @@ class ProjectGeneratorTest {
     String local = p.text("src/main/resources/application-local.yaml");
     assertTrue(local.contains("url: r2dbc:postgresql://localhost:5432/orders"), local);
     String migration = p.text("src/main/resources/db/migration/V1__init.sql");
-    assertTrue(migration.contains("only uses R2DBC"));
+    assertTrue(migration.contains("solo usa R2DBC"));
     assertTrue(migration.contains("CREATE TABLE IF NOT EXISTS axiz_outbox"));
     assertTrue(p.text("compose.yaml").contains("postgres:"));
     assertTrue(
@@ -486,7 +488,10 @@ class ProjectGeneratorTest {
     assertTrue(application.contains("read model &lt;R2DBC&gt; &amp;"), "doclint-safe HTML");
   }
 
-  /** Every run of hyphens, a trailing one and markup still give well-formed POMs and Javadoc. */
+  /**
+   * Cualquier secuencia de guiones, uno al final y el marcado siguen produciendo POM y Javadoc bien
+   * formados.
+   */
   @Test
   void ordinaryPunctuationAlwaysProducesWellFormedFiles() throws Exception {
     DocumentBuilderFactory xml = DocumentBuilderFactory.newInstance();

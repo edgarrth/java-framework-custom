@@ -29,9 +29,10 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.TransactionCanceledException;
 
 /**
- * DynamoDB implementation on the {@code beneficiaries} table (prefixed per environment). Removed
- * items are skipped with a filter expression, so a page may hold fewer items than requested while a
- * next cursor exists; clients follow {@code nextCursor} until it is null.
+ * Implementación en DynamoDB sobre la tabla {@code beneficiaries} (con prefijo por entorno). Los
+ * elementos eliminados se omiten con una expresión de filtro, por lo que una página puede contener
+ * menos elementos que los solicitados mientras exista un cursor siguiente; los clientes siguen
+ * {@code nextCursor} hasta que sea null.
  */
 @Repository
 class DynamoBeneficiaryRepository implements BeneficiaryRepository {
@@ -106,7 +107,7 @@ class DynamoBeneficiaryRepository implements BeneficiaryRepository {
     for (int attempt = 0; attempt < 8; attempt++) {
       long revision = directoryRevision(customer);
       List<Beneficiary> active = allActive(customer);
-      // No stale snapshot may reject a request or escape into a transaction.
+      // Ningún snapshot desactualizado puede rechazar una solicitud ni filtrarse a una transacción.
       if (directoryRevision(customer) != revision) continue;
       policy.checkRegistration(active, beneficiary.getCci());
       if (write(beneficiary, revision, true)) return;
@@ -140,7 +141,10 @@ class DynamoBeneficiaryRepository implements BeneficiaryRepository {
         .orElse(0L);
   }
 
-  /** Every change advances the customer fence atomically with the versioned beneficiary row. */
+  /**
+   * Cada cambio avanza la barrera del cliente de forma atómica junto con la fila versionada del
+   * beneficiario.
+   */
   private boolean write(Beneficiary beneficiary, long revision, boolean insert) {
     var fence =
         Expression.builder()
@@ -239,7 +243,10 @@ class DynamoBeneficiaryRepository implements BeneficiaryRepository {
     return table + "/primary/active/customer=" + customerId;
   }
 
-  /** Decodes the cursor and checks it belongs to the same customer (no cross-partition reads). */
+  /**
+   * Decodifica el cursor y verifica que pertenezca al mismo cliente (sin lecturas entre
+   * particiones).
+   */
   private @Nullable Map<String, AttributeValue> startKey(
       String customerId, @Nullable String cursor) {
     Map<String, AttributeValue> start;

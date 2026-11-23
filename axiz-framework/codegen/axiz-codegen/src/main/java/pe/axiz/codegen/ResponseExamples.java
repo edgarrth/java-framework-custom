@@ -9,7 +9,9 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.codegen.openapi.Json;
 import pe.axiz.codegen.openapi.OpenApiDocument;
 
-/** Small, typed synthetic values for generated controller mapping tests. */
+/**
+ * Valores sintéticos pequeños y tipados para las pruebas de mapeo de los controladores generados.
+ */
 final class ResponseExamples {
   private ResponseExamples() {}
 

@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/** The explicit architecture scopes implied by the resolved capability graph. */
+/** Los alcances de arquitectura explícitos que implica el grafo de capacidades resuelto. */
 public record ArchitectureScopes(String cardData, String tokenization) {
   public static ArchitectureScopes of(Collection<Capability> capabilities) {
     Set<String> names = capabilities.stream().map(Capability::name).collect(Collectors.toSet());

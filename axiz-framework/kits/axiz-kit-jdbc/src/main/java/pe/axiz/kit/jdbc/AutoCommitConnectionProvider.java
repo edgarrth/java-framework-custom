@@ -6,10 +6,11 @@ import java.util.Objects;
 import javax.sql.DataSource;
 
 /**
- * Borrows a dedicated connection in auto-commit mode for every operation and closes it on release.
- * Its work never joins, and never waits for, a transaction of the caller: each statement commits on
- * its own. Stores whose writes must be visible to other workers immediately (leases, ownership,
- * process state) use it, so they behave the same inside or outside application transactions.
+ * Toma prestada una conexión dedicada en modo auto-commit para cada operación y la cierra al
+ * liberarla. Su trabajo nunca se une a una transacción de quien llama ni la espera: cada sentencia
+ * hace commit por sí sola. La usan los almacenes cuyas escrituras deben ser visibles de inmediato
+ * para otros workers (leases, propiedad, estado del proceso), de modo que se comportan igual dentro
+ * o fuera de las transacciones de la aplicación.
  */
 public final class AutoCommitConnectionProvider implements ConnectionProvider {
 

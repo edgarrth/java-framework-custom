@@ -6,7 +6,10 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.audit.AsyncAuditPublisherDecorator;
 import pe.axiz.core.audit.AuditPublisherDecorator;
 
-/** Bounded identity traversal, including user decorators; no recursive cycle can hide a queue. */
+/**
+ * Recorrido acotado por identidad, incluidos los decoradores del usuario; ningún ciclo recursivo
+ * puede ocultar una cola.
+ */
 final class AuditPublisherLookup {
   private AuditPublisherLookup() {}
 

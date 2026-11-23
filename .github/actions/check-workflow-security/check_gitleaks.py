@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prove that the effective gitleaks configuration still detects secret canaries."""
+"""Demuestra que la configuración efectiva de gitleaks sigue detectando los canaries de secretos."""
 import argparse
 import base64
 import json
@@ -18,7 +18,7 @@ def check(configuration):
         api = root / "docs/api/public-api.json"
         api.parent.mkdir(parents=True)
         digest = secrets.token_hex(32)
-        # Synthetic random data, never a real account credential. Reports are always redacted.
+                # Datos aleatorios sintéticos, nunca una credencial real de una cuenta. Los reportes siempre se ocultan.
         canary = secrets.token_urlsafe(32)
         api.write_text('"keySha256": "' + digest + '"\n'
                        '"api_key": "' + canary + '"\n'

@@ -1,4 +1,4 @@
-# Release-please creates the tag and service release; ci builds and deploy promotes independently.
+# Release-please crea el tag y la release del servicio; ci construye y deploy promueve de forma independiente.
 name: release
 
 on:
@@ -33,7 +33,7 @@ jobs:
     permissions:
       contents: write
     needs: axiz-workflows-trust
-    # Immutable internal release: axiz-workflows-trust must succeed first.
+    # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
     uses: edgarrth/java-framework-custom/.github/workflows/release.yaml@axiz-workflows-v2.0.0
     secrets:

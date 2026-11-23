@@ -13,7 +13,10 @@ import pe.axiz.spring.lock.dynamodb.AxizLockDynamoDbAutoConfiguration;
 import pe.axiz.spring.lock.redis.AxizLockRedisAutoConfiguration;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-/** The lock store is chosen explicitly; a lock that cannot exclude other replicas is refused. */
+/**
+ * El almacén de locks se elige de forma explícita; se rechaza un lock que no puede excluir a otras
+ * réplicas.
+ */
 class LockStoreSelectionTest {
 
   private final ApplicationContextRunner runner =

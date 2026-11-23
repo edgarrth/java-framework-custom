@@ -6,7 +6,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/** Flags from configuration (bound from the service ConfigMap). */
+/** Flags desde la configuración (enlazados desde el ConfigMap del servicio). */
 public final class MapFlagProvider implements FlagProvider {
 
   private final Map<String, FlagDefinition> flags;

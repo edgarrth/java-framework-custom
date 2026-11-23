@@ -1,4 +1,4 @@
-/** Automated migrations for axiz consumers. */
+/** Migraciones automatizadas para los consumidores de axiz. */
 @NullMarked
 package pe.axiz.rewrite;
 

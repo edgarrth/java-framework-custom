@@ -8,26 +8,28 @@ import pe.axiz.core.api.PageRequest;
 import pe.axiz.core.money.Money;
 import pe.axiz.payments.orders.domain.PaymentOrder;
 
-/** Storage of payment orders. */
+/** Almacenamiento de órdenes de pago. */
 public interface PaymentOrders {
 
   /**
-   * Stores changes of an existing order; never inserts a missing order. The use case loads and
-   * saves within the same transaction. A missing persisted order is an infrastructure failure.
+   * Almacena los cambios de una orden existente; nunca inserta una orden inexistente. El caso de
+   * uso carga y guarda dentro de la misma transacción. Que falte una orden persistida es una falla
+   * de infraestructura.
    */
   void save(PaymentOrder order);
 
   /**
-   * Inserts a new order together with the client's request key, unique per customer, and writes it
-   * immediately so a concurrent request with the same key fails here. Returns the authoritative
-   * persisted representation, including its creation timestamp at database precision.
+   * Inserta una orden nueva junto con la clave de solicitud del cliente, única por cliente, y la
+   * escribe de inmediato para que una solicitud concurrente con la misma clave falle aquí. Devuelve
+   * la representación persistida de referencia, incluida su marca de tiempo de creación con la
+   * precisión de la base de datos.
    *
-   * @throws pe.axiz.core.errors.BusinessException {@code CONCURRENT_REQUEST} when another request
-   *     with the same key was stored first
+   * @throws pe.axiz.core.errors.BusinessException {@code CONCURRENT_REQUEST} cuando otra solicitud
+   *     con la misma clave se almacenó primero
    */
   PaymentOrder create(PaymentOrder order, @Nullable String requestKey);
 
-  /** The order a customer registered with a request key, if any. */
+  /** La orden que un cliente registró con una clave de solicitud, si existe. */
   Optional<PaymentOrder> findByRequestKey(String customerId, String requestKey);
 
   Optional<PaymentOrder> find(String id);
@@ -35,21 +37,22 @@ public interface PaymentOrders {
   Page<PaymentOrder> byCustomer(String customerId, PageRequest page);
 
   /**
-   * Atomically adds {@code amount} to what the customer reserved for that processing date and
-   * currency, only if the total stays within {@code limit}. The reservation row is locked until the
-   * transaction ends, so concurrent orders of the same customer and day are serialized: two orders
-   * can never both fit in the same remaining amount.
+   * Suma de forma atómica {@code amount} a lo que el cliente reservó para esa fecha de
+   * procesamiento y esa moneda, solo si el total se mantiene dentro de {@code limit}. La fila de
+   * reserva queda bloqueada hasta que termina la transacción, por lo que las órdenes concurrentes
+   * del mismo cliente y día se serializan: dos órdenes nunca pueden caber ambas en el mismo monto
+   * restante.
    *
-   * @return false when the amount does not fit (nothing is reserved)
+   * @return false cuando el monto no cabe (no se reserva nada)
    */
   boolean reserveDaily(String customerId, Money amount, LocalDate processingDate, Money limit);
 
-  /** Gives back the amount of an order that will not be paid (rejected). */
+  /** Devuelve el monto de una orden que no se pagará (rechazada). */
   void releaseDaily(String customerId, Money amount, LocalDate processingDate);
 
-  /** Amount reserved by the customer for a processing date, in one currency. */
+  /** Monto reservado por el cliente para una fecha de procesamiento, en una moneda. */
   Money reservedOn(String customerId, String currency, LocalDate processingDate);
 
-  /** Whether the customer already ordered the same amount to the same creditor on that date. */
+  /** Indica si el cliente ya ordenó el mismo monto al mismo acreedor en esa fecha. */
   boolean exists(String customerId, String creditorCci, Money amount, LocalDate processingDate);
 }

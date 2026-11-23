@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare checksum-pinned local CRD schemas before running the offline policy executor."""
+"""Prepara esquemas CRD locales fijados por checksum antes de ejecutar el ejecutor de políticas sin conexión."""
 import argparse
 import hashlib
 import json

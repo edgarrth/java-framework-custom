@@ -21,7 +21,10 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
 import software.amazon.awssdk.services.ssm.SsmClient;
 
-/** Keeps the standard aws-parameterstore: format while controlling identity before first I/O. */
+/**
+ * Conserva el formato estándar aws-parameterstore: mientras controla la identidad antes de la
+ * primera E/S.
+ */
 public final class AxizParameterStoreResolver
     implements ConfigDataLocationResolver<AxizParameterStoreResource>, Ordered {
   private final DeferredLogFactory logs;

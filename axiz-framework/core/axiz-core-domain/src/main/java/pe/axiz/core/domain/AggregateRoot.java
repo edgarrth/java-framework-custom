@@ -4,10 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Aggregate root: consistency boundary that records domain events while it changes. The application
- * layer pulls the events after saving and publishes them once the transaction commits.
+ * Raíz de agregado: frontera de consistencia que registra eventos de dominio mientras cambia. La
+ * capa de aplicación extrae los eventos tras guardar y los publica una vez que la transacción hace
+ * commit.
  *
- * @param <I> id type
+ * @param <I> tipo del id
  */
 public abstract class AggregateRoot<I> extends Entity<I> {
 
@@ -17,12 +18,12 @@ public abstract class AggregateRoot<I> extends Entity<I> {
     pendingEvents.add(event);
   }
 
-  /** Events registered since the last pull, without removing them. */
+  /** Eventos registrados desde la última extracción, sin eliminarlos. */
   public List<DomainEvent> peekEvents() {
     return List.copyOf(pendingEvents);
   }
 
-  /** Returns and clears the pending events. */
+  /** Devuelve y limpia los eventos pendientes. */
   public List<DomainEvent> pullEvents() {
     List<DomainEvent> events = List.copyOf(pendingEvents);
     pendingEvents.clear();

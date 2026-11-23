@@ -1,6 +1,6 @@
 package pe.axiz.core.notification;
 
-/** Delivery channels. */
+/** Canales de entrega. */
 public enum NotificationChannel {
   EMAIL,
   SMS,

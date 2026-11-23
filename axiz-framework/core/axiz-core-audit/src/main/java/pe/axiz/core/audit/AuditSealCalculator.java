@@ -5,13 +5,16 @@ import java.util.Objects;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
-/** Pure, thread-safe seal calculation, with no chain state or I/O. */
+/** Cálculo de sellos puro y thread-safe, sin estado de cadena ni E/S. */
 public final class AuditSealCalculator {
   private final AuditSealer.Mode mode;
   private final @Nullable Supplier<byte[]> hmacKey;
   private final @Nullable String keyId;
 
-  /** The HMAC supplier transfers a fresh buffer on every call; the calculator wipes that buffer. */
+  /**
+   * El proveedor de HMAC transfiere un buffer nuevo en cada llamada; el calculador borra ese
+   * buffer.
+   */
   public AuditSealCalculator(
       AuditSealer.Mode mode, @Nullable Supplier<byte[]> hmacKey, @Nullable String keyId) {
     this.mode = Objects.requireNonNull(mode);
@@ -24,7 +27,8 @@ public final class AuditSealCalculator {
     }
     this.hmacKey = hmacKey;
     this.keyId = keyId;
-    // Resolve JCA providers during composition, before use on an event-loop thread.
+    // Se resuelven los proveedores JCA durante la composición, antes de usarlos en un hilo del
+    // event loop.
     SealPreimage.prepare(mode);
   }
 

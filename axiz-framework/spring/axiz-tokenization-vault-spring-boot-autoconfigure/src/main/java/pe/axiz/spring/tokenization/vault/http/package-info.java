@@ -1,3 +1,6 @@
-/** Dedicated bounded HTTP boundary for the token vault; no global revealing serializers. */
+/**
+ * Límite HTTP dedicado y acotado para el vault de tokens; sin serializadores globales que revelen
+ * valores.
+ */
 @org.jspecify.annotations.NullMarked
 package pe.axiz.spring.tokenization.vault.http;

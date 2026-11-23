@@ -26,7 +26,9 @@ import pe.axiz.payments.bankingcore.domain.MovementStatus;
 
 class UseCasesTest {
 
-  /** Core fake that records calls and detects overlapping debits on the same account. */
+  /**
+   * Fake del core que registra las llamadas y detecta débitos superpuestos sobre una misma cuenta.
+   */
   static final class FakeCore implements CoreAccounts {
     final List<String> calls = new ArrayList<>();
     final AtomicInteger inFlight = new AtomicInteger();

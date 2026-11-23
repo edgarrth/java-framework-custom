@@ -25,7 +25,10 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 import software.amazon.awssdk.services.dynamodb.model.TransactionCanceledException;
 
-/** Native SDK futures with the same transaction plans and serializable lookup as the sync port. */
+/**
+ * Futures nativos del SDK con los mismos planes de transacción y la misma consulta serializable que
+ * el puerto síncrono.
+ */
 public final class DynamoDbAsyncTokenVault implements AsyncTokenVault {
   @SuppressFBWarnings(
       value = "EI_EXPOSE_REP2",
@@ -173,8 +176,8 @@ public final class DynamoDbAsyncTokenVault implements AsyncTokenVault {
       Supplier<CompletionStage<V>> action,
       Function<V, CompletionStage<T>> success,
       Function<TransactionCanceledException, CompletionStage<T>> rejected) {
-    // A canceled public future must not misclassify a write that the SDK already accepted.
-    // Callers keep their lease until these bounded native calls settle.
+    // Un future público cancelado no debe clasificar mal una escritura que el SDK ya aceptó.
+    // Quienes llaman conservan su lease hasta que estas llamadas nativas acotadas se resuelven.
     return Stages.compose(
         Stages.recover(
             Stages.map(Stages.call(action), answer -> new WriteAnswer<>(answer, null)),

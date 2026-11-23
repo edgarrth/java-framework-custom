@@ -11,20 +11,22 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 import pe.axiz.core.security.ClaimMapping;
 
 /**
- * Resource server settings ({@code axiz.security.*}). The issuer allow-list normally lives in the
- * {@code axiz-common} ConfigMap.
+ * Configuración del resource server ({@code axiz.security.*}). La lista de emisores permitidos
+ * normalmente reside en el ConfigMap {@code axiz-common}.
  *
- * @param issuers trusted issuers; tokens from any other issuer are rejected before any key lookup
- * @param algorithms accepted JWS algorithms
- * @param clockSkew tolerated clock difference for {@code exp} and {@code nbf}
- * @param claims claim mapping to the principal
- * @param publicPaths path patterns that do not require a token (none by default)
- * @param publicApiDocs whether the OpenAPI document and Swagger UI are reachable without a token;
- *     off by default (production), the local profile of generated services turns it on
- * @param publicInfo whether {@code /actuator/info} is reachable without a token; off by default,
- *     since build and git details help an attacker; health probes are always public
- * @param actuatorAuthority authority required for actuator endpoints other than health
- * @param rateLimit rate limiting per caller
+ * @param issuers emisores de confianza; los tokens de cualquier otro emisor se rechazan antes de
+ *     cualquier búsqueda de claves
+ * @param algorithms algoritmos JWS aceptados
+ * @param clockSkew diferencia de reloj tolerada para {@code exp} y {@code nbf}
+ * @param claims asociación de claims con el principal
+ * @param publicPaths patrones de ruta que no requieren token (ninguno por defecto)
+ * @param publicApiDocs indica si el documento OpenAPI y Swagger UI son accesibles sin token;
+ *     desactivado por defecto (producción), el perfil local de los servicios generados lo activa
+ * @param publicInfo indica si {@code /actuator/info} es accesible sin token; desactivado por
+ *     defecto, ya que los detalles del build y de git ayudan a un atacante; las sondas de salud
+ *     siempre son públicas
+ * @param actuatorAuthority autoridad requerida para los endpoints del actuator distintos de health
+ * @param rateLimit limitación de tasa por invocante
  */
 @ConfigurationProperties("axiz.security")
 public record AxizSecurityProperties(
@@ -47,7 +49,10 @@ public record AxizSecurityProperties(
     publicPaths = List.copyOf(publicPaths);
   }
 
-  /** Finite connect and complete-response deadlines for discovery and key download. */
+  /**
+   * Plazos finitos de conexión y de respuesta completa para el descubrimiento y la descarga de
+   * claves.
+   */
   public record Jwks(
       @DefaultValue("2s") Duration connectTimeout, @DefaultValue("3s") Duration readTimeout) {
     public Jwks {
@@ -59,7 +64,7 @@ public record AxizSecurityProperties(
     }
   }
 
-  /** Prior authorization coverage; warn is intended only for development. */
+  /** Cobertura previa de autorización; warn está pensado solo para desarrollo. */
   public record Authorization(
       @DefaultValue("fail") String unprotected, @DefaultValue List<RouteRule> rules) {
     public Authorization {
@@ -70,7 +75,8 @@ public record AxizSecurityProperties(
   }
 
   /**
-   * A specific HTTP rule applied by the framework's effective security chain; authorities are AND.
+   * Regla HTTP específica aplicada por la cadena de seguridad efectiva del framework; las
+   * autoridades se combinan con AND.
    */
   public record RouteRule(
       @DefaultValue List<String> paths,
@@ -94,11 +100,11 @@ public record AxizSecurityProperties(
     }
   }
 
-  /** Paths of the OpenAPI document and Swagger UI (springdoc defaults). */
+  /** Rutas del documento OpenAPI y de Swagger UI (valores por defecto de springdoc). */
   static final List<String> API_DOCS =
       List.of("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html");
 
-  /** Every path reachable without a token, besides the health probes. */
+  /** Todas las rutas accesibles sin token, además de las sondas de salud. */
   public List<String> anonymousPaths(String actuatorBase) {
     List<String> out = new ArrayList<>(publicPaths);
     if (publicApiDocs) {
@@ -111,13 +117,14 @@ public record AxizSecurityProperties(
   }
 
   /**
-   * A trusted issuer. Keys come from the configured (or discovered) JWKS URI, never from the token.
+   * Emisor de confianza. Las claves provienen del URI JWKS configurado (o descubierto), nunca del
+   * token.
    *
-   * @param issuer exact {@code iss} value
-   * @param jwkSetUri JWKS endpoint; when empty it is discovered from the issuer's OpenID metadata
-   *     on the first token of that issuer
-   * @param audiences accepted audiences (at least one)
-   * @param profile disjoint access-token profile for this issuer
+   * @param issuer valor exacto de {@code iss}
+   * @param jwkSetUri endpoint JWKS; cuando está vacío, se descubre a partir de los metadatos OpenID
+   *     del emisor con el primer token de ese emisor
+   * @param audiences audiencias aceptadas (al menos una)
+   * @param profile perfil disjunto de token de acceso para este emisor
    */
   public record Issuer(
       String issuer,
@@ -131,18 +138,20 @@ public record AxizSecurityProperties(
   }
 
   /**
-   * Claim paths for each principal attribute; dots navigate nested claims.
+   * Rutas de claims para cada atributo del principal; los puntos navegan por claims anidados.
    *
-   * @param subject subject claims
-   * @param clientId client id claims
-   * @param scopes scope claims
-   * @param roles role claims
-   * @param tenant tenant claims
-   * @param attributes extra claims copied to the principal
-   * @param machine exact issuer-owned {@code claim=value} markers of application tokens; user
-   *     profile claims, presence and prefix heuristics are rejected
-   * @param subjectAsClient opt-in to use sub as client only when a machine marker also matches;
-   *     otherwise tokens without a client claim are rejected (401)
+   * @param subject claims del subject
+   * @param clientId claims del id de cliente
+   * @param scopes claims de scopes
+   * @param roles claims de roles
+   * @param tenant claims del tenant
+   * @param attributes claims adicionales copiados al principal
+   * @param machine marcadores exactos {@code claim=value} propios del emisor para tokens de
+   *     aplicación; se rechazan los claims de perfil de usuario y las heurísticas de presencia y de
+   *     prefijo
+   * @param subjectAsClient activación opcional para usar sub como cliente solo cuando también
+   *     coincide un marcador de máquina; en otro caso, los tokens sin claim de cliente se rechazan
+   *     (401)
    */
   public record Claims(
       @DefaultValue("sub") List<String> subject,
@@ -167,12 +176,15 @@ public record AxizSecurityProperties(
       return new ClaimMapping(subject, clientId, scopes, roles, tenant, attributes, machine);
     }
 
-    /** Named construction; required values and invariants are checked by build. */
+    /** Construcción con nombre; build comprueba los valores obligatorios y las invariantes. */
     public static Builder builder() {
       return new Builder();
     }
 
-    /** Mutable construction state; use one builder per operation, never as shared state. */
+    /**
+     * Estado mutable de construcción; se usa un builder por operación, nunca como estado
+     * compartido.
+     */
     public static final class Builder {
       private @Nullable List<String> subject = List.of();
       private @Nullable List<String> clientId = List.of();
@@ -240,12 +252,13 @@ public record AxizSecurityProperties(
   }
 
   /**
-   * Rate limiting. The key always comes from the validated token (client or subject), never from a
-   * client-controlled header.
+   * Limitación de tasa. La clave siempre proviene del token validado (cliente o subject), nunca de
+   * una cabecera controlada por el cliente.
    *
-   * @param store name of the installed rate-limit integration; memory is restricted to one process
-   * @param enabled whether limits are enforced
-   * @param rules limits by route group
+   * @param store nombre de la integración de límites de tasa instalada; memory se restringe a un
+   *     solo proceso
+   * @param enabled indica si se aplican los límites
+   * @param rules límites por grupo de rutas
    */
   public record RateLimit(
       @DefaultValue("false") boolean enabled,
@@ -264,14 +277,16 @@ public record AxizSecurityProperties(
   }
 
   /**
-   * One rate-limit rule.
+   * Regla de límite de tasa.
    *
-   * @param name route group name
-   * @param paths path patterns covered
-   * @param limit requests allowed per window
-   * @param window window length
-   * @param key {@code client}, {@code subject}, or {@code anonymous-ip} for anonymous gateway calls
-   * @param failOpen policy of this group when the store is unavailable; required when enabled
+   * @param name nombre del grupo de rutas
+   * @param paths patrones de ruta cubiertos
+   * @param limit solicitudes permitidas por ventana
+   * @param window duración de la ventana
+   * @param key {@code client}, {@code subject} o {@code anonymous-ip} para llamadas anónimas desde
+   *     el gateway
+   * @param failOpen política de este grupo cuando el almacén no está disponible; obligatoria cuando
+   *     está habilitado
    */
   public record Rule(
       String name,
@@ -291,7 +306,8 @@ public record AxizSecurityProperties(
     }
 
     /**
-     * Explicit policy; direct programmatic construction also fails closed at configuration time.
+     * Política explícita; la construcción programática directa también falla de forma cerrada al
+     * configurar.
      */
     public boolean failurePolicy() {
       if (failOpen == null)
@@ -300,12 +316,14 @@ public record AxizSecurityProperties(
     }
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción con nombre; build comprueba los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable List<Issuer> issuers = List.of();
     private @Nullable List<String> algorithms = List.of();

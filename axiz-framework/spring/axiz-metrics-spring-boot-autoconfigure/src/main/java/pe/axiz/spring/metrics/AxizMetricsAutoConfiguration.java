@@ -39,9 +39,9 @@ import pe.axiz.core.metrics.MetricsSettings;
 import pe.axiz.core.metrics.TagPolicy;
 
 /**
- * Generic event metrics: the {@link EventMetrics} API, {@link Metered}, the meter filter that
- * enforces declared tags and buckets, and the common tags {@code service}, {@code env}, {@code
- * version} and {@code domain}.
+ * Métricas genéricas de eventos: la API {@link EventMetrics}, {@link Metered}, el filtro de
+ * medidores que impone las etiquetas y los buckets declarados, y las etiquetas comunes {@code
+ * service}, {@code env}, {@code version} y {@code domain}.
  */
 @AutoConfiguration(
     beforeName =
@@ -55,7 +55,7 @@ import pe.axiz.core.metrics.TagPolicy;
 @EnableConfigurationProperties(AxizMetricsProperties.class)
 public class AxizMetricsAutoConfiguration {
 
-  /** Common tag keys added to every meter. */
+  /** Claves de las etiquetas comunes añadidas a cada medidor. */
   public static final Set<String> COMMON_TAGS = Set.of("service", "env", "version", "domain");
 
   @Bean
@@ -125,7 +125,7 @@ public class AxizMetricsAutoConfiguration {
     return advisor;
   }
 
-  /** Common tags on every registry managed by Boot. */
+  /** Etiquetas comunes en cada registro gestionado por Boot. */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnClass(
       name = "org.springframework.boot.micrometer.metrics.autoconfigure.MeterRegistryCustomizer")
@@ -155,7 +155,10 @@ public class AxizMetricsAutoConfiguration {
         p.domain() != null ? p.domain() : "none");
   }
 
-  /** Resolve the registry at startup; repository completions must never initialize it lazily. */
+  /**
+   * Se resuelve el registro en el arranque; las finalizaciones de los repositorios nunca deben
+   * inicializarlo de forma diferida.
+   */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
   @ConditionalOnClass(

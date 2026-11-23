@@ -1,55 +1,61 @@
-# Provider recipes
+# Recetas de proveedores
 
-Executable consumer examples for provider choices not exercised by the payment flow.
-Requires JDK 25, Docker and the installed Axiz artifacts. Uses only local containers.
+Ejemplos ejecutables de consumidor para las opciones de proveedor que el flujo de pagos no ejercita.
+Requieren JDK 25, Docker y los artefactos de Axiz instalados. Usan solo contenedores locales.
 
 ```bash
 ./mvnw -pl examples/provider-recipes verify
 ```
 
-Run this command from `axiz-demo`. Each test starts only the selected Spring configurations
-from the public starters declared in this POM. An application should depend on the required
-subset of starters, never on this example module. Tests own provisioning and resource cleanup.
+Este comando se ejecuta desde `axiz-demo`. Cada prueba arranca solo las configuraciones Spring
+seleccionadas de los starters públicos declarados en este POM. Una aplicación debe depender del
+subconjunto de starters que necesita, nunca de este módulo de ejemplo. Las pruebas son dueñas del
+aprovisionamiento y de la limpieza de recursos.
 
-The relational recipes use PostgreSQL, including rollback, duplicate delivery, sequence
-reservation and competing scheduler locks. SQL migrations are applied before consumers start;
-production deployments should manage them with their normal migration process.
+Las recetas relacionales usan PostgreSQL, incluidos rollback, entrega duplicada, reserva de secuencias
+y locks del planificador en competencia. Las migraciones SQL se aplican antes de que arranquen los
+consumidores; los despliegues de producción las gestionan con su proceso normal de migraciones.
 
-| Recipe | What the consumer does | Boundary exercised |
+| Receta | Qué hace el consumidor | Límite ejercitado |
 |---|---|---|
-| `RelationalRecipesTest` | Reserves JDBC/R2DBC sequence values, rolls back business work, deduplicates inbox deliveries, commits/rolls back outbox events with business rows, excludes competing scheduled workers | PostgreSQL through public provider configurations |
-| `CloudRecipesTest` | Uploads/downloads/deletes S3 content, shares DynamoDB sequence counters, coordinates inbox/idempotency/locks, resolves Secrets Manager/SSM values, loads Parameter Store before beans exist | LocalStack; synchronous and native asynchronous providers |
-| `RedisRecipesTest` | Caches/evicts data, fences locks and idempotent responses, shares rate limits | Valkey through Redis providers on both stacks; also verifies missing/disabled providers cannot claim coverage |
-| `MessagingRecipesTest` | Publishes through the SQS and SNS messaging providers and sends sanitized audit records to independent SQS/Kafka destinations | LocalStack and Kafka; real producer/consumer delivery on both stacks |
-| `IdentityRecipesTest` | Selects a credential identity, signs expiring RDS authentication, configures a pool-scoped IAM profile and MSK TLS/SASL callback, reads mounted secrets | Local identity contracts and real filesystem I/O; no remote RDS or MSK authentication |
-| `CrossCuttingRecipesTest` | Logs operations with excluded arguments/results, observes outcomes without secret attributes, resolves localized messages, propagates and clears trusted tenant context | In-process Spring consumer contracts; JWT validation and OTLP collection are separate boundaries |
-| `OutboundRecipesTest` | Retries an HTTP read, refuses to replay an unkeyed payment, calls SOAP after credential rotation | Real loopback HTTP/XML transports; production requires TLS |
-| `RemoteTokenClientRecipeTest` | Tokenizes, looks up, describes, reveals and deletes through `Tokenizer`; uses subscriber identity with `ReactiveTokenizer` | Remote-client protocol contract against a loopback fixture, not a deployable token vault |
+| `RelationalRecipesTest` | Reserva valores de secuencia JDBC/R2DBC, revierte trabajo de negocio, deduplica entregas del inbox, confirma o revierte eventos del outbox junto con las filas de negocio, excluye workers programados en competencia | PostgreSQL mediante configuraciones públicas de proveedores |
+| `CloudRecipesTest` | Sube, descarga y borra contenido en S3, comparte contadores de secuencia en DynamoDB, coordina inbox, idempotencia y locks, resuelve valores de Secrets Manager y SSM, carga Parameter Store antes de que existan los beans | LocalStack; proveedores síncronos y nativos asíncronos |
+| `RedisRecipesTest` | Guarda y desaloja datos en caché, protege locks y respuestas idempotentes, comparte límites de tasa | Valkey mediante proveedores Redis en ambos stacks; también verifica que los proveedores ausentes o desactivados no puedan declarar cobertura |
+| `MessagingRecipesTest` | Publica mediante los proveedores de mensajería SQS y SNS y envía registros de auditoría saneados a destinos independientes de SQS y Kafka | LocalStack y Kafka; entrega real de productor y consumidor en ambos stacks |
+| `IdentityRecipesTest` | Selecciona una identidad de credenciales, firma la autenticación expirable de RDS, configura un perfil IAM acotado al pool y el callback TLS/SASL de MSK, lee secretos montados | Contratos de identidad locales y I/O real de sistema de archivos; sin autenticación remota en RDS ni MSK |
+| `CrossCuttingRecipesTest` | Registra operaciones con argumentos y resultados excluidos, observa resultados sin atributos secretos, resuelve mensajes localizados, propaga y limpia el contexto de tenant confiable | Contratos de consumidor Spring en proceso; la validación JWT y la recolección OTLP son límites separados |
+| `OutboundRecipesTest` | Reintenta una lectura HTTP, se niega a repetir un pago sin clave, llama a SOAP después de rotar credenciales | Transportes HTTP/XML reales en loopback; producción requiere TLS |
+| `RemoteTokenClientRecipeTest` | Tokeniza, busca, describe, revela y borra mediante `Tokenizer`; usa la identidad del suscriptor con `ReactiveTokenizer` | Contrato del protocolo del cliente remoto contra un fixture en loopback, no una bóveda de tokens desplegable |
 
-To run one recipe, use `./mvnw -pl examples/provider-recipes -Dtest=RedisRecipesTest test`.
-Read the named test for imports, selected starter configuration, properties, provisioning and
-resource ownership. Use only the starters needed by your service. The examples intentionally
-keep provider selection explicit so a service never falls back silently to an in-memory store.
+Para ejecutar una receta se usa `./mvnw -pl examples/provider-recipes -Dtest=RedisRecipesTest test`.
+La prueba nombrada muestra los imports, la configuración de starters seleccionada, las propiedades, el
+aprovisionamiento y la propiedad de los recursos. Se usan solo los starters que necesita el servicio.
+Los ejemplos mantienen a propósito explícita la selección de proveedores para que un servicio nunca
+pase en silencio a un almacén en memoria.
 
-The token client returns an opaque token and allowed metadata. Search uses the vault's lookup
-operation; ciphertext and the equality index remain in the vault. Token relay uses the validated
-request identity, or the Reactor subscriber's identity. A process without an incoming identity
-uses client credentials instead. Automatic token retries are disabled; any business retry must
-use its stable operation identifier and the vault's documented idempotency contract.
+El cliente de tokens devuelve un token opaco y los metadatos permitidos. La búsqueda usa la operación
+de consulta de la bóveda; el texto cifrado y el índice de igualdad permanecen en la bóveda. El relay de
+tokens usa la identidad validada de la petición o la identidad del suscriptor de Reactor. Un proceso
+sin identidad entrante usa client credentials. Los reintentos automáticos de tokens están desactivados;
+cualquier reintento de negocio debe usar su identificador de operación estable y el contrato de
+idempotencia documentado de la bóveda.
 
-Local identity tests cannot establish AWS IAM enforcement. They check configuration and signing
-without a remote AWS account. LocalStack exercises the AWS API contracts used by the framework;
-production still needs service-owned IAM, TLS and infrastructure. No test prints secret material.
+Las pruebas de identidad locales no pueden demostrar la aplicación de IAM en AWS. Comprueban la
+configuración y la firma sin una cuenta remota de AWS. LocalStack ejercita los contratos de la API de
+AWS que usa el framework; producción necesita IAM, TLS e infraestructura propios del servicio. Ninguna
+prueba imprime material secreto.
 
-The demo's `coverage` module reads actual Surefire and Failsafe results after all consumer modules execute.
-It rejects missing, failed, skipped or stale evidence and requires every persistence choice in
-the framework catalog. `coverage.yaml` records the test and the level of evidence for every
-capability; `variants.yaml` adds explicit stack/provider obligations. These are demo acceptance
-checks, separate from the framework's own unit, integration and architecture tests.
+El módulo `coverage` de la demo lee los resultados reales de Surefire y Failsafe después de que se
+ejecutan todos los módulos consumidores. Rechaza resultados ausentes, fallidos, omitidos o
+desactualizados y exige cada opción de persistencia del catálogo del framework. `coverage.yaml`
+registra la prueba y el nivel de comprobación de cada capacidad; `variants.yaml` añade obligaciones
+explícitas de stack y de proveedor. Son comprobaciones de aceptación de la demo, separadas de las
+pruebas unitarias, de integración y de arquitectura propias del framework.
 
-The notification recipe invokes `NotificationSender` and `ReactiveNotifications`, then verifies the
-actual `notification.requested.v1` envelopes received through SNS -> SQS. The delivery application
-owns email/SMS/push providers; Axiz publishes the request, correlation and template parameters.
+La receta de notificaciones invoca `NotificationSender` y `ReactiveNotifications`, y luego verifica los
+sobres reales `notification.requested.v1` recibidos mediante SNS -> SQS. La aplicación de entrega es
+dueña de los proveedores de email, SMS y push; Axiz publica la solicitud, la correlación y los
+parámetros de la plantilla.
 
 Las recetas comunes se ejecutan en contextos servlet y reactivos. `PolicyRecipesTest` muestra
 enmascaramiento, feature flags por canal y métricas; `CloudRecipesTest` realiza CRUD y paginación

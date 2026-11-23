@@ -8,18 +8,20 @@ import org.w3c.dom.NodeList;
 import pe.axiz.core.errors.ExternalErrorDetail;
 import pe.axiz.core.errors.ExternalServiceException;
 
-/** Parses SOAP responses: extracts the body payload or turns a Fault into an external error. */
+/**
+ * Parsea respuestas SOAP: extrae el payload del cuerpo o convierte un Fault en un error externo.
+ */
 public final class SoapResponse {
 
   private SoapResponse() {}
 
   /**
-   * Returns the first element inside the Body.
+   * Devuelve el primer elemento dentro del Body.
    *
-   * @param system logical name of the dependency
-   * @param httpStatus HTTP status of the response
-   * @param xml response body
-   * @return the payload element
+   * @param system nombre lógico de la dependencia
+   * @param httpStatus estado HTTP de la respuesta
+   * @param xml cuerpo de la respuesta
+   * @return el elemento payload
    */
   public static Element payload(String system, int httpStatus, String xml) {
     if (xml == null || xml.isBlank()) {

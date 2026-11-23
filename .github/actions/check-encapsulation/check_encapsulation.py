@@ -1,4 +1,4 @@
-"""Fail on encapsulation findings of any reported priority and on broad detector exclusions."""
+"""Falla ante hallazgos de encapsulación de cualquier prioridad reportada y ante exclusiones amplias de detectores."""
 from pathlib import Path
 import sys
 import os
@@ -6,8 +6,8 @@ from defusedxml import ElementTree as ET
 
 PATTERNS = {'EI_EXPOSE_REP', 'EI_EXPOSE_REP2', 'CT_CONSTRUCTOR_THROW'}
 
-# Optional, class-retention metadata from third-party bytecode. These contain no executable
-# contract and are not required for control/data-flow analysis. No package-wide exception.
+# Metadatos opcionales con retención de clase procedentes de bytecode de terceros. No contienen ningún
+# contrato ejecutable y no se requieren para el análisis de flujo de control y de datos. Sin excepción por paquete.
 OPTIONAL_ANNOTATIONS = {
     'lombok.Generated',
     'org.checkerframework.checker.initialization.qual.Initialized',
@@ -49,15 +49,15 @@ def analysis_errors(document):
 
 
 def filter_errors(path):
-    # Trusted checked-in build configuration, never service/request XML.
-    # Trusted build POM/report, after executing the same checkout; no request XML is parsed.
+        # Configuración de build de confianza incluida en el repositorio, nunca XML del servicio o de la petición.
+    # POM o reporte de build de confianza, tras ejecutar el mismo checkout; no se analiza XML de la petición.
     # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse
     root = ET.parse(path).getroot()
     for node in root.iter():
         node.tag = node.tag.rsplit('}', 1)[-1]
     errors = []
     for match in root.findall('Match'):
-        # Only the mutable collection contract of exactly marked generated DTOs is exempt.
+                # Solo está exento el contrato de colecciones mutables de los DTO generados marcados de forma exacta.
         children = list(match)
         annotation = match.find('Annotation')
         generated_bug = match.find('Bug')
@@ -90,7 +90,7 @@ def filter_errors(path):
 
 
 def declared_filters(root):
-    """Resolve every declared exclusion; no silently ignored arbitrary path or Maven property."""
+    """Resuelve cada exclusión declarada; ninguna ruta arbitraria ni propiedad de Maven se ignora en silencio."""
     paths, errors = set(), []
     for pom in root.rglob('pom.xml'):
         if any(part in {'target', 'node_modules'} or part.startswith(('.', '_'))
@@ -117,7 +117,7 @@ def declared_filters(root):
                 if not file.is_absolute():
                     file = pom.parent / file
                 if not file.is_file():
-                    # The parent uses a classpath resource shipped in axiz-build-rules.
+                                        # El parent usa un recurso del classpath incluido en axiz-build-rules.
                     candidates = list(root.glob('**/src/main/resources/' + value)) if not Path(value).is_absolute() else []
                     candidates = [p for p in candidates if 'target' not in p.parts]
                     if len(candidates) != 1:

@@ -18,7 +18,9 @@ import pe.axiz.spring.foundation.ReactiveStages;
 import pe.axiz.spring.tokenization.vault.VerifiedTokenCaller;
 import reactor.core.publisher.Mono;
 
-/** Native reactive boundary; caller resolution and ownership are scoped to each subscription. */
+/**
+ * Límite reactivo nativo; la resolución del invocante y la propiedad se limitan a cada suscripción.
+ */
 @RestController
 @AuthenticatedAccess
 public class ReactiveVaultController {

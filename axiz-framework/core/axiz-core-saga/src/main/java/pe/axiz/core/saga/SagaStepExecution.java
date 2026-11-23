@@ -3,10 +3,11 @@ package pe.axiz.core.saga;
 import java.util.Objects;
 
 /**
- * Participant execution identity. The saga and step form a stable operation key; the fence grows
- * across durable transitions and owners, and remains equal for retries of the same attempt.
- * Compensation uses a distinct participant operation from execution. A participant must enforce
- * fences atomically; merely forwarding this value does not fence I/O.
+ * Identidad de ejecución del participante. La saga y el paso forman una clave de operación estable;
+ * el fence crece con las transiciones durables y los propietarios, y se mantiene igual en los
+ * reintentos del mismo intento. La compensación usa una operación del participante distinta de la
+ * ejecución. Un participante debe aplicar los fences de forma atómica; reenviar este valor no
+ * aplica fencing a la E/S por sí solo.
  */
 public record SagaStepExecution(String sagaId, String stepName, long fence) {
   public SagaStepExecution {

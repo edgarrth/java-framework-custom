@@ -24,8 +24,8 @@ import pe.axiz.core.logging.OperationLogger;
 import pe.axiz.core.sensitive.ObjectMasker;
 
 /**
- * {@link LogOperation} through an infrastructure advisor (AOT and native friendly, no AspectJ) and
- * the HTTP access log for servlet and reactive applications.
+ * {@link LogOperation} mediante un advisor de infraestructura (compatible con AOT y nativo, sin
+ * AspectJ) y el log de acceso HTTP para aplicaciones servlet y reactivas.
  */
 @AutoConfiguration(afterName = "pe.axiz.spring.sensitive.AxizSensitiveAutoConfiguration")
 @ConditionalOnBooleanProperty(name = "axiz.logging.enabled", matchIfMissing = true)
@@ -80,8 +80,9 @@ public class AxizLoggingAutoConfiguration {
         ObjectProvider<HttpPayloadPolicy> policies,
         Environment environment) {
       if (properties.http().bodies()) {
-        // masking by key name and card-number pattern is a safety net, not a guarantee: free-form
-        // bodies may carry authentication data that must never be written (PCI DSS 3.3.1)
+        // el enmascaramiento por nombre de clave y por patrón de número de tarjeta es una red de
+        // seguridad, no una garantía: los cuerpos de forma libre pueden contener datos de
+        // autenticación que nunca deben escribirse (PCI DSS 3.3.1)
         Environments.requireSingleProcess(
             environment.getProperty("axiz.config.environment"),
             "axiz.logging.http.bodies=true",

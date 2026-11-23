@@ -2,7 +2,10 @@ package pe.axiz.core.tokenization.vault;
 
 import org.jspecify.annotations.Nullable;
 
-/** Bounded retention progress; changed rows require another traversal, never a forced delete. */
+/**
+ * Progreso acotado de la retención; las filas cambiadas requieren otro recorrido, nunca un borrado
+ * forzado.
+ */
 public record VaultRetentionBatch(
     int inspected,
     int deleted,

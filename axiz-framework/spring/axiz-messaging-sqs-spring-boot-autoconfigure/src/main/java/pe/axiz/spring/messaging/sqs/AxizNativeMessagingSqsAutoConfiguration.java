@@ -37,7 +37,10 @@ import pe.axiz.spring.aws.AxizAwsCompletionProperties;
 import pe.axiz.spring.messaging.AsyncEventPublisherAdapter;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 
-/** Native AWS producers, created only for configured destinations or supplied async clients. */
+/**
+ * Productores AWS nativos, creados solo para los destinos configurados o los clientes asíncronos
+ * entregados.
+ */
 @AutoConfiguration(
     beforeName = "pe.axiz.spring.messaging.AxizNativeMessagingAutoConfiguration",
     afterName = "pe.axiz.spring.foundation.AxizFoundationAutoConfiguration")

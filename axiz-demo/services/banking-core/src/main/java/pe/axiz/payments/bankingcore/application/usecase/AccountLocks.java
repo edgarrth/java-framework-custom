@@ -7,8 +7,8 @@ import pe.axiz.core.errors.CoreErrors;
 import pe.axiz.core.lock.LockTemplate;
 
 /**
- * Serializes movements on the same account across replicas (distributed lock on Redis): the core
- * answers unpredictably to concurrent holds on one account.
+ * Serializa los movimientos sobre una misma cuenta entre réplicas (lock distribuido en Redis): el
+ * core responde de forma impredecible ante retenciones concurrentes sobre una cuenta.
  */
 final class AccountLocks {
 

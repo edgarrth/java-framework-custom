@@ -20,7 +20,10 @@ import pe.axiz.core.tokenization.TokenizationResult;
 import pe.axiz.core.tokenization.Tokenizer;
 import pe.axiz.core.tokenization.TokenizerCapabilities;
 
-/** Imperative remote boundary; requests contain values or tokens, never trusted caller claims. */
+/**
+ * Límite remoto imperativo; las solicitudes contienen valores o tokens, nunca claims de invocante
+ * de confianza.
+ */
 public final class RemoteTokenizer implements Tokenizer {
   @SuppressFBWarnings(
       value = "EI_EXPOSE_REP2",

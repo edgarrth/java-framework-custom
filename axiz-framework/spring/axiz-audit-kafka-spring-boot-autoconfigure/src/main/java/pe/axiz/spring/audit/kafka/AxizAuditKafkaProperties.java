@@ -5,7 +5,7 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
-/** KAFKA audit destination and its transport policy. */
+/** Destino de auditoría KAFKA y su política de transporte. */
 @ConfigurationProperties("axiz.audit.kafka")
 public record AxizAuditKafkaProperties(
     @Nullable String topic,

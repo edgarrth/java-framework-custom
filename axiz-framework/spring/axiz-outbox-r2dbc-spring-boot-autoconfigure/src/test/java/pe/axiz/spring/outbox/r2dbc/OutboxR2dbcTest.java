@@ -62,7 +62,7 @@ class OutboxR2dbcTest {
 
   private static final Duration T = Duration.ofSeconds(5);
 
-  /** What the R2DBC starter provides: SQL that joins Spring's reactive transaction. */
+  /** Lo que aporta el starter de R2DBC: SQL que se une a la transacción reactiva de Spring. */
   record TxSql(DatabaseClient client) implements ReactiveSql {
     @Override
     public Object transactionResource() {

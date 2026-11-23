@@ -9,7 +9,7 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.i18n.LocaleContextResolver;
 import pe.axiz.core.i18n.LocaleResolver;
 
-/** Reactive locale resolver driven only by {@code Accept-Language}. */
+/** Resolvedor de locale reactivo guiado solo por {@code Accept-Language}. */
 public final class AcceptLanguageLocaleContextResolver implements LocaleContextResolver {
 
   private final LocaleResolver delegate;

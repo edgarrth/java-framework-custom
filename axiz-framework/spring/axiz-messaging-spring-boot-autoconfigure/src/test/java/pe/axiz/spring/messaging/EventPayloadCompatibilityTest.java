@@ -16,7 +16,10 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.json.JsonMapper;
 
-/** Additive v1 event evolution is independent of the consumer's framework version. */
+/**
+ * La evolución aditiva de un tipo de evento dentro de su versión es independiente de la versión del
+ * framework del consumidor.
+ */
 class EventPayloadCompatibilityTest {
   record StructuredPayload(Map<String, Object> details, List<Object> entries) {}
 

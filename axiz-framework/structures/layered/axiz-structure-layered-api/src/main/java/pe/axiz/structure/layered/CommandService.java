@@ -1,15 +1,18 @@
 package pe.axiz.structure.layered;
 
-/** Write operations with separate request and response types. Implementations are transactional. */
+/**
+ * Operaciones de escritura con tipos de petición y de respuesta separados. Las implementaciones son
+ * transaccionales.
+ */
 public interface CommandService<RequestT, ResponseT, I> {
   ResponseT create(RequestT request);
 
-  /** Updates an existing authorized resource using the request's expected version. */
+  /** Actualiza un recurso autorizado existente usando la versión esperada de la petición. */
   ResponseT update(I id, RequestT request);
 
   /**
-   * Deletes an authorized resource only at the expected version; missing/forbidden answer as
-   * absent.
+   * Borra un recurso autorizado solo en la versión esperada; un recurso inexistente o prohibido
+   * responde como ausente.
    */
   void delete(I id, String expectedVersion);
 }

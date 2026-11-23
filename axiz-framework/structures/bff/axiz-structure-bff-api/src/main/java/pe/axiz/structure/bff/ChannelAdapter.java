@@ -1,14 +1,14 @@
 package pe.axiz.structure.bff;
 
 /**
- * Shapes a composed result for one channel (mobile, web, partner...).
+ * Da forma a un resultado compuesto para un canal (móvil, web, socio, etc.).
  *
- * @param <S> composed source
- * @param <T> channel response
+ * @param <S> fuente compuesta
+ * @param <T> respuesta del canal
  */
 public interface ChannelAdapter<S, T> {
 
-  /** Channel served, e.g. {@code mobile}; {@code *} is the default adapter. */
+  /** Canal atendido, por ejemplo {@code mobile}; {@code *} es el adaptador por defecto. */
   String channel();
 
   T adapt(S source);

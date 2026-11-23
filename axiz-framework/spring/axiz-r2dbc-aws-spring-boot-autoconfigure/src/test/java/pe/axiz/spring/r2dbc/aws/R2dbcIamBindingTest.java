@@ -23,7 +23,9 @@ import pe.axiz.spring.r2dbc.ReaderDatabase;
 import reactor.core.publisher.Mono;
 import software.amazon.awssdk.regions.Region;
 
-/** The read replica connection, IAM tokens, Flyway over IAM and the auditing of rows. */
+/**
+ * La conexión a la réplica de lectura, los tokens IAM, Flyway sobre IAM y la auditoría de filas.
+ */
 class R2dbcIamBindingTest {
 
   private static final Duration T = Duration.ofSeconds(5);
@@ -32,7 +34,8 @@ class R2dbcIamBindingTest {
   @BeforeEach
   void localCredentials() {
     RecordingDriver.CREATED.clear();
-    // placeholders for the SDK default chain: an IAM token is signed locally, no call is made
+    // valores de relleno para la cadena por defecto del SDK: el token IAM se firma localmente y no
+    // se hace ninguna llamada
     System.setProperty("aws.accessKeyId", "local-only-access-key");
     System.setProperty("aws.secretAccessKey", "local-only-secret-key");
   }

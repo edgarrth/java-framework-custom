@@ -223,8 +223,8 @@ class ReactiveUseCaseWiringTest {
               assertTrue(db.events().stream().anyMatch(event -> event.startsWith("rollback:")));
               var cancelled =
                   change.execute("cancel").subscribeOn(Schedulers.parallel()).toFuture();
-              // Wait for the bounded, CPU-only protocol fake to record the outbox write before
-              // cancelling.
+              // Se espera a que el fake del protocolo, acotado y solo de CPU, registre la escritura
+              // en el outbox antes de cancelar.
               StepVerifier.create(
                       Mono.defer(() -> Mono.just(db.executions().size()))
                           .repeatWhen(repeats -> repeats.delayElements(Duration.ofMillis(10)))

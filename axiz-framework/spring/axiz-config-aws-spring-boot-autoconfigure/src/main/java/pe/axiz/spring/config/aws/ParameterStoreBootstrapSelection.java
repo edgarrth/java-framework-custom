@@ -5,7 +5,9 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.PropertySource;
 import pe.axiz.spring.config.ConfigurationEnvironment;
 
-/** Captures selectors before Config Data without exposing synthetic configuration properties. */
+/**
+ * Captura los selectores antes de Config Data sin exponer propiedades de configuración sintéticas.
+ */
 final class ParameterStoreBootstrapSelection
     extends PropertySource<ParameterStoreBootstrapSelection.Selection> {
   static final String NAME = "axizParameterStoreBootstrapSelection";

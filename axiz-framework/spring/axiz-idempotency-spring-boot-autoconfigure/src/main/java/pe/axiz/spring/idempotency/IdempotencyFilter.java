@@ -23,16 +23,16 @@ import pe.axiz.core.idempotency.IdempotencyService;
 import pe.axiz.core.idempotency.StoredResponse;
 
 /**
- * Buffers the body of unsafe requests carrying {@code Idempotency-Key} (up to {@code maxBodySize})
- * so it can be fingerprinted (method, path, query string as sent and body), and stores the response
- * once the handler finished. The decision itself is taken by {@link IdempotencyMethodInterceptor}
- * after method authorization.
+ * Almacena en búfer el cuerpo de las solicitudes no seguras que llevan {@code Idempotency-Key}
+ * (hasta {@code maxBodySize}) para poder calcular su huella (método, ruta, query string tal como se
+ * envió y cuerpo), y almacena la respuesta cuando el handler termina. La decisión en sí la toma
+ * {@link IdempotencyMethodInterceptor} después de la autorización de métodos.
  *
- * <p>The response streams to the client as usual; only a copy of up to {@code maxResponseSize}
- * bytes is kept for storage. Only a handler that returned normally with a status below 500 is
- * stored. An exception that escapes the chain, or a server error, retains the key as UNKNOWN until
- * the service reconciles the operation. Asynchronous handlers are stored when their last dispatch
- * finishes.
+ * <p>La respuesta se transmite al cliente como de costumbre; solo se conserva para almacenamiento
+ * una copia de hasta {@code maxResponseSize} bytes. Solo se almacena un handler que retornó
+ * normalmente con un estado inferior a 500. Una excepción que escapa de la cadena, o un error del
+ * servidor, conserva la clave como UNKNOWN hasta que el servicio concilia la operación. Los
+ * handlers asíncronos se almacenan cuando termina su último dispatch.
  */
 public final class IdempotencyFilter extends OncePerRequestFilter {
 
@@ -208,7 +208,8 @@ public final class IdempotencyFilter extends OncePerRequestFilter {
         LOG.warn("Idempotency lease lost before completion; response not stored");
       }
     } catch (RuntimeException e) {
-      // the original outcome must reach the client; retention still prevents immediate reuse
+      // el resultado original debe llegar al cliente; la retención sigue impidiendo la
+      // reutilización inmediata
       LOG.error("Idempotency completion failed; failureType={}", e.getClass().getSimpleName());
       try {
         service.fail(execution);

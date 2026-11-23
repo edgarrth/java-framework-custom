@@ -12,7 +12,10 @@ import org.springframework.core.env.Environment;
 import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.secrets.SecretResolver;
 
-/** SOAP clients with safe XML parsing, WS-Security, fault mapping, masking and observations. */
+/**
+ * Clientes SOAP con parseo XML seguro, WS-Security, mapeo de faults, enmascaramiento y
+ * observaciones.
+ */
 @AutoConfiguration(
     afterName = {
       "pe.axiz.spring.secrets.AxizSecretsAutoConfiguration",

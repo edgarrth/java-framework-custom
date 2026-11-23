@@ -28,7 +28,7 @@ import pe.axiz.core.outbox.OutboxWriter;
 import pe.axiz.core.resilience.Backoff;
 import pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter;
 
-/** Common outbox policy composed from persistence and messaging ports. */
+/** Política común del outbox compuesta a partir de los puertos de persistencia y mensajería. */
 @AutoConfiguration(
     afterName = {
       "pe.axiz.spring.outbox.jdbc.AxizOutboxJdbcAutoConfiguration",
@@ -121,7 +121,7 @@ public class AxizOutboxAutoConfiguration {
     }
   }
 
-  /** {@code axiz.outbox.pending}, refreshed off the scrape thread. */
+  /** {@code axiz.outbox.pending}, refrescado fuera del hilo de scraping. */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnClass(name = "io.micrometer.core.instrument.MeterRegistry")
   @ConditionalOnBean(OutboxStore.class)

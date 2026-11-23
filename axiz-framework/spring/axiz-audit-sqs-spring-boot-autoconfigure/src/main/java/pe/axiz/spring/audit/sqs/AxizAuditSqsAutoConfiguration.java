@@ -34,9 +34,10 @@ import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 /**
- * Dedicated SQS audit clients use optional audit/service/global identity and framework AWS
- * transport conventions. Their named, non-default identity allow a separate audit account without
- * becoming messaging's client. Applications may replace them by the explicit audit bean name.
+ * Los clientes SQS dedicados a auditoría usan la identidad opcional de auditoría, servicio o global
+ * y las convenciones de transporte AWS del framework. Su identidad con nombre y no predeterminada
+ * permite una cuenta de auditoría separada sin convertirse en el cliente de mensajería. Las
+ * aplicaciones pueden reemplazarlos mediante el nombre explícito del bean de auditoría.
  */
 @AutoConfiguration(
     beforeName = {
@@ -52,7 +53,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 @ConditionalOnBooleanProperty(name = "axiz.audit.enabled", matchIfMissing = true)
 @EnableConfigurationProperties({AxizAuditSqsProperties.class, AxizAwsCompletionProperties.class})
 public class AxizAuditSqsAutoConfiguration {
-  /** Bind and validate destination settings before constructing transport resources. */
+  /** Enlaza y valida la configuración del destino antes de construir los recursos de transporte. */
   public AxizAuditSqsAutoConfiguration(AxizAuditSqsProperties properties) {
     Objects.requireNonNull(properties);
     super();

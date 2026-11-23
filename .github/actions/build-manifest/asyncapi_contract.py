@@ -1,4 +1,4 @@
-"""Conservative, offline AsyncAPI 3 compatibility for versioned CloudEvents."""
+"""Compatibilidad conservadora y sin conexión de AsyncAPI 3 para CloudEvents versionados."""
 import re
 
 import yaml
@@ -19,7 +19,7 @@ class ContractLoader(yaml.SafeLoader):
         return result
 
 
-# Preserve examples containing dates, exactly like the framework's SafeYaml reader.
+# Se conservan los ejemplos que contienen fechas, igual que el lector SafeYaml del framework.
 ContractLoader.yaml_implicit_resolvers = {
     key: [(tag, regex) for tag, regex in rules if tag != "tag:yaml.org,2002:timestamp"]
     for key, rules in yaml.SafeLoader.yaml_implicit_resolvers.items()
@@ -134,7 +134,7 @@ def events(root):
 
 
 def equal(left, right, depth=0):
-    """JSON scalar types matter: Python must not equate true with 1 in enums/defaults."""
+    """Los tipos escalares de JSON importan: Python no debe equiparar true con 1 en enums o valores por defecto."""
     if depth > 64:
         raise ValueError("Contract comparison nesting limit exceeded")
     if type(left) is not type(right):
@@ -147,7 +147,7 @@ def equal(left, right, depth=0):
 
 
 def compare(previous, current):
-    """Return breaking locations. New event types and optional fields are compatible."""
+    """Devuelve las ubicaciones incompatibles. Los tipos de evento nuevos y los campos opcionales son compatibles."""
     before, after = events(previous)["send"], events(current)["send"]
     failures = []
 

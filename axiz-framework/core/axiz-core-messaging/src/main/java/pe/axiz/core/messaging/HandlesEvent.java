@@ -7,7 +7,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * CloudEvents type handled by a {@link TypedEventHandler}, e.g. {@code
+ * Tipo CloudEvents que maneja un {@link TypedEventHandler}, por ejemplo {@code
  * pe.axiz.payments.payment-created.v1}.
  */
 @Documented

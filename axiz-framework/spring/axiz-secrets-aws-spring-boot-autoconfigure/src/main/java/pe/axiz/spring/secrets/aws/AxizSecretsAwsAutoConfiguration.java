@@ -30,9 +30,9 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.ssm.SsmClient;
 
 /**
- * AWS Secrets Manager and Parameter Store sources, each enabled explicitly. Without a client bean,
- * the client takes {@code axiz.aws.region} and {@code axiz.aws.secretsmanager.endpoint} / {@code
- * axiz.aws.ssm.endpoint} or {@code axiz.aws.endpoint}.
+ * Fuentes AWS Secrets Manager y Parameter Store, cada una habilitada explícitamente. Sin un bean de
+ * cliente, el cliente toma {@code axiz.aws.region} y {@code axiz.aws.secretsmanager.endpoint} /
+ * {@code axiz.aws.ssm.endpoint} o {@code axiz.aws.endpoint}.
  */
 @AutoConfiguration(
     beforeName = {
@@ -45,7 +45,8 @@ import software.amazon.awssdk.services.ssm.SsmClient;
 @EnableConfigurationProperties({AxizSecretsAwsProperties.class, AxizAwsCompletionProperties.class})
 public class AxizSecretsAwsAutoConfiguration {
 
-  // Register each owner before native clients; each AWS service can use a different identity.
+  // Se registra cada propietario antes de los clientes nativos; cada servicio AWS puede usar una
+  // identidad distinta.
   @Bean(destroyMethod = "close")
   @ConditionalOnClass(name = "reactor.core.publisher.Mono")
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
@@ -69,7 +70,8 @@ public class AxizSecretsAwsAutoConfiguration {
         transport.toSettings());
   }
 
-  // Register each owner before native clients; each AWS service can use a different identity.
+  // Se registra cada propietario antes de los clientes nativos; cada servicio AWS puede usar una
+  // identidad distinta.
   @Bean(destroyMethod = "close")
   @ConditionalOnClass(name = "reactor.core.publisher.Mono")
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)

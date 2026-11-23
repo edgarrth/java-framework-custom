@@ -15,7 +15,10 @@ import java.util.List;
 import java.util.Set;
 import pe.axiz.core.sensitive.SensitiveKeys;
 
-/** Typed card fields and controlled reveal sites. Raw Strings still require runtime detection. */
+/**
+ * Campos de tarjeta tipados y sitios de revelado controlados. Los String sin tipo siguen
+ * requiriendo detección en tiempo de ejecución.
+ */
 public final class CardDataRules {
   private static final SensitiveKeys KEYS = SensitiveKeys.defaults();
   private static final Set<String> UNSUPPORTED =

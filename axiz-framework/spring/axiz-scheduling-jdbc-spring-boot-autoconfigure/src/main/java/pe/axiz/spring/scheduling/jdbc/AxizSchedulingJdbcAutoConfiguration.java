@@ -16,7 +16,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import pe.axiz.spring.jdbc.SchemaInitializer;
 import pe.axiz.spring.scheduling.AxizSchedulingProperties;
 
-/** JDBC scheduling resources; common policies remain in the base capability. */
+/** Recursos JDBC de planificación; las políticas comunes permanecen en la capacidad base. */
 @AutoConfiguration(
     beforeName = "pe.axiz.spring.scheduling.AxizSchedulingAutoConfiguration",
     afterName = {

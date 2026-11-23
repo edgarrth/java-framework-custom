@@ -12,7 +12,10 @@ import pe.axiz.kit.r2dbc.SqlParams;
 import pe.axiz.kit.sql.SqlIdentifiers;
 import reactor.core.publisher.Mono;
 
-/** Nonblocking PostgreSQL inbox with atomic owner-checked updates and cancellable R2DBC I/O. */
+/**
+ * Inbox PostgreSQL no bloqueante con actualizaciones atómicas verificadas por propietario y E/S
+ * R2DBC cancelable.
+ */
 public final class R2dbcReactiveInboxStore implements ReactiveInboxStore {
   private final ReactiveSql sql;
   private final String table;

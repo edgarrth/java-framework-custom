@@ -19,7 +19,7 @@ public class GenerationServiceTest {
   private final SimpleMeterRegistry meters = new SimpleMeterRegistry();
   private final GenerationService service = new GenerationService(meters);
 
-  /** The sample contract of the tests. */
+  /** El contrato de muestra de las pruebas. */
   public static String contract() throws IOException {
     try (InputStream in = GenerationServiceTest.class.getResourceAsStream("/orders.yaml")) {
       return new String(in.readAllBytes(), StandardCharsets.UTF_8);

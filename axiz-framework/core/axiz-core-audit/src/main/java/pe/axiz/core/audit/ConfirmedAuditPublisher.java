@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.LoggerFactory;
 import pe.axiz.core.json.JsonWriter;
 
-/** Destination acknowledgement, without claiming atomicity with the business transaction. */
+/** Acuse del destino, sin afirmar atomicidad con la transacción de negocio. */
 public final class ConfirmedAuditPublisher
     implements AuditPublisher, AuditPublisherDecorator, AutoCloseable {
   private final AuditPublisher target;

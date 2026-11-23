@@ -84,7 +84,10 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.ssm.SsmClient;
 import software.amazon.awssdk.services.ssm.model.ParameterType;
 
-/** No remote AWS account: setup and every SDK endpoint belong to this LocalStack container. */
+/**
+ * Sin cuenta remota de AWS: la preparación y cada endpoint del SDK pertenecen a este contenedor de
+ * LocalStack.
+ */
 class CloudRecipesTest {
   private static final Duration TIMEOUT = Duration.ofSeconds(20);
   private static final LocalStackContainer AWS = AxizContainers.localstack();

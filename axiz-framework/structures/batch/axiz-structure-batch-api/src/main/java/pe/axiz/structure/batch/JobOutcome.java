@@ -3,14 +3,14 @@ package pe.axiz.structure.batch;
 import java.time.Duration;
 
 /**
- * Summary of a finished job used for metrics, audit and the CronJob exit code.
+ * Resumen de un job terminado, usado para métricas, auditoría y el código de salida del CronJob.
  *
- * @param job job name
- * @param status final status ({@code COMPLETED}, {@code FAILED}, ...)
- * @param read records read
- * @param written records written
- * @param skipped records skipped
- * @param duration elapsed time
+ * @param job nombre del job
+ * @param status estado final ({@code COMPLETED}, {@code FAILED}, etc.)
+ * @param read registros leídos
+ * @param written registros escritos
+ * @param skipped registros omitidos
+ * @param duration tiempo transcurrido
  */
 public record JobOutcome(
     String job, String status, long read, long written, long skipped, Duration duration) {
@@ -19,7 +19,10 @@ public record JobOutcome(
     return "COMPLETED".equals(status);
   }
 
-  /** Process exit code: 0 on success, 1 otherwise (Kubernetes marks the CronJob run as failed). */
+  /**
+   * Código de salida del proceso: 0 si tiene éxito y 1 en otro caso (Kubernetes marca la ejecución
+   * del CronJob como fallida).
+   */
   public int exitCode() {
     return successful() ? 0 : 1;
   }

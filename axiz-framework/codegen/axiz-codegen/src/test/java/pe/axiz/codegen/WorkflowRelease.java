@@ -16,7 +16,9 @@ import org.yaml.snakeyaml.Yaml;
 import pe.axiz.codegen.output.GeneratedProject;
 import pe.axiz.codegen.render.TemplateSet;
 
-/** Shared test/fixture semantics; never changes effective workflow pins. */
+/**
+ * Semántica compartida de pruebas y fixtures; nunca cambia los pines efectivos de los workflows.
+ */
 public final class WorkflowRelease {
   private WorkflowRelease() {}
 

@@ -7,7 +7,10 @@ import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import pe.axiz.core.concurrent.AsyncLoadingCache;
 
-/** Bounded TTL cache, coalesced native loads and cancellation without caching missing secrets. */
+/**
+ * Caché con TTL acotada, cargas nativas coalescidas y cancelación, sin guardar en caché los
+ * secretos ausentes.
+ */
 public final class CachingAsyncSecretResolver implements AsyncSecretResolver, AutoCloseable {
   private final AsyncSecretResolver delegate;
   private final SecretCacheInstrumentation instrumentation;

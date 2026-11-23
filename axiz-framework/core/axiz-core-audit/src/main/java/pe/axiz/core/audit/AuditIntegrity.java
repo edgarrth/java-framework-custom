@@ -3,7 +3,9 @@ package pe.axiz.core.audit;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
-/** Immutable chain position and seal. Sequence zero identifies the initial head only. */
+/**
+ * Posición en la cadena y sello inmutables. La secuencia cero identifica solo la cabeza inicial.
+ */
 public record AuditIntegrity(
     String chainId,
     long sequence,
@@ -31,17 +33,17 @@ public record AuditIntegrity(
     if (!hash.matches("[0-9a-f]{64}")) throw new IllegalArgumentException("Invalid audit hash");
   }
 
-  /** Restores the minimal stored head; it is state for calculation, not an event seal. */
+  /** Restaura la cabeza mínima almacenada; es estado para el cálculo, no el sello de un evento. */
   public static AuditIntegrity head(String chainId, long sequence, String hash) {
     return new AuditIntegrity(chainId, sequence, SealPreimage.GENESIS, hash, null, null);
   }
 
-  /** Initial state before any event in a chain. */
+  /** Estado inicial previo a cualquier evento de una cadena. */
   public static AuditIntegrity initial(String chainId) {
     return head(chainId, 0, SealPreimage.GENESIS);
   }
 
-  /** Enforces the same successor invariant in memory and in every persistence provider. */
+  /** Impone la misma invariante de sucesor en memoria y en todo proveedor de persistencia. */
   public void requireSuccessor(AuditIntegrity next) {
     if (!chainId.equals(next.chainId())
         || next.sequence() != Math.addExact(sequence, 1)

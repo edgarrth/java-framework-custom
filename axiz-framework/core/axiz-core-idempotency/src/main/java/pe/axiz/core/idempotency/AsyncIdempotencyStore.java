@@ -6,15 +6,19 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.jspecify.annotations.Nullable;
 
-/** Native asynchronous idempotency port; every mutation is atomically fenced by its owner token. */
+/**
+ * Puerto de idempotencia asíncrono nativo; cada mutación tiene fencing atómico por su token de
+ * propietario.
+ */
 public interface AsyncIdempotencyStore {
   CompletionStage<Boolean> compareAndSet(
       IdempotencyRecord expected, @Nullable IdempotencyRecord replacement);
 
   /**
-   * Default for immediate local stores only. Remote asynchronous providers must override this
-   * method and delegate to AsyncIdempotencyCas with their injected clock, so contention never
-   * freezes lease checks at the caller's initial instant.
+   * Valor por defecto solo para almacenes locales inmediatos. Los proveedores asíncronos remotos
+   * deben sobrescribir este método y delegar en AsyncIdempotencyCas con su reloj inyectado, para
+   * que la contención nunca congele las verificaciones del lease en el instante inicial de quien
+   * llama.
    */
   default CompletionStage<Boolean> renew(
       String key, String owner, Instant leaseUntil, Instant retainUntil, Instant now) {
@@ -29,8 +33,9 @@ public interface AsyncIdempotencyStore {
   }
 
   /**
-   * Default for immediate local stores only. Remote asynchronous providers must override this
-   * method and delegate to AsyncIdempotencyCas with their injected clock on every attempt.
+   * Valor por defecto solo para almacenes locales inmediatos. Los proveedores asíncronos remotos
+   * deben sobrescribir este método y delegar en AsyncIdempotencyCas con su reloj inyectado en cada
+   * intento.
    */
   default CompletionStage<Boolean> markUnknown(
       String key, String owner, String diagnostic, Instant now) {

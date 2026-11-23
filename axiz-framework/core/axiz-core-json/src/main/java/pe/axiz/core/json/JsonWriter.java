@@ -9,9 +9,9 @@ import java.util.TreeMap;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Minimal JSON writer for maps, collections, strings, numbers, booleans, enums, dates and UUIDs.
- * Used where layer 1 must produce JSON without depending on a JSON library (audit records,
- * structured payloads). Anything else is written with {@code toString()} as a string.
+ * Escritor JSON mínimo para mapas, colecciones, cadenas, números, booleanos, enums, fechas y UUID.
+ * Se usa donde la capa 1 debe producir JSON sin depender de una librería JSON (registros de
+ * auditoría, payloads estructurados). Todo lo demás se escribe con {@code toString()} como cadena.
  */
 public final class JsonWriter {
 
@@ -24,10 +24,11 @@ public final class JsonWriter {
   }
 
   /**
-   * Deterministic JSON for audit snapshots. Keys use String.compareTo; finite Float values are
-   * widened to double; bounded BigDecimal values use plain notation. Unknown types and non-string
-   * keys are rejected without invoking their toString methods. This is Axiz canonical JSON v1, not
-   * the different number/ordering format defined by RFC 8785.
+   * JSON determinista para instantáneas de auditoría. Las claves usan String.compareTo; los valores
+   * Float finitos se amplían a double; los valores BigDecimal acotados usan notación plana. Los
+   * tipos desconocidos y las claves que no son cadenas se rechazan sin invocar sus métodos
+   * toString. Es el JSON canónico de Axiz en su versión 1, no el formato distinto de números y
+   * orden que define RFC 8785.
    */
   public static String writeCanonical(@Nullable Object value) {
     StringBuilder out = new StringBuilder(128);
@@ -35,7 +36,7 @@ public final class JsonWriter {
     return out.toString();
   }
 
-  /** Exact UTF-8 byte length of the escaped text, excluding its surrounding quotes. */
+  /** Longitud exacta en bytes UTF-8 del texto escapado, sin las comillas que lo rodean. */
   public static int escapedUtf8Length(String text) {
     long length = 0;
     for (int i = 0; i < text.length(); i++) {
@@ -58,10 +59,10 @@ public final class JsonWriter {
     return Math.toIntExact(length);
   }
 
-  /** Exact UTF-8 byte length of a supported canonical scalar. */
+  /** Longitud exacta en bytes UTF-8 de un escalar canónico soportado. */
   public static int canonicalLength(@Nullable Object scalar) {
     if (scalar instanceof String text) return Math.addExact(2, escapedUtf8Length(text));
-    return scalar(scalar).length(); // all other scalar forms are ASCII
+    return scalar(scalar).length(); // las demás formas escalares son ASCII
   }
 
   private static void canonical(StringBuilder out, @Nullable Object value, int depth) {
@@ -166,7 +167,8 @@ public final class JsonWriter {
     } else if (value instanceof Object[] array) {
       append(sb, Arrays.asList(array), depth);
     } else {
-      // text, enums, UUIDs, java.time values, characters and anything else: their text form
+      // texto, enums, UUID, valores de java.time, caracteres y cualquier otra cosa: su forma de
+      // texto
       string(sb, value.toString());
     }
   }

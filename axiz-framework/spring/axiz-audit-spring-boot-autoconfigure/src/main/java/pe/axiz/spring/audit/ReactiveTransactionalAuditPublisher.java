@@ -30,8 +30,9 @@ import pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter;
 import reactor.core.publisher.Mono;
 
 /**
- * Durable audit in the same Reactor transaction as business data. Failures go to the native
- * fallback because their business transaction will roll back. No CompletionStage bridge is used.
+ * Auditoría durable en la misma transacción de Reactor que los datos de negocio. Los fallos van al
+ * respaldo nativo porque su transacción de negocio hará rollback. No se usa ningún puente de
+ * CompletionStage.
  */
 public final class ReactiveTransactionalAuditPublisher
     implements ReactiveAuditPublisher, AuditIntegrityMetrics {
@@ -264,12 +265,14 @@ public final class ReactiveTransactionalAuditPublisher
         });
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción con nombre; build comprueba los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable ReactiveOutboxWriter outbox = null;
     private @Nullable String destination = null;

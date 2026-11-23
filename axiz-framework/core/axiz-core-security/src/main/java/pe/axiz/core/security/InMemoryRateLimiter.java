@@ -6,8 +6,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Fixed-window rate limiter kept in memory: for local use, tests and single-replica services. Use
- * the Redis implementation for distributed limits.
+ * Limitador de tasa de ventana fija en memoria: para uso local, pruebas y servicios de una réplica.
+ * Para límites distribuidos se usa la implementación de Redis.
  */
 public final class InMemoryRateLimiter implements RateLimiter {
 

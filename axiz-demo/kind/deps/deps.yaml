@@ -1,4 +1,4 @@
-# Local infrastructure stand-ins; never deploy these fixtures to production.
+# Sustitutos locales de infraestructura; nunca se despliegan estos fixtures en producción.
 apiVersion: v1
 kind: Namespace
 metadata:

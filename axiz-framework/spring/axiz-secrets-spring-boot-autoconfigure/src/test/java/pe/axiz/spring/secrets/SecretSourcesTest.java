@@ -14,7 +14,10 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import pe.axiz.core.secrets.SecretResolver;
 import pe.axiz.core.secrets.SecretValue;
 
-/** Which secret sources are consulted, how values are cached, and how mounts become properties. */
+/**
+ * Qué fuentes de secretos se consultan, cómo se cachean los valores y cómo los montajes se
+ * convierten en propiedades.
+ */
 class SecretSourcesTest {
 
   private final ApplicationContextRunner runner =

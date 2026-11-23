@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-featureflags-spring-boot-starter
 
-Feature flags from ConfigMap or Parameter Store exposed through OpenFeature.
+Feature flags desde ConfigMap o Parameter Store expuestos mediante OpenFeature.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,4 +12,4 @@ Feature flags from ConfigMap or Parameter Store exposed through OpenFeature.
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).

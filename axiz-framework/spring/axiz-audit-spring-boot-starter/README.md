@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-audit-spring-boot-starter
 
-@Auditable, sanitized audit events and asynchronous publishers (log, MSK, SQS).
+@Auditable, eventos de auditoría saneados y publicadores asíncronos (log, MSK, SQS).
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,4 +12,4 @@
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).

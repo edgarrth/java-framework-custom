@@ -20,9 +20,10 @@ import pe.axiz.extension.cqrs.PipelineBehavior;
 import pe.axiz.extension.cqrs.RequiresAuthority;
 
 /**
- * Authorization stage of the pipeline: {@link RequiresAuthority} on the request type (403 when the
- * caller lacks it), then every matching {@code AccessPolicy} (object-level checks). It runs before
- * idempotency, so a stored result is never returned to a caller who may no longer send the request.
+ * Etapa de autorización del pipeline: {@link RequiresAuthority} en el tipo de petición (403 cuando
+ * quien llama no la tiene) y luego cada {@code AccessPolicy} coincidente (verificaciones a nivel de
+ * objeto). Se ejecuta antes de la idempotencia, de modo que un resultado almacenado nunca se
+ * devuelve a un llamador que podría no estar autorizado a enviar la petición.
  */
 public final class AuthorizationBehavior implements PipelineBehavior {
 
@@ -57,7 +58,7 @@ public final class AuthorizationBehavior implements PipelineBehavior {
         invocation.request().getClass(), RequiresAuthority.class);
   }
 
-  /** Throws a 403 problem when the caller holds none of the required authorities. */
+  /** Lanza un problema 403 cuando quien llama no tiene ninguna de las autoridades requeridas. */
   static void check(RequiresAuthority rule, @Nullable Authentication auth, String operation) {
     Set<String> granted = authorities(auth);
     if (Arrays.stream(rule.value()).noneMatch(granted::contains)) {
@@ -73,7 +74,10 @@ public final class AuthorizationBehavior implements PipelineBehavior {
             .collect(Collectors.toSet());
   }
 
-  /** The caller as policies see it: identity from the request metadata, authorities from Spring. */
+  /**
+   * Quien llama tal como lo ven las políticas: identidad a partir de los metadatos de la petición y
+   * autoridades a partir de Spring.
+   */
   static Caller caller(@Nullable Authentication auth, @Nullable RequestMetadata m) {
     Set<String> authorities = authorities(auth);
     if (m == null) {

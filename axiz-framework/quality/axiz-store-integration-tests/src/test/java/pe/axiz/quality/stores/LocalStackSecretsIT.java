@@ -58,7 +58,8 @@ import software.amazon.awssdk.services.ssm.SsmClient;
 import software.amazon.awssdk.services.ssm.model.ParameterType;
 
 /**
- * Native secret lookup through the actual Spring chain, with cold I/O and non-noop observations.
+ * Búsqueda nativa de secretos mediante la cadena real de Spring, con E/S en frío y observaciones
+ * distintas de noop.
  */
 @ExtendWith(BlockHoundExtension.class)
 class LocalStackSecretsIT {

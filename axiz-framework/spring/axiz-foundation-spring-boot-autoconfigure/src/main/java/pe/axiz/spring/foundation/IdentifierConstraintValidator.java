@@ -6,7 +6,7 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.identifiers.IdentifierRegistry;
 
-/** Validator of {@link ValidIdentifier} backed by the identifier registry. */
+/** Validador de {@link ValidIdentifier} respaldado por el registro de identificadores. */
 public final class IdentifierConstraintValidator
     implements ConstraintValidator<ValidIdentifier, CharSequence> {
 

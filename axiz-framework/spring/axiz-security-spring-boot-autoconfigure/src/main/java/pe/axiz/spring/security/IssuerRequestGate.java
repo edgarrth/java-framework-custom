@@ -2,7 +2,7 @@ package pe.axiz.spring.security;
 
 import java.util.concurrent.TimeUnit;
 
-/** One in-flight network attempt per configured endpoint, with monotonic failure backoff. */
+/** Un intento de red en curso por endpoint configurado, con backoff monotónico ante fallos. */
 final class IssuerRequestGate {
   private boolean running;
   private int failures;

@@ -1,29 +1,31 @@
-# Support
+# Soporte
 
-## Supported versions
+## Versiones admitidas
 
-| Version | Status | Security fixes | Bug fixes |
+| Versión | Estado | Correcciones de seguridad | Correcciones de errores |
 |---|---|---|---|
-| 2.0.x | current | yes | yes |
+| 2.0.x | vigente | sí | sí |
 
-Support policy:
+Política de soporte:
 
-- The latest minor receives bug and security fixes.
-- The previous minor receives security fixes for six months after the next minor is released.
-- A major version is supported for twelve months after the next major is released.
-- End of support is announced in the release notes and in the documentation site at least three
-  months in advance. Renovate proposes the upgrades and `axiz upgrade` applies the current
-  conventions (`pe.axiz.UpgradeToAxiz`).
+- La última versión menor recibe correcciones de errores y de seguridad.
+- La versión menor anterior recibe correcciones de seguridad durante seis meses después de publicarse
+  la siguiente versión menor.
+- Una versión mayor tiene soporte durante doce meses después de publicarse la siguiente versión mayor.
+- El fin del soporte se anuncia en las notas de release y en el sitio de documentación con al menos
+  tres meses de anticipación. Renovate propone las actualizaciones y `axiz upgrade` aplica las
+  convenciones vigentes (`pe.axiz.UpgradeToAxiz`).
 
-The supported runtime is the one declared by the release: Java 25 and the Spring Boot line of the
-BOM. Other combinations are not supported.
+El runtime admitido es el que declara la release: Java 25 y la línea de Spring Boot del BOM. Otras combinaciones no tienen
+soporte.
 
-## Getting help
+## Ayuda
 
-- Questions and usage: the documentation site first (`axiz-docs`), then the platform team channel.
-- Bugs and feature requests: an issue in this repository with version, steps and expected
-  behavior.
-- Security issues: never in an issue; follow `SECURITY.md`.
+- Preguntas y uso: primero el sitio de documentación (`axiz-docs`) y luego el canal del equipo de
+  plataforma.
+- Errores y solicitudes de funcionalidades: un issue en este repositorio con la versión, los pasos y el
+  comportamiento esperado.
+- Problemas de seguridad: nunca en un issue; se sigue `SECURITY.md`.
 
-This policy covers the framework, the developer tools, the documentation site, the payments demo
-and the shared CI/CD workflows.
+Esta política cubre el framework, las herramientas para desarrolladores, el sitio de documentación, la
+demo de pagos y los workflows compartidos de CI/CD.

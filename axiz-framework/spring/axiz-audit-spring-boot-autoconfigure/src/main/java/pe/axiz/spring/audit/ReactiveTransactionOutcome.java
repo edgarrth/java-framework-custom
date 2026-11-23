@@ -11,7 +11,10 @@ import org.springframework.util.ClassUtils;
 import pe.axiz.core.commons.TransactionOutcome;
 import reactor.core.publisher.Mono;
 
-/** Native transaction completion evidence, including cancellation and uncertain commit failures. */
+/**
+ * Evidencia nativa de finalización de la transacción, incluidas la cancelación y los fallos de
+ * commit inciertos.
+ */
 final class ReactiveTransactionOutcome {
   private ReactiveTransactionOutcome() {}
 

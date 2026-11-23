@@ -5,7 +5,10 @@ import java.util.Map;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
 
-/** Reject competing credential-property policies; explicit provider beans remain supported. */
+/**
+ * Rechaza políticas de propiedades de credenciales en conflicto; los beans de proveedor explícitos
+ * siguen siendo compatibles.
+ */
 public final class AwsCredentialConfiguration {
   private AwsCredentialConfiguration() {}
 

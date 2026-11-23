@@ -6,15 +6,16 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.lang.Checks;
 
 /**
- * Metadata of the request or message being processed by the current thread.
+ * Metadatos de la petición o del mensaje que procesa el hilo actual.
  *
- * <p>Inbound adapters (HTTP filters, message listeners) open a scope; outbound adapters read it to
- * propagate headers. Reactive code carries the value in the Reactor context under {@link #KEY} and
- * the Spring layer bridges both through Micrometer context-propagation.
+ * <p>Los adaptadores de entrada (filtros HTTP, listeners de mensajes) abren un scope; los
+ * adaptadores de salida lo leen para propagar cabeceras. El código reactivo lleva el valor en el
+ * contexto de Reactor bajo {@link #KEY} y la capa de Spring enlaza ambos mediante
+ * context-propagation de Micrometer.
  */
 public final class RequestContext {
 
-  /** Key used in the Reactor context and by the context-propagation accessor. */
+  /** Clave usada en el contexto de Reactor y por el accesor de context-propagation. */
   public static final String KEY = "axiz.request";
 
   private static final ThreadLocal<@Nullable RequestMetadata> CURRENT = new ThreadLocal<>();
@@ -29,21 +30,21 @@ public final class RequestContext {
     return CURRENT.get();
   }
 
-  /** Sets the value for the current thread and returns a scope that restores the previous one. */
+  /** Fija el valor para el hilo actual y devuelve un scope que restaura el anterior. */
   public static Scope open(RequestMetadata metadata) {
     RequestMetadata previous = CURRENT.get();
     CURRENT.set(Checks.notNull(metadata, "metadata"));
     return () -> restore(previous);
   }
 
-  /** Runs a task with the given metadata. */
+  /** Ejecuta una tarea con los metadatos indicados. */
   public static <T> T call(RequestMetadata metadata, Callable<T> task) throws Exception {
     try (Scope ignored = open(metadata)) {
       return task.call();
     }
   }
 
-  /** Low-level setter for context-propagation accessors; prefer {@link #open}. */
+  /** Setter de bajo nivel para accesores de context-propagation; es preferible {@link #open}. */
   public static void restore(@Nullable RequestMetadata value) {
     if (value == null) {
       CURRENT.remove();
@@ -52,7 +53,7 @@ public final class RequestContext {
     }
   }
 
-  /** Closes a scope without checked exceptions. */
+  /** Cierra un scope sin excepciones comprobadas. */
   @FunctionalInterface
   public interface Scope extends AutoCloseable {
     @Override

@@ -34,10 +34,10 @@
       <plugin>
         <groupId>org.jacoco</groupId><artifactId>jacoco-maven-plugin</artifactId>
         <executions><execution><id>check</id><configuration>
-          <!-- This enum has no user-written behavior: its only executable lines initialize
-               constants. CrudLayersTest and CrudAcceptanceIT exercise all actions in the
-               consumer. QueryService's default behavior remains subject to the full gate;
-               keep the enum visible in reports and aggregate integration coverage. -->
+          <!-- Este enum no tiene comportamiento escrito por el usuario: sus únicas líneas ejecutables inicializan
+               constantes. CrudLayersTest y CrudAcceptanceIT ejercitan todas las acciones en el
+               consumidor. El comportamiento por defecto de QueryService sigue sujeto al gate completo;
+               el enum se mantiene visible en los reportes y en la cobertura de integración agregada. -->
           <excludes><exclude>pe/axiz/structure/layered/CrudAction.class</exclude></excludes>
         </configuration></execution></executions>
       </plugin>

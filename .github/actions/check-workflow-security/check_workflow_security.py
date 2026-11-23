@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate explicit secrets and the narrowly scoped immutable Axiz release exception."""
+"""Valida los secretos explícitos y la excepción de release inmutable de Axiz, de alcance acotado."""
 import argparse
 import json
 from pathlib import Path
@@ -87,7 +87,7 @@ def validate(document, contracts_root=ROOT, *, snapshot=True, permission_excepti
             if GUARD not in needs:
                 errors.append(f"{name}: no direct dependency on {GUARD}")
             condition = job.get("if")
-            # Custom conditions must put the success check outside the entire original expression.
+                        # Las condiciones personalizadas deben colocar la verificación de éxito fuera de toda la expresión original.
             if condition and not guarded_condition(str(condition)):
                 errors.append(f"{name}: condition may bypass failed release verification")
             expected = {
@@ -131,7 +131,7 @@ def checkout_reference_errors(text, expected):
 
 
 def validate_monorepo_file(path, document, version, managed=True):
-    """File-specific release boundaries supplement the reusable-workflow security policy."""
+    """Los límites de release específicos de cada archivo complementan la política de seguridad de los workflows reutilizables."""
     errors = []
     text = path.read_text()
     expected = "axiz-workflows-v" + version

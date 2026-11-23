@@ -28,7 +28,8 @@ import pe.axiz.codegen.project.ProjectLayout;
 import pe.axiz.codegen.project.ProjectManifest;
 
 /**
- * Reconciles the selected service's provider dependencies without moving pure-core dependencies.
+ * Reconcilia las dependencias de proveedores del servicio seleccionado sin mover las dependencias
+ * del core puro.
  */
 final class CapabilityAdapters {
   private CapabilityAdapters() {}

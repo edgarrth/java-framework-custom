@@ -24,27 +24,32 @@ import pe.axiz.core.idempotency.IdempotencyService;
 import pe.axiz.core.idempotency.Idempotent;
 
 /**
- * Applies {@code @Idempotent} around the handler method, <b>inside</b> method security: it is
- * ordered after Spring Security's {@code @PreAuthorize}, {@code @Secured} and JSR-250 interceptors,
- * so a replay is only returned when the caller is still authorized for this request, with the
- * resolved arguments (path variables, body) the policies need. Then it rejects missing keys when
- * required, replays completed responses (through {@link IdempotentReplay}), answers 409 while the
- * first request runs and 422 when a key is reused with a different request.
+ * Aplica {@code @Idempotent} alrededor del método handler, <b>dentro</b> de la seguridad de
+ * métodos: se ordena después de los interceptores {@code @PreAuthorize}, {@code @Secured} y JSR-250
+ * de Spring Security, de modo que una reproducción solo se devuelve cuando el invocante sigue
+ * autorizado para esta solicitud, con los argumentos resueltos (variables de ruta, cuerpo) que
+ * necesitan las políticas. Luego rechaza las claves ausentes cuando son obligatorias, reproduce las
+ * respuestas completadas (mediante {@link IdempotentReplay}), responde 409 mientras se ejecuta la
+ * primera solicitud y 422 cuando se reutiliza una clave con una solicitud distinta.
  *
- * <p>Servlet requests take the fingerprint computed by {@link IdempotencyFilter}; reactive handlers
- * (returning {@code Mono} or {@code Flux}) take it from {@link IdempotencyWebFilter} through the
- * Reactor context.
+ * <p>Las solicitudes servlet toman la huella calculada por {@link IdempotencyFilter}; los handlers
+ * reactivos (que devuelven {@code Mono} o {@code Flux}) la toman de {@link IdempotencyWebFilter}
+ * mediante el contexto de Reactor.
  */
 public final class IdempotencyMethodInterceptor implements MethodInterceptor {
 
-  /** After {@code AuthorizationInterceptorsOrder.JSR250} (400), before result authorization. */
+  /**
+   * Después de {@code AuthorizationInterceptorsOrder.JSR250} (400), antes de la autorización del
+   * resultado.
+   */
   public static final int ORDER = 440;
 
   private static final boolean REACTOR =
       ClassUtils.isPresent(
           "reactor.core.publisher.Mono", IdempotencyMethodInterceptor.class.getClassLoader());
 
-  // servlet types are only touched when the servlet API is present (reactive services lack it)
+  // los tipos de servlet solo se usan cuando la API de servlet está presente (los servicios
+  // reactivos no la tienen)
   private static final boolean SERVLET =
       ClassUtils.isPresent(
           "jakarta.servlet.http.HttpServletRequest",
@@ -99,7 +104,7 @@ public final class IdempotencyMethodInterceptor implements MethodInterceptor {
     if (REACTOR && ReactiveIdempotency.handles(method.getReturnType())) {
       return ReactiveIdempotency.apply(invocation, rule, operation, asyncService, asyncProtection);
     }
-    return invocation.proceed(); // not called from a web request
+    return invocation.proceed(); // no se invoca desde una solicitud web
   }
 
   private @Nullable Object servlet(
@@ -138,7 +143,7 @@ public final class IdempotencyMethodInterceptor implements MethodInterceptor {
     }
   }
 
-  /** Current servlet request; only loaded when the servlet API is present. */
+  /** Solicitud servlet actual; solo se carga cuando la API de servlet está presente. */
   private static final class ServletRequests {
     private ServletRequests() {}
 

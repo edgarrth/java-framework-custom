@@ -19,7 +19,8 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.TransactionCanceledException;
 
 /**
- * Borrowed synchronous DynamoDB client; the operator provisions schema-v1 and key control items.
+ * Cliente DynamoDB síncrono prestado; el operador aprovisiona el esquema 1 de la bóveda y los ítems
+ * de control de claves.
  */
 public final class DynamoDbTokenVault implements TokenVault {
   @SuppressFBWarnings(
@@ -66,7 +67,8 @@ public final class DynamoDbTokenVault implements TokenVault {
         var initial = client.transactGetItems(request).responses();
         Optional<Token> owner = requests.owner(scope, candidates, initial, false);
         if (owner.isEmpty()) return Optional.empty();
-        // Re-read indexes AND token together so a concurrent delete is not mistaken for an orphan.
+        // Se releen los índices Y el token juntos para que un borrado concurrente no se confunda
+        // con un huérfano.
         var snapshot =
             client
                 .transactGetItems(requests.references(scope, candidates, owner.get()))
@@ -103,7 +105,8 @@ public final class DynamoDbTokenVault implements TokenVault {
           candidates.addAll(otherReadFingerprints);
           Optional<VaultRecord> winner = findByFingerprint(record.scope(), candidates);
           if (winner.isPresent()) return new PutOutcome.FingerprintExists(winner.get().token());
-          // The competing association was deleted after confirmed rollback; retry the same plan.
+          // La asociación competidora se borró tras un rollback confirmado; se reintenta el mismo
+          // plan.
         } else if (VaultRequests.condition(reasons, 1)) return new PutOutcome.TokenCollision();
         else if (!VaultRequests.conflict(reasons)) throw VaultRequests.unavailable();
       } catch (RuntimeException failure) {

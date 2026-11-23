@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Observe Argo CD through its read-only API and require the approved immutable sources."""
+"""Observa Argo CD mediante su API de solo lectura y exige las fuentes inmutables aprobadas."""
 import argparse
 import json
 import os

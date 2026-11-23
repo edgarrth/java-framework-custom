@@ -7,7 +7,7 @@ import org.springframework.http.server.PathContainer;
 import org.springframework.web.util.pattern.PathPattern;
 import org.springframework.web.util.pattern.PathPatternParser;
 
-/** Compiled, first-match request limits shared by the HTTP stacks. */
+/** Límites de solicitud compilados, por primera coincidencia, compartidos por las pilas HTTP. */
 final class RequestBodyLimits {
   private record Rule(PathPattern path, long bytes) {}
 

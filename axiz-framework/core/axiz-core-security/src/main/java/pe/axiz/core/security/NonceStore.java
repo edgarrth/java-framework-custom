@@ -3,17 +3,18 @@ package pe.axiz.core.security;
 import java.time.Duration;
 
 /**
- * Remembers used nonces so a signed message is accepted only once. Implementations must be atomic
- * across every instance of the receiver (for example Redis {@code SET NX PX}); an in-memory store
- * only protects a single instance.
+ * Recuerda los nonces usados para que un mensaje firmado se acepte una sola vez. Las
+ * implementaciones deben ser atómicas entre todas las instancias del receptor (por ejemplo {@code
+ * SET NX PX} de Redis); un almacén en memoria solo protege una instancia.
  */
 public interface NonceStore {
 
   /**
-   * Records the nonce if it was not seen in the last {@code ttl}.
+   * Registra el nonce si no se vio durante el último {@code ttl}.
    *
-   * @return {@code true} the first time, {@code false} for a repeated nonce
-   * @throws RuntimeException if the store cannot answer; callers must then reject the message
+   * @return {@code true} la primera vez, {@code false} para un nonce repetido
+   * @throws RuntimeException si el almacén no puede responder; en ese caso quienes llaman deben
+   *     rechazar el mensaje
    */
   boolean markUsed(String nonce, Duration ttl);
 }

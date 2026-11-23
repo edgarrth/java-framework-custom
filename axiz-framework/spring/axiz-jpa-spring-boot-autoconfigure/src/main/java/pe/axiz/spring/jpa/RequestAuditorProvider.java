@@ -6,9 +6,9 @@ import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.kit.jpa.AuditorProvider;
 
 /**
- * Auditor of {@code createdBy}/{@code updatedBy}: the end user, or the calling application for
- * machine-to-machine requests, as authenticated by the security starter; an empty result when no
- * authenticated identity is available.
+ * Auditor de {@code createdBy}/{@code updatedBy}: el usuario final, o la aplicación invocante en
+ * solicitudes de máquina a máquina, según la autenticación del starter de seguridad; un resultado
+ * vacío cuando no hay ninguna identidad autenticada disponible.
  */
 public class RequestAuditorProvider implements AuditorProvider {
 

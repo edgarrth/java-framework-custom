@@ -179,7 +179,8 @@ class ReactiveKafkaBrokerTest {
   @Test
   void unavailableBrokerFailsWithinDeadlineWithoutBlockingReactiveCaller() throws Exception {
     int port;
-    // Only reserves a temporary test port; no application data or credentials are exchanged.
+    // Solo reserva un puerto temporal de prueba; no se intercambian datos de aplicación ni
+    // credenciales.
     // nosemgrep: java.lang.security.audit.crypto.unencrypted-socket.unencrypted-socket
     try (var socket = new ServerSocket(0)) {
       port = socket.getLocalPort();

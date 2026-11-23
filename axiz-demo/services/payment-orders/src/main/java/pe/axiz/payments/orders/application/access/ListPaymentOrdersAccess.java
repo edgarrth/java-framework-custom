@@ -6,7 +6,7 @@ import pe.axiz.extension.cqrs.AccessPolicy;
 import pe.axiz.extension.cqrs.Caller;
 import pe.axiz.payments.orders.application.query.ListPaymentOrdersQuery;
 
-/** Customers list their own orders; services need {@code payments:read}. */
+/** Los clientes listan sus propias órdenes; los servicios necesitan {@code payments:read}. */
 public class ListPaymentOrdersAccess implements AccessPolicy<ListPaymentOrdersQuery> {
 
   @Override

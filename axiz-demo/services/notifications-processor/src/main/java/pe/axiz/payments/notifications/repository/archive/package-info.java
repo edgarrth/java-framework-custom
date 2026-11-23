@@ -1,4 +1,4 @@
-/** Long-term archive of the audit trail on S3. */
+/** Archivo a largo plazo del rastro de auditoría en S3. */
 @NullMarked
 package pe.axiz.payments.notifications.repository.archive;
 

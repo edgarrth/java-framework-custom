@@ -8,7 +8,9 @@ import pe.axiz.kit.dynamodb.DynamoAsyncRepository;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 
-/** Creates native repositories and deferred Reactor facades using one borrowed transport. */
+/**
+ * Crea repositorios nativos y fachadas diferidas de Reactor usando un único transporte prestado.
+ */
 public final class ReactiveDynamoRepositories {
   @SuppressFBWarnings(
       value = "EI_EXPOSE_REP2",

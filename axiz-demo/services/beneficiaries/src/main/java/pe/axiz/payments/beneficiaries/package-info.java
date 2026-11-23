@@ -1,6 +1,6 @@
 /**
- * Beneficiaries: Frequent beneficiaries of each customer. Archetype business, layered structure,
- * servlet stack. Types are non-null unless annotated {@code @Nullable}.
+ * Beneficiaries: beneficiarios frecuentes de cada cliente. Arquetipo business, estructura layered,
+ * stack servlet. Los tipos no son nulos salvo que se anoten con {@code @Nullable}.
  */
 @NullMarked
 package pe.axiz.payments.beneficiaries;

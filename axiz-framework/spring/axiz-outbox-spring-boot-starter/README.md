@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-outbox-spring-boot-starter
 
-Transactional outbox on Aurora PostgreSQL with background relay.
+Outbox transaccional sobre Aurora PostgreSQL con relay en segundo plano.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,12 +12,12 @@ Transactional outbox on Aurora PostgreSQL with background relay.
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Technical payload protection
+## Protección técnica del payload
 
-`axiz.outbox.payload-protection=envelope` opts into authenticated payload encryption;
-`none` is the default. Envelope mode requires the matching synchronous/native
-`EnvelopeEncryptor` and fails startup when it is absent. Protected records cannot
-be read in `none` mode; migration and retained read keys must be planned before
-changing the mode. See [technical storage protection](../../../axiz-docs/docs/guias/proteccion-de-almacenes-tecnicos.md).
+`axiz.outbox.payload-protection=envelope` activa el cifrado autenticado del payload;
+`none` es el valor por defecto. El modo envelope requiere el `EnvelopeEncryptor` síncrono o nativo
+correspondiente y hace fallar el arranque cuando falta. Los registros protegidos no se pueden
+leer en modo `none`; la migración de datos y las claves de lectura retenidas se planifican antes
+de cambiar el modo. Se recomienda revisar la [protección de almacenes técnicos](../../../axiz-docs/docs/guias/proteccion-de-almacenes-tecnicos.md).

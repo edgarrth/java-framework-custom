@@ -217,7 +217,7 @@ class ObservationExecutionInterceptorTest {
             SdkHttpResponse.builder().statusCode(200).putHeader("x-amzn-RequestId", "R-1").build()),
         dynamo);
 
-    // S3 names the header differently
+    // S3 nombra la cabecera de otra forma
     ExecutionAttributes s3 = call("S3", "GetObject");
     interceptor.beforeExecution(() -> (SdkRequest) null, s3);
     interceptor.afterExecution(

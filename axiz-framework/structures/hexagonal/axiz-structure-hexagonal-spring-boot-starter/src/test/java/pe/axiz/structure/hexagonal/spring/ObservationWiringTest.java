@@ -14,8 +14,9 @@ import org.springframework.boot.micrometer.observation.autoconfigure.Observation
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
 /**
- * The use case advisors are created before bean post-processors run. Resolving the observation
- * registry at that point would leave it without its handlers: no tracing for the whole service.
+ * Los advisors de casos de uso se crean antes de que corran los post-processors de beans. Resolver
+ * el registro de observaciones en ese punto lo dejaría sin sus handlers: sin tracing para todo el
+ * servicio.
  */
 class ObservationWiringTest {
 

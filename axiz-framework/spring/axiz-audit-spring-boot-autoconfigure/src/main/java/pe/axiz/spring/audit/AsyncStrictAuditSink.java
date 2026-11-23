@@ -3,7 +3,7 @@ package pe.axiz.spring.audit;
 import java.util.Objects;
 import pe.axiz.core.audit.AsyncAuditEventPublisher;
 
-/** Native durable destination; the supplied stage completes only after an actual durable ACK. */
+/** Destino nativo durable; la etapa entregada solo se completa tras un ACK durable real. */
 public record AsyncStrictAuditSink(String name, AsyncAuditEventPublisher publisher) {
   public AsyncStrictAuditSink {
     Objects.requireNonNull(name);

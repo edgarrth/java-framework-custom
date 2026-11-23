@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Opt-in OCI round trip against an existing ephemeral loopback registry (Docker and Helm required)."""
+"""Ida y vuelta OCI, activada de forma explícita, contra un registry efímero de loopback existente (requiere Docker y Helm)."""
 import argparse
 import hashlib
 import json
@@ -28,7 +28,7 @@ def main():
     real_output = subprocess.check_output
 
     def local_helm(command, **kwargs):
-        # Only this opt-in loopback fixture permits unencrypted OCI transport.
+                # Solo este fixture de loopback, activado de forma explícita, permite transporte OCI sin cifrar.
         if command[:3] == ["helm", "show", "chart"]:
             command = [*command, "--plain-http"]
         return real_output(command, **kwargs)
@@ -53,8 +53,8 @@ def main():
             data["parameters_sha256"] = manifest.canonical_hash(data["parameters"])
             tag = "single" if len(platforms) == 1 else "multi"
             repository = args.registry + "/builds/payments"
-            # No RUN instruction: each architecture can be built without emulation or changing
-            # the host's Docker image store. The multi-platform product is a real registry index.
+                        # Sin instrucción RUN: cada arquitectura se construye sin emulación y sin modificar el
+            # almacén de imágenes Docker del host. El producto multiplataforma es un índice real del registry.
             references = []
             for platform in platforms:
                 reference = repository + ":" + tag + "-" + platform.split("/")[1]

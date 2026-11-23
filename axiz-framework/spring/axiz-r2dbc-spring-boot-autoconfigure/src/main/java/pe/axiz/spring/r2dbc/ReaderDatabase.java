@@ -11,10 +11,11 @@ import pe.axiz.kit.r2dbc.ReactiveSql;
 import reactor.core.publisher.Mono;
 
 /**
- * The reader endpoint of the Aurora cluster ({@code axiz.r2dbc.reader.url}): a separate pool for
- * queries that tolerate replica lag. It is deliberately not a {@link ConnectionFactory} bean, so
- * the writer stays the only candidate for transactions, repositories and migrations; statements run
- * here never take part in a transaction.
+ * Endpoint de lectura del clúster Aurora ({@code axiz.r2dbc.reader.url}): un pool separado para
+ * consultas que toleran el retraso de las réplicas. Deliberadamente no es un bean {@link
+ * ConnectionFactory}, de modo que el de escritura sigue siendo el único candidato para
+ * transacciones, repositorios y migraciones; las sentencias que se ejecutan aquí nunca participan
+ * en una transacción.
  */
 public final class ReaderDatabase implements DisposableBean {
 
@@ -29,7 +30,7 @@ public final class ReaderDatabase implements DisposableBean {
     this(connectionFactory, null);
   }
 
-  /** Owns reader-specific IAM resources as well as the connection pool. */
+  /** Posee los recursos IAM específicos de lectura además del pool de conexiones. */
   public ReaderDatabase(ConnectionFactory connectionFactory, @Nullable AutoCloseable credentials) {
     this.credentials = credentials;
     this.connectionFactory = Objects.requireNonNull(connectionFactory);
@@ -37,12 +38,12 @@ public final class ReaderDatabase implements DisposableBean {
     this.sql = new DatabaseClientReactiveSql(client);
   }
 
-  /** Spring's client on the reader pool. */
+  /** Cliente de Spring sobre el pool de lectura. */
   public DatabaseClient client() {
     return client;
   }
 
-  /** Named-parameter SQL on the reader pool. */
+  /** SQL con parámetros con nombre sobre el pool de lectura. */
   public ReactiveSql sql() {
     return sql;
   }

@@ -20,10 +20,11 @@ import pe.axiz.structure.batch.CsvRecordReader;
 import pe.axiz.structure.batch.spring.StorageRecordItemReader;
 
 /**
- * The {@code {{project.name}}} job: loads the input file from S3 into Aurora in chunks. The reader
- * saves its position in the step context, so a failed run restarts after the last committed chunk;
- * the insert ignores references already loaded, so reprocessing is idempotent. Job metrics, audit
- * and the summary line are added by the batch starter.
+ * El job {@code {{project.name}}}: carga el archivo de entrada desde S3 a Aurora por chunks. El
+ * lector guarda su posición en el contexto del paso, por lo que una ejecución fallida se reinicia
+ * tras el último chunk confirmado; el insert ignora las referencias ya cargadas, por lo que el
+ * reprocesamiento es idempotente. El starter de batch agrega las métricas del job, la auditoría y
+ * la línea de resumen.
  */
 @Configuration(proxyBeanMethods = false)
 public class {{project.className}}JobConfiguration {

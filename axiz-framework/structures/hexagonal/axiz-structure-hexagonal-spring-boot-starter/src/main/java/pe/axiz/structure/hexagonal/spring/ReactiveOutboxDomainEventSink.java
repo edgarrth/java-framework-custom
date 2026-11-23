@@ -12,7 +12,9 @@ import pe.axiz.structure.hexagonal.ReactiveDomainEventSink;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/** Enqueues immutable event batches sequentially on the caller's R2DBC transaction. */
+/**
+ * Encola lotes de eventos inmutables de forma secuencial en la transacción R2DBC de quien llama.
+ */
 public final class ReactiveOutboxDomainEventSink implements ReactiveDomainEventSink {
   @SuppressFBWarnings(
       value = "EI_EXPOSE_REP2",

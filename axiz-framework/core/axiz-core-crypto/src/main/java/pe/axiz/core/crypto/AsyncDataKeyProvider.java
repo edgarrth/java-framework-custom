@@ -3,8 +3,9 @@ package pe.axiz.core.crypto;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Native envelope-key provider. Results transfer ownership (close DataKey, clear raw byte arrays).
- * Cancellation must reach the remote operation; shared plaintext arrays are forbidden.
+ * Proveedor nativo de claves de envelope. Los resultados transfieren la propiedad (se cierra el
+ * DataKey y se limpian los arrays de bytes en bruto). La cancelación debe llegar a la operación
+ * remota; se prohíben los arrays de texto plano compartidos.
  */
 public interface AsyncDataKeyProvider {
   CompletionStage<DataKeyProvider.DataKey> generate(String context);

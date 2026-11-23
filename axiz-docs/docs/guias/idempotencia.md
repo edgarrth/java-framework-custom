@@ -45,7 +45,7 @@ token, tenant, aplicación cliente y usuario final. Dos llamantes que usan la mi
 vengan de emisores o tenants distintos. La query string es parte de la huella tal como se envió:
 `?amount=10` y `?amount=99` con la misma llave son un `422`, y también `?sort=a&sort=b` frente a
 `?sort=b&sort=a` (el orden puede tener significado); un cliente que reintenta reenvía la misma
-request.
+petición.
 
 El llamante se codifica parte por parte (marcador de presencia, texto y separador) y ninguna parte
 puede contener caracteres de control (U+0000 a U+001F, U+007F): así ningún valor puede imitar un
@@ -63,7 +63,7 @@ ni una nueva ejecución autorizada. El vencimiento de la concesión no autoriza 
 a repetir un efecto de negocio incierto. Redis lo resuelve con scripts Lua que comprueban estado y dueño en el mismo paso atómico;
 DynamoDB, con escrituras condicionadas por `status` y `owner`.
 
-Elige `in-progress-ttl` mayor que la duración máxima de la operación (timeouts de las llamadas que
+Se elige un `in-progress-ttl` mayor que la duración máxima de la operación (timeouts de las llamadas que
 hace incluidos). Axiz renueva la concesión mientras trabaja; si vence, conserva la incertidumbre
 y exige reconciliación antes de volver a ejecutar.
 
@@ -100,7 +100,7 @@ envía el command no vuelve a pasar por el pipeline.
 es un límite de deduplicación, por lo que la unicidad de una operación financiera también debe
 residir en su base de negocio. Una llave expirada no sustituye ese control persistente.
 
-## Commands: `IdempotentCommand`
+## Comandos: `IdempotentCommand`
 
 En CQRS, un command que implementa `IdempotentCommand` (con su `idempotencyKey()`) guarda su primer
 resultado y lo devuelve para la misma llave y el mismo llamante; la misma llave con otro command es

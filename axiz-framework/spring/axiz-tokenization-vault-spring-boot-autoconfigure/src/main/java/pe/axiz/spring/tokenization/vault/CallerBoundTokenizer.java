@@ -15,7 +15,9 @@ import pe.axiz.core.tokenization.TokenizerCapabilities;
 import pe.axiz.core.tokenization.vault.TokenCaller;
 import pe.axiz.core.tokenization.vault.VaultOperations;
 
-/** In-process imperative consumer; resolves verified identity anew on every invocation. */
+/**
+ * Consumidor imperativo en proceso; resuelve de nuevo la identidad verificada en cada invocación.
+ */
 public final class CallerBoundTokenizer implements Tokenizer {
   @SuppressFBWarnings(
       value = "EI_EXPOSE_REP2",

@@ -1,4 +1,4 @@
-/** Event payloads. */
+/** Payloads de eventos. */
 @NullMarked
 package pe.axiz.payments.notifications.event;
 

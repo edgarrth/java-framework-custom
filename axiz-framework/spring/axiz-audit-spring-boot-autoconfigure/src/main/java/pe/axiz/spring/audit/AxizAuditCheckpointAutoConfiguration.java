@@ -15,7 +15,8 @@ import pe.axiz.core.audit.StrictAuditPublisher;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 
 /**
- * Registers checkpoints only when a confirmed audit path exists, including a custom strict port.
+ * Registra checkpoints solo cuando existe una ruta de auditoría confirmada, incluido un puerto
+ * estricto personalizado.
  */
 @AutoConfiguration(after = AxizStrictAuditAutoConfiguration.class)
 @ConditionalOnBooleanProperty(name = "axiz.audit.enabled", matchIfMissing = true)

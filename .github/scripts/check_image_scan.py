@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reject empty or mismatched image scans; no findings alone is not evidence of coverage."""
+"""Rechaza escaneos de imagen vacíos o no coincidentes; la ausencia de hallazgos por sí sola no es evidencia de cobertura."""
 import argparse
 from datetime import datetime, timedelta, timezone
 import json
@@ -35,7 +35,7 @@ def github_advisory(ghsa):
 
 
 def verify_fixed_ancestry(report, vex, expected_image_id, compare=github_compare, advisory=github_advisory):
-    """Recompute ancestry upstream and bind the proof to the image inspected in this build."""
+    """Recalcula la ascendencia upstream y vincula la prueba a la imagen inspeccionada en este build."""
     if expected_image_id and report['Metadata']['ImageID'] != expected_image_id:
         raise ValueError('The scan does not match the immutable identity of the built image')
     modified = [item for result in report.get('Results', [])
@@ -93,9 +93,9 @@ def validate(report, expected_image, now=None, maven_lock=None, required_types=(
         if not isinstance(packages, list):
             raise ValueError('Invalid component inventory')
         for package in packages:
-            # Go source builds include an unversioned main-module graph node. It is
-            # not a dependency: the recipe pins its source archive and SHA-256.
-            # Retain it in the report, but never count it as versioned inventory.
+                        # Los builds de Go desde el código fuente incluyen un nodo del grafo del módulo principal sin versión.
+            # No es una dependencia: la receta fija su archivo de código fuente y su SHA-256.
+            # Se conserva en el reporte, pero nunca se cuenta como inventario versionado.
             if (result.get('Type') == 'gobinary' and package.get('Relationship') == 'root'
                     and package.get('Name') and not package.get('Version')
                     and package.get('DependsOn')):
@@ -129,7 +129,7 @@ def validate(report, expected_image, now=None, maven_lock=None, required_types=(
 
 
 def workspace_components(report, source_bytes):
-    """Go workspace modules belong to the pinned source release, not a separate module tag."""
+    """Los módulos del workspace de Go pertenecen a la release de código fuente fijada, no a un tag de módulo separado."""
     import hashlib
     labels = report.get('Metadata', {}).get('ImageConfig', {}).get('config', {}).get('Labels', {})
     if labels.get('pe.axiz.go-sources-sha256') != hashlib.sha256(source_bytes).hexdigest():
@@ -158,7 +158,7 @@ def workspace_components(report, source_bytes):
 
 
 def fixed_components(vex, now):
-    """Accept only exact-version fixes with source ancestry evidence, never risk waivers."""
+    """Acepta solo correcciones de versión exacta con evidencia de ascendencia del código fuente, nunca exenciones de riesgo."""
     if (vex.get('@context') != 'https://openvex.dev/ns/v0.2.0'
             or not vex.get('author') or not vex.get('statements')):
         raise ValueError('Invalid reviewed OpenVEX document')

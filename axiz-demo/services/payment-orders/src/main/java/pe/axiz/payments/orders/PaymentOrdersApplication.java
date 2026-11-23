@@ -3,7 +3,7 @@ package pe.axiz.payments.orders;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-/** Payment Orders: Owner of payment orders. */
+/** Payment Orders: propietario de las órdenes de pago. */
 @SpringBootApplication
 @SuppressWarnings("checkstyle:hideutilityclassconstructor")
 public class PaymentOrdersApplication {

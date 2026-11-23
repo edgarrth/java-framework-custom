@@ -17,7 +17,9 @@ import software.amazon.jdbc.util.FullServicesContainer;
 import software.amazon.jdbc.util.IamAuthUtils;
 import software.amazon.jdbc.util.RegionUtils;
 
-/** JDBC wrapper SPI: each connection borrows the managed pool scope identity. */
+/**
+ * SPI del wrapper JDBC: cada conexión toma prestada la identidad del ámbito del pool gestionado.
+ */
 public final class AxizJdbcIamPluginFactory implements ConnectionPluginFactory {
   @Override
   public ConnectionPlugin getInstance(FullServicesContainer services, Properties properties) {
@@ -84,7 +86,8 @@ public final class AxizJdbcIamPluginFactory implements ConnectionPluginFactory {
                 IamAuthConnectionPlugin.IAM_TOKEN_PROPERTY_NAME.getString(properties),
                 "JDBC IAM token property name is required");
         properties.setProperty(property, token);
-        // Runs on every physical connect, including wrapper failover/reconnect after token expiry.
+        // Se ejecuta en cada conexión física, incluidos el failover y la reconexión del wrapper
+        // tras la expiración del token.
         return connect.call();
       } catch (RuntimeException failure) {
         throw new SQLException("Unable to obtain JDBC IAM credentials", "28000", failure);

@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-adapter-crypto-kms
 
-AWS KMS key provider for envelope encryption with data key cache.
+Proveedor de claves de AWS KMS para cifrado de sobre con caché de claves de datos.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,15 +12,15 @@ AWS KMS key provider for envelope encryption with data key cache.
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `KmsAsyncDataKeyProvider` | Native KMS client with exact SDK cancellation, AES-256 data keys and shared encryption-context policy. |
-| `KmsDataKeyProvider` | Data keys from AWS KMS. |
+| `KmsAsyncDataKeyProvider` | Cliente KMS nativo con cancelación exacta del SDK, claves de datos AES-256 y política compartida de contexto de cifrado. |
+| `KmsDataKeyProvider` | Claves de datos desde AWS KMS. |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl adapters/axiz-adapter-crypto-kms verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl adapters/axiz-adapter-crypto-kms verify`.

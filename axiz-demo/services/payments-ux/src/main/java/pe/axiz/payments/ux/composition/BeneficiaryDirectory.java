@@ -9,9 +9,10 @@ import pe.axiz.payments.ux.client.beneficiaries.model.BeneficiaryPage;
 import reactor.core.publisher.Mono;
 
 /**
- * Reads beneficiaries from beneficiaries. Pages are cached briefly (two levels: memory and Redis,
- * TTL in {@code axiz.cache.caches.customer-beneficiaries}) because channels list them on every
- * payment screen; single beneficiaries are always read fresh before paying.
+ * Lee beneficiarios desde beneficiaries. Las páginas se guardan en caché por poco tiempo (dos
+ * niveles: memoria y Redis, TTL en {@code axiz.cache.caches.customer-beneficiaries}) porque los
+ * canales las listan en cada pantalla de pago; los beneficiarios individuales siempre se leen
+ * frescos previo al pago.
  */
 @Component
 public class BeneficiaryDirectory {
@@ -22,13 +23,13 @@ public class BeneficiaryDirectory {
     this.beneficiaries = beneficiaries;
   }
 
-  /** One page of the customer's beneficiaries (cached). */
+  /** Una página de los beneficiarios del cliente (en caché). */
   @AxizCacheable("customer-beneficiaries")
   public Mono<BeneficiaryPage> page(String customerId, @Nullable String cursor, int size) {
     return beneficiaries.listBeneficiaries(customerId, cursor, size);
   }
 
-  /** One beneficiary, never from cache: payments must see removals immediately. */
+  /** Un beneficiario, nunca desde la caché: los pagos deben ver las eliminaciones de inmediato. */
   public Mono<Beneficiary> get(String customerId, String beneficiaryId) {
     return beneficiaries
         .getBeneficiary(customerId, beneficiaryId)

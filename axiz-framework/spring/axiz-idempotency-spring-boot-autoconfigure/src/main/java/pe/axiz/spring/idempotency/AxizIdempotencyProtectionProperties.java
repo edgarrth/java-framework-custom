@@ -4,7 +4,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 import pe.axiz.core.crypto.PayloadProtectionMode;
 
-/** Protection of stored response bytes, selected independently from persistence technology. */
+/**
+ * Protección de los bytes de respuesta almacenados, seleccionada con independencia de la tecnología
+ * de persistencia.
+ */
 @ConfigurationProperties("axiz.idempotency")
 public record AxizIdempotencyProtectionProperties(
     @DefaultValue("NONE") PayloadProtectionMode responseProtection) {}

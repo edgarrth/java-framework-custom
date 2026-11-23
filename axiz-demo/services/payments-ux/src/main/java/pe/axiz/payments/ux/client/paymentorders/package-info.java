@@ -1,4 +1,4 @@
-/** Client of the payment-orders API. */
+/** Cliente de la API payment-orders. */
 @NullMarked
 package pe.axiz.payments.ux.client.paymentorders;
 

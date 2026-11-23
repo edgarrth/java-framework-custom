@@ -12,8 +12,8 @@ import org.junit.jupiter.api.Test;
 class XmlHardeningContractTest {
   @Test
   void effectiveParserPolicyDisablesEachIndependentExternalResourceMechanism() throws Exception {
-    // Effective JAXP configuration is inspected independently of DOCTYPE rejection: one active
-    // defense must not hide accidental removal of the other mandatory defenses.
+    // La configuración JAXP efectiva se inspecciona con independencia del rechazo de DOCTYPE: una
+    // defensa activa no debe ocultar la eliminación accidental de las demás defensas obligatorias.
     var factoryMethod = SafeXml.class.getDeclaredMethod("factory");
     factoryMethod.setAccessible(true);
     var factory = (DocumentBuilderFactory) factoryMethod.invoke(null);

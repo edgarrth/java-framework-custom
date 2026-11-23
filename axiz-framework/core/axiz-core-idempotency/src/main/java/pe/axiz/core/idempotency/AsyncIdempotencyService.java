@@ -12,7 +12,10 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.errors.BusinessException;
 
-/** Non-blocking idempotency with the same scoped keys, replay decisions, leases and fencing. */
+/**
+ * Idempotencia no bloqueante con las mismas claves con alcance, decisiones de replay, leases y
+ * fencing.
+ */
 public final class AsyncIdempotencyService {
   private final AsyncIdempotencyStore store;
   private final Duration inProgressTtl;

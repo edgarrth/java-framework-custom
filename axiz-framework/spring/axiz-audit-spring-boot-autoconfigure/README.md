@@ -1,15 +1,16 @@
 <!-- generated -->
 # axiz-audit-spring-boot-autoconfigure
 
-`axiz.audit.mode=ASYNC|DURABLE|SYNC` is the only delivery selector; boolean selectors are
-invalid configuration. Framework-owned publishers require an explicit mode outside local/test.
-DURABLE requires a compatible outbox, transaction resource and relay destination; a writer-only
-instance explicitly disables its local relay. Empty configured Kafka topics or SQS queue URLs fail
-startup. Route support validates addressing, not remote resource existence or permissions.
+`axiz.audit.mode=ASYNC|DURABLE|SYNC` es el único selector de entrega; los selectores booleanos son
+configuración inválida. Los publicadores propios del framework requieren un modo explícito fuera de local/test.
+DURABLE requiere un outbox compatible, un recurso transaccional y un destino del relay; una instancia
+solo de escritura desactiva explícitamente su relay local. Los tópicos Kafka o URLs de colas SQS
+configurados vacíos hacen fallar el arranque. El soporte de rutas valida el direccionamiento, no la
+existencia ni los permisos del recurso remoto.
 
-@Auditable, sanitized audit events and asynchronous publishers (log, MSK, SQS) (auto-configuration).
+@Auditable, eventos de auditoría saneados y publicadores asíncronos (log, MSK, SQS) (autoconfiguración).
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -18,121 +19,124 @@ startup. Route support validates addressing, not remote resource existence or pe
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `AuditContextResolver` | Builds the audit context (actor, correlation, channel, tenant) from the current request. |
-| `AuditOutsideTransaction` | What durable audit does with a successful action recorded outside a transaction. |
-| `AuditSink` | A destination of audit events contributed by an adapter auto-configuration. |
-| `AuditableInterceptor` | Applies `Auditable`: records who did what on which resource and with what result. |
-| `AxizAuditAutoConfiguration` | Audit: `Auditable` through an infrastructure advisor, sanitized immutable events, real asynchronous publication (bounded queue, virtual thread, log fallback) and optional HTTP audit. |
-| `AxizAuditProperties` | Audit settings (`axiz.audit.*`). |
-| `HttpAuditFilter` | Audits mutating HTTP requests. |
-| `HttpAuditWebFilter` | Reactive counterpart of `HttpAuditFilter`. |
-| `TransactionalAuditPublisher` | Durable audit: a successful action recorded inside a transaction is written to the outbox in that same transaction, so the evidence exists if and only if the business change was committed, and survives a crash right after the commit (the relay publishes it later, at least once, with the event id for deduplication). |
+| `AuditContextResolver` | Construye el contexto de auditoría (actor, correlación, canal, tenant) a partir de la petición actual. |
+| `AuditOutsideTransaction` | Qué hace la auditoría durable con una acción exitosa registrada fuera de una transacción. |
+| `AuditSink` | Destino de eventos de auditoría aportado por la autoconfiguración de un adaptador. |
+| `AuditableInterceptor` | Aplica `Auditable`: registra quién hizo qué, sobre qué recurso y con qué resultado. |
+| `AxizAuditAutoConfiguration` | Auditoría: `Auditable` mediante un advisor de infraestructura, eventos inmutables saneados, publicación asíncrona real (cola acotada, hilo virtual, respaldo en log) y auditoría HTTP opcional. |
+| `AxizAuditProperties` | Configuración de auditoría (`axiz.audit.*`). |
+| `HttpAuditFilter` | Audita las peticiones HTTP que modifican estado. |
+| `HttpAuditWebFilter` | Equivalente reactivo de `HttpAuditFilter`. |
+| `TransactionalAuditPublisher` | Auditoría durable: una acción exitosa registrada dentro de una transacción se escribe en el outbox en esa misma transacción, de modo que la evidencia existe si y solo si el cambio de negocio se confirmó, y sobrevive a una caída justo después del commit (el relay la publica luego, al menos una vez, con el id del evento para deduplicar). |
 
-## Native reactive audit
+## Auditoría reactiva nativa
 
-Reactive applications expose `ReactiveAuditTrail` and `ReactiveAuditPublisher`, backed by
-`AsyncAuditEventPublisher`/`AsyncAuditSink`. SQS uses `SqsAsyncClient`, startup-owned AWS resources,
-and exact native cancellation. Imperative sinks are rejected; Kafka audit uses the dedicated bounded asynchronous submission
-boundary described below in reactive applications.
-The global `axiz.audit.enabled=false` switch also disables native wiring.
+Las aplicaciones reactivas exponen `ReactiveAuditTrail` y `ReactiveAuditPublisher`, respaldados por
+`AsyncAuditEventPublisher`/`AsyncAuditSink`. SQS usa `SqsAsyncClient`, recursos AWS propios del arranque
+y cancelación nativa exacta. Los sinks imperativos se rechazan; en aplicaciones reactivas la auditoría
+Kafka usa el límite dedicado de envío asíncrono acotado que se describe más abajo.
+El interruptor global `axiz.audit.enabled=false` también desactiva el cableado nativo.
 
-`@Auditable` supports Mono/Flux methods in reactive applications. Each subscription owns its
-record and request metadata. Native R2DBC transaction context is preserved throughout publication.
+`@Auditable` admite métodos Mono/Flux en aplicaciones reactivas. Cada suscripción es dueña de su
+registro y de los metadatos de la petición. El contexto transaccional nativo de R2DBC se conserva durante toda la publicación.
 
-## Delivery modes and transaction evidence
+## Modos de entrega y evidencia transaccional
 
-Set `axiz.audit.mode` explicitly to `async`, `durable` or `sync`. Legacy `durable.enabled`
-and `async.enabled` selectors are rejected. Select the Kafka or SQS provider starter separately;
-this neutral module does not own those SDKs or auto-configurations.
+`axiz.audit.mode` se configura explícitamente con `async`, `durable` o `sync`. Los selectores
+booleanos `durable.enabled` y `async.enabled` se rechazan. El starter del proveedor Kafka o SQS se
+selecciona por separado; este módulo neutral no es dueño de esos SDK ni de sus autoconfiguraciones.
 
-| Mode | Guarantee |
+| Modo | Garantía |
 |---|---|
-| `async` (implicit only in development) | Bounded in-memory queue. Enqueue is not a destination acknowledgement and does not survive a process crash. Deployed applications must choose a mode explicitly. |
-| `durable` | Success is appended to the outbox in the business transaction. Relay delivery is at least once; consumers deduplicate event IDs. |
-| `sync` | Waits for the destination acknowledgement, using the native asynchronous transport on WebFlux. It is not atomic with business changes. Delivery failure logs the sanitized event as `audit.persistence=UNCONFIRMED` and does not undo business completion. |
+| `async` (implícito solo en desarrollo) | Cola acotada en memoria. Encolar no equivale a una confirmación del destino y no sobrevive a una caída del proceso. Las aplicaciones desplegadas deben elegir un modo explícitamente. |
+| `durable` | El éxito se agrega al outbox en la transacción de negocio. La entrega del relay es al menos una vez; los consumidores deduplican los IDs de evento. |
+| `sync` | Espera la confirmación del destino, con el transporte asíncrono nativo en WebFlux. No es atómico con los cambios de negocio. Un fallo de entrega registra en el log el evento saneado como `audit.persistence=UNCONFIRMED` y no deshace la finalización del negocio. |
 
-The audit advice runs at order **20**, outside the business transaction advice. An additional inner
-advisor appends durable successes before commit. Startup verifies the actual proxy order, including
-Spring's transaction advisor; changing it cannot silently remove atomic evidence.
+El advice de auditoría se ejecuta con orden **20**, fuera del advice de la transacción de negocio. Un
+advisor interno adicional agrega los éxitos durables antes del commit. El arranque verifica el orden real
+de los proxies, incluido el advisor transaccional de Spring; cambiarlo no puede eliminar en silencio la evidencia atómica.
 
-A durable failure is recorded **after** rollback in an independent short transaction. If an outer
-transaction is still active, the event waits for the outer audit, HTTP or messaging boundary to
-exit. HTTP boundaries require `axiz.audit.http.enabled=true`; broker dispatch boundaries are
-registered automatically. A call without one of these boundaries uses bounded `REQUIRES_NEW` as a
-last resort. Imperative servlet asynchronous work must establish its own transaction/audit boundary
-on the execution thread; thread-local transactions are not propagated to asynchronous tasks.
+Un fallo durable se registra **después** del rollback en una transacción corta independiente. Si una
+transacción externa sigue activa, el evento espera a que termine el límite externo de auditoría, HTTP o
+mensajería. Los límites HTTP requieren `axiz.audit.http.enabled=true`; los límites de despacho del broker
+se registran automáticamente. Una llamada sin ninguno de estos límites usa `REQUIRES_NEW` acotado como
+último recurso. El trabajo asíncrono servlet imperativo debe establecer su propio límite de transacción y
+auditoría en el hilo de ejecución; las transacciones ligadas al hilo no se propagan a tareas asíncronas.
 
-Both asynchronous queues snapshot request metadata and the parent observation at submission.
-The worker restores only those values for delivery; registered transaction accessors are excluded.
-Context scopes close after every event, so one request cannot leak its metadata into another.
+Ambas colas asíncronas toman una instantánea de los metadatos de la petición y de la observación padre al
+encolar. El worker restaura solo esos valores para la entrega; se excluyen los accesores de transacción
+registrados. Los scopes de contexto se cierran después de cada evento, de modo que una petición no puede
+filtrar sus metadatos a otra.
 
-`axiz.audit.durable.failure-timeout` (default `2s`) bounds failure persistence, including connection
-acquisition. `failure-concurrency` (default `4`) limits concurrent failure writes. JDBC uses owned
-virtual workers; R2DBC composes an independent `TransactionalOperator` without blocking. The
-pending buffer is bounded to 1,024 events per outer boundary; overflow uses the bounded last resort.
+`axiz.audit.durable.failure-timeout` (por defecto `2s`) acota la persistencia de fallos, incluida la
+obtención de la conexión. `failure-concurrency` (por defecto `4`) limita las escrituras concurrentes de
+fallos. JDBC usa workers virtuales propios; R2DBC compone un `TransactionalOperator` independiente sin
+bloquear. El buffer pendiente se limita a 1.024 eventos por límite externo; el desborde usa el último recurso acotado.
 
-If failure persistence cannot complete, the original business error is preserved and the sanitized
-event is queued with `audit.persistence=NOT_CONFIRMED`. This is degradation, not durable evidence.
-It is not counted as `lost` while the queue retains it. Metrics `axiz.audit.persistence.not.confirmed`
-and `axiz.audit.persistence.unconfirmed` expose these two conditions. Existing queue health metrics
-(`pending`, `lost`, `fallback`, `failures`, `worker.alive`) apply to both stacks.
+Si la persistencia del fallo no puede completarse, se conserva el error de negocio original y el evento
+saneado se encola con `audit.persistence=NOT_CONFIRMED`. Esto es degradación, no evidencia durable.
+No se cuenta como `lost` mientras la cola lo retiene. Las métricas `axiz.audit.persistence.not.confirmed`
+y `axiz.audit.persistence.unconfirmed` exponen estas dos condiciones. Las métricas de salud de la cola
+(`pending`, `lost`, `fallback`, `failures`, `worker.alive`) aplican a ambas pilas.
 
-Events carry two separate axes: `transactionOutcome` records confirmed local commit/rollback or
-`UNKNOWN`; `operationOutcome` remains `UNKNOWN` on failure unless `RejectedBeforeEffect` explicitly
-certifies no effects. A local rollback does not prove an external integration had no effect. Commit
-connection failures and unclassifiable transaction failures remain `UNKNOWN`.
+Los eventos llevan dos ejes separados: `transactionOutcome` registra el commit o rollback local confirmado,
+o `UNKNOWN`; `operationOutcome` permanece en `UNKNOWN` ante un fallo, salvo que `RejectedBeforeEffect`
+certifique explícitamente que no hubo efectos. Un rollback local no prueba que una integración externa
+no haya tenido efecto. Los fallos de conexión durante el commit y los fallos transaccionales no
+clasificables permanecen en `UNKNOWN`.
 
-Outside a transaction, durable success obeys `axiz.audit.durable.outside-transaction`: `fail`
-rejects publication and `async` uses the fallback. No durable guarantee is claimed for the latter.
+Fuera de una transacción, el éxito durable obedece a `axiz.audit.durable.outside-transaction`: `fail`
+rechaza la publicación y `async` usa el respaldo. Para este último no se declara ninguna garantía durable.
 
-Generated Helm charts contain optional Prometheus rules for unconfirmed/degraded/lost audit and
-blocked outbox aggregates. Enable them only with the Prometheus Operator CRD installed and service
-scraping configured. Adapt `monitoring.prometheusRules.metricSelector` to the actual target labels.
+Los charts de Helm generados contienen reglas opcionales de Prometheus para auditoría no confirmada,
+degradada o perdida y para agregados de outbox bloqueados. Se habilitan solo con el CRD de Prometheus
+Operator instalado y el scraping del servicio configurado. `monitoring.prometheusRules.metricSelector`
+se adapta a las etiquetas reales del destino.
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-audit-spring-boot-autoconfigure verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl spring/axiz-audit-spring-boot-autoconfigure verify`.
 
-## Integrity and confirmed publication
+## Integridad y publicación confirmada
 
-`axiz.audit.integrity.mode=HASH` seals canonical immutable events by default; `HMAC` adds
-authentication using the separate secret reference `integrity.hmac-secret` and rotation ID
-`integrity.hmac-key-id`. `NONE` disables sealing and is incompatible with strict publication.
-An unkeyed hash chain does not prevent an actor with write access from recomputing evidence.
+`axiz.audit.integrity.mode=HASH` sella por defecto los eventos inmutables canónicos; `HMAC` agrega
+autenticación con la referencia de secreto separada `integrity.hmac-secret` y el ID de rotación
+`integrity.hmac-key-id`. `NONE` desactiva el sellado y es incompatible con la publicación estricta.
+Una cadena de hash sin clave no impide que un actor con acceso de escritura recalcule la evidencia.
 
-`axiz.audit.strict.enabled=true` publishes `StrictAuditPublisher` or its native asynchronous
-counterpart. `strict.mode=DIRECT` requires an explicitly attested durable sink; `DURABLE`
-requires a separately committed outbox. There is no tolerant queue/log fallback on this path.
-Timeout (default 2 s) and concurrency (default 4) are bounded. A publication failure propagates;
-it does not claim that a previously committed business effect was rolled back.
+`axiz.audit.strict.enabled=true` publica `StrictAuditPublisher` o su equivalente asíncrono nativo.
+`strict.mode=DIRECT` requiere un sink durable atestado explícitamente; `DURABLE` requiere un outbox
+confirmado por separado. En esta ruta no existe respaldo tolerante en cola o log. El timeout (por
+defecto 2 s) y la concurrencia (por defecto 4) están acotados. Un fallo de publicación se propaga;
+no afirma que un efecto de negocio confirmado previamente se haya revertido.
 
-Memory chains emit confirmed checkpoints every `strict.checkpoint-interval` (default 1 minute)
-when a strict path exists. The verifier must obtain a trusted checkpoint from the durable sink,
-not a local diagnostic snapshot. `AuditChainVerifier` reports integrity separately from
-completeness: without a trusted checkpoint, completeness is `NOT_ASSESSED`; a missing suffix is
-detectable only up to that checkpoint. Preserve checkpoints and HMAC verification keys under
-separate operational control. No local hash, metric or successful enqueue proves complete receipt.
+Las cadenas en memoria emiten checkpoints confirmados cada `strict.checkpoint-interval` (por defecto
+1 minuto) cuando existe una ruta estricta. El verificador debe obtener un checkpoint confiable del sink
+durable, no una instantánea de diagnóstico local. `AuditChainVerifier` informa la integridad por separado
+de la completitud: sin un checkpoint confiable, la completitud es `NOT_ASSESSED`; un sufijo faltante solo
+es detectable hasta ese checkpoint. Los checkpoints y las claves de verificación HMAC se conservan bajo
+un control operativo separado. Ningún hash local, métrica o encolado exitoso prueba la recepción completa.
 
-### Kafka submission in reactive applications
+### Envío a Kafka en aplicaciones reactivas
 
-Servlet publication keeps its synchronous adapter. In reactive applications the framework invokes
-`KafkaTemplate.send()` on dedicated workers because metadata lookup or a full producer buffer can
-wait inside `send()`. Completion means broker acknowledgement; there is no wait for that ack on a
-worker or Reactor thread. The standard Kafka client is retained.
+La publicación servlet conserva su adaptador síncrono. En aplicaciones reactivas el framework invoca
+`KafkaTemplate.send()` en workers dedicados, porque la búsqueda de metadatos o un buffer del productor
+lleno pueden esperar dentro de `send()`. Completar significa confirmación del broker; esa confirmación no
+se espera en un worker ni en un hilo de Reactor. Se mantiene el cliente Kafka estándar.
 
-`axiz.audit.kafka.send-workers` defaults to 2 (range 1..64) and `send-queue-capacity` to 256
-(range 0..65536). Typed properties validate these limits before creating the dispatcher. Admission is
-bounded across queued work and unacknowledged sends; exhaustion fails immediately rather than
-running on the caller. The existing Kafka timeout bounds submission plus acknowledgement and
-`max.block.ms`. Metrics `axiz.transport.pending`, `.queued`, `.rejected`, and `.latency` carry the
-`transport` tag (`kafka-events` or `kafka-audit`). Producers and workers close with the context.
+`axiz.audit.kafka.send-workers` vale 2 por defecto (rango de 1 a 64) y `send-queue-capacity`, 256
+(rango de 0 a 65536). Las propiedades tipadas validan estos límites antes de crear el despachador. La
+admisión se acota entre el trabajo encolado y los envíos sin confirmar; al agotarse falla de inmediato en
+lugar de ejecutarse en el llamador. El timeout de Kafka configurado acota el envío más la confirmación y
+`max.block.ms`. Las métricas `axiz.transport.pending`, `.queued`, `.rejected` y `.latency` llevan el tag
+`transport` (`kafka-events` o `kafka-audit`). Los productores y workers se cierran con el contexto.
 
-Cancelling queued work prevents its send. Once Kafka has accepted a send, cancellation or timeout
-cannot retract it: a late acknowledgement is possible, and capacity remains reserved until the
-transport completes. Retrying must preserve the event ID and use consumer inbox deduplication.
+Cancelar trabajo encolado impide su envío. Una vez que Kafka aceptó un envío, la cancelación o el
+timeout no pueden retirarlo: es posible una confirmación tardía, y la capacidad sigue reservada hasta que
+el transporte termina. Un reintento debe conservar el ID del evento y usar la deduplicación del inbox del consumidor.

@@ -1,6 +1,6 @@
-# Releases (shared axiz workflow with release-please): every merge to main updates a release pull
-# request with the next version and the changelog from Conventional Commits; merging it creates the
-# tag v<x.y.z>, which runs build-only ci.yaml. Promotion is a separate deploy.yaml invocation.
+# Releases (workflow compartido de axiz con release-please): cada merge a main actualiza un pull request
+# de release con la siguiente versión y el changelog a partir de Conventional Commits; al hacer merge se crea el
+# tag v<x.y.z>, que ejecuta ci.yaml, solo de build. La promoción es una invocación separada de deploy.yaml.
 name: release
 
 on:
@@ -35,7 +35,7 @@ jobs:
     permissions:
       contents: write
     needs: axiz-workflows-trust
-    # Immutable internal release: axiz-workflows-trust must succeed first.
+    # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
     uses: edgarrth/java-framework-custom/.github/workflows/release.yaml@axiz-workflows-v2.0.0
     secrets:

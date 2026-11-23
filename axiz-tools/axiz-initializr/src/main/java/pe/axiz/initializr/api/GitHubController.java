@@ -25,8 +25,8 @@ import pe.axiz.initializr.service.GenerationService;
 import pe.axiz.initializr.service.GitHubPublisher;
 
 /**
- * Creates the repository of a new project in GitHub with the user's own authorization (OAuth client
- * registration {@code github}); the token is used for this request only.
+ * Crea el repositorio de un proyecto nuevo en GitHub con la autorización propia del usuario
+ * (registro de cliente OAuth {@code github}); el token se usa solo para esta solicitud.
  */
 @RestController
 public class GitHubController {
@@ -47,7 +47,7 @@ public class GitHubController {
     this.authorizedClients = authorizedClients;
   }
 
-  /** Generates the project and pushes it to a new private repository. */
+  /** Genera el proyecto y lo sube a un repositorio privado nuevo. */
   @PostMapping("/v1/projects/github")
   @ResponseStatus(HttpStatus.CREATED)
   public Map<String, String> create(
@@ -77,8 +77,8 @@ public class GitHubController {
   }
 
   /**
-   * Landing of the GitHub authorization: the OAuth client support has already stored it for the
-   * signed-in user and redirects here; the UI picks up where it was.
+   * Destino de la autorización de GitHub: el soporte de cliente OAuth ya la almacenó para el
+   * usuario autenticado y redirige aquí; la UI continúa donde estaba.
    */
   @GetMapping(SecurityConfiguration.GITHUB_CALLBACK)
   public ResponseEntity<Void> authorized() {

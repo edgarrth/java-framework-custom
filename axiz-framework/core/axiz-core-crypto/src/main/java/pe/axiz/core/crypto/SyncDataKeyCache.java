@@ -7,7 +7,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import pe.axiz.core.crypto.DataKeyProvider.DataKey;
 
-/** Synchronous acquisition over the same bounded ownership and coalescing policy as native I/O. */
+/**
+ * Adquisición síncrona sobre la misma política acotada de propiedad y coalescencia que la E/S
+ * nativa.
+ */
 final class SyncDataKeyCache implements AutoCloseable {
   private final AsyncDataKeyCache cache;
 

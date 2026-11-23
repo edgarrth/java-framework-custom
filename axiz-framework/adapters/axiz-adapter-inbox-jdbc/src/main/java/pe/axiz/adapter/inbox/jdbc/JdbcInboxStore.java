@@ -16,9 +16,10 @@ import pe.axiz.kit.jdbc.SqlStates;
 import pe.axiz.kit.sql.SqlIdentifiers;
 
 /**
- * JDBC inbox (Aurora PostgreSQL). Acquisition is an INSERT on the primary key; a duplicate key
- * means the message was seen, unless the previous attempt left an expired in-progress lease, which
- * is taken over with a new owner. Completion and release are conditioned on the owner.
+ * Inbox JDBC (Aurora PostgreSQL). La adquisición es un INSERT sobre la clave primaria; una clave
+ * duplicada significa que el mensaje ya se vio, salvo que el intento previo dejara un lease en
+ * curso expirado, que se toma con un propietario nuevo. La finalización y la liberación se
+ * condicionan al propietario.
  */
 public final class JdbcInboxStore implements InboxStore {
 
@@ -68,7 +69,7 @@ public final class JdbcInboxStore implements InboxStore {
           return Acquisition.acquired();
         }
       }
-      // take over an expired in-progress registration (its delivery died)
+      // se toma un registro en curso expirado (su entrega murió)
       try (PreparedStatement ps =
           c.prepareStatement(
               "UPDATE "
@@ -95,7 +96,7 @@ public final class JdbcInboxStore implements InboxStore {
         ps.setString(2, messageId);
         try (ResultSet rs = ps.executeQuery()) {
           if (!rs.next()) {
-            return Acquisition.busy(now); // released meanwhile: redeliver right away
+            return Acquisition.busy(now); // liberado entretanto: se reentrega de inmediato
           }
           if ("PROCESSED".equals(rs.getString(1))) {
             return Acquisition.processed();
@@ -201,7 +202,7 @@ public final class JdbcInboxStore implements InboxStore {
     void apply(PreparedStatement statement) throws SQLException;
   }
 
-  /** Message of a missing or outdated inbox table. */
+  /** Mensaje de una tabla de inbox ausente o desactualizada. */
   static final String SCHEMA_HINT =
       "Inbox table %s does not match the current v2 schema (owner required): "
           + "see axiz/sql/inbox-postgresql.sql and manage schema with reviewed migrations";
@@ -211,7 +212,7 @@ public final class JdbcInboxStore implements InboxStore {
       try {
         connections.release(c);
       } catch (SQLException ignored) {
-        // not actionable
+        // no accionable
       }
     }
   }

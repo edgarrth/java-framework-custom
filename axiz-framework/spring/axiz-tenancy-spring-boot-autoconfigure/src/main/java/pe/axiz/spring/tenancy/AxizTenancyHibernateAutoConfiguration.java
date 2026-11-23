@@ -6,7 +6,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.hibernate.autoconfigure.HibernatePropertiesCustomizer;
 import org.springframework.context.annotation.Bean;
 
-/** Hibernate {@code @TenantId} support: the current tenant filters and stamps tenant entities. */
+/**
+ * Soporte de {@code @TenantId} de Hibernate: el tenant actual filtra y marca las entidades con
+ * tenant.
+ */
 @AutoConfiguration(
     beforeName = "org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration")
 @ConditionalOnClass(

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One explicit build destination shared by producer, isolated signer and GitOps rendering."""
+"""Un único destino de build explícito compartido por el productor, el firmante aislado y el renderizado de GitOps."""
 import argparse
 import copy
 from dataclasses import dataclass
@@ -70,7 +70,7 @@ class BuildDestination:
         return f"oci://{self.registry}/{self.namespace}/build-charts/{repository.lower()}/{run}/{attempt}/{variant}/{service}"
 
     def render(self, templates, output):
-        """Render deployment templates; callers must supply this same configuration to CI."""
+        """Renderiza las plantillas de despliegue; quienes invocan deben aportar esta misma configuración a CI."""
         documents = {}
         for relative in ("argocd/project", "argocd/applicationset", "policies/verify-images"):
             documents[relative] = yaml.safe_load((templates / (relative + ".yaml.template")).read_text())

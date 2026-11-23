@@ -19,11 +19,11 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
 /**
- * Matches when a list property has at least one non-blank element, however it is written: YAML list
- * ({@code topics: [payments]} or {@code - payments}), indexed keys ({@code topics[0]=...}),
- * comma-separated value or environment variable. {@code ${prop:}} placeholders and
- * {@code @ConditionalOnProperty} only see the comma-separated form, so a YAML list looks empty to
- * them.
+ * Coincide cuando una propiedad de lista tiene al menos un elemento no vacío, sin importar cómo se
+ * escriba: lista YAML ({@code topics: [payments]} o {@code - payments}), claves indexadas ({@code
+ * topics[0]=...}), valor separado por comas o variable de entorno. Los placeholders {@code
+ * ${prop:}} y {@code @ConditionalOnProperty} solo ven la forma separada por comas, por lo que para
+ * ellos una lista YAML parece vacía.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
@@ -31,10 +31,10 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
 @Conditional(ConditionalOnListProperty.OnListPropertyCondition.class)
 public @interface ConditionalOnListProperty {
 
-  /** Name of the list property. */
+  /** Nombre de la propiedad de lista. */
   String value();
 
-  /** Binds the property as a list and checks that it is not empty. */
+  /** Enlaza la propiedad como lista y comprueba que no esté vacía. */
   final class OnListPropertyCondition extends SpringBootCondition {
 
     @Override
@@ -50,7 +50,7 @@ public @interface ConditionalOnListProperty {
           : ConditionOutcome.match(name + " has " + values.size() + " element(s)");
     }
 
-    /** Non-blank elements of the list property, in any of its accepted forms. */
+    /** Elementos no vacíos de la propiedad de lista, en cualquiera de sus formas aceptadas. */
     static List<String> values(Environment env, String name) {
       return Binder.get(env).bind(name, Bindable.listOf(String.class)).orElseGet(List::of).stream()
           .filter(v -> v != null && !v.isBlank())

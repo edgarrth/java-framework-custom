@@ -46,7 +46,7 @@ class ReactiveStagesTest {
 
   private void assertNoActiveObservation() {
     var observation = registry.getCurrentObservation();
-    // Micrometer clears an existing scope with a NullObservation, then restores it at close.
+    // Micrometer limpia un ámbito existente con una NullObservation y luego lo restaura al cerrar.
     assertTrue(
         observation == null || observation instanceof NullObservation || observation.isNoop());
   }

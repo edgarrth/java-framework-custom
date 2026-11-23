@@ -5,7 +5,7 @@ import pe.axiz.core.carddata.Pan;
 import pe.axiz.core.tokenization.SensitiveValue;
 import pe.axiz.core.tokenization.TokenProfile;
 
-/** PAN validation and canonical digits; no persistence or encryption algorithm. */
+/** Validación del PAN y dígitos canónicos; sin persistencia ni algoritmo de cifrado. */
 public final class PanTokenProfile implements TokenProfile {
   @Override
   public String id() {

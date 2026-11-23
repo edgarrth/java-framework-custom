@@ -13,9 +13,9 @@ import java.util.stream.Stream;
 import org.springframework.test.context.DynamicPropertyRegistry;
 
 /**
- * Secret files for tests, generated at run time: a fresh random 256-bit key (Base64) per name in a
- * temporary directory that is deleted when the JVM exits. No key material is ever committed, and no
- * two runs (or services) share one.
+ * Archivos de secretos para pruebas, generados en tiempo de ejecución: una clave aleatoria nueva de
+ * 256 bits (Base64) por nombre en un directorio temporal que se elimina cuando la JVM termina.
+ * Nunca se versiona material de claves, y dos ejecuciones (o servicios) nunca comparten una.
  *
  * <pre>{@code
  * @DynamicPropertySource
@@ -32,10 +32,10 @@ public final class EphemeralSecrets {
   private EphemeralSecrets() {}
 
   /**
-   * Creates the directory with one key file per name.
+   * Crea el directorio con un archivo de clave por nombre.
    *
-   * @param names secret names (file names), as the service resolves them
-   * @return the directory, for {@code axiz.secrets.directory}
+   * @param names nombres de los secretos (nombres de archivo), tal como los resuelve el servicio
+   * @return el directorio, para {@code axiz.secrets.directory}
    */
   public static Path keys(String... names) {
     try {
@@ -56,7 +56,7 @@ public final class EphemeralSecrets {
     }
   }
 
-  /** Creates the keys and points {@code axiz.secrets.directory} at them. */
+  /** Crea las claves y apunta {@code axiz.secrets.directory} hacia ellas. */
   public static void register(DynamicPropertyRegistry registry, String... names) {
     Path dir = keys(names);
     registry.add("axiz.secrets.directory", dir::toString);
@@ -66,7 +66,7 @@ public final class EphemeralSecrets {
     try (Stream<Path> files = Files.walk(dir)) {
       files.sorted(Comparator.reverseOrder()).forEach(EphemeralSecrets::deleteQuietly);
     } catch (IOException e) {
-      // the temporary directory is left to the operating system
+      // el directorio temporal se deja al sistema operativo
     }
   }
 
@@ -74,7 +74,7 @@ public final class EphemeralSecrets {
     try {
       Files.deleteIfExists(p);
     } catch (IOException e) {
-      // the temporary directory is left to the operating system
+      // el directorio temporal se deja al sistema operativo
     }
   }
 }

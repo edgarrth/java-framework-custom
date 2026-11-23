@@ -6,7 +6,10 @@ import org.springframework.boot.SpringApplicationRunListener;
 import org.springframework.boot.bootstrap.ConfigurableBootstrapContext;
 import org.springframework.context.ConfigurableApplicationContext;
 
-/** Covers config-data failures before bootstrap resources can be transferred to Spring. */
+/**
+ * Cubre los fallos de config data antes de que los recursos del bootstrap puedan transferirse a
+ * Spring.
+ */
 public final class AwsBootstrapLifecycle implements SpringApplicationRunListener {
   private @Nullable ConfigurableBootstrapContext bootstrap;
 

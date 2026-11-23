@@ -1,92 +1,97 @@
 # axiz-framework
 
-Corporate backend framework for Java 25 microservices on Spring Boot 4.1, Kubernetes (EKS) and AWS.
-Root package `pe.axiz`, groupId `pe.axiz`, single version `${revision}` for framework artifacts. Tools, documentation and workflows have independent versions in the monorepo.
+Framework corporativo de backend para microservicios Java 25 sobre Spring Boot 4.1, Kubernetes (EKS) y AWS.
+Paquete raíz `pe.axiz`, groupId `pe.axiz` y una única versión `${revision}` para los artefactos del framework. Las herramientas, la documentación y los workflows tienen versiones independientes dentro del monorepo.
 
-## Layers
+## Capas
 
-| Layer | Folder | Artifacts | Rule |
+| Capa | Carpeta | Artefactos | Regla |
 |---|---|---|---|
-| Platform | `platform/` | `axiz-parent-*`, `axiz-dependencies`, `axiz-bom` | Versions and build gates |
-| 1. Core | `core/` | `axiz-core-<capability>` | JDK, SLF4J, JSpecify and core contracts; Micrometer only in metrics/observability; no provider or application runtime |
-| 2. Adapters | `adapters/` | `axiz-adapter-<capability>-<technology>` | Implement core ports using native technology clients |
-| 2. Persistence kits | `kits/` | `axiz-kit-jdbc`, `axiz-kit-jpa`, `axiz-kit-r2dbc`, `axiz-kit-dynamodb` | Persistence types; used only by service repositories and persistence adapters |
-| 3. Spring | `spring/` | `axiz-<capability>-spring-boot-autoconfigure` and `-starter` | Lifecycle, beans, transactions and facades; capabilities communicate through core ports |
-| 4. Structures | `structures/` | `axiz-structure-<structure>-api` and `-spring-boot-starter` | Exactly one structure per service |
-| 4. Extensions | `extensions/` | `axiz-extension-cqrs-api` and `-spring-boot-starter` | Optional CQRS on hexagonal business/event-processor services |
-| Generation | `codegen/` | `axiz-codegen`, templates, archetypes | Shared by CLI and Initializr |
-| Quality | `quality/` | Standards, ArchUnit, test support and store contracts | Tests and architecture enforcement |
+| Plataforma | `platform/` | `axiz-parent-*`, `axiz-dependencies`, `axiz-bom` | Versiones y controles del build |
+| 1. Core | `core/` | `axiz-core-<capability>` | JDK, SLF4J, JSpecify y contratos del núcleo; Micrometer solo en metrics/observability; sin proveedores ni runtime de aplicación |
+| 2. Adaptadores | `adapters/` | `axiz-adapter-<capability>-<technology>` | Implementan los puertos del núcleo con clientes nativos de cada tecnología |
+| 2. Kits de persistencia | `kits/` | `axiz-kit-jdbc`, `axiz-kit-jpa`, `axiz-kit-r2dbc`, `axiz-kit-dynamodb` | Tipos de persistencia; los usan solo los repositorios y adaptadores de persistencia de los servicios |
+| 3. Spring | `spring/` | `axiz-<capability>-spring-boot-autoconfigure` y `-starter` | Ciclo de vida, beans, transacciones y fachadas; las capacidades se comunican mediante los puertos del núcleo |
+| 4. Estructuras | `structures/` | `axiz-structure-<structure>-api` y `-spring-boot-starter` | Exactamente una estructura por servicio |
+| 4. Extensiones | `extensions/` | `axiz-extension-cqrs-api` y `-spring-boot-starter` | CQRS opcional en servicios hexagonales de negocio o procesadores de eventos |
+| Generación | `codegen/` | `axiz-codegen`, plantillas, arquetipos | Compartida por la CLI y el Initializr |
+| Calidad | `quality/` | Estándares, ArchUnit, soporte de pruebas y contratos de almacenes | Pruebas y cumplimiento de la arquitectura |
 
-`axiz-adapter-aws` is the shared AWS identity/transport base; it has no Spring or Micrometer
-dependency. Spring owns context composition and the optional observability adapter adds telemetry.
+`axiz-adapter-aws` es la base compartida de identidad y transporte de AWS; no depende de Spring ni de
+Micrometer. Spring es dueño de la composición del contexto y el adaptador opcional de observabilidad
+añade la telemetría.
 
-The [architecture guide](../axiz-docs/docs/arquitectura/capas.md) describes service boundaries, execution models and dependency rules. The [capability catalog](../axiz-docs/docs/capacidades/index.md) lists starters, configuration and examples.
+La [guía de arquitectura](../axiz-docs/docs/arquitectura/capas.md) describe los límites de los servicios, los modelos de ejecución y las reglas de dependencias. El [catálogo de capacidades](../axiz-docs/docs/capacidades/index.md) lista los starters, la configuración y los ejemplos.
 
-## Build
+## Compilación
 
 ```bash
-./mvnw --bootstrap install         # fresh source: independent BOMs, then parents and modules in ~/.m2
-./mvnw verify                      # build, unit tests, enforcer base rules
-./mvnw -Pquality verify            # CI gate: + Spotless check, Checkstyle, Error Prone + NullAway, dependency
-                                   # convergence, SpotBugs/FindSecBugs, JaCoCo thresholds, PIT on core
-./mvnw -Pquality,release deploy -DaltDeploymentRepository=staging::file:///tmp/axiz-staging  # local candidate staging
-./mvnw -Pquality -pl '!:axiz-dependencies,!:axiz-bom' spotless:apply  # format
+./mvnw --bootstrap install         # copia nueva: BOM independientes, luego parents y módulos en ~/.m2
+./mvnw verify                      # compilación, pruebas unitarias y reglas base de enforcer
+./mvnw -Pquality verify            # control de CI: además Spotless, Checkstyle, Error Prone con NullAway, convergencia de
+                                   # dependencias, SpotBugs/FindSecBugs, umbrales de JaCoCo y PIT en core
+./mvnw -Pquality,release deploy -DaltDeploymentRepository=staging::file:///tmp/axiz-staging  # staging local del candidato
+./mvnw -Pquality -pl '!:axiz-dependencies,!:axiz-bom' spotless:apply  # formato
 ```
 
-Requirements: JDK 25, Maven 3.9.x (wrapper included). Maven settings with the GitHub Packages repository and
-credentials come from the CI secrets or `~/.m2/settings.xml`, never from this repository.
+Requisitos: JDK 25 y Maven 3.9.x (wrapper incluido). La configuración de Maven con el repositorio y
+las credenciales de GitHub Packages proviene de los secretos de CI o de `~/.m2/settings.xml`, nunca de
+este repositorio.
 
-## Core capabilities (layer 1)
+## Capacidades del núcleo (capa 1)
 
 `commons`, `errors`, `i18n`, `domain`, `money`, `time`, `identifiers`, `id`, `sensitive`,
 `logging`, `observability`, `metrics`, `audit`, `security`, `crypto`, `secrets`, `tenancy`,
 `resilience`, `http`, `soap`, `messaging`, `outbox`, `inbox`, `idempotency`, `cache`,
-`sequence`, `lock`, `storage`, `featureflags`, `fileformats`, `notification` and `saga`.
+`sequence`, `lock`, `storage`, `featureflags`, `fileformats`, `notification` y `saga`.
 
-Redis, AWS, Kafka and persistence implementations live in layer 2. Test support and shared store
-contracts live in `quality`; they are not production core capabilities.
+Las implementaciones de Redis, AWS, Kafka y persistencia están en la capa 2. El soporte de pruebas y
+los contratos compartidos de almacenes están en `quality`; no son capacidades del núcleo de producción.
 
-Each module has its own README with its public types.
+Cada módulo tiene su propio README con sus tipos públicos.
 
-## Conventions
+## Convenciones
 
-- Properties: `axiz.<capability>.*` (kebab-case). Error codes: `AXZ-<CAPABILITY>-<NNNN>`.
-- Every package is `@NullMarked` (JSpecify); NullAway checks it at compile time.
-- Formatting is owned by Spotless (google-java-format); Checkstyle only checks naming, imports,
-  Javadoc of the public API and forbidden APIs.
-- The module README documents configuration, contracts and usage examples.
+- Propiedades: `axiz.<capability>.*` (kebab-case). Códigos de error: `AXZ-<CAPABILITY>-<NNNN>`.
+- Todos los paquetes son `@NullMarked` (JSpecify); NullAway lo comprueba en compilación.
+- El formato lo gestiona Spotless (google-java-format); Checkstyle solo comprueba nombres, imports,
+  el Javadoc de la API pública y las APIs prohibidas.
+- El README del módulo documenta la configuración, los contratos y los ejemplos de uso.
 
-## Responsibility boundaries
+## Límites de responsabilidad
 
-Core contracts and algorithms are independent of technology and runtime frameworks.
-Native asynchronous ports use `CompletionStage` or `Flow.Publisher`. Technology adapters
-implement these ports; persistence kits expose their technology types deliberately.
+Los contratos y algoritmos del núcleo son independientes de la tecnología y de los frameworks de
+runtime. Los puertos asíncronos nativos usan `CompletionStage` o `Flow.Publisher`. Los adaptadores de
+tecnología implementan estos puertos; los kits de persistencia exponen sus tipos de tecnología de forma
+deliberada.
 
-The closed Reactor list contains four persistence integrations: `axiz-kit-r2dbc`,
-`axiz-adapter-inbox-r2dbc`, `axiz-adapter-outbox-r2dbc` and `axiz-adapter-sequence-r2dbc`.
-Two neutral kits, `axiz-kit-audit-reactor` and `axiz-kit-outbox-reactor`, expose the transaction
-contracts without bringing R2DBC drivers or a storage implementation. AWS adapters may use Reactive
-Streams internally for SDK interoperability without exposing it through their public API.
+La lista cerrada de Reactor contiene cuatro integraciones de persistencia: `axiz-kit-r2dbc`,
+`axiz-adapter-inbox-r2dbc`, `axiz-adapter-outbox-r2dbc` y `axiz-adapter-sequence-r2dbc`.
+Dos kits neutrales, `axiz-kit-audit-reactor` y `axiz-kit-outbox-reactor`, exponen los contratos
+transaccionales sin incorporar drivers R2DBC ni una implementación de almacenamiento. Los adaptadores
+de AWS pueden usar Reactive Streams internamente para interoperar con el SDK sin exponerlo en su API
+pública.
 
-Spring adds lifecycle, transactions, security and servlet/reactive facades. Filters and
-interceptors integrate core algorithms with the runtime. Starters assemble dependencies;
-services consume the test starter with test scope.
+Spring añade el ciclo de vida, las transacciones, la seguridad y las fachadas servlet y reactivas. Los
+filtros e interceptores integran los algoritmos del núcleo con el runtime. Los starters ensamblan las
+dependencias; los servicios consumen el starter de pruebas con scope test.
 
-A service chooses one archetype, one execution stack, one structure and optional extensions.
-CQRS is an extension of hexagonal; event handlers, inbox and outbox are capabilities independent
-of EDA. Service adapters are runtime dependencies; kits belong in persistence packages. The
-domain may depend on Axiz domain contracts while remaining independent of third-party frameworks.
+Un servicio elige un arquetipo, un stack de ejecución, una estructura y extensiones opcionales. CQRS es
+una extensión de hexagonal; los handlers de eventos, el inbox y el outbox son capacidades
+independientes de EDA. Los adaptadores del servicio son dependencias de runtime; los kits pertenecen a
+los paquetes de persistencia. El dominio puede depender de los contratos de dominio de Axiz y seguir
+siendo independiente de frameworks de terceros.
 
-| Related capabilities | Distinct responsibilities |
+| Capacidades relacionadas | Responsabilidades distintas |
 |---|---|
-| logging / observability / metrics / audit | Diagnostics; observations and tracing; bounded business-event instruments; business audit events |
-| idempotency / inbox / outbox / lock | Replay an operation response; deduplicate received messages; publish committed changes; coordinate concurrent owners |
-| security / crypto / sensitive / secrets | Authentication and authorization; cryptography; masking; retrieval of key material and credentials |
-| messaging / notification | Transport messages; request delivery to a human recipient |
-| id / identifiers / sequence | Generate technical IDs; validate domain identifiers; allocate sequential business numbers |
-| persistence / storage | Store application records; store files and objects |
-| platform / codegen / quality | Govern dependencies and builds; generate service source; enforce architecture and quality |
+| logging / observability / metrics / audit | Diagnóstico; observaciones y trazas; instrumentos acotados de eventos de negocio; eventos de auditoría de negocio |
+| idempotency / inbox / outbox / lock | Repetir la respuesta de una operación; deduplicar mensajes recibidos; publicar cambios confirmados; coordinar propietarios concurrentes |
+| security / crypto / sensitive / secrets | Autenticación y autorización; criptografía; enmascaramiento; obtención de material de claves y credenciales |
+| messaging / notification | Transportar mensajes; solicitar la entrega a un destinatario humano |
+| id / identifiers / sequence | Generar IDs técnicos; validar identificadores de dominio; asignar números de negocio secuenciales |
+| persistence / storage | Guardar registros de aplicación; guardar archivos y objetos |
+| platform / codegen / quality | Gobernar dependencias y builds; generar el código de los servicios; hacer cumplir la arquitectura y la calidad |
 
-CLI and Initializr share `axiz-codegen`. Templates and archetype metadata are generation assets,
-not alternative runtime implementations. Demo, documentation and workflows are maintained parts
-of the distribution, even though they are not runtime layers.
+La CLI y el Initializr comparten `axiz-codegen`. Las plantillas y los metadatos de arquetipos son
+recursos de generación, no implementaciones alternativas de runtime. La demo, la documentación y los
+workflows son partes mantenidas de la distribución, aunque no sean capas de runtime.

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  axiz-parent: root POM of the axiz-framework monorepo.
-  1) Aggregator: lists every module so `./mvnw verify` builds the whole framework in order.
-  2) Shared build definition: version (${revision}), Java 25, plugin versions and configuration,
-     enforcer rules, formatting, static analysis and publication to GitHub Packages.
-  No service inherits this POM directly: services use axiz-parent-service.
+  axiz-parent: POM raíz del monorepo axiz-framework.
+  1) Agregador: lista todos los módulos para que `./mvnw verify` construya todo el framework en orden.
+  2) Definición de build compartida: versión (${revision}), Java 25, versiones y configuración de plugins,
+     reglas del enforcer, formato, análisis estático y publicación en GitHub Packages.
+  Ningún servicio hereda directamente este POM: los servicios usan axiz-parent-service.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -75,7 +75,7 @@
 
   <properties>
     <revision>2.0.0</revision>
-    <!-- version of axiz used by children (the code standards); resolved when the parents are published -->
+    <!-- versión de axiz que usan los hijos (los estándares de código); se resuelve cuando se publican los parents -->
     <axiz.version>${revision}</axiz.version>
     <axiz.api.breakBuildOnIncompatible>true</axiz.api.breakBuildOnIncompatible>
     <axiz.api.skip>false</axiz.api.skip>
@@ -87,20 +87,20 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <project.build.outputTimestamp>2026-01-01T00:00:00Z</project.build.outputTimestamp>
 
-    <!-- GitHub Packages base URL; CI passes -Daxiz.packages.url=https://maven.pkg.github.com/owner/repository (never committed credentials) -->
+    <!-- URL base de GitHub Packages; CI pasa -Daxiz.packages.url=https://maven.pkg.github.com/owner/repository (nunca credenciales versionadas) -->
     <axiz.packages.url>https://maven.pkg.github.com/edgarrth/java-framework-custom</axiz.packages.url>
 
-    <!-- Quality gates (section 15 of the definition) -->
+    <!-- Quality gates (sección 15 de la definición) -->
     <axiz.coverage.line>0.80</axiz.coverage.line>
     <axiz.coverage.branch>0.70</axiz.coverage.branch>
     <axiz.mutation.threshold>81</axiz.mutation.threshold>
     <axiz.errorprone.fqn.severity>WARN</axiz.errorprone.fqn.severity>
-    <!-- empty default so @{argLine} resolves when JaCoCo is not active -->
+    <!-- valor por defecto vacío para que @{argLine} se resuelva cuando JaCoCo no está activo -->
     <argLine />
-    <!-- extra JVM options of test runs (axiz-parent-service sets the ones BlockHound needs) -->
+    <!-- opciones de JVM adicionales de las ejecuciones de pruebas (axiz-parent-service define las que necesita BlockHound) -->
     <axiz.test.argLine />
 
-    <!-- Maven plugins -->
+    <!-- Plugins de Maven -->
     <maven-enforcer-plugin.version>3.6.2</maven-enforcer-plugin.version>
     <extra-enforcer-rules.version>1.8.0</extra-enforcer-rules.version>
     <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
@@ -126,15 +126,15 @@
     <jib-maven-plugin.version>3.5.1</jib-maven-plugin.version>
     <native-maven-plugin.version>0.11.4</native-maven-plugin.version>
     <axiz.readme.skip>false</axiz.readme.skip>
-    <!-- Last release published to Maven Central; newer releases require a Code Genome proxy. -->
+    <!-- Última release publicada en Maven Central; las releases más recientes requieren un proxy de Code Genome. -->
     <rewrite-maven-plugin.version>6.46.1</rewrite-maven-plugin.version>
     <japicmp-maven-plugin.version>0.26.5</japicmp-maven-plugin.version>
-    <!-- Classpath dependency for inspecting published Reactive Streams signatures. -->
+    <!-- Dependencia de classpath para inspeccionar las firmas publicadas de Reactive Streams. -->
 
-    <!-- Must match axiz-dependencies -->
+    <!-- Debe coincidir con axiz-dependencies -->
     <spring-boot.version>4.1.2</spring-boot.version>
 
-    <!-- Analysis tools -->
+    <!-- Herramientas de análisis -->
     <checkstyle.version>14.2.0</checkstyle.version>
     <spotbugs.version>4.10.3</spotbugs.version>
     <findsecbugs.version>1.14.0</findsecbugs.version>
@@ -156,7 +156,7 @@
   </dependencyManagement>
 
   <dependencies>
-    <!-- Static analysis metadata only; never a runtime dependency of a framework consumer. -->
+    <!-- Solo metadatos de análisis estático; nunca una dependencia de runtime de un consumidor del framework. -->
     <dependency>
       <groupId>com.github.spotbugs</groupId>
       <artifactId>spotbugs-annotations</artifactId>
@@ -217,7 +217,7 @@
           <artifactId>maven-resources-plugin</artifactId>
           <version>${maven-resources-plugin.version}</version>
           <configuration>
-            <!-- filtered .properties files are read and written in the build encoding too -->
+            <!-- los archivos .properties filtrados también se leen y se escriben con el encoding del build -->
             <propertiesEncoding>${project.build.sourceEncoding}</propertiesEncoding>
           </configuration>
         </plugin>
@@ -432,7 +432,7 @@
                 <requirePluginVersions />
                 <bannedDependencies>
                   <excludes>
-                    <!-- AWS SDK v1, Hazelcast, GCP, Vault, OpenTelemetry Java agent, parallel HTTP clients -->
+                    <!-- AWS SDK v1, Hazelcast, GCP, Vault, agente Java de OpenTelemetry, clientes HTTP paralelos -->
                     <exclude>com.amazonaws:*</exclude>
                     <exclude>com.hazelcast:*</exclude>
                     <exclude>com.google.cloud:*</exclude>
@@ -446,8 +446,8 @@
                     <exclude>org.springframework.cloud:spring-cloud-starter-openfeign</exclude>
                     <exclude>log4j:log4j</exclude>
                     <exclude>junit:junit</exclude>
-                    <!-- commons-logging is allowed: since Spring Framework 7 it is the logging facade of
-                         spring-core (1.3+, routed to SLF4J by Spring Boot); spring-jcl no longer exists -->
+                    <!-- commons-logging está permitido: en Spring Framework 7 es la fachada de logging de
+                         spring-core (1.3+, redirigida a SLF4J por Spring Boot); spring-jcl no existe en esa línea -->
                   </excludes>
                   <searchTransitive>true</searchTransitive>
                 </bannedDependencies>
@@ -459,7 +459,7 @@
             </configuration>
           </execution>
           <execution>
-            <!-- every module documents itself; -Daxiz.readme.skip only for throwaway experiments -->
+            <!-- cada módulo se documenta a sí mismo; -Daxiz.readme.skip solo para experimentos desechables -->
             <id>axiz-module-readme</id>
             <goals>
               <goal>enforce</goal>
@@ -482,11 +482,11 @@
   </build>
 
   <profiles>
-    <!-- Full quality gate, run by CI on every pull request and before publishing (-Pquality):
-         Error Prone + NullAway (JSpecify) on production code (tests are excluded: fakes and
-         assertions use nulls on purpose), Checkstyle (parents), dependency convergence,
-         Spotless format check, SpotBugs, JaCoCo thresholds and mutation testing on core. The
-         default build stays fast: compile, tests and enforcer base rules. -->
+    <!-- Quality gate completo, que CI ejecuta en cada pull request y antes de publicar (-Pquality):
+         Error Prone + NullAway (JSpecify) sobre el código de producción (las pruebas se excluyen: los fakes y
+         las aserciones usan nulos a propósito), Checkstyle (parents), convergencia de dependencias,
+         verificación de formato con Spotless, SpotBugs, umbrales de JaCoCo y mutation testing en el core. El
+         build por defecto sigue siendo rápido: compilación, pruebas y reglas base del enforcer. -->
     <profile>
       <id>quality</id>
       <build>
@@ -524,7 +524,7 @@
           </plugins>
         </pluginManagement>
         <plugins>
-          <!-- format check: run ./mvnw spotless:apply before pushing -->
+          <!-- verificación de formato: ./mvnw spotless:apply antes de hacer push -->
           <plugin>
             <groupId>com.diffplug.spotless</groupId>
             <artifactId>spotless-maven-plugin</artifactId>
@@ -550,7 +550,7 @@
             </dependencies>
             <executions>
               <execution>
-                <!-- one version of each library and no class shipped by two different jars -->
+                <!-- una versión de cada biblioteca y ninguna clase incluida en dos jars distintos -->
                 <id>axiz-dependency-convergence</id>
                 <goals>
                   <goal>enforce</goal>
@@ -626,7 +626,7 @@
       </build>
     </profile>
 
-    <!-- Publication: sources, javadoc and CycloneDX SBOM -->
+    <!-- Publicación: sources, javadoc y SBOM de CycloneDX -->
     <profile>
       <id>release</id>
       <build>
@@ -670,8 +670,8 @@
         </plugins>
       </build>
     </profile>
-    <!-- Subsequent releases compare against a genuine published v2 baseline.
-         First release API is validated by the mandatory reviewed-signature gate. -->
+    <!-- Las releases sucesivas se comparan con una línea base v2 publicada real.
+         La API de la primera release se valida con el gate obligatorio de firmas revisadas. -->
     <profile>
       <id>api-compat</id>
       <build>

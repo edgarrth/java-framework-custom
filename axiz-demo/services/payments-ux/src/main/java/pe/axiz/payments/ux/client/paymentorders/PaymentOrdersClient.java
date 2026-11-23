@@ -15,32 +15,32 @@ import pe.axiz.payments.ux.client.paymentorders.model.StatusChange;
 import reactor.core.publisher.Mono;
 
 /**
- * Client of the Payment orders API (1.0.0), HTTP service group {@code payment-orders}: base URL,
- * timeouts, retries, circuit breaker and authentication come from {@code
+ * Cliente de la API Payment orders (1.0.0), grupo de servicios HTTP {@code payment-orders}: la URL
+ * base, los timeouts, los reintentos, el circuit breaker y la autenticación provienen de {@code
  * axiz.http-client.clients.payment-orders.*}.
  */
 @HttpExchange
 public interface PaymentOrdersClient {
 
-  /** Registers a payment order (POST /v1/payment-orders). */
+  /** Registra una orden de pago (POST /v1/payment-orders). */
   @PostExchange("/v1/payment-orders")
   Mono<PaymentOrder> createPaymentOrder(
       @RequestHeader(name = "Idempotency-Key", required = true) String idempotencyKey,
       @RequestBody PaymentOrderRequest body);
 
-  /** Payment orders of a customer (GET /v1/payment-orders). */
+  /** Órdenes de pago de un cliente (GET /v1/payment-orders). */
   @GetExchange("/v1/payment-orders")
   Mono<PaymentOrderPage> listPaymentOrders(
       @RequestParam(name = "customerId", required = true) String customerId,
       @RequestParam(name = "page", required = false) @Nullable Integer page,
       @RequestParam(name = "size", required = false) @Nullable Integer size);
 
-  /** Gets a payment order (GET /v1/payment-orders/{orderId}). */
+  /** Obtiene una orden de pago (GET /v1/payment-orders/{orderId}). */
   @GetExchange("/v1/payment-orders/{orderId}")
   Mono<PaymentOrder> getPaymentOrder(@PathVariable("orderId") String orderId);
 
   /**
-   * Moves the order to its next status (used by the payment process) (POST
+   * Mueve la orden a su siguiente estado (lo usa el proceso de pagos) (POST
    * /v1/payment-orders/{orderId}/status).
    */
   @PostExchange("/v1/payment-orders/{orderId}/status")

@@ -7,7 +7,10 @@ import java.util.Base64;
 import java.util.Map;
 import pe.axiz.core.crypto.DataKeyProvider.DataKey;
 
-/** Versioned routing inside the wrapped-DEK field; never contains plaintext key material. */
+/**
+ * Enrutamiento versionado dentro del campo de DEK envuelta; nunca contiene material de clave en
+ * texto plano.
+ */
 final class DataKeyRouting {
   private static final int MAGIC = 0x41584431; // AXD1
 
@@ -28,8 +31,9 @@ final class DataKeyRouting {
 
   static String context(String keyId, String context) {
     if (context.isBlank()) throw new CryptoException("Data-key context is required");
-    // Route is authenticated by the underlying wrapping provider even if two routes share a KEK.
-    // Only the configured technical context is present; never send the record binding to KMS logs.
+    // El proveedor de envoltura subyacente autentica la ruta incluso si dos rutas comparten una
+    // KEK. Solo está presente el contexto técnico configurado; el enlace del registro nunca se
+    // envía a los logs de KMS.
     return "axiz-keyring-v1/"
         + keyId
         + "/"

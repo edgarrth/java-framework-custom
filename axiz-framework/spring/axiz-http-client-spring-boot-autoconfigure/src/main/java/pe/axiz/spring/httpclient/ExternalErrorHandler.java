@@ -10,8 +10,8 @@ import org.springframework.web.client.RestClient;
 import pe.axiz.core.http.ExternalErrorTranslator;
 
 /**
- * Translates error responses of a dependency into {@code ExternalServiceException} with the
- * category chosen from the status; an empty body is preserved.
+ * Traduce las respuestas de error de una dependencia a {@code ExternalServiceException} con la
+ * categoría elegida a partir del estado; se conserva un cuerpo vacío.
  */
 public class ExternalErrorHandler implements RestClient.ResponseSpec.ErrorHandler {
 

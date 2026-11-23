@@ -11,7 +11,10 @@ import java.util.stream.Stream;
 import pe.axiz.codegen.openapi.SafeYaml;
 import pe.axiz.codegen.output.SafePaths;
 
-/** Locates the application in a declared Maven reactor; project metadata stays at its root. */
+/**
+ * Ubica la aplicación en un reactor de Maven declarado; los metadatos del proyecto permanecen en su
+ * raíz.
+ */
 public final class ProjectLayout {
   private final Path root;
   private final Path module;
@@ -25,7 +28,7 @@ public final class ProjectLayout {
     this.name = name;
   }
 
-  /** Resolves one service module, rejecting ambiguous applications and undeclared paths. */
+  /** Resuelve un módulo de servicio y rechaza aplicaciones ambiguas y rutas no declaradas. */
   public static ProjectLayout read(Path directory, ProjectManifest manifest) throws IOException {
     Path root = directory.toAbsolutePath().normalize();
     Path rootPom = SafePaths.target(root, "pom.xml");
@@ -74,33 +77,39 @@ public final class ProjectLayout {
     return new ProjectLayout(root, application, poms.getFirst(), manifest.name());
   }
 
-  /** Root containing the manifest, generation snapshots and identity ledger. */
+  /** Raíz que contiene el manifiesto, los snapshots de generación y el registro de identidades. */
   public Path root() {
     return root;
   }
 
-  /** Application directory, possibly below an aggregator. */
+  /** Directorio de la aplicación, posiblemente bajo un agregador. */
   public Path module() {
     return module;
   }
 
-  /** The declared service POM, including reactors that use an explicitly named POM file. */
+  /**
+   * El POM declarado del servicio, incluidos los reactores que usan un archivo POM con nombre
+   * explícito.
+   */
   public Path pom() {
     return pom;
   }
 
-  /** Resolves a service-relative destination without following symlinks. */
+  /** Resuelve un destino relativo al servicio sin seguir enlaces simbólicos. */
   public Path target(String relative) throws IOException {
     Path target = SafePaths.target(module, relative);
     return SafePaths.target(root, root.relativize(target).toString());
   }
 
-  /** Converts a service-relative generated filename into a filename relative to the project. */
+  /**
+   * Convierte un nombre de archivo generado relativo al servicio en un nombre de archivo relativo
+   * al proyecto.
+   */
   public String relative(String relative) throws IOException {
     return root.relativize(target(relative)).toString().replace('\\', '/');
   }
 
-  /** Existing owned charts, preserving their directories after a deployment rename. */
+  /** Charts propios existentes, preservando sus directorios tras renombrar un despliegue. */
   public List<Path> charts() throws IOException {
     List<Path> result = new ArrayList<>();
     for (Path base : Stream.of(root, module).distinct().toList()) {

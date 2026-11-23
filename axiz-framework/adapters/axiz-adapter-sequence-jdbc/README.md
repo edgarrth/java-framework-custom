@@ -1,8 +1,8 @@
 # axiz-adapter-sequence-jdbc
 
-Sequence persistence and schema resources over JDBC.
+Persistencia de secuencias y recursos de esquema sobre JDBC.
 
-Java/JDBC technology belongs here; business ports remain in `axiz-core-sequence`.
-Use through the matching Spring capability, or provide a transaction-aware `ConnectionProvider`.
+La tecnología Java/JDBC pertenece aquí; los puertos de negocio permanecen en `axiz-core-sequence`.
+Se usa mediante la capacidad Spring correspondiente o proporcionando un `ConnectionProvider` consciente de transacciones.
 
-Run `./mvnw -pl adapters/axiz-adapter-sequence-jdbc -am verify` from the framework root.
+Se ejecuta `./mvnw -pl adapters/axiz-adapter-sequence-jdbc -am verify` desde la raíz del framework.

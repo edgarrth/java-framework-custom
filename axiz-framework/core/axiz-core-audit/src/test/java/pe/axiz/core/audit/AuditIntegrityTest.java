@@ -147,7 +147,7 @@ class AuditIntegrityTest {
     assertEquals(AuditChainVerifier.IntegrityStatus.INTACT, result.integrity());
     assertEquals(10000, result.upTo());
     assertEquals(AuditChainVerifier.Completeness.COMPLETE_UP_TO, result.completeness());
-    // This checkpoint establishes agreement with the in-memory head, not durable delivery.
+    // Este checkpoint establece coincidencia con la cabeza en memoria, no entrega durable.
   }
 
   @Test

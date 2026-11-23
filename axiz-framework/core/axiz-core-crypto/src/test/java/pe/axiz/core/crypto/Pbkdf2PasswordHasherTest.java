@@ -9,7 +9,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Base64;
 import org.junit.jupiter.api.Test;
 
-/** Stored hashes are read by one validating parser: corrupt records never match nor throw. */
+/**
+ * Los hashes almacenados se leen con un único parser que valida: los registros corruptos nunca
+ * coinciden ni lanzan excepciones.
+ */
 class Pbkdf2PasswordHasherTest {
 
   private static final Base64.Encoder B64 = Base64.getEncoder().withoutPadding();

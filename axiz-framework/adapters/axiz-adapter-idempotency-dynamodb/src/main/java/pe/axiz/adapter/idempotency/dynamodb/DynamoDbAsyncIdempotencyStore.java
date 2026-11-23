@@ -24,8 +24,8 @@ import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
 /**
- * Native asynchronous DynamoDB idempotency, with the same durable records and fencing as {@link
- * DynamoDbIdempotencyStore}.
+ * Idempotencia asíncrona nativa sobre DynamoDB, con los mismos registros durables y el mismo
+ * fencing que {@link DynamoDbIdempotencyStore}.
  */
 public final class DynamoDbAsyncIdempotencyStore implements AsyncIdempotencyStore {
   @SuppressFBWarnings(

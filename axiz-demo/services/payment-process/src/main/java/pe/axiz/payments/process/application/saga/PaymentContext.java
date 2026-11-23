@@ -4,13 +4,13 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.payments.process.domain.PaymentInstruction;
 
 /**
- * Context of the payment saga, persisted after every step.
+ * Contexto de la saga de pago, persistido tras cada paso.
  *
- * @param instruction what to pay
- * @param movementId debit movement, once debited
- * @param transferId network transfer, once sent
- * @param completionPending the money moved but payment-orders could not be told yet (the settlement
- *     reconciliation completes the order)
+ * @param instruction qué se paga
+ * @param movementId movimiento de débito, una vez debitado
+ * @param transferId transferencia en la red, una vez enviada
+ * @param completionPending el dinero se movió, pero todavía no se pudo informar a payment-orders
+ *     (la conciliación de liquidación completa la orden)
  */
 public record PaymentContext(
     PaymentInstruction instruction,

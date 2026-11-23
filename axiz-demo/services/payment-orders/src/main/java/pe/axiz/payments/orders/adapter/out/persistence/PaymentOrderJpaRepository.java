@@ -11,7 +11,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.repository.query.Param;
 
-/** Spring Data access to {@code payment_order}. */
+/** Acceso de Spring Data a {@code payment_order}. */
 interface PaymentOrderJpaRepository extends JpaRepository<PaymentOrderEntity, UUID> {
 
   Page<PaymentOrderEntity> findByCustomerId(String customerId, Pageable pageable);
@@ -19,9 +19,9 @@ interface PaymentOrderJpaRepository extends JpaRepository<PaymentOrderEntity, UU
   Optional<PaymentOrderEntity> findByCustomerIdAndRequestKey(String customerId, String requestKey);
 
   /**
-   * Adds the amount to the customer's day only while it fits in the limit, in one statement: the
-   * conflicting row is locked and re-checked by PostgreSQL, so concurrent reservations serialize.
-   * Returns 0 when it does not fit.
+   * Suma el monto al día del cliente solo mientras quepa en el límite, en una única sentencia:
+   * PostgreSQL bloquea la fila en conflicto y la vuelve a verificar, por lo que las reservas
+   * concurrentes se serializan. Devuelve 0 cuando no cabe.
    */
   @Modifying
   @NativeQuery(

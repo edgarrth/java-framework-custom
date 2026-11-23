@@ -63,8 +63,8 @@ class SecretSnapshotLimitsTest {
   }
 
   /**
-   * Inspect owned secrets: public resolution intentionally returns copies, which must survive
-   * rotation.
+   * Inspecciona los secretos propios: la resolución pública devuelve copias intencionalmente, que
+   * deben sobrevivir a la rotación.
    */
   @SuppressWarnings("unchecked")
   private static Map<String, SecretValue> ownedValues(RefreshingFileSecretResolver resolver)

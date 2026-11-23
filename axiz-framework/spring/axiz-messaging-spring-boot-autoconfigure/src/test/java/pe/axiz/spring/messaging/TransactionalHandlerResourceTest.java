@@ -37,7 +37,8 @@ import pe.axiz.test.support.r2dbc.FakeR2dbc;
 import reactor.core.publisher.Mono;
 
 /**
- * Tests selection, failure and ownership boundaries; PostgreSQL proves the actual data atomicity.
+ * Prueba los límites de selección, fallo y propiedad; PostgreSQL demuestra la atomicidad real de
+ * los datos.
  */
 @ExtendWith(BlockHoundExtension.class)
 class TransactionalHandlerResourceTest {

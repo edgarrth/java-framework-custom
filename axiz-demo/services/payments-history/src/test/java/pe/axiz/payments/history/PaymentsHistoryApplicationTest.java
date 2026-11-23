@@ -43,9 +43,9 @@ import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
 /**
- * Starts the whole service against real dependencies in containers (Testcontainers) and follows a
- * payment end to end: events on Kafka, R2DBC inbox, reactive command pipeline, projection with
- * encrypted and money columns on PostgreSQL, reactive query. Needs Docker.
+ * Arranca el servicio completo contra dependencias reales en contenedores (Testcontainers) y sigue
+ * un pago de extremo a extremo: eventos en Kafka, inbox R2DBC, pipeline reactivo de comandos,
+ * proyección con columnas cifradas y monetarias en PostgreSQL y consulta reactiva. Requiere Docker.
  */
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -69,7 +69,9 @@ class PaymentsHistoryApplicationTest {
     assertThat(BlockHoundExtension.detectedBlockingCalls()).isEmpty();
   }
 
-  /** Field encryption and blind index keys: random for every run, never committed. */
+  /**
+   * Claves de cifrado de campos y de índice ciego: aleatorias en cada ejecución, nunca versionadas.
+   */
   @DynamicPropertySource
   static void secrets(DynamicPropertyRegistry registry) {
     EphemeralSecrets.register(registry, "field-key-v1", "blind-index-key");
@@ -78,8 +80,9 @@ class PaymentsHistoryApplicationTest {
   private static final Duration T = Duration.ofSeconds(30);
 
   @Autowired EventFactory events;
-  // Test fixture acting as an external producer on the JUnit thread. The application is
-  // consumer-only; declaring a reactive Kafka publishing destination must still fail startup.
+  // Fixture de prueba que actúa como productor externo en el hilo de JUnit. La aplicación solo
+  // consume; declarar un destino de publicación reactivo de Kafka debe seguir haciendo fallar el
+  // arranque.
   @Autowired EventPublisher fixturePublisher;
   @Autowired ReactiveQueryBus queries;
   @Autowired DatabaseClient db;
@@ -123,9 +126,9 @@ class PaymentsHistoryApplicationTest {
                 "status", "COMPLETED"),
             null));
 
-    // the query runs through the access policy, as the API does: only the owner reads the payment
-    // (another customer gets "not found"). Until the first event is projected it is not found
-    // either, so that is the only error retried
+    // la consulta pasa por la política de acceso, igual que en la API: solo el propietario lee el
+    // pago (otro cliente obtiene "no encontrado"). Mientras no se proyecte el primer evento tampoco
+    // se encuentra, por lo que ese es el único error que se reintenta
     PaymentHistory projected =
         Mono.defer(() -> queries.ask(new GetPaymentQuery(orderId)))
             .contextWrite(ReactiveSecurityContextHolder.withAuthentication(customer("C-1001")))
@@ -149,7 +152,7 @@ class PaymentsHistoryApplicationTest {
                         + row.get("created_by", String.class))
             .one()
             .block(T);
-    // encrypted at rest, audited by the R2DBC starter
+    // cifrado en reposo, auditado por el starter R2DBC
     assertThat(stored).doesNotContain("00219100123456789053").doesNotEndWith("|null");
 
     assertThatThrownBy(

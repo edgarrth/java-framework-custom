@@ -16,7 +16,7 @@ import pe.axiz.core.audit.StrictAuditPublisher;
 import pe.axiz.core.concurrent.Stages;
 import pe.axiz.spring.foundation.BoundedAsyncDispatcher;
 
-/** One bounded confirmation boundary; no fallback is allowed to turn failure into success. */
+/** Un único límite acotado de confirmación; ningún respaldo puede convertir un fallo en éxito. */
 final class StrictAuditPipeline implements AsyncStrictAuditPublisher, AutoCloseable {
   private final BoundedAsyncDispatcher dispatcher;
   private final Function<AuditEvent, CompletionStage<Void>> publication;
@@ -66,7 +66,9 @@ final class StrictAuditPipeline implements AsyncStrictAuditPublisher, AutoClosea
     dispatcher.close();
   }
 
-  /** Keeps synchronous and asynchronous ports distinct during Spring bean selection. */
+  /**
+   * Mantiene separados los puertos síncronos y asíncronos durante la selección de beans de Spring.
+   */
   static final class Imperative implements StrictAuditPublisher, AutoCloseable {
     private final StrictAuditPipeline pipeline;
 

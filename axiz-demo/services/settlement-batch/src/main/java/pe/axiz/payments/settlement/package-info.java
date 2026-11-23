@@ -1,6 +1,6 @@
 /**
- * Settlement Batch: Daily settlement and reconciliation. Archetype batch, batch style, servlet
- * stack. Types are non-null unless annotated {@code @Nullable}.
+ * Settlement Batch: liquidación y conciliación diarias. Arquetipo batch, estilo batch, stack
+ * servlet. Los tipos no son nulos salvo que se anoten con {@code @Nullable}.
  */
 @NullMarked
 package pe.axiz.payments.settlement;

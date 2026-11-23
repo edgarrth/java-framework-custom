@@ -8,7 +8,10 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.micrometer.tracing.autoconfigure.TracingProperties;
 
-/** Bootstrap metrics have no trace exemplar; after bootstrap only the cached tracer is queried. */
+/**
+ * Las métricas del bootstrap no tienen exemplar de traza; después del bootstrap solo se consulta el
+ * tracer cacheado.
+ */
 final class StartupExemplarContextProvider
     implements ExemplarContextProvider, SmartInitializingSingleton {
   private final ObjectProvider<Tracer> tracers;

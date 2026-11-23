@@ -1,6 +1,9 @@
 package pe.axiz.extension.cqrs;
 
-/** No handler is registered for a request type: a configuration error, not a client error. */
+/**
+ * No hay handler registrado para un tipo de petición: es un error de configuración, no un error del
+ * cliente.
+ */
 public class HandlerNotFoundException extends IllegalStateException {
 
   private static final long serialVersionUID = 1L;

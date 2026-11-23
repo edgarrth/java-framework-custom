@@ -9,7 +9,8 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 
 /**
- * Synchronous poll-thread inbox; shares wire conditions and status decoding with the native port.
+ * Inbox síncrono para el hilo de sondeo; comparte las condiciones de red y la decodificación de
+ * estado con el puerto nativo.
  */
 public final class DynamoDbInboxStore implements InboxStore {
   @SuppressFBWarnings(

@@ -1,12 +1,12 @@
 package pe.axiz.core.observability;
 
 /**
- * Standard attribute keys. Low cardinality keys become metric tags and span attributes; high
- * cardinality keys only span attributes.
+ * Claves de atributo estándar. Las claves de baja cardinalidad se convierten en tags de métricas y
+ * atributos de span; las de alta cardinalidad, solo en atributos de span.
  */
 public final class AxizAttributes {
 
-  // low cardinality
+  // baja cardinalidad
   public static final String OPERATION = "axiz.operation";
   public static final String COMPONENT = "axiz.component";
   public static final String CHANNEL = "axiz.channel";
@@ -19,7 +19,7 @@ public final class AxizAttributes {
   public static final String AWS_SERVICE = "aws.service";
   public static final String AWS_OPERATION = "aws.operation";
 
-  // high cardinality
+  // alta cardinalidad
   public static final String CORRELATION_ID = "axiz.correlation_id";
   public static final String EVENT_ID = "axiz.event.id";
   public static final String AGGREGATE_ID = "axiz.aggregate.id";

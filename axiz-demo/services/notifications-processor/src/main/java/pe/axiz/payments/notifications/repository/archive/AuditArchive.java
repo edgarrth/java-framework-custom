@@ -23,9 +23,10 @@ import pe.axiz.core.storage.StoredObject;
 import pe.axiz.payments.notifications.event.AuditRecord;
 
 /**
- * Archives audit records on S3: one object per record under {@code audit/yyyy/MM/dd/<service>/}
- * (writing the same record twice is harmless) and a daily manifest with counts per service. The
- * manifest is a read-modify-write, so replicas serialize it with a distributed lock (DynamoDB).
+ * Archiva los registros de auditoría en S3: un objeto por registro bajo {@code
+ * audit/yyyy/MM/dd/<service>/} (escribir dos veces el mismo registro es inocuo) y un manifiesto
+ * diario con conteos por servicio. El manifiesto es una lectura-modificación-escritura, por lo que
+ * las réplicas lo serializan con un lock distribuido (DynamoDB).
  */
 @Component
 public class AuditArchive {
@@ -42,7 +43,7 @@ public class AuditArchive {
     this.locks = locks;
   }
 
-  /** Stores the record; returns the object key. */
+  /** Almacena el registro y devuelve la clave del objeto. */
   public String store(AuditRecord r) {
     LocalDate day = Instant.parse(r.occurredAt()).atZone(ZoneOffset.UTC).toLocalDate();
     String key = dayPrefix(day) + safe(r.service()) + "/" + safe(r.id()) + ".json";
@@ -77,7 +78,7 @@ public class AuditArchive {
             Object current = counts.get(service);
             long n = current instanceof Number num ? num.longValue() : 0;
             counts.put(service, n + 1);
-            lease.ensureHeld(); // another replica may own the manifest once the lease is lost
+            lease.ensureHeld(); // otra réplica puede tomar el manifiesto al perderse el lease
             put(manifest, JsonWriter.write(counts));
             return null;
           });
@@ -116,7 +117,7 @@ public class AuditArchive {
     return m;
   }
 
-  /** Keys only take safe characters from the record. */
+  /** Las claves solo toman caracteres seguros del registro. */
   static String safe(String value) {
     return value.replaceAll("[^A-Za-z0-9._-]", "_");
   }

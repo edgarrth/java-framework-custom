@@ -1,6 +1,6 @@
 package pe.axiz.core.tokenization.vault;
 
-/** Completes only after durable acknowledgement; failures must propagate. */
+/** Termina solo tras la confirmación durable; los fallos deben propagarse. */
 @FunctionalInterface
 public interface TokenReconciliationLog {
   void recordConfirmed(UncertainTokenOperation operation);

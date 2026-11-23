@@ -13,8 +13,8 @@ import pe.axiz.structure.bff.Composition;
 import reactor.core.publisher.Mono;
 
 /**
- * Reactive composition for WebFlux BFFs: parts subscribe in parallel, optional parts fall back on
- * error or timeout, nothing blocks.
+ * Composición reactiva para BFF de WebFlux: las partes se suscriben en paralelo, las partes
+ * opcionales recurren a su valor alternativo ante error o timeout y nada bloquea.
  */
 public final class ReactiveComposer {
 

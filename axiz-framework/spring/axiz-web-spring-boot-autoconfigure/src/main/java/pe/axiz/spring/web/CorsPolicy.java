@@ -6,7 +6,7 @@ import java.util.stream.Stream;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.commons.Environments;
 
-/** One startup policy for the servlet and reactive CORS registrations. */
+/** Una única política de arranque para los registros CORS servlet y reactivo. */
 final class CorsPolicy {
   private CorsPolicy() {}
 

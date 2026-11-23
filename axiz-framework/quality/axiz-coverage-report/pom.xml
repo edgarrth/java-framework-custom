@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Internal module: never published. -->
+<!-- Módulo interno: nunca se publica. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
@@ -12,8 +12,8 @@
   </parent>
 
   <artifactId>axiz-coverage-report</artifactId>
-  <!-- only aggregates the reports of the other modules: no classes of its own, so no jar
-       (with jar packaging Maven warns "JAR will be empty") -->
+  <!-- solo agrega los reportes de los demás módulos: sin clases propias, por lo que no hay jar
+       (con packaging jar Maven advierte "JAR will be empty") -->
   <packaging>pom</packaging>
   <name>axiz :: quality :: coverage report</name>
   <description>Aggregated JaCoCo report of the whole reactor (published to the CI run, not to GitHub Packages)</description>
@@ -22,16 +22,16 @@
     <axiz.module.name>pe.axiz.quality.report</axiz.module.name>
     <maven.deploy.skip>true</maven.deploy.skip>
     <maven.install.skip>true</maven.install.skip>
-    <!-- overridden by -DskipTests: without tests there is nothing to aggregate -->
+    <!-- lo sobrescribe -DskipTests: sin pruebas no hay nada que agregar -->
     <skipTests>false</skipTests>
   </properties>
 
-  <!-- every module with production code, generated from the reactor and checked by
-       .github/scripts/check-coverage-aggregate.py. The scope is provided: report-aggregate takes
-       classes and sources only from compile, runtime and provided dependencies; a test
-       dependency would add its execution data and nothing to measure it against. -->
+  <!-- cada módulo con código de producción, generado a partir del reactor y verificado por
+       .github/scripts/check-coverage-aggregate.py. El scope es provided: report-aggregate toma
+       clases y fuentes solo de las dependencias compile, runtime y provided; una dependencia
+       test añadiría sus datos de ejecución y nada contra lo que medirlos. -->
   <dependencies>
-    <!-- Cross-module and real-store tests contribute execution data, not production classes. -->
+    <!-- Las pruebas entre módulos y con almacenes reales aportan datos de ejecución, no clases de producción. -->
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-architecture-tests</artifactId><version>${project.version}</version><scope>test</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-store-integration-tests</artifactId><version>${project.version}</version><scope>test</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-test-containers</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
@@ -897,9 +897,9 @@
   </build>
 
   <profiles>
-    <!-- with the quality profile the modules run under the JaCoCo agent, so the aggregate must
-         hold their classes and counters: an empty report fails the build instead of being
-         published as if it measured something -->
+    <!-- con el perfil quality los módulos se ejecutan bajo el agente de JaCoCo, por lo que el agregado debe
+         contener sus clases y contadores: un reporte vacío hace fallar el build en lugar de
+         publicarse como si midiera algo -->
     <profile>
       <id>quality</id>
       <build>

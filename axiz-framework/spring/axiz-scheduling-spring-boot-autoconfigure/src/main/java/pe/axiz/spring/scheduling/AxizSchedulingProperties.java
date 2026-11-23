@@ -5,11 +5,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
- * Scheduled tasks with a single execution per cluster ({@code axiz.scheduling.*}).
+ * Tareas programadas con una única ejecución por clúster ({@code axiz.scheduling.*}).
  *
- * @param store {@code jdbc} (Aurora, default), {@code r2dbc} (Aurora from a reactive service) or
- *     {@code dynamodb}
- * @param defaultLockAtMostFor safety lease when a node dies while running a task
+ * @param store {@code jdbc} (Aurora, por defecto), {@code r2dbc} (Aurora desde un servicio
+ *     reactivo) o {@code dynamodb}
+ * @param defaultLockAtMostFor lease de seguridad cuando un nodo muere mientras ejecuta una tarea
  */
 @ConfigurationProperties("axiz.scheduling")
 public record AxizSchedulingProperties(

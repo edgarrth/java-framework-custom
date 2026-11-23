@@ -10,7 +10,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
-/** Negative fixtures are imported by ArchUnit, never executed. */
+/** ArchUnit importa los fixtures negativos; nunca se ejecutan. */
 public class BlockingOperations {
   public String join(CompletableFuture<String> result) {
     return result.join();

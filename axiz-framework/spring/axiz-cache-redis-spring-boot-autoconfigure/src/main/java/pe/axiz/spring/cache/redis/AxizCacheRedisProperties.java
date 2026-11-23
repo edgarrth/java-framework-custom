@@ -3,6 +3,9 @@ package pe.axiz.spring.cache.redis;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
-/** Controls the Redis integration; shared L2 policy belongs to the neutral cache base. */
+/**
+ * Controla la integración con Redis; la política L2 compartida pertenece a la base neutral de
+ * caché.
+ */
 @ConfigurationProperties("axiz.cache")
 public record AxizCacheRedisProperties(@DefaultValue("true") boolean redis) {}

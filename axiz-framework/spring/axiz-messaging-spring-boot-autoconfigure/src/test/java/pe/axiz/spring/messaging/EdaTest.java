@@ -86,7 +86,7 @@ class EdaTest {
             });
   }
 
-  /** A handler that fails with a checked exception. */
+  /** Handler que falla con una excepción checked. */
   static final class Failing implements EventHandler<String> {
     @Override
     public String eventType() {

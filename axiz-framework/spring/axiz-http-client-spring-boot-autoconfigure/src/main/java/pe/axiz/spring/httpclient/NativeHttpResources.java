@@ -21,7 +21,10 @@ import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
 import reactor.netty.resources.LoopResources;
 
-/** Owned bounded native transport; TLS, resolver and loops are prepared only at startup. */
+/**
+ * Transporte nativo acotado y propio; TLS, el resolvedor y los bucles solo se preparan en el
+ * arranque.
+ */
 final class NativeHttpResources implements AutoCloseable {
   private static final Duration CLOSE_TIMEOUT = Duration.ofSeconds(10);
   private final ConnectionProvider connections;

@@ -5,14 +5,16 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * SQL with {@code :name} placeholders translated to PostgreSQL positional ones ({@code $1}). A name
- * used twice maps to the same position. Placeholders inside string literals, quoted identifiers and
- * comments are left alone, including PostgreSQL dollar quotes, explicit E escape strings and nested
- * block comments. {@code ::type} casts are not parameters. Assumes PostgreSQL's default {@code
- * standard_conforming_strings=on}; SQL is application-owned, values must be bound.
+ * SQL con marcadores {@code :name} traducidos a los posicionales de PostgreSQL ({@code $1}). Un
+ * nombre usado dos veces se mapea a la misma posición. Los marcadores dentro de literales de
+ * cadena, identificadores entre comillas y comentarios se dejan intactos, incluidos los dollar
+ * quotes de PostgreSQL, las cadenas con escape E explícitas y los comentarios de bloque anidados.
+ * Los casts {@code ::type} no son parámetros. Asume el valor por defecto de PostgreSQL {@code
+ * standard_conforming_strings=on}; el SQL es propiedad de la aplicación y los valores deben
+ * enlazarse.
  *
- * @param sql positional SQL
- * @param names parameter name of each position (position {@code i + 1})
+ * @param sql SQL posicional
+ * @param names nombre del parámetro de cada posición (posición {@code i + 1})
  */
 public record NamedSql(String sql, List<String> names) {
 
@@ -89,7 +91,7 @@ public record NamedSql(String sql, List<String> names) {
       }
       if (sql.charAt(i) == quote) {
         if (i + 1 < sql.length() && sql.charAt(i + 1) == quote) {
-          i += 2; // escaped quote
+          i += 2; // comilla escapada
           continue;
         }
         if (escapes) {
@@ -106,8 +108,8 @@ public record NamedSql(String sql, List<String> names) {
     return sql.length();
   }
 
-  // PostgreSQL concatenates quoted strings separated by whitespace containing a newline.
-  // An E prefix applies to the whole continuation, including after SQL comments.
+  // PostgreSQL concatena las cadenas entre comillas separadas por espacios que contienen un salto
+  // de línea. Un prefijo E aplica a toda la continuación, incluso después de comentarios SQL.
   private static int continuation(String sql, int start) {
     int i = start;
     boolean newline = false;

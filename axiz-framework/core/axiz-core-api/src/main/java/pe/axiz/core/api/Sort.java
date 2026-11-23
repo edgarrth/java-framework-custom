@@ -7,9 +7,10 @@ import java.util.regex.Pattern;
 import pe.axiz.core.lang.Checks;
 
 /**
- * Sort specification parsed from {@code field,asc;other,desc} or repeated {@code field,dir}.
+ * Especificación de ordenamiento obtenida de {@code field,asc;other,desc} o de {@code field,dir}
+ * repetido.
  *
- * @param orders ordered list of sort orders
+ * @param orders lista ordenada de criterios de ordenamiento
  */
 public record Sort(List<Order> orders) {
 
@@ -28,10 +29,11 @@ public record Sort(List<Order> orders) {
   }
 
   /**
-   * Parses sort expressions such as {@code "createdAt,desc"}; unknown directions default to asc.
+   * Interpreta expresiones de ordenamiento como {@code "createdAt,desc"}; las direcciones
+   * desconocidas toman asc por defecto.
    *
-   * @param expressions each one {@code field[,asc|desc]}
-   * @return the parsed sort
+   * @param expressions cada una {@code field[,asc|desc]}
+   * @return el ordenamiento interpretado
    */
   public static Sort parse(List<String> expressions) {
     List<Order> orders = new ArrayList<>();
@@ -55,17 +57,17 @@ public record Sort(List<Order> orders) {
     return !orders.isEmpty();
   }
 
-  /** Sort direction. */
+  /** Dirección de ordenamiento. */
   public enum Direction {
     ASC,
     DESC
   }
 
   /**
-   * One sort criterion; field names are restricted to safe identifiers.
+   * Un criterio de ordenamiento; los nombres de campo se restringen a identificadores seguros.
    *
-   * @param field property name
-   * @param direction direction
+   * @param field nombre de la propiedad
+   * @param direction dirección
    */
   public record Order(String field, Direction direction) {
     public Order {

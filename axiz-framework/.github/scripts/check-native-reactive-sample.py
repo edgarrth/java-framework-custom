@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Boot a generated native service with owned local dependencies; require all health probes UP."""
+"""Arranca un servicio nativo generado con dependencias locales propias; exige que todas las sondas de salud estén UP."""
 import argparse
 import re
 from defusedxml import ElementTree as ET
@@ -80,8 +80,8 @@ try:
         reservation.bind(('127.0.0.1', 0))
         service_port = reservation.getsockname()[1]
     environment = irsa.environment()
-    # Framework-owned clients must discover STS in this ELF and resolve web identity, not static keys.
-    # The ELF receives no PRNG flag: its compiled default must come from the parent.
+        # Los clientes propios del framework deben descubrir STS en este ELF y resolver web identity, no claves estáticas.
+    # El ELF no recibe ningún flag de PRNG: su valor por defecto compilado debe provenir del parent.
     args = [*command, '--axiz.acceptance.default-identity-probe=true', '--server.address=127.0.0.1', f'--server.port={service_port}',
             f'--axiz.aws.endpoint={aws_endpoint}', '--axiz.aws.region=us-east-1',
             f'--axiz.audit.sqs.queue-url={aws_endpoint}/000000000000/native-acceptance-audit',
@@ -95,7 +95,7 @@ try:
             '--spring.flyway.user=app', '--spring.flyway.password=native-acceptance-only']
     service_log = (logs / f'{runtime_prefix}-service.log').open('w')
     started = time.monotonic()
-    # Owned JVM/ELF from the validated project; argv list, no shell; OS allowlist plus local IRSA fixture only.
+        # JVM o ELF propios del proyecto validado; lista argv, sin shell; solo la allowlist del SO y el fixture local de IRSA.
     # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-tainted-env-args.dangerous-subprocess-use-tainted-env-args
     process = subprocess.Popen(args, cwd=project, env=environment,
                                stdout=service_log, stderr=subprocess.STDOUT)
@@ -135,7 +135,7 @@ try:
     irsa.succeed = False
     previous_sts = irsa.sts_calls
     with (logs / f'{runtime_prefix}-invalid-irsa.log').open('w') as rejected_log:
-        # Owned executable; sanitized fixture environment, argv list and no shell.
+                # Ejecutable propio; entorno de fixture saneado, lista argv y sin shell.
         # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-tainted-env-args.dangerous-subprocess-use-tainted-env-args
         process = subprocess.Popen(args, cwd=project, env=environment,
                                    stdout=rejected_log, stderr=subprocess.STDOUT)

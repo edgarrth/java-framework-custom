@@ -9,9 +9,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Nonce store for a single instance (tests, local runs, one-replica tools). Bounded: expired
- * entries are swept when the limit is reached and, if it is still full, new nonces are refused by
- * throwing, so the verifier fails closed instead of forgetting nonces that are still valid.
+ * Almacén de nonces para una sola instancia (pruebas, ejecuciones locales, herramientas de una
+ * réplica). Acotado: las entradas expiradas se barren cuando se alcanza el límite y, si sigue
+ * lleno, los nonces nuevos se rechazan lanzando una excepción, de modo que el verificador falla en
+ * cerrado en lugar de olvidar nonces aún válidos.
  */
 public final class InMemoryNonceStore implements NonceStore {
 

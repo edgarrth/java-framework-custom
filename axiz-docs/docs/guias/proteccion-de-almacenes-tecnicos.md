@@ -43,7 +43,7 @@ El payload máximo es 16 MiB antes de cifrar, además de los límites propios de
 capacidad y proveedor. El tamaño aumenta por el envelope y base64: revise el límite
 final del registro, especialmente en DynamoDB. El modo `none` rechaza marcadores
 protegidos y versiones reservadas. Desactivar el cifrado no devuelve ciphertext al
-consumidor. `envelope` tampoco acepta filas antiguas sin protección.
+consumidor. `envelope` tampoco acepta filas sin protección.
 
 ## Transacciones, recuperación y concurrencia
 

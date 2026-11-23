@@ -35,16 +35,17 @@ import pe.axiz.payments.orders.domain.PaymentOrder;
 import pe.axiz.payments.orders.domain.PaymentStatus;
 
 /**
- * The JPA adapter over an in-memory Spring Data repository: what it stores (blind index instead of
- * the account for lookups, status and request key), how it maps rows back and how it tells a
- * concurrent request with the same key from any other integrity error.
+ * El adaptador JPA sobre un repositorio de Spring Data en memoria: qué almacena (índice ciego en
+ * lugar de la cuenta para las búsquedas, estado y clave de solicitud), cómo convierte las filas de
+ * vuelta y cómo distingue una solicitud concurrente con la misma clave de cualquier otro error de
+ * integridad.
  */
 class PaymentOrderPersistenceAdapterTest {
 
   static final LocalDate DAY = LocalDate.of(2026, 10, 9);
   static final String CCI = "00219100123456789053";
 
-  /** In-memory repository answering the methods the adapter calls; records the rest. */
+  /** Repositorio en memoria que responde los métodos que invoca el adaptador; registra el resto. */
   static final class Rows {
     final Map<UUID, PaymentOrderEntity> rows = new LinkedHashMap<>();
     final List<String> calls = new ArrayList<>();
@@ -238,7 +239,7 @@ class PaymentOrderPersistenceAdapterTest {
 
   @Test
   void pagesAreNewestFirstWithTheStoreTotal() {
-    // the store reports 10 more rows than this page holds
+    // el almacén informa 10 filas más de las que contiene esta página
     adapter.create(order(UUID.randomUUID(), "C-1"), null);
     adapter.create(order(UUID.randomUUID(), "C-2"), null);
 

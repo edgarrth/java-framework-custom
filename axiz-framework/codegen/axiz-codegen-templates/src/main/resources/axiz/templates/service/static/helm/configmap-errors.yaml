@@ -1,4 +1,4 @@
-# Error catalog of the service (axiz.errors.catalog), mounted in /etc/axiz/config/errors
+# Catálogo de errores del servicio (axiz.errors.catalog), montado en /etc/axiz/config/errors
 apiVersion: v1
 kind: ConfigMap
 metadata:

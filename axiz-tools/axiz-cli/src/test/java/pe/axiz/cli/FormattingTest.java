@@ -13,12 +13,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import pe.axiz.codegen.render.JavaFormatter;
 
-/** A project leaves the CLI formatted as its spotless:check expects. */
+/** Un proyecto sale de la CLI formateado tal como lo espera su spotless:check. */
 class FormattingTest {
 
   @Test
   void theJarFormatsTheSourcesItGenerates(@TempDir Path tmp) throws Exception {
-    // the tests run with the exports the jar declares in its manifest (Add-Exports)
+    // las pruebas se ejecutan con los exports que el jar declara en su manifiesto (Add-Exports)
     assertTrue(JavaFormatter.available(), "google-java-format runs with the jar's exports");
     CliHarness h = new CliHarness();
     Path contract = CliHarness.contract(tmp);

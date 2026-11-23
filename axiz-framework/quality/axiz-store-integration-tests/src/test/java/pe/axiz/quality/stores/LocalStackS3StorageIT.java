@@ -50,7 +50,10 @@ import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
-/** Native S3 streaming and lifecycle on a real HTTP backend, including watched SDK threads. */
+/**
+ * Streaming y ciclo de vida nativos de S3 sobre un backend HTTP real, incluidos los hilos vigilados
+ * del SDK.
+ */
 @ExtendWith(BlockHoundExtension.class)
 class LocalStackS3StorageIT {
   private static final LocalStackContainer LOCALSTACK =
@@ -254,7 +257,8 @@ class LocalStackS3StorageIT {
     StepVerifier.create(storage.head("absent").subscribeOn(Schedulers.parallel())).verifyComplete();
     StepVerifier.create(storage.content("absent").subscribeOn(Schedulers.parallel()))
         .verifyComplete();
-    // Let the configured idle/TTL policy retire sockets, then exercise the native reconnect path.
+    // Se deja que la política de inactividad y TTL configurada retire los sockets y luego se
+    // ejercita la ruta nativa de reconexión.
     LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(150));
     StepVerifier.create(
             storage

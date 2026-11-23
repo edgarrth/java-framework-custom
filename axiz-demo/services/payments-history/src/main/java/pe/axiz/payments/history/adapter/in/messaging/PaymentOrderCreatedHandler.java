@@ -14,10 +14,11 @@ import pe.axiz.payments.history.application.command.RecordPaymentRegisteredComma
 import pe.axiz.spring.messaging.ReactiveTypedEventHandler;
 
 /**
- * Projects {@code payment-order.created.v1} (topic {@code payments}, consumer group
- * payments-history). The command runs through the reactive pipeline (span, transaction on R2DBC,
- * metrics); the consumer thread waits for it, so retries, the dead-letter topic and the R2DBC inbox
- * work as for any consumer. Redeliveries are harmless: the projection is idempotent.
+ * Proyecta {@code payment-order.created.v1} (tópico {@code payments}, grupo de consumidores
+ * payments-history). El comando se ejecuta mediante el pipeline reactivo (span, transacción sobre
+ * R2DBC, métricas); el hilo del consumidor lo espera, de modo que los reintentos, el tópico de
+ * mensajes fallidos (dead-letter) y el inbox R2DBC funcionan como en cualquier consumidor. Las
+ * reentregas son inocuas: la proyección es idempotente.
  */
 @Component
 @HandlesEvent(PaymentOrderCreatedHandler.TYPE)
@@ -27,15 +28,15 @@ public class PaymentOrderCreatedHandler
   static final String TYPE = "pe.axiz.payments.payment-order.created.v1";
 
   /**
-   * Payload of the event (only the fields this service reads).
+   * Payload del evento (solo los campos que lee este servicio).
    *
-   * @param orderId order
-   * @param operationNumber operation number
-   * @param customerId customer
-   * @param creditorCci destination account
-   * @param amount amount
-   * @param currency currency
-   * @param processingDate processing date
+   * @param orderId orden
+   * @param operationNumber número de operación
+   * @param customerId cliente
+   * @param creditorCci cuenta de destino
+   * @param amount monto
+   * @param currency moneda
+   * @param processingDate fecha de procesamiento
    */
   public record PaymentOrderCreated(
       String orderId,

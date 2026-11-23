@@ -1,11 +1,10 @@
 # axiz-adapter-sequence-r2dbc
 
-Native PostgreSQL counter reservations for reactive services. Implements `ReactiveSequenceStore`
-with Reactor cancellation and context propagation. Each reservation uses its own connection and
-transaction, commits before emitting the value, and survives a later business rollback.
+Reservas nativas de contadores en PostgreSQL para servicios reactivos. Implementa `ReactiveSequenceStore`
+con cancelación de Reactor y propagación de contexto. Cada reserva usa su propia conexión y transacción,
+hace commit antes de emitir el valor y sobrevive a un rollback posterior del negocio.
 
-This is a technology adapter, not a general persistence kit. Consumers select it at runtime through
-the sequence capability with R2DBC; the generic sequence starter does not impose this backend.
+Es un adaptador de tecnología, no un kit general de persistencia. Los consumidores lo seleccionan en tiempo
+de ejecución mediante la capacidad de secuencias con R2DBC; el starter genérico de secuencias no impone este backend.
 
-Run `./mvnw --bootstrap -pl adapters/axiz-adapter-sequence-r2dbc -am verify -Daxiz.it.requireDocker=true`
-from the framework root. Public API is reviewed with every other published module by the v2 signature gate.
+Se ejecuta `./mvnw --bootstrap -pl adapters/axiz-adapter-sequence-r2dbc -am verify -Daxiz.it.requireDocker=true` desde la raíz del framework. La API pública se revisa junto con los demás módulos publicados mediante el control de firmas.

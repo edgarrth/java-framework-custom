@@ -1,4 +1,4 @@
 package pe.axiz.core.domain;
 
-/** Marker for immutable value objects compared by value (normally records). */
+/** Marcador para objetos de valor inmutables comparados por valor (normalmente records). */
 public interface ValueObject {}

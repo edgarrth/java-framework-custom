@@ -36,15 +36,16 @@ import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.outbox.OutboxWriter;
 
 /**
- * Durable audit: a successful action recorded inside a transaction is written to the outbox in that
- * same transaction, so the evidence exists if and only if the business change was committed, and
- * survives a crash right after the commit (the relay publishes it later, at least once, with the
- * event id for deduplication). The event keeps the CloudEvents attributes of the other audit
- * transports, so consumers see the same format.
+ * Auditoría durable: una acción exitosa registrada dentro de una transacción se escribe en el
+ * outbox en esa misma transacción, de modo que la evidencia existe si y solo si se hizo commit del
+ * cambio de negocio, y sobrevive a una caída justo después del commit (el relay la publica más
+ * tarde, al menos una vez, con el id del evento para deduplicar). El evento conserva los atributos
+ * CloudEvents de los demás transportes de auditoría, por lo que los consumidores ven el mismo
+ * formato.
  *
- * <p>Events that cannot be tied to a commit go to the fallback (the asynchronous publisher): those
- * recorded outside a transaction, unless {@code outside-transaction=fail}, and failures, whose
- * transaction is about to roll back and would take the audit record with it.
+ * <p>Los eventos que no pueden vincularse a un commit van al respaldo (el publicador asíncrono):
+ * los registrados fuera de una transacción, salvo con {@code outside-transaction=fail}, y los
+ * fallos, cuya transacción está por hacer rollback y arrastraría consigo el registro de auditoría.
  */
 public final class TransactionalAuditPublisher
     implements AuditPublisher, AuditPublisherDecorator, AutoCloseable, AuditIntegrityMetrics {
@@ -291,12 +292,14 @@ public final class TransactionalAuditPublisher
     }
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción con nombre; build comprueba los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable OutboxWriter outbox = null;
     private @Nullable String destination = null;

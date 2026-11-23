@@ -1,4 +1,6 @@
-/** Command-line utilities of the generation engine used by the structure's own CI. */
+/**
+ * Utilidades de línea de comandos del motor de generación que usa la propia CI de la estructura.
+ */
 @NullMarked
 package pe.axiz.codegen.tools;
 

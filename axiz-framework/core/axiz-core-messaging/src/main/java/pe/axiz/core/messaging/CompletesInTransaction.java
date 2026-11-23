@@ -1,6 +1,9 @@
 package pe.axiz.core.messaging;
 
-/** Handler boundary that commits the business effect and the claimed inbox completion together. */
+/**
+ * Frontera del handler que hace commit del efecto de negocio y de la finalización reclamada del
+ * inbox a la vez.
+ */
 public interface CompletesInTransaction<T> extends EventHandler<T> {
   boolean completesInTransaction();
 

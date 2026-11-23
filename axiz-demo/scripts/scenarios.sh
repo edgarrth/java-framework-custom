@@ -1,39 +1,39 @@
 #!/bin/bash
-# "condition && pass ... || bad ...": pass always succeeds, so bad runs only when the condition failed
+# "condition && pass ... || bad ...": pass siempre termina con éxito, así que bad solo se ejecuta cuando falló la condición
 # shellcheck disable=SC2015
-# Functional scenarios of the whole demo, against the services started by scripts/demo.sh up.
-# Where the smoke test pays once, this suite checks what the demo promises, one group at a time:
+# Escenarios funcionales de toda la demo, contra los servicios arrancados por scripts/demo.sh up.
+# Mientras la prueba smoke paga una vez, esta suite verifica lo que promete la demo, un grupo a la vez:
 #
-#   beneficiaries  registration, CCI check digits, duplicates, rename, soft delete, cursor pages,
-#                  masking in the channel
-#   payment        a payment end to end: channel, saga, process view, history, order
-#   idempotency    replayed request, same key with another body, missing key
-#   rules          duplicate payment, daily limit, currency flag (with i18n), currency mismatch
-#   saga           rejections and compensations: no funds, blocked account, closed destination
-#                  (the debit is reversed), account of another customer
-#   security       401 without token, other customer's data (404/403), status changes and money
-#                  movements reserved to payment-process, protected actuator
-#   integration    banking-core: SOAP credit, unknown movement, holder check
-#   events         outbox published, encrypted accounts, saga states, Kafka consumers and DLQ,
-#                  CloudEvents headers
-#   notifications  notification requests on SNS for completed and rejected payments
-#   audit          audit trail: SQS -> S3 archive (with manifest), Kafka audit topic, audit DLQ
-#   observability  metrics in Prometheus and traces in Tempo (through Grafana): one trace from the
-#                  channel request to the saga
-#   settlement     settlement-batch: loads a new file per run, idempotent rerun, summary on S3,
-#                  a lost summary written again by a rerun
-#   dlq            a malformed message on the payments topic ends in payments.dlq (each consumer)
-#   recovery       a debit that times out leaves the saga VERIFYING; the recovery job completes it
-#                  (takes about 4 minutes)
+#   beneficiaries  registro, dígitos de control del CCI, duplicados, renombrado, borrado lógico, páginas
+#                  por cursor, enmascaramiento en el canal
+#   payment        un pago de extremo a extremo: canal, saga, vista del proceso, historial, orden
+#   idempotency    petición repetida, misma clave con otro cuerpo, clave ausente
+#   rules          pago duplicado, límite diario, flag de moneda (con i18n), moneda no coincidente
+#   saga           rechazos y compensaciones: sin fondos, cuenta bloqueada, destino cerrado
+#                  (el débito se revierte), cuenta de otro cliente
+#   security       401 sin token, datos de otro cliente (404/403), cambios de estado y movimientos
+#                  de dinero reservados a payment-process, actuator protegido
+#   integration    banking-core: crédito SOAP, movimiento desconocido, verificación del titular
+#   events         outbox publicado, cuentas cifradas, estados de la saga, consumidores de Kafka y DLQ,
+#                  cabeceras de CloudEvents
+#   notifications  solicitudes de notificación en SNS para pagos completados y rechazados
+#   audit          registro de auditoría: SQS -> archivo en S3 (con manifiesto), tópico de auditoría en Kafka, DLQ de auditoría
+#   observability  métricas en Prometheus y trazas en Tempo (a través de Grafana): una traza desde la
+#                  petición del canal hasta la saga
+#   settlement     settlement-batch: carga un archivo nuevo por ejecución, reejecución idempotente, resumen
+#                  en S3, un resumen perdido que una reejecución vuelve a escribir
+#   dlq            un mensaje mal formado en el tópico de pagos termina en payments.dlq (cada consumidor)
+#   recovery       un débito que excede el timeout deja la saga en VERIFYING; el job de recuperación la
+#                  completa (tarda unos 4 minutos)
 #
-#   scripts/scenarios.sh                  every group, in that order (about 8 minutes)
-#   scripts/scenarios.sh saga security    only those groups (data they need is created)
-#   SCENARIOS_SKIP="recovery" scripts/scenarios.sh   every group but those
+#   scripts/scenarios.sh                  todos los grupos, en ese orden (unos 8 minutos)
+#   scripts/scenarios.sh saga security    solo esos grupos (se crean los datos que necesitan)
+#   SCENARIOS_SKIP="recovery" scripts/scenarios.sh   todos los grupos salvo esos
 #
-# Every check prints PASS or FAIL; a failing check shows why (status, body) and the last
-# warnings and errors of the services involved. The summary lists the failures; exit code 1 when
-# any check failed. Local runs only: it reads the databases, Kafka, LocalStack and WireMock of
-# local/compose.yaml.
+# Cada verificación imprime PASS o FAIL; una verificación fallida muestra el motivo (estado, cuerpo) y las
+# últimas advertencias y errores de los servicios involucrados. El resumen lista los fallos; código de salida 1
+# cuando alguna verificación falló. Solo para ejecuciones locales: lee las bases de datos, Kafka, LocalStack y
+# WireMock de local/compose.yaml.
 set -uo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
 KC_URL=${KC_URL:-http://localhost:8180}
@@ -51,13 +51,13 @@ JSON=(-H "Content-Type: application/json")
 all_groups=(beneficiaries payment idempotency rules saga security integration events notifications
   audit observability settlement dlq recovery)
 
-# accounts and CCIs of the simulated core and network (local/wiremock)
-ACCOUNT=1910012345678         # C-1001 (ana) is its holder
+# cuentas y CCI del core y de la red simulados (local/wiremock)
+ACCOUNT=1910012345678         # C-1001 (ana) es su titular
 NO_FUNDS=1910099999999        # CB-51
 BLOCKED=1910088888888         # CB-62
-SLOW=1910077777777            # the recovery group makes its debits time out
+SLOW=1910077777777            # el grupo recovery hace que sus débitos excedan el timeout
 CCI_LANDLORD=00219100123456789053
-CCI_CLOSED=00219100123456780052   # the network rejects transfers to it (NET-R02)
+CCI_CLOSED=00219100123456780052   # la red rechaza las transferencias hacia ella (NET-R02)
 CCI_USD=00219100123456781159
 CCI_TEMP=00219100123456782256
 CCI_LUIS=00319100987654321043
@@ -67,11 +67,11 @@ failed=0
 failures=()
 group=""
 involved=()
-run_ids=()      # payments created by this run
+run_ids=()      # pagos creados por esta ejecución
 used_amounts=" "
 
 # ---------------------------------------------------------------------------------------------
-# output
+# salida
 
 pass() { passed=$((passed + 1)); printf '  \033[32mPASS\033[0m %s\n' "$1"; return 0; }
 bad() {
@@ -83,7 +83,7 @@ bad() {
 }
 note() { printf '       %s\n' "$*"; }
 
-# last warnings and errors of the services involved in the current group
+# últimas advertencias y errores de los servicios involucrados en el grupo actual
 show_logs() {
   local s f
   for s in "${involved[@]}"; do
@@ -100,7 +100,7 @@ show_logs() {
 
 key() { cat /proc/sys/kernel/random/uuid 2>/dev/null || uuidgen; }
 
-# call METHOD URL [curl args...]: sets $code, $body and $headers
+# call MÉTODO URL [args de curl...]: asigna $code, $body y $headers
 call() {
   local method=$1 url=$2 out hdr rc=0
   shift 2
@@ -112,7 +112,7 @@ call() {
   if [ "$rc" -ne 0 ] || ! [[ "$code" =~ ^[1-9][0-9]{2}$ ]]; then code=000; fi
 }
 
-# expect NAME "<codes>" [jq conditions on the body...]
+# expect NOMBRE "<codes>" [condiciones jq sobre el cuerpo...]
 expect() {
   local name=$1 codes=$2 q why=""
   shift 2
@@ -128,7 +128,7 @@ $( (jq -c . <<<"$body" 2>/dev/null || printf '%s' "$body") | cut -c1-700)"
   return 1
 }
 
-# check NAME COMMAND...: PASS when the command succeeds
+# check NOMBRE COMANDO...: PASS cuando el comando termina con éxito
 check() {
   local name=$1 out
   shift
@@ -137,7 +137,7 @@ check() {
   return 1
 }
 
-# poll SECONDS COMMAND...: retries every 2 s until the command succeeds
+# poll SEGUNDOS COMANDO...: reintenta cada 2 s hasta que el comando termina con éxito
 poll() {
   local limit=$1 start=$SECONDS
   shift
@@ -148,17 +148,17 @@ poll() {
 }
 
 # ---------------------------------------------------------------------------------------------
-# infrastructure of local/compose.yaml
+# infraestructura de local/compose.yaml
 
 sql() { "${compose[@]}" exec -T postgres psql -U app -d "$1" -tAc "$2" 2>&1; }
-# JSON on stdout only: the CLI also writes notices (deprecation banners) to stderr
+# JSON solo en stdout: la CLI también escribe avisos (banners de deprecación) en stderr
 awsl() { "${compose[@]}" exec -T localstack awslocal "$@" 2>/dev/null; }
 kafka() { local tool=$1; shift; "${compose[@]}" exec -T kafka "/opt/kafka/bin/$tool" --bootstrap-server localhost:9092 "$@" 2>/dev/null; }
 
-# messages written to a topic (sum of the end offsets of its partitions)
+# mensajes escritos en un tópico (suma de los offsets finales de sus particiones)
 topic_size() { kafka kafka-get-offsets.sh --topic "$1" | awk -F: '{s += $3} END {print s + 0}'; }
 
-# consumers of the group are connected and have read everything on the topic
+# los consumidores del grupo están conectados y leyeron todo lo que hay en el tópico
 caught_up() {
   local out
   out=$(kafka kafka-consumer-groups.sh --describe --group "$1") || return 1
@@ -170,8 +170,8 @@ lag_report() {
   kafka kafka-consumer-groups.sh --describe --group "$1" | awk 'NF && $1 != ""' | head -n 6
 }
 
-# objects archived today under audit/. The CLI paginates list-objects-v2 and merges the pages,
-# which drops KeyCount (it printed None): count the merged Contents instead
+# objetos archivados hoy bajo audit/. La CLI pagina list-objects-v2 y combina las páginas,
+# lo que descarta KeyCount (imprimía None): por eso se cuentan los Contents combinados
 audit_objects() {
   local n
   # shellcheck disable=SC2016 # JMESPath literal, not a shell expansion
@@ -181,7 +181,7 @@ audit_objects() {
 }
 
 # ---------------------------------------------------------------------------------------------
-# tokens and data
+# tokens y datos
 
 token_user() {
   curl -s "$KC_URL/realms/axiz/protocol/openid-connect/token" -d grant_type=password \
@@ -191,7 +191,7 @@ token_client() {
   curl -s "$KC_URL/realms/axiz/protocol/openid-connect/token" -d grant_type=client_credentials \
     -d client_id="$1" -d client_secret="$2" | jq -r '.access_token // empty'
 }
-# claim TOKEN NAME: a claim of the JWT payload
+# claim TOKEN NOMBRE: un claim del payload del JWT
 claim() {
   local p
   p=$(cut -d. -f2 <<<"$1" | tr '_-' '/+')
@@ -200,7 +200,7 @@ claim() {
 }
 tokens_at=-1000
 tokens() {
-  # tokens last 15 minutes: renewed for every group
+  # los tokens duran 15 minutos: se renuevan para cada grupo
   [ $((SECONDS - tokens_at)) -lt 300 ] && return 0
   ANA=$(token_user ana)
   LUIS=$(token_user luis)
@@ -210,7 +210,7 @@ tokens() {
     printf '\033[31mFAILED: no tokens from Keycloak (%s)\033[0m\n' "$KC_URL" >&2
     exit 1
   fi
-  # payment-process is multi-tenant: tokens must carry the claim tenant (realm of this demo)
+  # payment-process es multi-tenant: los tokens deben llevar el claim tenant (realm de esta demo)
   if [ "$(claim "$M2M" tenant)" != demo ]; then
     printf '\033[31mFAILED: the tokens have no claim "tenant": Keycloak runs an older realm.\033[0m\n' >&2
     echo "  scripts/demo.sh down && scripts/demo.sh up   (imports local/keycloak/axiz-realm.json again)" >&2
@@ -219,8 +219,8 @@ tokens() {
   tokens_at=$SECONDS
 }
 
-# beneficiary CUSTOMER TOKEN ALIAS HOLDER CCI CURRENCY: id of the active beneficiary with that
-# CCI, registering it when missing
+# beneficiary CLIENTE TOKEN ALIAS TITULAR CCI MONEDA: id del beneficiario activo con ese
+# CCI, registrándolo si no existe
 beneficiary() {
   local c=$1 t=$2
   call POST "$CRUD/v1/customers/$c/beneficiaries" -H "Authorization: Bearer $t" "${JSON[@]}" \
@@ -243,8 +243,8 @@ need_beneficiaries() {
   fi
 }
 
-# a completed payment of ana (and a rejected one), created by the payment and saga groups when
-# they did not run before
+# un pago completado de ana (y uno rechazado), creados por los grupos payment y saga cuando
+# no se ejecutaron previamente
 need_payment() {
   [ -n "${PAY:-}" ] && return
   local saved=("${involved[@]}") g=$group
@@ -260,8 +260,8 @@ need_rejected() {
   involved=("${saved[@]}")
 }
 
-# an amount not used yet in this run: the same amount to the same beneficiary on the same day is
-# rejected as a probable duplicate
+# un importe aún no usado en esta ejecución: el mismo importe al mismo beneficiario el mismo día se
+# rechaza como probable duplicado
 amount() {
   local a
   while :; do
@@ -272,7 +272,7 @@ amount() {
   echo "$a"
 }
 
-# pay TOKEN BENEFICIARY ACCOUNT AMOUNT CURRENCY [IDEMPOTENCY-KEY] [TRACEPARENT]
+# pay TOKEN BENEFICIARIO CUENTA IMPORTE MONEDA [IDEMPOTENCY-KEY] [TRACEPARENT]
 pay() {
   local trace=()
   [ -z "${7:-}" ] || trace=(-H "traceparent: $7")
@@ -290,7 +290,7 @@ pay() {
 order_status() { curl -s "$EXP/v1/payments/$1" -H "Authorization: Bearer $2" | jq -r '.status // empty'; }
 is_final() { local s; s=$(order_status "$1" "$2"); [ "$s" = COMPLETED ] || [ "$s" = REJECTED ]; }
 
-# final_status ID TOKEN: waits (up to 120 s) for COMPLETED or REJECTED
+# final_status ID TOKEN: espera (hasta 120 s) COMPLETED o REJECTED
 final_status() {
   poll "${SCENARIOS_SAGA_WAIT:-120}" is_final "$1" "$2"
   order_status "$1" "$2"
@@ -300,18 +300,18 @@ process_view() { call GET "$PROC/v1/payment-processes/$1" -H "Authorization: Bea
 process_status() { curl -s "$PROC/v1/payment-processes/$1" -H "Authorization: Bearer $M2M" | jq -r '.status // empty'; }
 history_status() { curl -s "$HIST/v1/payments/$1" -H "Authorization: Bearer $ANA" | jq -r '.status // empty'; }
 process_is() { [ "$(process_status "$1")" = "$2" ]; }
-# the saga stopped running: VERIFYING or finished
+# la saga dejó de ejecutarse: VERIFYING o terminada
 process_stopped() { [[ " VERIFYING COMPLETED REJECTED NEEDS_ATTENTION " == *" $(process_status "$1") "* ]]; }
 process_final() { [[ " COMPLETED REJECTED NEEDS_ATTENTION " == *" $(process_status "$1") "* ]]; }
 history_is() { [ "$(history_status "$1")" = "$2" ]; }
 reserved() { sql payment_orders "SELECT COALESCE(SUM(reserved),0)::numeric(18,2) FROM payment_daily_usage WHERE customer_id='C-1001' AND currency='PEN'"; }
 
-# WireMock journal: reversals requested so far
+# journal de WireMock: reversiones solicitadas hasta el momento
 reversals() {
   curl -s "$WM/__admin/requests?limit=1000" \
     | jq '[.requests[] | select(.request.method == "POST" and (.request.url | test("/reversal$")))] | length'
 }
-# id of the movement the core returned for the debit with reference $1 (the operation number)
+# id del movimiento que devolvió el core para el débito con referencia $1 (el número de operación)
 movement_of() {
   curl -s "$WM/__admin/requests?limit=1000" | jq -r --arg op "$1" '
     [.requests[] | select(.request.url | test("/debits$"))
@@ -320,7 +320,7 @@ movement_of() {
 }
 
 # ---------------------------------------------------------------------------------------------
-# groups
+# grupos
 
 g_beneficiaries() {
   involved=(beneficiaries payments-ux)
@@ -336,7 +336,7 @@ g_beneficiaries() {
     -H "Idempotency-Key: $(key)" -d "{\"alias\":\"Otra vez\",\"holderName\":\"Ana Torres\",\"cci\":\"$CCI_LANDLORD\",\"currency\":\"PEN\"}"
   expect "one active beneficiary per account (409)" 409 '.code == "PAYMENTS-BENEFICIARIES-0002"'
 
-  # lifecycle on a beneficiary of its own (removed again at the end)
+  # ciclo de vida sobre un beneficiario propio (se elimina de nuevo al final)
   id=$(beneficiary C-1001 "$ANA" Temporal "Rosa Diaz" "$CCI_TEMP" PEN)
   if [ -z "$id" ]; then bad "register a temporary beneficiary" "HTTP $code $body"; return; fi
   call PUT "$CRUD/v1/customers/C-1001/beneficiaries/$id" -H "Authorization: Bearer $ANA" "${JSON[@]}" \
@@ -355,7 +355,7 @@ g_beneficiaries() {
     -H "Idempotency-Key: $key1" -d "$again"
   expect "the account of a removed beneficiary can be registered again (201)" 201
   id=$(jq -r '.id // empty' <<<"$body")
-  # the client lost the answer and retries: idempotency on DynamoDB returns the same beneficiary
+  # el cliente perdió la respuesta y reintenta: la idempotencia en DynamoDB devuelve el mismo beneficiario
   call POST "$CRUD/v1/customers/C-1001/beneficiaries" -H "Authorization: Bearer $ANA" "${JSON[@]}" \
     -H "Idempotency-Key: $key1" -d "$again"
   expect "a retried registration (same Idempotency-Key) returns the same beneficiary" 201 ".id == \"$id\""
@@ -382,7 +382,7 @@ g_payment() {
   need_beneficiaries || return
   PAY_KEY=$(key)
   PAY_AMOUNT=$(amount)
-  # A known ingress trace identifies this successful fixture even after rejection scenarios run.
+  # Una traza de ingreso conocida identifica este fixture exitoso incluso después de ejecutar los escenarios de rechazo.
   PAY_TRACE=$(key); PAY_TRACE=${PAY_TRACE//-/}
   local parent; parent=$(key); parent=${parent//-/}
   pay "$ANA" "$BEN" "$ACCOUNT" "$PAY_AMOUNT" PEN "$PAY_KEY" "00-$PAY_TRACE-${parent:0:16}-01"
@@ -456,7 +456,7 @@ g_rules() {
   expect "PEN to a USD beneficiary: currency mismatch (422)" 422 '.code == "PAYMENTS-PAYMENTSUX-0001"'
 }
 
-# rejected NAME TOKEN BENEFICIARY ACCOUNT FAILED-STEP: pays, waits REJECTED and checks the process
+# rejected NOMBRE TOKEN BENEFICIARIO CUENTA PASO-FALLIDO: paga, espera REJECTED y verifica el proceso
 rejected() {
   local name=$1 s
   pay "$2" "$3" "$4" "$(amount)" PEN
@@ -599,7 +599,7 @@ g_notifications() {
   fi
   need_payment
   need_rejected
-  # drains the probe queue (it also holds the notifications of earlier runs) until both appear
+  # vacía la cola de sondeo (también contiene las notificaciones de ejecuciones previas) hasta que aparecen ambas
   local entries
   start=$SECONDS
   while [ $((SECONDS - start)) -lt 90 ]; do
@@ -607,7 +607,7 @@ g_notifications() {
     entries=$(jq -c '[.Messages[]? | {Id: .MessageId, ReceiptHandle}]' <<<"$out" 2>/dev/null)
     [ -n "$entries" ] && [ "$entries" != "[]" ] \
       && awsl sqs delete-message-batch --queue-url "$q" --entries "$entries" >/dev/null
-    # structured CloudEvents (SNS/SQS) carry the payload in data_base64: decode it to search it
+    # los CloudEvents estructurados (SNS/SQS) llevan el payload en data_base64: se decodifica para buscar en él
     seen+=$(jq -r '.Messages[]?.Body | ., ((fromjson? | .data_base64? // empty) | @base64d)' \
       <<<"$out" 2>/dev/null)
     { [ -z "${PAY:-}" ] || grep -q "$PAY" <<<"$seen"; } && { [ -z "${NOFUNDS:-}" ] || grep -q "$NOFUNDS" <<<"$seen"; } && break
@@ -649,7 +649,7 @@ grafana() {
   local out credentials
   credentials=$(printf '%s' "${GRAFANA_USERNAME:-admin}:${GRAFANA_PASSWORD:-admin}" | base64 | tr -d '\n')
   out=$(curl -s -w '\n%{http_code}' "$GRAFANA$1")
-  # anonymous access first (otel-lgtm), then the default admin account
+  # primero el acceso anónimo (otel-lgtm) y luego la cuenta de administración por defecto
   if [ "${out##*$'\n'}" != 200 ]; then out=$(printf 'header = "Authorization: Basic %s"\n' "$credentials" | curl --config - -s -w '\n%{http_code}' "$GRAFANA$1"); fi
   printf '%s' "${out%$'\n'*}"
 }
@@ -663,10 +663,10 @@ traceql() {
   grafana "/api/datasources/proxy/uid/$TEMPO_UID/api/search?q=$(jq -rn --arg q "$1" '$q|@uri')&start=$((now - 3600))&end=$now&limit=5" \
     | jq -e '(.traces // []) | length > 0'
 }
-# log_trace SERVICE REGEX: trace ID of the last line of .run/SERVICE.log matching REGEX (the log
-# pattern prints [traceId-spanId] of the current span; empty when the line ran outside a trace)
+# log_trace SERVICIO REGEX: trace ID de la última línea de .run/SERVICE.log que coincide con REGEX (el
+# patrón de log imprime [traceId-spanId] del span actual; vacío cuando la línea se ejecutó fuera de una traza)
 log_text() {
-  # Local runs use text logs; the same services in kind use structured JSON logs.
+  # Las ejecuciones locales usan logs de texto; los mismos servicios en kind usan logs JSON estructurados.
   jq -Rr '. as $raw | try (fromjson |
     "[\(.trace_id // .traceId // "")-\(.span_id // .spanId // "")] \(.logger_name // "") : \(.message // "")") catch $raw' \
     "$root/.run/$1.log" 2>/dev/null
@@ -674,20 +674,20 @@ log_text() {
 log_trace() {
   log_text "$1" | grep -E "$2" | grep -oE '\[[0-9a-f]{32}-[0-9a-f]{16}\]' | tail -1 | cut -c2-33
 }
-# trace_services TRACE-ID: service names of the spans Tempo holds for that trace
+# trace_services TRACE-ID: nombres de servicio de los spans que Tempo guarda para esa traza
 trace_services() {
   grafana "/api/datasources/proxy/uid/$TEMPO_UID/api/traces/$1" | jq -r '
     [ (.batches // .resourceSpans // [])[] | .resource.attributes[]?
       | select(.key == "service.name") | .value.stringValue ] | unique | join(" ")' 2>/dev/null
 }
-# trace_has TRACE-ID SERVICE...: the trace holds spans of every service
+# trace_has TRACE-ID SERVICIO...: la traza contiene spans de cada servicio
 trace_has() {
   local t=$1 have s; shift
   have=" $(trace_services "$t") "
   for s in "$@"; do [[ "$have" == *" $s "* ]] || return 1; done
 }
-# grafana_datasources: sets PROM_UID and TEMPO_UID; false until Grafana lists both (a single
-# request can find Grafana busy or restarting, so the check polls instead of failing on it)
+# grafana_datasources: asigna PROM_UID y TEMPO_UID; false hasta que Grafana lista ambos (una sola
+# petición puede encontrar a Grafana ocupado o reiniciándose, por eso la verificación sondea en lugar de fallar)
 grafana_datasources() {
   local ds
   ds=$(grafana /api/datasources)
@@ -708,8 +708,8 @@ g_observability() {
   q='sum({__name__=~"http_server_request.*_count", job=~".*payments-ux.*"})'
   poll 60 prom_positive "$q" && pass "HTTP server metrics of payments-ux (OTLP)" \
     || bad "HTTP server metrics of payments-ux (OTLP)" "$q = $(promql "$q")"
-  # Follow the known successful payment. The latest request may be a rejection that correctly
-  # never reaches the payment network. Logs still prove that each service propagated the trace.
+  # Se sigue el pago exitoso conocido. La petición más reciente puede ser un rechazo que, correctamente,
+  # nunca llega a la red de pagos. Los logs siguen demostrando que cada servicio propagó la traza.
   local t
   t=$(log_trace payment-process "\\[$PAY_TRACE-.*client=banking-core ")
   if [ -z "$t" ]; then
@@ -725,8 +725,8 @@ $(grep -E 'axiz.http .*path=/v1/' "$root/.run/banking-core.log" | tail -1 | cut 
       && pass "  ... and Tempo holds that trace with the process, core and gateway" \
       || bad "  ... and Tempo holds that trace with the process, core and gateway" "services in trace $t: $(trace_services "$t")"
   fi
-  # the request that registers the payment and its saga are one trace: the outbox keeps the
-  # context of the write, the relay continues it and Kafka carries it to the consumers
+  # la petición que registra el pago y su saga forman una sola traza: el outbox conserva el
+  # contexto de la escritura, el relay lo continúa y Kafka lo lleva a los consumidores
   local want=(payments-ux payment-orders payment-process banking-core payment-network-gateway)
   t=$(log_trace payment-orders "\\[$PAY_TRACE-.*path=/v1/payment-orders status=201")
   if [ -z "$t" ]; then
@@ -753,10 +753,10 @@ settle() {
       --spring.profiles.active=local,platform --settlement.input-key="$key" > "$log" 2>&1
   )
 }
-# a settlement file of its own for this run: the sample with end-to-end ids nobody loaded before
-# (same widths, amounts and control totals). Each run checks a fresh load, its rerun and its
-# summary, whatever state earlier runs left in Aurora or S3 (LocalStack keeps no data between
-# restarts, PostgreSQL does)
+# un archivo de liquidación propio para esta ejecución: el de ejemplo con ids de extremo a extremo que nadie
+# cargó previamente (mismos anchos, importes y totales de control). Cada ejecución verifica una carga nueva,
+# su reejecución y su resumen, sea cual sea el estado que ejecuciones previas dejaron en Aurora o S3
+# (LocalStack no conserva datos entre reinicios, PostgreSQL sí)
 settlement_file() {
   local key=$1 run=$2
   sed "s/^DOP20261011-/DSC${run}-/" "$root/local/localstack/NET-SETTLE-SAMPLE.txt" \
@@ -771,7 +771,7 @@ g_settlement() {
     bad "settlement-batch jar" "missing: scripts/demo.sh up builds it (or ./mvnw clean package -DskipTests -pl services/settlement-batch -am)"
     return
   fi
-  # 8 digits replace the 8 characters of "20261011" in the end-to-end id
+  # 8 dígitos reemplazan los 8 caracteres de "20261011" en el id de extremo a extremo
   run=$(date +%s | tail -c 9)
   name="NET-SETTLE-SCN${run}.txt"
   key="in/settlement/$name"
@@ -791,7 +791,7 @@ $(grep -E ' (WARN|ERROR) |Exception|Settlement' "$log" | tail -n 8 | cut -c1-300
   awsl s3 ls "s3://local-bucket/out/settlement/$name.summary.json" | grep -q summary \
     && pass "summary on S3 (out/settlement/$name.summary.json)" \
     || bad "summary on S3" "no out/settlement/$name.summary.json"
-  # the bucket loses the summary (as when LocalStack restarts): a rerun writes it again from Aurora
+  # el bucket pierde el resumen (como cuando LocalStack se reinicia): una reejecución lo escribe de nuevo desde Aurora
   awsl s3 rm "s3://local-bucket/out/settlement/$name.summary.json" >/dev/null
   settle "$jar" "$key" "$log.3"; rc=$?
   [ "$rc" = 0 ] && grep -q 'writing it again' "$log.3" \

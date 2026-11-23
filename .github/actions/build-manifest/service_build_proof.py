@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Signed auxiliary reference for automatic service deployment; not a third build-manifest kind."""
+"""Referencia auxiliar firmada para el despliegue automático del servicio; no es un tercer tipo de build-manifest."""
 import argparse
 import base64
 import io
@@ -58,7 +58,7 @@ def create(bundle, expected, repository):
 
 
 def producer(repository, run_id, attempt, branch="main", workflow="ci.yaml"):
-    """Re-read Actions authority; reject forks, PRs, stale attempts and stale source commits."""
+    """Vuelve a leer la autoridad de Actions; rechaza forks, PR, intentos obsoletos y commits de origen obsoletos."""
     positive(run_id)
     positive(attempt)
     if not re.fullmatch(r"[A-Za-z0-9_-]+\.ya?ml", workflow) or not re.fullmatch(r"[A-Za-z0-9_-]+", branch):
@@ -98,7 +98,7 @@ def download_proof(repository, run_id, attempt, service, destination):
         if page > 100:
             raise ValueError("Excessive producer artifact pagination")
     if not matches:
-        return False  # A successful CI verification without a product build has no deploy candidate.
+        return False  # Una verificación de CI exitosa sin build de producto no tiene candidato a despliegue.
     if len(matches) != 1 or matches[0].get("expired") is not False:
         raise ValueError("Missing, expired or ambiguous service build proof")
     artifact = matches[0]
@@ -132,8 +132,8 @@ def verify_proof(directory, repository, source_sha, run_id, attempt, service, mo
     signature = safe_file(directory, SIGNATURE)
     if proof.stat().st_size > LIMIT or signature.stat().st_size > LIMIT:
         raise ValueError("Oversized service proof")
-    # Authenticate before interpreting or exposing the manifest hash. No self-supplied checksum
-    # becomes approval: this is an independent signed statement of the immutable build workflow.
+        # Se autentica antes de interpretar o exponer el hash del manifiesto. Ningún checksum aportado por el propio
+    # emisor se convierte en aprobación: esta es una declaración firmada e independiente del workflow de build inmutable.
     subprocess.run(["cosign", "verify-blob", "--bundle", str(signature),
                     "--certificate-identity", "https://github.com/edgarrth/java-framework-custom/.github/workflows/service-build.yaml@refs/tags/" + tag,
                     "--certificate-oidc-issuer", "https://token.actions.githubusercontent.com",
@@ -162,7 +162,7 @@ def predecessor(repository, branch, service, environment, token):
     ref = api(f"repos/{repository}/git/ref/heads/{quote(branch, safe='')}", token).get("object", {})
     if ref.get("type") != "commit" or not re.fullmatch(r"[0-9a-f]{40}", ref.get("sha", "")):
         raise ValueError("GitOps branch did not resolve to a commit")
-    # Walk Git trees at an immutable commit: a missing path is distinct from an API/auth error.
+        # Se recorren los árboles de Git en un commit inmutable: una ruta ausente es distinta de un error de API o de autenticación.
     commit = api(f"repos/{repository}/git/commits/{ref['sha']}", token)
     tree = commit["tree"]["sha"]
     parts = [GITOPS_STATE_ROOT, environment, service + ".yaml"]

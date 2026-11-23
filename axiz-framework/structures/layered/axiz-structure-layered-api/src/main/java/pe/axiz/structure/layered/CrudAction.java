@@ -1,6 +1,6 @@
 package pe.axiz.structure.layered;
 
-/** Function and object authorization decisions required by the CRUD service. */
+/** Decisiones de autorización de función y de objeto que requiere el servicio CRUD. */
 public enum CrudAction {
   READ,
   LIST,

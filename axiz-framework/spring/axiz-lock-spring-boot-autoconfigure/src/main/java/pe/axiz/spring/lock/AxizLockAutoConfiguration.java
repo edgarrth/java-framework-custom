@@ -22,7 +22,7 @@ import pe.axiz.core.lock.LockObserver;
 import pe.axiz.core.lock.LockTemplate;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 
-/** Leased locks with renewal ({@link LockTemplate}) on Redis or DynamoDB. */
+/** Locks con lease y renovación ({@link LockTemplate}) sobre Redis o DynamoDB. */
 @AutoConfiguration
 @ConditionalOnBooleanProperty(name = "axiz.lock.enabled", matchIfMissing = true)
 @EnableConfigurationProperties(AxizLockProperties.class)
@@ -44,7 +44,8 @@ public class AxizLockAutoConfiguration {
         "axiz.lock.store=memory",
         "redis or dynamodb",
         "a lock held in one replica does not exclude the others");
-    // allowed only where one process runs (local, test): the check above fails anywhere else
+    // permitido solo donde se ejecuta un único proceso (local, test): la comprobación anterior
+    // falla en cualquier otro lugar
     LoggerFactory.getLogger(AxizLockAutoConfiguration.class)
         .info("Locks are kept in memory (single process); replicas need redis or dynamodb");
     return new InMemoryDistributedLock(clock.getIfAvailable(Clock::systemUTC));

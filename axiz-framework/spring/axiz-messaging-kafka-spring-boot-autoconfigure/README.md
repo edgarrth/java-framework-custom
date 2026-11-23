@@ -1,12 +1,12 @@
 # axiz-messaging-kafka-spring-boot-autoconfigure
 
-KAFKA integration for CloudEvents messaging.
+Integración Kafka para mensajería CloudEvents.
 
-This module owns the `pe.axiz.spring.messaging.kafka` API.
+Este módulo es dueño de la API `pe.axiz.spring.messaging.kafka`.
 
-## Selection
+## Selección
 
-Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
+Las versiones las gestiona `axiz-bom`; las aplicaciones heredan `axiz-parent-service`.
 
 ```xml
 <dependency>
@@ -15,50 +15,52 @@ Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
 </dependency>
 ```
 
-The paired starter selects this provider. Application code uses the capability ports; do not
-import auto-configuration classes into controllers, application services or domain models.
+El starter asociado selecciona este proveedor. El código de aplicación usa los puertos de la
+capacidad; las clases de autoconfiguración no se importan en controladores, servicios de
+aplicación ni modelos de dominio.
 
-## Types
+## Tipos
 
-Public types declared by this module:
+Tipos públicos que declara este módulo:
 
 - `AxizMessagingKafkaAutoConfiguration`
 - `AxizMessagingKafkaProperties`
 - `KafkaClientAuthentication`
 - `KafkaConsumers`
 
-## Configuration
+## Configuración
 
-Owned property prefixes: `axiz.messaging.kafka.*`.
+Prefijos de propiedades propios: `axiz.messaging.kafka.*`.
 
-## Catalog usage
+## Uso desde el catálogo
 
 ```bash
 axiz add messaging-kafka
 ```
 
-Required capabilities: `messaging`.
+Capacidades requeridas: `messaging`.
 
-The catalog supplies the following properties. Environment placeholders must resolve in the
-service configuration; they are not credentials or provisioned infrastructure.
+El catálogo aporta las siguientes propiedades. Los marcadores de entorno deben resolverse en la
+configuración del servicio; no son credenciales ni infraestructura aprovisionada.
 
 ```yaml
 spring.kafka.bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 ```
 
-## Operations
+## Operación
 
-Provision topics and broker access with TLS/SASL, bounded transport timeouts and durability
-settings suited to the event contract. Delivery may be repeated; consumers use stable event
-IDs and inbox deduplication. A producer acknowledgement is not a business transaction commit.
+Los tópicos y el acceso al broker se aprovisionan con TLS/SASL, timeouts de transporte acotados y
+una durabilidad adecuada al contrato del evento. La entrega puede repetirse; los consumidores usan
+identificadores de evento estables y deduplicación con inbox. La confirmación del productor no
+equivale a confirmar una transacción de negocio.
 
-## Verification
+## Verificación
 
-From `axiz-framework`:
+Desde `axiz-framework`:
 
 ```bash
 ./mvnw -pl spring/axiz-messaging-kafka-spring-boot-autoconfigure -am test
 ```
 
-The full acceptance gate is `./mvnw clean install -Pquality -Daxiz.it.requireDocker=true`.
-Provider integration tests live in `quality/axiz-store-integration-tests` and require Docker.
+La verificación completa es `./mvnw clean install -Pquality -Daxiz.it.requireDocker=true`.
+Las pruebas de integración de proveedores están en `quality/axiz-store-integration-tests` y requieren Docker.

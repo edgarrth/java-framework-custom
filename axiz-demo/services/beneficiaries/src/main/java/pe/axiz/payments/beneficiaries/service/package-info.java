@@ -1,4 +1,4 @@
-/** Business services, transactional. */
+/** Servicios de negocio, transaccionales. */
 @NullMarked
 package pe.axiz.payments.beneficiaries.service;
 

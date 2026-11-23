@@ -5,7 +5,10 @@ import java.time.Duration;
 import java.util.Locale;
 import pe.axiz.core.secrets.SecretCacheObserver;
 
-/** Only bounded outcome and resolver labels; measurements never receive a secret identifier. */
+/**
+ * Solo etiquetas acotadas de resultado y de resolvedor; las mediciones nunca reciben un
+ * identificador de secreto.
+ */
 final class SecretCacheMetrics implements SecretCacheObserver {
   private final MeterRegistry registry;
   private final String resolver;

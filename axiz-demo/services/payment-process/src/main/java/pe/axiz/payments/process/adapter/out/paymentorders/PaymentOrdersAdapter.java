@@ -9,9 +9,9 @@ import pe.axiz.payments.process.adapter.out.paymentorders.model.StatusChange;
 import pe.axiz.payments.process.application.port.out.PaymentOrders;
 
 /**
- * Moves payment orders in payment-orders (client credentials, HTTP service group {@code
- * payment-orders}). A 409 because the order already is in the target status counts as done, so a
- * resumed saga can repeat a step safely.
+ * Mueve órdenes de pago en payment-orders (client credentials, grupo de servicios HTTP {@code
+ * payment-orders}). Un 409 porque la orden ya está en el estado de destino cuenta como hecho, de
+ * modo que una saga reanudada puede repetir un paso con seguridad.
  */
 @Component
 public class PaymentOrdersAdapter implements PaymentOrders {

@@ -1,8 +1,8 @@
 package pe.axiz.kit.r2dbc;
 
 /**
- * Supplies the password of each new database connection; lets the pool use short-lived credentials
- * (IAM authentication tokens) without restarting.
+ * Suministra la contraseña de cada conexión nueva a la base de datos; permite al pool usar
+ * credenciales de vida corta (tokens de autenticación IAM) sin reiniciar.
  */
 @FunctionalInterface
 public interface DatabasePasswordProvider {

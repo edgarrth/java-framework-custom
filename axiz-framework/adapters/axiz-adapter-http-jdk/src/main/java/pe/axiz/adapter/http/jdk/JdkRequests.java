@@ -4,7 +4,7 @@ import java.net.http.HttpRequest;
 import java.nio.charset.StandardCharsets;
 import pe.axiz.core.http.AsyncHttpExchange;
 
-/** Boundary between neutral wire data and the JDK transport. */
+/** Frontera entre los datos neutrales de red y el transporte del JDK. */
 final class JdkRequests {
   private JdkRequests() {}
 

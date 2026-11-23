@@ -18,7 +18,10 @@ import pe.axiz.core.tokenization.vault.TokenBudgetPolicy;
 import pe.axiz.core.tokenization.vault.TokenCaller;
 import pe.axiz.core.tokenization.vault.VaultScope;
 
-/** Distributed budgets; inject a verified fail-closed limiter on the owned Redis connection. */
+/**
+ * Presupuestos distribuidos; se inyecta un limitador fail-closed verificado sobre la conexión Redis
+ * propia.
+ */
 public final class RedisTokenBudget implements TokenBudget {
   private final RedisCommands<String, String> redis;
   private final RateLimiter limiter;

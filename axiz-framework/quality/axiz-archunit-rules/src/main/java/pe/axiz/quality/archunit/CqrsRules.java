@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * CQRS on top of hexagonal: commands and queries are immutable records; query handlers never depend
- * on command handlers or write ports.
+ * CQRS sobre hexagonal: los comandos y las consultas son records inmutables; los handlers de
+ * consulta nunca dependen de los handlers de comando ni de los puertos de escritura.
  */
 public final class CqrsRules {
 

@@ -23,7 +23,7 @@ spec:
         {{- include "service.selectorLabels" . | nindent 8 }}
         axiz.io/environment: {{ .Values.environment | quote }}
       annotations:
-        # ConfigMap reload is disabled: a config change rolls the pods
+        # La recarga del ConfigMap está deshabilitada: un cambio de configuración reinicia los pods de forma escalonada
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/errors: {{ include (print $.Template.BasePath "/configmap-errors.yaml") . | sha256sum }}
     spec:
@@ -32,8 +32,8 @@ spec:
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: topology.kubernetes.io/zone
-          # ScheduleAnyway keeps scheduling when a zone is full; DoNotSchedule guarantees the
-          # spread (critical services, clusters with capacity in every zone)
+          # ScheduleAnyway sigue programando pods cuando una zona está llena; DoNotSchedule garantiza la
+          # distribución (servicios críticos, clústeres con capacidad en todas las zonas)
           whenUnsatisfiable: {{ (.Values.topologySpread | default dict).whenUnsatisfiable | default "ScheduleAnyway" }}
           labelSelector:
             matchLabels:

@@ -3,7 +3,7 @@ package pe.axiz.core.crypto;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 
-/** Explicit, versioned search equivalence. Encryption always preserves the original. */
+/** Equivalencia de búsqueda explícita y versionada. El cifrado siempre preserva el original. */
 public record FieldProtectionPolicy(
     String purpose,
     String fieldType,
@@ -23,7 +23,10 @@ public record FieldProtectionPolicy(
     return new FieldProtectionPolicy(purpose, fieldType, "identity", 1, UnaryOperator.identity());
   }
 
-  /** Peruvian DNI: eight ASCII digits, including leading zeroes; no implicit normalization. */
+  /**
+   * DNI peruano: ocho dígitos ASCII, incluidos los ceros a la izquierda; sin normalización
+   * implícita.
+   */
   public static FieldProtectionPolicy dniPe(String purpose) {
     return new FieldProtectionPolicy(
         purpose,

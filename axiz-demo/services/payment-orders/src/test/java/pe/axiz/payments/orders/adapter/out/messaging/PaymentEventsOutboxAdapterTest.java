@@ -22,22 +22,22 @@ import pe.axiz.payments.orders.domain.PaymentOrder;
 import pe.axiz.payments.orders.domain.PaymentStatus;
 import pe.axiz.spring.outbox.TransactionalEvents;
 
-/** The events the outbox receives: destination, type, aggregate and payload of each. */
+/** Los eventos que recibe el outbox: destino, tipo, agregado y payload de cada uno. */
 class PaymentEventsOutboxAdapterTest {
 
   /**
-   * Enqueued event as the adapter hands it over.
+   * Evento encolado tal como lo entrega el adaptador.
    *
-   * @param destination destination
-   * @param type type
-   * @param aggregateType aggregate type
-   * @param aggregateId aggregate id
+   * @param destination destino
+   * @param type tipo
+   * @param aggregateType tipo de agregado
+   * @param aggregateId id del agregado
    * @param payload payload
    */
   record Enqueued(
       String destination, String type, String aggregateType, String aggregateId, Object payload) {}
 
-  /** Records instead of writing to the outbox table. */
+  /** Registra en lugar de escribir en la tabla del outbox. */
   static final class Recording extends TransactionalEvents {
     final List<Enqueued> events = new ArrayList<>();
 

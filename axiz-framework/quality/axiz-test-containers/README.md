@@ -55,10 +55,9 @@ reutilizan la imagen identificada por el contenido de la receta.
 Ejecuta como UID/GID 1000, con código y ejecutables no modificables por ese usuario.
 Los datos y la caché se escriben en `/var/lib/localstack` y los temporales en `/tmp`.
 
-Para migrar desde `AxizContainers.LOCALSTACK`, usar `AxizContainers.localstack()` o
-`TestContainerImages.localstack()` y aplicar `withServices(...)` al contenedor.
-La constante anterior se retiró para impedir que las pruebas sigan usando la imagen
-sin corregir. No sustituirla por un nombre de imagen fijo en cada consumidor.
+Para LocalStack se usa `AxizContainers.localstack()` o `TestContainerImages.localstack()` y se
+aplica `withServices(...)` al contenedor, de modo que las pruebas usen siempre la imagen corregida.
+No se sustituye por un nombre de imagen fijo en cada consumidor.
 
 Testcontainers mantiene activo Ryuk. `PatchedRyukImageSubstitutor` construye su
 fuente oficial 0.14.0 con Go 1.27.4 y el cliente Docker mantenido; la preparación

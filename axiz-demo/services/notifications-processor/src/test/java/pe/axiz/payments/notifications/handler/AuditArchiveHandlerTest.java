@@ -13,7 +13,7 @@ import pe.axiz.core.storage.InMemoryObjectStorage;
 import pe.axiz.payments.notifications.event.AuditRecord;
 import pe.axiz.payments.notifications.repository.archive.AuditArchive;
 
-/** Audit events of the queue end up in the archive. */
+/** Los eventos de auditoría de la cola terminan en el archivo. */
 class AuditArchiveHandlerTest {
 
   final InMemoryObjectStorage storage = new InMemoryObjectStorage();

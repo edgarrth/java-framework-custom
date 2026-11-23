@@ -4,15 +4,15 @@ import pe.axiz.payments.bankingcore.domain.Movement;
 import pe.axiz.payments.bankingcore.domain.MovementOrder;
 
 /**
- * Accounts of the core banking system. Implementations translate core errors to {@code
- * IntegrationErrors}; every call carries the caller's idempotency key so the core never posts a
- * movement twice.
+ * Cuentas del sistema core bancario. Las implementaciones traducen los errores del core a {@code
+ * IntegrationErrors}; cada llamada lleva la clave de idempotencia del invocador para que el core
+ * nunca contabilice un movimiento dos veces.
  */
 public interface CoreAccounts {
 
   Movement debit(MovementOrder order, String idempotencyKey);
 
-  /** Reverses a debit; unknown movements raise {@code NotFoundException}. */
+  /** Revierte un débito; los movimientos desconocidos lanzan {@code NotFoundException}. */
   Movement reverse(String movementId, String idempotencyKey);
 
   Movement credit(MovementOrder order, String idempotencyKey);

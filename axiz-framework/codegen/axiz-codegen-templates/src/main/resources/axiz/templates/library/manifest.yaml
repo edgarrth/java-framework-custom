@@ -1,4 +1,4 @@
-# Library template set: a plain Java (layer 1) library published to GitHub Packages.
+# Conjunto de plantillas de biblioteca: una biblioteca Java simple (capa 1) publicada en GitHub Packages.
 files:
   - {template: /shared/mvnw, path: mvnw, binary: true}
   - {template: /shared/mvnw.cmd, path: mvnw.cmd, binary: true}

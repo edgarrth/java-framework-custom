@@ -21,9 +21,10 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /**
- * The demo must show every capability of the axiz catalog: each one needs an entry in
- * coverage.yaml, declared by the service or executable example and evidenced by a successful,
- * current JUnit operation. A dependency, comment, YAML setting or skipped test is not execution.
+ * La demo debe mostrar cada capacidad del catálogo de axiz: cada una necesita una entrada en
+ * coverage.yaml, declarada por el servicio o el ejemplo ejecutable y respaldada por una operación
+ * JUnit exitosa y vigente. Una dependencia, un comentario, un ajuste YAML o una prueba omitida no
+ * cuentan como ejecución.
  */
 class CapabilityCoverageTest {
 
@@ -181,7 +182,8 @@ class CapabilityCoverageTest {
     try (InputStream in = CapabilityCoverageTest.class.getResourceAsStream("/variants.yaml")) {
       variants = (Map<String, List<String>>) yaml(Objects.requireNonNull(in));
     }
-    // The authoritative catalog owns stacks and persistence; variants.yaml only adds operations.
+    // El catálogo de referencia define los stacks y la persistencia; variants.yaml solo agrega
+    // operaciones.
     try (InputStream in =
         CapabilityCoverageTest.class.getResourceAsStream("/axiz/archetypes/capabilities.yaml")) {
       var document = (Map<String, Object>) yaml(Objects.requireNonNull(in));

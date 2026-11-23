@@ -3,7 +3,8 @@ package pe.axiz.core.tokenization.vault;
 import java.util.Objects;
 
 /**
- * Immutable wrapping-key transition issued after privileged protocol checks, not an IAM credential.
+ * Transición inmutable de clave de envoltura emitida tras las verificaciones del protocolo
+ * privilegiado, no una credencial IAM.
  */
 public final class WrappingKeyTransition {
   private final WrappingKeyState expected;

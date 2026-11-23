@@ -1,7 +1,7 @@
-# Checks shared by every pull request of any axiz repository: Conventional Commits title, secret
-# scanning, dependency review, static security analysis (Semgrep), filesystem scan (Trivy) and the
-# repository's own workflows (actionlint). Build, tests and quality gates run in lib-build or
-# service-build, which callers also trigger on pull requests.
+# Verificaciones compartidas por cada pull request de cualquier repositorio de axiz: título con Conventional
+# Commits, escaneo de secretos, revisión de dependencias, análisis estático de seguridad (Semgrep), escaneo
+# del sistema de archivos (Trivy) y los workflows propios del repositorio (actionlint). El build, las pruebas
+# y los quality gates se ejecutan en lib-build o service-build, que los invocadores también lanzan en los pull requests.
 name: pr
 on:
   workflow_call:
@@ -79,7 +79,7 @@ jobs:
           docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
             git /repo "${config[@]}" --log-opts="$BASE..$HEAD" --redact --verbose
       - name: Naming guard (identifiers that must never appear in axiz code)
-        # the forbidden names live in an organization secret, so the repositories never contain them
+        # los nombres prohibidos residen en un secreto de la organización, por lo que los repositorios nunca los contienen
         env:
           PATTERNS: ${{ secrets.AXIZ_NAMING_GUARD }}
           OPTIONAL: ${{ vars.AXIZ_NAMING_GUARD_OPTIONAL }}
@@ -94,10 +94,10 @@ jobs:
             cut -d: -f1,2 "$RUNNER_TEMP/hits.txt"
             exit 1
           fi
-      # Immutable release; the dependency guard is validated by check_workflow_security.
+      # Release inmutable; check_workflow_security valida la protección de dependencias.
       # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
       - name: Release state and source versions are consistent
-        # Exact immutable internal release; fail-closed verification is checked by workflow policy.
+        # Release interna inmutable y exacta; la política de workflows comprueba la verificación que falla de forma cerrada.
         # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
         uses: edgarrth/java-framework-custom/.github/actions/check-release-versions@axiz-workflows-v2.0.0 # x-release-please-version
       - name: Enforce minimum vulnerability threshold
@@ -125,7 +125,7 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-      # Exact immutable internal release, verified before fetching its tool lock.
+      # Release interna inmutable y exacta, verificada antes de obtener el lock de sus herramientas.
       # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
@@ -169,7 +169,7 @@ jobs:
           format: sarif
           output: trivy.sarif
           exit-code: "1"
-      # Exact immutable internal release: evaluate code and schema cannot come from the PR.
+      # Release interna inmutable y exacta: el código y el esquema de evaluación no pueden provenir del PR.
       - name: Complete vulnerability evidence and protected risk deadlines
         # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
         uses: edgarrth/java-framework-custom/.github/actions/check-vulnerabilities@axiz-workflows-v2.0.0 # x-release-please-version
@@ -217,13 +217,13 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
-      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
       # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
       - uses: edgarrth/java-framework-custom/.github/actions/check-workflow-security@axiz-workflows-v2.0.0 # x-release-please-version
       - name: actionlint (workflows of the repository)
         run: |
           if ls .github/workflows/*.y*ml > /dev/null 2>&1; then
-            # pinned version and SHA-256 (from the release checksums file): verified before running it
+            # versión fijada y SHA-256 (del archivo de checksums de la release): se verifica antes de ejecutarlo
             curl -fsSL -o actionlint.tar.gz https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz
             echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  actionlint.tar.gz" | sha256sum -c -
             tar xzf actionlint.tar.gz actionlint

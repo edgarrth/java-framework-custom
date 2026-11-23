@@ -21,7 +21,7 @@ import pe.axiz.spring.outbox.ReactiveTransactionalEvents;
 import pe.axiz.structure.hexagonal.ReactiveDomainEventSink;
 import pe.axiz.structure.hexagonal.ReactiveUseCase;
 
-/** Reactive hexagonal use cases, selected by the service execution stack. */
+/** Casos de uso hexagonales reactivos, seleccionados según la pila de ejecución del servicio. */
 @AutoConfiguration(after = AxizHexagonalAutoConfiguration.class)
 @ConditionalOnClass(name = "reactor.core.publisher.Mono")
 public class AxizReactiveHexagonalAutoConfiguration {

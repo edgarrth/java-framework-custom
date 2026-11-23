@@ -3,11 +3,11 @@ package pe.axiz.payments.bankingcore.domain;
 import java.util.Objects;
 
 /**
- * A movement posted by the core banking system.
+ * Movimiento contabilizado por el sistema core bancario.
  *
- * @param id core movement id
- * @param status posted or reversed
- * @param reference business reference (operation number or the reversed movement id)
+ * @param id id del movimiento en el core
+ * @param status contabilizado o revertido
+ * @param reference referencia de negocio (número de operación o id del movimiento revertido)
  */
 public record Movement(String id, MovementStatus status, String reference) {
 

@@ -11,26 +11,26 @@ import org.springframework.security.util.SimpleMethodInvocation;
 import org.springframework.web.method.HandlerMethod;
 
 /**
- * Decides which handler methods are authorized before their arguments are read.
+ * Decide qué métodos handler están autorizados antes de leer sus argumentos.
  *
- * <p>Spring resolves and validates {@code @RequestBody} and other arguments before the
- * {@code @PreAuthorize} interceptor of the controller runs: a caller without the required scope
- * would receive a 400 listing the fields of the contract instead of a 403. A {@code @PreAuthorize}
- * expression that does not read method arguments ({@code #name}, {@code #p0}) is evaluated against
- * the handler before binding, so an unauthorized caller learns nothing about the endpoint. The
- * method interceptor still evaluates it afterwards; expressions that read arguments keep that
- * single, later evaluation.
+ * <p>Spring resuelve y valida {@code @RequestBody} y los demás argumentos antes de que se ejecute
+ * el interceptor {@code @PreAuthorize} del controlador: un invocante sin el scope requerido
+ * recibiría un 400 que lista los campos del contrato en lugar de un 403. Una expresión
+ * {@code @PreAuthorize} que no lee argumentos del método ({@code #name}, {@code #p0}) se evalúa
+ * contra el handler antes del binding, de modo que un invocante no autorizado no averigua nada
+ * sobre el endpoint. El interceptor de métodos igualmente la evalúa después; las expresiones que
+ * leen argumentos conservan esa única evaluación posterior.
  */
 final class PreBindingAuthorization {
 
   private final Map<Method, Boolean> eligible = new ConcurrentHashMap<>();
 
-  /** Whether the handler's effective {@code @PreAuthorize} can be decided without arguments. */
+  /** Indica si el {@code @PreAuthorize} efectivo del handler puede decidirse sin argumentos. */
   boolean appliesTo(HandlerMethod handler) {
     return eligible.computeIfAbsent(handler.getMethod(), method -> decidable(handler));
   }
 
-  /** An invocation of the handler with no arguments bound, for argument-free expressions. */
+  /** Invocación del handler sin argumentos enlazados, para expresiones sin argumentos. */
   static MethodInvocation invocation(HandlerMethod handler) {
     Method method = handler.getMethod();
     return new SimpleMethodInvocation(

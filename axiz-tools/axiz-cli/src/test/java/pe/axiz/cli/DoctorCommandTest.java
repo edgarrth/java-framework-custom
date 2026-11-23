@@ -17,7 +17,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import pe.axiz.codegen.project.ProjectManifest;
 
-/** What {@code axiz doctor} reports on a generated service and on each kind of drift. */
+/**
+ * Lo que {@code axiz doctor} informa sobre un servicio generado y sobre cada tipo de desviación.
+ */
 class DoctorCommandTest {
 
   static DoctorCommand doctor() {
@@ -77,8 +79,9 @@ class DoctorCommandTest {
               .orElseThrow();
     }
     String annotated = Files.readString(application);
-    // Scoped contracts also generate instrumented authorization tests. Remove every explicit
-    // extension so this project-level check does not accidentally find one in another class.
+    // Los contratos con alcances también generan pruebas de autorización instrumentadas. Se elimina
+    // cada extensión explícita para que esta verificación a nivel de proyecto no encuentre por
+    // accidente una en otra clase.
     try (var sources = Files.walk(project.resolve("src/test/java"))) {
       for (Path source : sources.filter(path -> path.toString().endsWith(".java")).toList()) {
         String text = Files.readString(source);

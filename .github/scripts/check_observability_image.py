@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise OTLP ingestion and Grafana queries against the actual local LGTM image."""
+"""Ejercita la ingesta OTLP y las consultas de Grafana contra la imagen LGTM local real."""
 import argparse
 import base64
 import json
@@ -19,7 +19,7 @@ def docker(*args):
 def request(url, payload=None, authenticated=False):
     headers = {'Content-Type': 'application/json'}
     if authenticated:
-        # A disposable, loopback-only development container; no external credential.
+                # Un contenedor de desarrollo desechable y solo de loopback; sin credenciales externas.
         headers['Authorization'] = 'Basic ' + base64.b64encode(b'admin:local-only').decode()
     body = json.dumps(payload).encode() if payload is not None else None
     with urllib.request.urlopen(urllib.request.Request(url, body, headers), timeout=10) as response:

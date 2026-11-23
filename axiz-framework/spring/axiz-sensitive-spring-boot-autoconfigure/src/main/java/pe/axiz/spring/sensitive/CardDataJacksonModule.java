@@ -16,7 +16,10 @@ import tools.jackson.databind.ValueSerializer;
 import tools.jackson.databind.deser.std.StdDeserializer;
 import tools.jackson.databind.module.SimpleModule;
 
-/** Card types are masked by default; a revealing module belongs to one explicit outbound client. */
+/**
+ * Los tipos de tarjeta se enmascaran por defecto; un módulo que los revela pertenece a un único
+ * cliente saliente explícito.
+ */
 public final class CardDataJacksonModule extends SimpleModule {
   private static final long serialVersionUID = 1L;
 

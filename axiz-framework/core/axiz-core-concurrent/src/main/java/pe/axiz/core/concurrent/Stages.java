@@ -12,23 +12,25 @@ import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.context.RequestContext;
 
-/**
- * Composes native asynchronous I/O and propagates downstream cancellation to the active operation.
- */
+/** Compone E/S asíncrona nativa y propaga la cancelación aguas abajo a la operación activa. */
 public final class Stages {
   private static final ThreadLocal<@Nullable ContextProvider> CONTEXT = new ThreadLocal<>();
 
   private Stages() {}
 
   /**
-   * Supplies an immutable callback snapshot; scopes are opened and closed on the executing thread.
+   * Suministra un snapshot inmutable para callbacks; los scopes se abren y cierran en el hilo que
+   * ejecuta.
    */
   @FunctionalInterface
   public interface ContextProvider {
     Supplier<RequestContext.Scope> capture();
   }
 
-  /** Installs a capture provider only for the current submission/callback scope, never globally. */
+  /**
+   * Instala un proveedor de captura solo para el scope actual de envío o callback, nunca de forma
+   * global.
+   */
   public static RequestContext.Scope context(ContextProvider provider) {
     Objects.requireNonNull(provider);
     ContextProvider previous = CONTEXT.get();
@@ -39,9 +41,12 @@ public final class Stages {
     };
   }
 
-  /** Registers a completion with its caller's context and reports context failures to its owner. */
+  /**
+   * Registra una finalización con el contexto de su llamador e informa los fallos de contexto a su
+   * propietario.
+   */
   @SuppressWarnings(
-      "FutureReturnValueIgnored") // Callback and scope failures are explicitly routed to the owner.
+      "FutureReturnValueIgnored") // Los fallos de callback y de scope se envían al propietario.
   public static <T extends @Nullable Object> void observe(
       CompletionStage<T> source,
       BiConsumer<? super T, ? super Throwable> callback,
@@ -65,7 +70,7 @@ public final class Stages {
         });
   }
 
-  /** Invokes native asynchronous I/O, turning synchronous submission failures into the stage. */
+  /** Invoca E/S asíncrona nativa y convierte los fallos síncronos de envío en la etapa. */
   public static <T> CompletionStage<T> call(Supplier<CompletionStage<T>> work) {
     Objects.requireNonNull(work);
     try {
@@ -81,14 +86,14 @@ public final class Stages {
   }
 
   /**
-   * Pure conversion of an owned value. Always releases the input, including late completion after
-   * cancellation, and discards an output that could not be delivered. The mapper returns an
-   * independent non-null value. CPU-only callbacks run on the completion thread without ambient
-   * context restoration, so cleanup cannot be bypassed by a failed context accessor. Cleanup
-   * callbacks must not throw.
+   * Conversión pura de un valor propio. Siempre libera la entrada, incluida una finalización tardía
+   * tras la cancelación, y descarta una salida que no pudo entregarse. El mapper devuelve un valor
+   * no null independiente. Los callbacks solo de CPU corren en el hilo de finalización sin
+   * restaurar el contexto ambiental, de modo que un accesor de contexto fallido no puede saltarse
+   * la limpieza. Los callbacks de limpieza no deben lanzar excepciones.
    */
   @SuppressWarnings(
-      "FutureReturnValueIgnored") // Completion, conversion and cleanup are handled here.
+      "FutureReturnValueIgnored") // La finalización, la conversión y la limpieza se manejan aquí.
   public static <T, R> CompletionStage<R> consume(
       CompletionStage<T> source,
       Function<T, R> mapper,
@@ -134,7 +139,10 @@ public final class Stages {
     return result;
   }
 
-  /** Adapts a nullable completion (for example an empty reactive source) to a required value. */
+  /**
+   * Adapta una finalización que admite null (por ejemplo una fuente reactiva vacía) a un valor
+   * obligatorio.
+   */
   public static <T> CompletionStage<T> requireValue(CompletionStage<@Nullable T> source) {
     Objects.requireNonNull(source);
     CompletableFuture<T> result =
@@ -230,12 +238,14 @@ public final class Stages {
     return result;
   }
 
-  /** Completion without a payload, preserving cancellation of the native operation. */
+  /** Finalización sin payload, que preserva la cancelación de la operación nativa. */
   public static CompletionStage<Void> ignore(CompletionStage<?> source) {
     return compose(source, ignored -> CompletableFuture.completedFuture(null));
   }
 
-  /** Handles a best-effort side effect failure without inventing a non-null Void payload. */
+  /**
+   * Maneja el fallo de un efecto secundario de mejor esfuerzo sin inventar un payload Void no null.
+   */
   public static CompletionStage<Void> settle(
       CompletionStage<Void> source, Consumer<Throwable> failure) {
     CompletableFuture<Void> result =

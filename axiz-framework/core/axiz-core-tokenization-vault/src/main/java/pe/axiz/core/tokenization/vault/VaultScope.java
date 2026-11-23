@@ -10,7 +10,10 @@ import pe.axiz.core.tokenization.TokenDomain;
 import pe.axiz.core.tokenization.TokenErrors;
 import pe.axiz.core.tokenization.TokenType;
 
-/** Length-framed scope; same bytes are used for persistence keys and authenticated binding. */
+/**
+ * Alcance delimitado por longitud; los mismos bytes se usan para las claves de persistencia y el
+ * enlace autenticado.
+ */
 public record VaultScope(
     TokenType type, String tenant, TokenDomain domain, String profileId, int canonicalVersion) {
   public VaultScope {

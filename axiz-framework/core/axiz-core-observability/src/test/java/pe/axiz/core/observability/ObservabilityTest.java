@@ -85,7 +85,7 @@ class ObservabilityTest {
         obs.start(AxizObservations.QUERY, "list-payments", Map.of(), Map.of());
     assertEquals(0, handler.stopped.size(), "still running");
     ok.succeed();
-    ok.fail(new IllegalStateException("late")); // ignored: already finished
+    ok.fail(new IllegalStateException("late")); // se ignora: ya terminó
     assertEquals(1, handler.stopped.size());
     assertEquals(
         "success",

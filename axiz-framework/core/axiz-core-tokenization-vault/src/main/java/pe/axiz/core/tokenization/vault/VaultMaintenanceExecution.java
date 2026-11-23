@@ -10,9 +10,12 @@ import pe.axiz.core.tokenization.TokenErrors;
 import pe.axiz.core.tokenization.vault.VaultMaintenanceEvent.Action;
 import pe.axiz.core.tokenization.vault.VaultMaintenanceEvent.Result;
 
-/** Shared authorization, confirmed audit and uncertainty handling for privileged vault jobs. */
+/**
+ * Autorización, auditoría confirmada y manejo de incertidumbre compartidos para los jobs
+ * privilegiados de la bóveda.
+ */
 final class VaultMaintenanceExecution {
-  /** Preserves classification through nested jobs without retaining the provider failure. */
+  /** Preserva la clasificación a través de jobs anidados sin retener el fallo del proveedor. */
   private static final class IntegrityFailure extends BusinessException {
     IntegrityFailure() {
       super(TokenErrors.UNAVAILABLE, "Vault maintenance integrity verification failed");
@@ -51,7 +54,8 @@ final class VaultMaintenanceExecution {
 
   void authorize(TokenCaller caller, Action action, String keyset, @Nullable VaultRecord row) {
     if (!caller.authorities().contains(authority)) throw TokenErrors.failure(TokenErrors.DENIED);
-    // A separate mandatory policy must grant cross-tenant administration explicitly.
+    // Una política obligatoria separada debe conceder explícitamente la administración entre
+    // tenants.
     access.check(caller, action, keyset, row == null ? null : row.scope());
   }
 
@@ -116,7 +120,7 @@ final class VaultMaintenanceExecution {
           try {
             alarm.failed(operation);
           } catch (RuntimeException alertFailure) {
-            /* Preserve uncertainty. */
+            /* Se preserva la incertidumbre. */
           }
         }
       }

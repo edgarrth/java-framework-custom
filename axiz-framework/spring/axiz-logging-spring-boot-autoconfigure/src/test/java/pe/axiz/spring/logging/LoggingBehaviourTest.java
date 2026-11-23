@@ -36,7 +36,9 @@ import pe.axiz.core.sensitive.ObjectMasker;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/** Operation logs, the HTTP access log on both stacks, and the logging defaults. */
+/**
+ * Logs de operaciones, el log de acceso HTTP en ambas pilas y los valores por defecto de logging.
+ */
 @ExtendWith(OutputCaptureExtension.class)
 class LoggingBehaviourTest {
 
@@ -72,7 +74,7 @@ class LoggingBehaviourTest {
     assertThat(response.getContentAsString()).isEqualTo("synthetic-revealed-canary");
   }
 
-  /** Every public method is an operation (annotation on the type). */
+  /** Cada método público es una operación (anotación en el tipo). */
   @LogOperation(logArguments = false, logResult = true)
   public static class Statements {
     public String latest(String account) {

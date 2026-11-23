@@ -52,7 +52,10 @@ import pe.axiz.spring.foundation.DispatchBoundary;
 import pe.axiz.spring.jdbc.SpringConnectionProvider;
 import pe.axiz.spring.jdbc.SpringTransactionRunner;
 
-/** Real commits and rollbacks with one connection expose publication at the wrong boundary. */
+/**
+ * Los commits y rollbacks reales con una sola conexión exponen una publicación en la frontera
+ * incorrecta.
+ */
 @Timeout(20)
 class AuditBoundaryRegressionTest {
   @Configuration(proxyBeanMethods = false)

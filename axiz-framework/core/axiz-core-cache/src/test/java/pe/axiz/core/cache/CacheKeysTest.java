@@ -24,7 +24,9 @@ import java.util.TreeMap;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
-/** Two different argument lists never share a key; equal ones always do. */
+/**
+ * Dos listas de argumentos distintas nunca comparten una clave; las iguales siempre la comparten.
+ */
 class CacheKeysTest {
 
   enum Channel {
@@ -90,7 +92,7 @@ class CacheKeysTest {
 
   @Test
   void arraysKeepTheirComponentType() {
-    // the audit case: a method taking Object received int[]{7} and then Integer[]{7}
+    // un método que recibe Object recibió int[]{7} y luego Integer[]{7}
     assertNotEquals(CacheKeys.of((Object) new int[] {7}), CacheKeys.of((Object) new Integer[] {7}));
     assertNotEquals(CacheKeys.of((Object) new int[] {7}), CacheKeys.of((Object) new long[] {7}));
     assertNotEquals(

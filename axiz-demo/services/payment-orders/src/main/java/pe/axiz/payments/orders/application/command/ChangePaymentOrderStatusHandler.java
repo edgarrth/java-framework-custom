@@ -10,7 +10,7 @@ import pe.axiz.payments.orders.application.port.out.PaymentOrders;
 import pe.axiz.payments.orders.domain.PaymentOrder;
 import pe.axiz.payments.orders.domain.PaymentStatus;
 
-/** Applies a status change and publishes {@code payment-order.status-changed}. */
+/** Aplica un cambio de estado y publica {@code payment-order.status-changed}. */
 public class ChangePaymentOrderStatusHandler
     implements CommandHandler<ChangePaymentOrderStatusCommand, PaymentOrder> {
 
@@ -32,13 +32,13 @@ public class ChangePaymentOrderStatusHandler
             .find(c.orderId())
             .orElseThrow(() -> new NotFoundException("payment-order", c.orderId()));
     if (order.status() == c.status()) {
-      return order; // retried request: already applied
+      return order; // solicitud reintentada: ya aplicada
     }
     PaymentStatus previous = order.status();
     order.moveTo(c.status(), c.reason());
     orders.save(order);
     if (order.status() == PaymentStatus.REJECTED) {
-      // the money will not move: give the amount back to the customer's daily limit
+      // el dinero no se moverá: se devuelve el monto al límite diario del cliente
       orders.releaseDaily(order.customerId(), order.amount(), order.processingDate());
     }
     events.statusChanged(order, previous);

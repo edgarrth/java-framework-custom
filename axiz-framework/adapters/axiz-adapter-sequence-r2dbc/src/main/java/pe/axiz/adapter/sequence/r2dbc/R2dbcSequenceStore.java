@@ -6,7 +6,7 @@ import pe.axiz.kit.r2dbc.SqlParams;
 import pe.axiz.kit.sql.SqlIdentifiers;
 import reactor.core.publisher.Mono;
 
-/** Atomic PostgreSQL counter blocks, using an independent connection and transaction. */
+/** Bloques de contador atómicos en PostgreSQL, con conexión y transacción independientes. */
 public final class R2dbcSequenceStore implements ReactiveSequenceStore {
   private final R2dbcSql sql;
   private final String table;

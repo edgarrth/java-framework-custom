@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 class PolicyTest(unittest.TestCase):
     def setUp(self):
         self.document = yaml.safe_load((ROOT / 'workflows/lib-build.yaml').read_text())
-        # This is an unprivileged caller fixture; closed signer roles are tested separately.
+                # Es un fixture de un invocador sin privilegios; los roles de firmante cerrados se prueban por separado.
         del self.document['jobs']['sign']
         self.document['jobs']['consumer'] = {
             'needs': GUARD, 'uses': 'edgarrth/java-framework-custom/.github/workflows/lib-build.yaml@axiz-workflows-v' + (ROOT / 'version.txt').read_text().strip(),

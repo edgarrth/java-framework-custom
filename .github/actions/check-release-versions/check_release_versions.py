@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the central Release Please state and the independent monorepo component versions."""
+"""Verifica el estado central de Release Please y las versiones independientes de los componentes del monorepo."""
 import json
 from pathlib import Path
 import re

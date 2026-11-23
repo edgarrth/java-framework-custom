@@ -6,7 +6,8 @@ import pe.axiz.spring.foundation.ReactiveStages;
 import reactor.core.publisher.Mono;
 
 /**
- * Spring facade for native audit delivery. R2DBC implementations retain the subscriber transaction.
+ * Fachada de Spring para la entrega nativa de auditoría. Las implementaciones R2DBC conservan la
+ * transacción del suscriptor.
  */
 @FunctionalInterface
 public interface ReactiveAuditPublisher {

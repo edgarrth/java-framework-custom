@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Summarize affected npm packages and resolve advisory references through the via graph."""
+"""Resume los paquetes npm afectados y resuelve las referencias de advisories a través del grafo via."""
 import argparse
 from collections import Counter
 import json
@@ -27,7 +27,7 @@ def summarize(audit):
     for name,entry in sorted(packages.items()):
         resolved=references(name,[])
         if not resolved:raise ValueError('Affected npm package has no resolvable advisory: '+name)
-        # Retain different dependency paths, but remove duplicate graph edges.
+        # Se conservan las distintas rutas de dependencias, pero se eliminan las aristas duplicadas del grafo.
         unique={json.dumps(row,sort_keys=True):row for row in resolved}
         rows.append({'package':name,'severity':entry['severity'],'isDirect':entry['isDirect'],
                      'range':entry.get('range'),'fixAvailable':entry.get('fixAvailable'),

@@ -31,15 +31,16 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.SignalType;
 
 /**
- * Reactive counterpart of {@link IdempotencyFilter}: for unsafe requests it fingerprints the
- * buffered body (method, path, query string as sent and body) and hands it to the advice through
- * the Reactor context; the advice decides after method authorization. When the handler proceeded,
- * the captured response (up to {@code maxResponseSize}) is stored; a larger body still streams to
- * the client and only its status and headers are stored.
+ * Contraparte reactiva de {@link IdempotencyFilter}: para las solicitudes no seguras calcula la
+ * huella del cuerpo en búfer (método, ruta, query string tal como se envió y cuerpo) y la entrega
+ * al advice mediante el contexto de Reactor; el advice decide después de la autorización de
+ * métodos. Cuando el handler continuó, se almacena la respuesta capturada (hasta {@code
+ * maxResponseSize}); un cuerpo mayor igualmente se transmite al cliente y solo se almacenan su
+ * estado y sus cabeceras.
  */
 public final class IdempotencyWebFilter implements WebFilter, Ordered {
 
-  /** After Spring Security's {@code WebFilterChainProxy} (order -100). */
+  /** Después del {@code WebFilterChainProxy} de Spring Security (orden -100). */
   public static final int ORDER = Ordered.LOWEST_PRECEDENCE - 100;
 
   private static final Logger LOG = LoggerFactory.getLogger(IdempotencyWebFilter.class);
@@ -149,8 +150,8 @@ public final class IdempotencyWebFilter implements WebFilter, Ordered {
           @Override
           public Mono<Void> writeAndFlushWith(
               Publisher<? extends Publisher<? extends DataBuffer>> body) {
-            // streamed (flushed) responses are stored without body: replaying a stream is not
-            // supported, its status and headers are
+            // las respuestas transmitidas (con flush) se almacenan sin cuerpo: no se admite
+            // reproducir un stream, sí su estado y sus cabeceras
             captured.markOverflowed();
             return super.writeAndFlushWith(body)
                 .doFinally(
@@ -189,7 +190,7 @@ public final class IdempotencyWebFilter implements WebFilter, Ordered {
       IdempotencyExchange state, ServerHttpResponseDecorator response, BoundedCapture captured) {
     IdempotencyService.Proceed execution = state.execution();
     if (execution == null) {
-      return Mono.empty(); // not idempotent, rejected before deciding, or a replay
+      return Mono.empty(); // no idempotente, rechazada antes de decidir, o una reproducción
     }
     if (state.noEffect)
       return ReactiveStages.from(() -> service.releaseWithoutEffect(execution))

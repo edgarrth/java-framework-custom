@@ -9,8 +9,8 @@ import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.id.IdGenerator;
 
 /**
- * Builds envelopes with the service source, a type prefix and context extensions (correlation,
- * tenant and propagated business headers).
+ * Construye envelopes con el source del servicio, un prefijo de tipo y extensiones de contexto
+ * (correlación, tenant y cabeceras de negocio propagadas).
  */
 public final class EventFactory {
 
@@ -31,14 +31,14 @@ public final class EventFactory {
   }
 
   /**
-   * Creates an envelope.
+   * Crea un envelope.
    *
-   * @param eventId id to use (the domain event id) or null to generate one
-   * @param type event type without prefix, e.g. {@code order-placed.v1}
-   * @param subject aggregate id
-   * @param payload payload object
-   * @param metadata request metadata to propagate, or null
-   * @return the envelope
+   * @param eventId id a usar (el id del evento de dominio) o null para generar uno
+   * @param type tipo de evento sin prefijo, por ejemplo {@code order-placed.v1}
+   * @param subject id del agregado
+   * @param payload objeto payload
+   * @param metadata metadatos de la petición a propagar, o null
+   * @return el envelope
    */
   public EventEnvelope create(
       @Nullable String eventId,

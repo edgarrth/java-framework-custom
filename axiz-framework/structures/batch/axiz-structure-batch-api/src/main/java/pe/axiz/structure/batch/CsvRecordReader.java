@@ -12,9 +12,9 @@ import pe.axiz.core.fileformats.CsvReader;
 import pe.axiz.core.fileformats.FileFormatException;
 
 /**
- * CSV records mapped to objects; the header can be skipped and blank lines are ignored.
+ * Registros CSV mapeados a objetos; la cabecera puede omitirse y las líneas en blanco se ignoran.
  *
- * @param <T> record type
+ * @param <T> tipo del registro
  */
 public final class CsvRecordReader<T> implements RecordReader<T> {
 

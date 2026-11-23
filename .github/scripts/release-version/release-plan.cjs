@@ -1,5 +1,5 @@
 "use strict";
-// One Release Please planner for monorepo assertions and real local lifecycle fixtures.
+// Un único planificador de Release Please para las aserciones del monorepo y los fixtures reales del ciclo de vida local.
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");

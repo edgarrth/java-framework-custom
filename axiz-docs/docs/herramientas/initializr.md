@@ -45,7 +45,7 @@ cd axiz-tools
 java -jar axiz-initializr/target/axiz-initializr-2.0.0.jar --spring.profiles.active=local
 ```
 
-Abre <http://localhost:8090> e inicia sesión con `ana` / `local-only-ana`. El perfil `local` usa
+Se abre <http://localhost:8090> y se inicia sesión con `ana` / `local-only-ana`. El perfil `local` usa
 el puerto 8090 y un secreto de cliente `local-only`. Para el botón de GitHub hace falta una OAuth
 App propia con el callback `http://localhost:8090/authorized/github` (`AXIZ_GITHUB_CLIENT_ID`,
 `AXIZ_GITHUB_CLIENT_SECRET`).

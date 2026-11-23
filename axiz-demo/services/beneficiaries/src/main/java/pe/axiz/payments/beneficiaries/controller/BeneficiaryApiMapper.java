@@ -6,7 +6,7 @@ import pe.axiz.payments.beneficiaries.model.NewBeneficiary;
 import pe.axiz.payments.beneficiaries.model.api.BeneficiaryPage;
 import pe.axiz.payments.beneficiaries.model.api.BeneficiaryRequest;
 
-/** Maps between the contract models and the service model. */
+/** Convierte entre los modelos del contrato y el modelo del servicio. */
 final class BeneficiaryApiMapper {
 
   private BeneficiaryApiMapper() {}

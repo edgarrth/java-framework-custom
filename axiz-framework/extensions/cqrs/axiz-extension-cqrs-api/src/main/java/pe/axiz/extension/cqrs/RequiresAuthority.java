@@ -6,12 +6,14 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** Authorities (any of them) the caller needs to send a command or query. */
+/**
+ * Autoridades (cualquiera de ellas) que necesita quien llama para enviar un comando o una consulta.
+ */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface RequiresAuthority {
 
-  /** Authority names, e.g. {@code SCOPE_cards:write} or {@code ROLE_TELLER}. */
+  /** Nombres de autoridad, por ejemplo {@code SCOPE_cards:write} o {@code ROLE_TELLER}. */
   String[] value();
 }

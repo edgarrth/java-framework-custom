@@ -1,6 +1,7 @@
 /**
- * Notifications Processor: Customer notifications and audit archive. Archetype event-processor, eda
- * style, servlet stack. Types are non-null unless annotated {@code @Nullable}.
+ * Notifications Processor: notificaciones a clientes y archivo de auditoría. Arquetipo
+ * event-processor, estilo eda, stack servlet. Los tipos no son nulos salvo que se anoten con
+ * {@code @Nullable}.
  */
 @NullMarked
 package pe.axiz.payments.notifications;

@@ -9,7 +9,7 @@ import java.util.Map;
 import pe.axiz.core.storage.InMemoryObjectStorage;
 import pe.axiz.core.storage.ObjectMetadata;
 
-/** Builds settlement files for tests with the production layouts. */
+/** Construye archivos de liquidación para pruebas con los formatos de producción. */
 final class SettlementFiles {
 
   static final String VALID_CCI = "00219100123456789053";

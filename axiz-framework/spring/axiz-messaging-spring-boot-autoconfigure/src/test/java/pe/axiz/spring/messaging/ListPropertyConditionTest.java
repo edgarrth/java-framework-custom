@@ -26,8 +26,9 @@ class ListPropertyConditionTest {
 
   @Test
   void aYamlListOfTopicsEnablesTheConsumers() {
-    // a YAML list reaches the environment as indexed keys, never as "axiz.messaging.kafka.topics",
-    // so "${axiz.messaging.kafka.topics:}" resolves to "" and the consumers were never created
+    // una lista YAML llega al entorno como claves indexadas, nunca como
+    // "axiz.messaging.kafka.topics", por lo que "${axiz.messaging.kafka.topics:}" se resolvería
+    // como "" y los consumidores nunca se crearían
     assertEquals(
         List.of("payments", "audit"), topics(TOPICS + "[0]", "payments", TOPICS + "[1]", "audit"));
   }

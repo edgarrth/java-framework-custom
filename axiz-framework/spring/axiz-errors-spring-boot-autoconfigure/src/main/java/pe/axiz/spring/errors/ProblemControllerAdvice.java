@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import pe.axiz.core.api.StandardHeaders;
 import pe.axiz.core.errors.Problem;
 
-/** Converts every exception raised by MVC handlers into an RFC 9457 response. */
+/** Convierte cada excepción lanzada por los handlers de MVC en una respuesta RFC 9457. */
 @RestControllerAdvice
 @Order(Ordered.LOWEST_PRECEDENCE - 100)
 public class ProblemControllerAdvice {

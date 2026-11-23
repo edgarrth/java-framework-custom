@@ -1,4 +1,4 @@
-/** Client of the core-banking API. */
+/** Cliente de la API core-banking. */
 @NullMarked
 package pe.axiz.payments.bankingcore.adapter.out.corebanking;
 

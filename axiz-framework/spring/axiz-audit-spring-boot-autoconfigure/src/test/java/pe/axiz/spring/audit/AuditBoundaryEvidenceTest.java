@@ -25,7 +25,8 @@ import reactor.test.StepVerifier;
 import reactor.util.context.Context;
 
 /**
- * Evidence boundaries must distinguish rollback, uncertain commit and nested failure publication.
+ * Los límites de evidencia deben distinguir rollback, commit incierto y publicación de fallos
+ * anidados.
  */
 class AuditBoundaryEvidenceTest {
   @Test

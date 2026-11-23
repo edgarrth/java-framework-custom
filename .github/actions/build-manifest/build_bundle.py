@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Inventory the bytes verified by a build; never compile or promote artifacts."""
+"""Inventaría los bytes verificados por un build; nunca compila ni promueve artefactos."""
 import argparse
 import json
 import os
@@ -10,7 +10,7 @@ from manifest import canonical_hash, read_json, safe_file, sha256, validate
 
 
 def complete(data, bundle):
-    """Called only after every build gate has succeeded, using actual retained evidence."""
+    """Se invoca solo después de que todos los gates del build terminen con éxito, usando la evidencia real conservada."""
     gate_files = {"tests": "verify.log", "quality": "verify.log", "mutation": "mutation.log",
                   "encapsulation": "encapsulation.log", "sbom": "bom.json", "scan": "scan.json"}
     if data["kind"] == "service":
@@ -55,7 +55,7 @@ def complete(data, bundle):
 
 def inventory(root, version):
     entries = []
-    # Repository metadata is managed by GitHub Packages, never copied over the repository's existing version index.
+        # GitHub Packages gestiona los metadatos del repositorio; nunca se copian sobre el índice de versiones existente del repositorio.
     for path in sorted(root.rglob("*")):
         if not path.is_file() and not path.is_symlink():
             continue

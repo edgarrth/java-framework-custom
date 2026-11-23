@@ -25,7 +25,10 @@ import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.spring.foundation.BoundedAsyncDispatcher;
 
-/** Periodic memory snapshots become evidence only after an independent strict acknowledgement. */
+/**
+ * Las instantáneas periódicas en memoria solo se convierten en evidencia tras una confirmación
+ * estricta independiente.
+ */
 final class AuditMemoryCheckpoints implements SmartLifecycle, AutoCloseable {
   private static final Logger LOG = LoggerFactory.getLogger(AuditMemoryCheckpoints.class);
   private static final IdGenerator IDS = IdGenerator.uuidV7();
@@ -69,8 +72,9 @@ final class AuditMemoryCheckpoints implements SmartLifecycle, AutoCloseable {
   @Override
   public synchronized void start() {
     if (running || !isAutoStartup()) return;
-    // One worker plus one handoff slot permits sequential callbacks without caller-runs.
-    // At most two unfinished sends can survive a timeout in a misbehaving custom strict port.
+    // Un worker más un espacio de traspaso permite callbacks secuenciales sin ejecución en el hilo
+    // invocante. Como máximo dos envíos sin terminar pueden sobrevivir a un timeout en un puerto
+    // estricto personalizado defectuoso.
     dispatcher = new BoundedAsyncDispatcher("audit-checkpoint", 1, 1, timeout, null);
     timer =
         new ScheduledThreadPoolExecutor(
@@ -82,7 +86,7 @@ final class AuditMemoryCheckpoints implements SmartLifecycle, AutoCloseable {
             this::tick, interval.toNanos(), interval.toNanos(), TimeUnit.NANOSECONDS);
   }
 
-  /** Does not await I/O and never overlaps an unfinished cycle. */
+  /** No espera la E/S y nunca se superpone con un ciclo sin terminar. */
   void tick() {
     long run;
     BoundedAsyncDispatcher deliveries;
@@ -190,7 +194,9 @@ final class AuditMemoryCheckpoints implements SmartLifecycle, AutoCloseable {
         .build();
   }
 
-  /** Diagnostic snapshot; the external verifier obtains its checkpoint from the durable sink. */
+  /**
+   * Instantánea de diagnóstico; el verificador externo obtiene su checkpoint del destino durable.
+   */
   synchronized Map<String, ChainCheckpoint> confirmedSnapshots() {
     return Map.copyOf(confirmed);
   }

@@ -18,13 +18,13 @@ import pe.axiz.core.messaging.TypedEventHandler;
 import {{project.basePackage}}.event.ExampleCreated;
 
 /**
- * Reacts to {@code example.created} events. Delivery is at least once: the handler must be
- * idempotent (the inbox capability de-duplicates by event id); a failure is retried with backoff
- * and dead-lettered after the configured attempts.
+ * Reacciona a los eventos {@code example.created}. La entrega es al menos una vez: el handler debe
+ * ser idempotente (la capacidad inbox deduplica por id de evento); una falla se reintenta con
+ * backoff y se envía a dead-letter tras los intentos configurados.
 {{#stack.reactive}}
- * Non-blocking: the returned publisher runs in a reactive transaction{{#persistence.r2dbc}} (R2DBC
- * writes and outbox events commit together){{/persistence.r2dbc}} and the consumer waits for it,
- * bounded by {@code axiz.messaging.consumer.handler-timeout}.
+ * No bloqueante: el publisher devuelto se ejecuta en una transacción reactiva{{#persistence.r2dbc}}
+ * (las escrituras R2DBC y los eventos del outbox se confirman juntos){{/persistence.r2dbc}} y el
+ * consumidor lo espera, con el límite de {@code axiz.messaging.consumer.handler-timeout}.
 {{/stack.reactive}}
  */
 @Component

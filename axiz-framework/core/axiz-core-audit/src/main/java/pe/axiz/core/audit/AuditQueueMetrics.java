@@ -1,6 +1,9 @@
 package pe.axiz.core.audit;
 
-/** Read-only live measurements of an audit queue; no events or lifecycle controls are exposed. */
+/**
+ * Mediciones en vivo de solo lectura de una cola de auditoría; no se exponen eventos ni controles
+ * de ciclo de vida.
+ */
 public interface AuditQueueMetrics {
   int pending();
 

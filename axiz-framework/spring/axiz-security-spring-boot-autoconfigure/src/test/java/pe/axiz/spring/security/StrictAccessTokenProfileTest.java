@@ -36,7 +36,10 @@ import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-/** Signed adversarial tokens through both effective security chains and a real loopback JWKS. */
+/**
+ * Tokens adversariales firmados a través de ambas cadenas de seguridad efectivas y un JWKS real en
+ * loopback.
+ */
 class StrictAccessTokenProfileTest {
   private static final String ISSUER = "https://profiles.example";
   private static final String PATH = "/tenant-contract";

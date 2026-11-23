@@ -48,8 +48,8 @@ class RepositoryMetricsStartupTest {
               var registry = context.getBean(MeterRegistry.class);
               var supplier =
                   (SingletonSupplier<?>) ReflectionTestUtils.getField(listener, "registrySupplier");
-              // Inspect readiness without calling get(): invoking it would hide lazy
-              // initialization.
+              // Se inspecciona el readiness sin llamar a get(): invocarlo ocultaría la
+              // inicialización diferida.
               assertThat(ReflectionTestUtils.getField(supplier, "singletonInstance"))
                   .isSameAs(registry);
               listener.afterInvocation(invocation);

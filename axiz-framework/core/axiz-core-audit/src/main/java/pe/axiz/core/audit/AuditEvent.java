@@ -14,22 +14,22 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.commons.TransactionOutcome;
 
 /**
- * Immutable audit record of who did what, on which resource, when and with what result. Details are
- * sanitized for the audit channel before the event is built.
+ * Registro de auditoría inmutable de quién hizo qué, sobre qué recurso, cuándo y con qué resultado.
+ * Los detalles se sanean para el canal de auditoría antes de construir el evento.
  *
- * @param id unique fact identifier (for example UUIDv7 or an independent random UUIDv4)
- * @param occurredAt when it happened
- * @param service service that produced it
- * @param action action, e.g. {@code order.create}
- * @param resourceType resource type, e.g. {@code order}
- * @param resourceId resource id, if known
- * @param actor who performed it
- * @param outcome result
- * @param errorCode error code when it failed
- * @param correlationId correlation id
- * @param channel origin channel
+ * @param id identificador único del hecho (por ejemplo UUIDv7 o un UUIDv4 aleatorio independiente)
+ * @param occurredAt cuándo ocurrió
+ * @param service servicio que lo produjo
+ * @param action acción, por ejemplo {@code order.create}
+ * @param resourceType tipo de recurso, por ejemplo {@code order}
+ * @param resourceId id del recurso, si se conoce
+ * @param actor quién lo realizó
+ * @param outcome resultado
+ * @param errorCode código de error cuando falló
+ * @param correlationId id de correlación
+ * @param channel canal de origen
  * @param tenant tenant
- * @param details sanitized details
+ * @param details detalles saneados
  */
 public record AuditEvent(
     String id,
@@ -51,9 +51,9 @@ public record AuditEvent(
     @Nullable AuditIntegrity integrity,
     int detailsSanitized) {
 
-  // An explicit canonical constructor, not a compact one: javac does not write the @Nullable of a
-  // type argument on the parameters of a compact constructor, so callers in other modules would
-  // see Map<String, Object> and NullAway would reject details with null values.
+  // Constructor canónico explícito, no compacto: javac no escribe el @Nullable de un argumento de
+  // tipo en los parámetros de un constructor compacto, así que los llamadores de otros módulos
+  // verían Map<String, Object> y NullAway rechazaría detalles con valores null.
   public AuditEvent(
       String id,
       Instant occurredAt,
@@ -122,7 +122,10 @@ public record AuditEvent(
         .build();
   }
 
-  /** Deeply frozen snapshot shared by all transport representations of the same fact. */
+  /**
+   * Instantánea profundamente congelada, compartida por todas las representaciones de transporte
+   * del mismo hecho.
+   */
   @Override
   @SuppressFBWarnings(
       value = "EI_EXPOSE_REP",
@@ -157,7 +160,7 @@ public record AuditEvent(
         .build();
   }
 
-  /** Attaches the calculated seal without changing the original snapshot. */
+  /** Adjunta el sello calculado sin cambiar la instantánea original. */
   public AuditEvent withIntegrity(AuditIntegrity seal) {
     if (integrity != null) throw new IllegalStateException("An event is already sealed");
     return AuditEvent.builder()
@@ -182,16 +185,21 @@ public record AuditEvent(
         .build();
   }
 
-  /** CloudEvents type of audit events on every transport (the action travels in the data). */
+  /**
+   * Tipo CloudEvents de los eventos de auditoría en todos los transportes (la acción viaja en los
+   * datos).
+   */
   public static final String CLOUD_EVENT_TYPE = "pe.axiz.audit.event.v1";
 
   /**
-   * Transport deduplication identity: retransmissions of one attempt share it; different sealed
-   * attempts of the same fact do not. The fact identity remains id() in the audit payload.
+   * Identidad de deduplicación del transporte: las retransmisiones de un intento la comparten; los
+   * distintos intentos sellados del mismo hecho no. La identidad del hecho sigue siendo id() en el
+   * payload de auditoría.
    */
   public String deliveryId() {
     if (integrity == null) return id;
-    // '#' cannot occur in a validated chain id. Sequence and hash have unambiguous formats.
+    // '#' no puede aparecer en un id de cadena validado. La secuencia y el hash tienen formatos
+    // inequívocos.
     String identity =
         "axiz.audit.attempt.v1#"
             + integrity.chainId()
@@ -210,9 +218,10 @@ public record AuditEvent(
   }
 
   /**
-   * CloudEvents 1.0 context attributes of this event ({@code specversion}, {@code id}, {@code
-   * source}, {@code type}, {@code time}, {@code subject} and the {@code correlationid} extension
-   * when known), so publishers write proper CloudEvents in structured or binary mode.
+   * Atributos de contexto CloudEvents 1.0 de este evento ({@code specversion}, {@code id}, {@code
+   * source}, {@code type}, {@code time}, {@code subject} y la extensión {@code correlationid}
+   * cuando se conoce), para que los publicadores escriban CloudEvents correctos en modo
+   * estructurado o binario.
    */
   public Map<String, String> cloudEventAttributes() {
     Map<String, String> m = new LinkedHashMap<>();
@@ -233,18 +242,18 @@ public record AuditEvent(
     return Collections.unmodifiableMap(m);
   }
 
-  /** Result of the audited action. */
+  /** Resultado de la acción auditada. */
   public enum Outcome {
     SUCCESS,
     FAILURE
   }
 
   /**
-   * Who acted.
+   * Quién actuó.
    *
-   * @param subject end user, if any
-   * @param clientId calling application
-   * @param ip client address, if known
+   * @param subject usuario final, si existe
+   * @param clientId aplicación que llama
+   * @param ip dirección del cliente, si se conoce
    */
   public record Actor(@Nullable String subject, @Nullable String clientId, @Nullable String ip) {
     public static Actor system() {
@@ -252,7 +261,7 @@ public record AuditEvent(
     }
   }
 
-  /** JSON-friendly map (ISO-8601 instant, enum names). */
+  /** Mapa apto para JSON (instante ISO-8601, nombres de enum). */
   public Map<String, @Nullable Object> toMap() {
     Map<String, @Nullable Object> m = new LinkedHashMap<>();
     m.put("id", id);
@@ -301,12 +310,14 @@ public record AuditEvent(
     return Collections.unmodifiableMap(m);
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción nominal; build verifica los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable String id = null;
     private @Nullable Instant occurredAt = null;

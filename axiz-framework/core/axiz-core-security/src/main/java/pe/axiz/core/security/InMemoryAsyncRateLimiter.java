@@ -5,7 +5,7 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-/** Local CPU-only rate limiter; no remote I/O, threads or scheduler offloading. */
+/** Limitador de tasa local solo de CPU; sin E/S remota, hilos ni delegación a un scheduler. */
 public final class InMemoryAsyncRateLimiter implements AsyncRateLimiter {
   private final InMemoryRateLimiter counters;
 

@@ -8,9 +8,9 @@ import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.core.json.JsonReader;
 
 /**
- * Translates an error response from a dependency into an {@link ExternalServiceException}. It
- * understands RFC 9457 problems and common shapes ({@code code/message}, {@code
- * error/error_description}); an empty body is preserved as such.
+ * Traduce una respuesta de error de una dependencia a una {@link ExternalServiceException}.
+ * Entiende problemas RFC 9457 y formas comunes ({@code code/message}, {@code
+ * error/error_description}); un cuerpo vacío se preserva como tal.
  */
 public final class ExternalErrorTranslator {
 
@@ -29,7 +29,7 @@ public final class ExternalErrorTranslator {
         code = firstString(json, "code", "errorCode", "error");
         message = firstString(json, "detail", "message", "error_description", "title");
       } catch (IllegalArgumentException ignored) {
-        // not JSON despite the header: keep the raw body only
+        // no es JSON pese a la cabecera: se conserva solo el cuerpo en bruto
       }
     }
     return ExternalServiceException.from(

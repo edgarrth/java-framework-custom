@@ -1,4 +1,4 @@
-/** Entities and items. */
+/** Entidades y elementos. */
 @NullMarked
 package pe.axiz.payments.beneficiaries.model;
 

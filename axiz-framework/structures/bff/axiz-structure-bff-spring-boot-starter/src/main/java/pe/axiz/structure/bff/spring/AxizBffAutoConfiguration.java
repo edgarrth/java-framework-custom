@@ -10,8 +10,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 
 /**
- * BFF style: context-aware parallel composition. HTTP clients (token relay, resilience), read cache
- * and channel handling come from the composed starters.
+ * Estilo BFF: composición en paralelo consciente del contexto. Los clientes HTTP (token relay,
+ * resiliencia), la caché de lectura y el manejo de canales provienen de los starters compuestos.
  */
 @AutoConfiguration
 public class AxizBffAutoConfiguration {
@@ -21,8 +21,8 @@ public class AxizBffAutoConfiguration {
   Compositions axizCompositions(Environment env) {
     ContextSnapshotFactory snapshots =
         ContextSnapshotFactory.builder().contextRegistry(ContextRegistry.getInstance()).build();
-    // Boot's binder converts "500ms" or "3s" in any context (Environment.getProperty only when the
-    // environment carries Boot's conversion service)
+    // el binder de Boot convierte "500ms" o "3s" en cualquier contexto (Environment.getProperty
+    // solo cuando el entorno lleva el servicio de conversión de Boot)
     Duration timeout =
         Binder.get(env)
             .bind("axiz.bff.timeout", Duration.class)

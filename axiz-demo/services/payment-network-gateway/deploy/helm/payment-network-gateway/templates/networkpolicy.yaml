@@ -1,8 +1,8 @@
 {{- if .Values.networkPolicy.enabled }}
-# Default deny in both directions. Ingress: the same namespace and the listed namespaces (gateway,
-# callers) on the HTTP port. Egress: DNS, optionally the pods of the same namespace, the listed
-# namespaces and the listed CIDRs (VPC endpoints, managed databases, brokers, partners); anything
-# else is blocked, which limits what a compromised pod can reach.
+# Denegación por defecto en ambas direcciones. Ingress: el mismo namespace y los namespaces listados (gateway,
+# invocadores) en el puerto HTTP. Egress: DNS, opcionalmente los pods del mismo namespace, los namespaces
+# listados y los CIDR listados (VPC endpoints, bases de datos gestionadas, brokers, socios); todo lo
+# demás se bloquea, lo que limita lo que puede alcanzar un pod comprometido.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -26,7 +26,7 @@ spec:
         - port: 8080
           protocol: TCP
   egress:
-    # name resolution (cluster DNS)
+    # resolución de nombres (DNS del clúster)
     - to:
         - namespaceSelector:
             matchLabels:
@@ -41,7 +41,7 @@ spec:
           protocol: TCP
     {{- with .Values.networkPolicy.egress }}
     {{- if .sameNamespace }}
-    # sibling services of the namespace
+    # servicios hermanos del namespace
     - to:
         - podSelector: {}
     {{- end }}

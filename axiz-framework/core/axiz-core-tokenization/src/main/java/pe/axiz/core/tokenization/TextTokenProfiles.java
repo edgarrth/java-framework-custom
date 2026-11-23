@@ -1,6 +1,9 @@
 package pe.axiz.core.tokenization;
 
-/** Built-in textual profiles; neither imports card data nor chooses storage/cryptography. */
+/**
+ * Perfiles textuales integrados; no importan datos de tarjeta ni eligen almacenamiento o
+ * criptografía.
+ */
 public final class TextTokenProfiles {
   private TextTokenProfiles() {}
 

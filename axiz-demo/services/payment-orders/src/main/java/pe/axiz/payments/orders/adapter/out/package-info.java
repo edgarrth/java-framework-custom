@@ -1,4 +1,4 @@
-/** Outbound adapters: persistence, HTTP clients, messaging. */
+/** Adaptadores de salida: persistencia, clientes HTTP, mensajería. */
 @NullMarked
 package pe.axiz.payments.orders.adapter.out;
 

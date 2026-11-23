@@ -72,7 +72,7 @@ class BffTest {
 
   @Test
   void theConfiguredTimeoutBoundsAComposition() {
-    // "50ms" is converted as Spring Boot does, also outside a SpringApplication
+    // "50ms" se convierte como lo hace Spring Boot, también fuera de una SpringApplication
     new ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(AxizBffAutoConfiguration.class))
         .withPropertyValues("axiz.bff.timeout=50ms")

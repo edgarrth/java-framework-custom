@@ -3,7 +3,7 @@ package pe.axiz.spring.storage.s3;
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-/** S3-only settings retain the public axiz.storage bucket and KMS keys. */
+/** La configuración exclusiva de S3 conserva las claves públicas axiz.storage de bucket y KMS. */
 @ConfigurationProperties("axiz.storage")
 public record AxizStorageS3Properties(@Nullable String bucket, @Nullable String kmsKeyId) {
   public AxizStorageS3Properties {

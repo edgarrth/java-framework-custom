@@ -8,12 +8,14 @@ import pe.axiz.core.errors.ErrorCategory;
 import pe.axiz.core.errors.ErrorType;
 
 /**
- * Error handling settings ({@code axiz.errors.*}). The service catalog usually comes from the
- * {@code <service>-errors} ConfigMap, mounted as a file and imported by axiz-config.
+ * Configuración del manejo de errores ({@code axiz.errors.*}). El catálogo del servicio suele
+ * provenir del ConfigMap {@code <service>-errors}, montado como archivo e importado por
+ * axiz-config.
  *
- * @param typeBaseUri base URI of problem types; empty means {@code about:blank}
- * @param exposeExternalDetail whether responses include the failing dependency name and code
- * @param catalog service error catalog
+ * @param typeBaseUri URI base de los tipos de problema; vacío significa {@code about:blank}
+ * @param exposeExternalDetail indica si las respuestas incluyen el nombre y el código de la
+ *     dependencia que falla
+ * @param catalog catálogo de errores del servicio
  */
 @ConfigurationProperties("axiz.errors")
 public record AxizErrorsProperties(
@@ -25,13 +27,13 @@ public record AxizErrorsProperties(
   }
 
   /**
-   * One catalog entry.
+   * Una entrada del catálogo.
    *
-   * @param code error code, e.g. {@code PAY-ORDER-0001}
-   * @param category category (HTTP status)
-   * @param type type; defaults to the category's type
-   * @param title short title
-   * @param messageKey i18n key of the detail; defaults to {@code error.<code>}
+   * @param code código de error, p. ej. {@code PAY-ORDER-0001}
+   * @param category categoría (estado HTTP)
+   * @param type tipo; por defecto, el tipo de la categoría
+   * @param title título breve
+   * @param messageKey clave i18n del detalle; por defecto, {@code error.<code>}
    */
   public record CatalogEntry(
       String code,

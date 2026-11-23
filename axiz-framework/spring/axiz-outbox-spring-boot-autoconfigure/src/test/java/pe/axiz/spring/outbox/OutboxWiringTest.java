@@ -30,10 +30,10 @@ import pe.axiz.core.outbox.OutboxRelay;
 import pe.axiz.core.outbox.OutboxStore;
 import pe.axiz.core.resilience.Backoff;
 
-/** The relay loop, the reactive relay wiring and the pending gauge. */
+/** El bucle del relay, el cableado del relay reactivo y el gauge de pendientes. */
 class OutboxWiringTest {
 
-  /** A store with nothing due that counts purges and can be made to fail. */
+  /** Almacén sin nada pendiente que cuenta las purgas y que puede hacerse fallar. */
   static final class CountingStore implements OutboxStore {
 
     public List<OutboxRecord> claimDue(int size, Duration lease, String owner) {
@@ -97,7 +97,9 @@ class OutboxWiringTest {
     }
   }
 
-  /** A clock that moves one hour forward on every reading, so every run is due for a purge. */
+  /**
+   * Reloj que avanza una hora en cada lectura, de modo que en cada ejecución corresponde una purga.
+   */
   static final class RacingClock extends Clock {
     private Instant now = Instant.parse("2026-10-23T00:00:00Z");
 
@@ -118,7 +120,7 @@ class OutboxWiringTest {
     }
   }
 
-  /** Runs the work as it is, without a transaction. */
+  /** Ejecuta el trabajo tal cual, sin transacción. */
   private static final TransactionRunner DIRECT =
       new TransactionRunner() {
         @Override
@@ -202,8 +204,8 @@ class OutboxWiringTest {
             .lease(Duration.ofMinutes(3))
             .publishBudget(Duration.ofMillis(1))
             .build();
-    // with a batch size of zero in the runner settings every run counts as full: no wait between
-    // runs
+    // con un tamaño de lote cero en la configuración del runner, cada ejecución cuenta como llena:
+    // sin espera entre ejecuciones
     OutboxRelayRunner runner =
         new OutboxRelayRunner(relay, store, ObservationRegistry.NOOP, relay(0), Clock.systemUTC());
     runner.start();

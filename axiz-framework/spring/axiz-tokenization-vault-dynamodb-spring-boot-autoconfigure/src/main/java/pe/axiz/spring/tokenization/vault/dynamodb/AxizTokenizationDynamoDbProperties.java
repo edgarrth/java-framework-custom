@@ -4,7 +4,10 @@ import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
-/** Explicit pre-provisioned table; finite per-request deadline. No auto-create or TTL switch. */
+/**
+ * Tabla explícita aprovisionada de antemano; plazo finito por solicitud. Sin creación automática ni
+ * interruptor de TTL.
+ */
 @ConfigurationProperties("axiz.tokenization.vault.dynamodb")
 public record AxizTokenizationDynamoDbProperties(
     String table, @DefaultValue("2s") Duration requestTimeout) {

@@ -1,139 +1,139 @@
 # Payment Orders
 
-Owner of payment orders.
+Dueño de las órdenes de pago.
 
 | | |
 |---|---|
-| Archetype | `business`: Business rules and ownership of domain data |
-| Structure | `hexagonal` |
-| Extensions | `cqrs` |
+| Arquetipo | `business`: Reglas de negocio y propiedad de los datos del dominio |
+| Estructura | `hexagonal` |
+| Extensiones | `cqrs` |
 | Stack | `servlet` |
-| Persistence | `aurora` |
+| Persistencia | `aurora` |
 | axiz | `2.0.0` |
-| Base package | `pe.axiz.payments.orders` |
+| Paquete base | `pe.axiz.payments.orders` |
 
-## In the demo
+## En la demo
 
-Owner of payment orders (CQRS on Aurora).
+Dueño de las órdenes de pago (CQRS sobre Aurora).
 
-- Registering an order validates the creditor CCI check digits, assigns the processing date
-  (business calendar and 18:00 cut-off), rejects possible duplicates, checks the daily limit per
-  currency, numbers the operation (`OP` + daily sequence) and publishes
-  `payment-order.created.v1` through the transactional outbox, all in one transaction.
-- Creditor accounts are stored encrypted (KMS envelope keys) with a blind index for searches; the
-  API returns them masked.
-- payment-process moves orders through `PROCESSING -> COMPLETED | REJECTED`; every change publishes
-  `payment-order.status-changed.v1`. The audit trail goes to MSK.
+- Registrar una orden valida los dígitos de control del CCI del acreedor, asigna la fecha de
+  proceso (calendario de negocio y corte a las 18:00), rechaza posibles duplicados, comprueba el
+  límite diario por moneda, numera la operación (`OP` + secuencia diaria) y publica
+  `payment-order.created.v1` mediante el outbox transaccional, todo en una sola transacción.
+- Las cuentas de los acreedores se guardan cifradas (claves de sobre de KMS) con un índice ciego
+  para las búsquedas; la API las devuelve enmascaradas.
+- payment-process mueve las órdenes por `PROCESSING -> COMPLETED | REJECTED`; cada cambio publica
+  `payment-order.status-changed.v1`. La pista de auditoría va a MSK.
 
-## Encrypted columns
+## Columnas cifradas
 
-The AAD contexts of the encrypted columns are `payment_order.debtor_account` and
-`payment_order.creditor_cci`; `payments-history` uses `payment_history.creditor_cci`.
+Los contextos AAD de las columnas cifradas son `payment_order.debtor_account` y
+`payment_order.creditor_cci`; `payments-history` usa `payment_history.creditor_cci`.
 
-The local demo is disposable: `scripts/demo.sh down` removes local volumes and all demo data, and
-`scripts/demo.sh up` recreates the environment.
+La demo local es desechable: `scripts/demo.sh down` elimina los volúmenes locales y todos los datos
+de la demo, y `scripts/demo.sh up` recrea el entorno.
 
-## Requirements
+## Requisitos
 
-- JDK 25 (Maven comes with the wrapper `./mvnw`)
-- Docker, for `docker compose` and the Testcontainers tests
-- Access to the GitHub Packages repository that publishes axiz
+- JDK 25 (Maven viene con el wrapper `./mvnw`)
+- Docker, para `docker compose` y las pruebas con Testcontainers
+- Acceso al repositorio de GitHub Packages que publica axiz
 
-## Build and test
+## Compilación y pruebas
 
 ```bash
-./mvnw verify                 # enforcer rules, tests and architecture rules
-./mvnw spotless:apply         # formats the code (run it before pushing)
-./mvnw -Pquality verify       # CI gate: + format check, Checkstyle, Error Prone + NullAway, SpotBugs/FindSecBugs,
-                              # dependency convergence and coverage thresholds
-./mvnw -Pnative native:compile  # GraalVM native image
+./mvnw verify                 # reglas de enforcer, pruebas y reglas de arquitectura
+./mvnw spotless:apply         # formatea el código (se ejecuta antes de hacer push)
+./mvnw -Pquality verify       # control de CI: además formato, Checkstyle, Error Prone con NullAway, SpotBugs/FindSecBugs,
+                              # convergencia de dependencias y umbrales de cobertura
+./mvnw -Pnative native:compile  # imagen nativa con GraalVM
 ```
 
-`ArchitectureTest` enforces the rules of the hexagonal structure and CQRS extension and the general axiz rules;
-`PaymentOrdersApplicationTest` starts the service against real dependencies in containers.
-`ContractExamplesTest` checks that every request example of the contract is a valid request.
+`ArchitectureTest` hace cumplir las reglas de la estructura hexagonal, de la extensión CQRS y las reglas generales de axiz;
+`PaymentOrdersApplicationTest` arranca el servicio contra dependencias reales en contenedores.
+`ContractExamplesTest` comprueba que cada ejemplo de petición del contrato sea una petición válida.
 
-## Run locally
+## Ejecución local
 
 ```bash
 local/dev-secrets.sh       # random development-only secrets in local/secrets (git-ignored)
 docker compose up -d
-export AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_REGION=us-east-1   # LocalStack, not real credentials
+export AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_REGION=us-east-1   # LocalStack, no son credenciales reales
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-Or `axiz local up` / `axiz local down`. Traces, metrics and logs are in Grafana at
-<http://localhost:3000> (OpenTelemetry collector on ports 4317/4318).
-Keycloak (<http://localhost:8180>, realm `axiz`) issues local tokens:
+También `axiz local up` / `axiz local down`. Las trazas, métricas y logs están en Grafana en
+<http://localhost:3000> (colector OpenTelemetry en los puertos 4317/4318).
+Keycloak (<http://localhost:8180>, realm `axiz`) emite tokens locales:
 
 ```bash
 curl -s -d grant_type=client_credentials -d client_id=local-client -d client_secret=local-only \
   http://localhost:8180/realms/axiz/protocol/openid-connect/token
 ```
 
-## Contract first
+## Contrato primero
 
-`src/main/openapi/openapi.yaml` is the source of truth. Request and response models are generated at
-build time into `pe.axiz.payments.orders.api.model` (never versioned). Controllers were generated once
-as skeletons that answer `501 Not Implemented` until each operation is implemented.
+`src/main/openapi/openapi.yaml` es la fuente de verdad. Los modelos de petición y de respuesta se generan
+en tiempo de build en `pe.axiz.payments.orders.api.model` (nunca se versionan). Los controladores se generan una sola vez
+como esqueletos que responden `501 Not Implemented` hasta que se implementa cada operación.
 
-- `axiz contract sync` adds skeletons for new operations, reports removed ones and checks breaking
-  changes against the previous version (openapi-diff).
-- Lint the contract with the axiz Spectral ruleset before publishing it.
+- `axiz contract sync` agrega esqueletos para las operaciones nuevas, informa las eliminadas y comprueba
+  los cambios incompatibles contra la versión anterior (openapi-diff).
+- El contrato se valida con el ruleset de Spectral de axiz antes de publicarlo.
 
-| Operation | Method | Path |
+| Operación | Método | Ruta |
 |---|---|---|
 | `createPaymentOrder` | POST | `/v1/payment-orders` |
 | `listPaymentOrders` | GET | `/v1/payment-orders` |
 | `getPaymentOrder` | GET | `/v1/payment-orders/{orderId}` |
 | `changePaymentOrderStatus` | POST | `/v1/payment-orders/{orderId}/status` |
 
-## Structure
+## Estructura
 
-- `pe.axiz.payments.orders.domain`: Domain model: plain Java, no framework dependencies.
-- `pe.axiz.payments.orders.application.command`: Commands and their handlers (write side).
-- `pe.axiz.payments.orders.application.query`: Queries and their handlers (read side).
-- `pe.axiz.payments.orders.application.port.out`: Outbound ports implemented by adapters.
-- `pe.axiz.payments.orders.adapter.in.rest`: REST adapter generated from the OpenAPI contract.
-- `pe.axiz.payments.orders.adapter.out`: Outbound adapters: persistence, HTTP clients, messaging.
-- `pe.axiz.payments.orders.config`: Wiring of handlers, ports and adapters.
+- `pe.axiz.payments.orders.domain`: Modelo de dominio: Java simple, sin dependencias de frameworks.
+- `pe.axiz.payments.orders.application.command`: Comandos y sus handlers (lado de escritura).
+- `pe.axiz.payments.orders.application.query`: Consultas y sus handlers (lado de lectura).
+- `pe.axiz.payments.orders.application.port.out`: Puertos de salida implementados por los adaptadores.
+- `pe.axiz.payments.orders.adapter.in.rest`: Adaptador REST generado desde el contrato OpenAPI.
+- `pe.axiz.payments.orders.adapter.out`: Adaptadores de salida: persistencia, clientes HTTP, mensajería.
+- `pe.axiz.payments.orders.config`: Cableado de handlers, puertos y adaptadores.
 
-## Capabilities
+## Capacidades
 
-| Capability | Starter | What it brings |
+| Capacidad | Starter | Qué aporta |
 |---|---|---|
-| `foundation` | `axiz-foundation-spring-boot-starter` | Clock and business calendar (zone, weekends, holidays), JSON and validation defaults |
-| `web` | `axiz-web-spring-boot-starter` | Request metadata headers, correlation, pagination, API versioning, CORS and JSON conventions |
-| `errors` | `axiz-errors-spring-boot-starter` | RFC 9457 problem details, error catalog (ConfigMap `APP_NAME-errors`), external error mapping |
-| `logging` | `axiz-logging-spring-boot-starter` | Structured JSON logs with trace and request context, HTTP access log with masking |
-| `observability` | `axiz-observability-spring-boot-starter` | OpenTelemetry traces and metrics through Micrometer (OTLP), no Java agent |
-| `metrics` | `axiz-metrics-spring-boot-starter` | Generic event metrics (count, duration, amounts by currency, values) with bounded tags |
-| `config` | `axiz-config-spring-boot-starter` | ConfigMaps mounted as files (axiz-common, `APP_NAME`, `APP_NAME-errors`; no Kubernetes API access), Parameter Store, required keys check |
-| `i18n` | `axiz-i18n-spring-boot-starter` | Localized messages and problem details (es-PE by default) from messages*.properties |
-| `sensitive` | `axiz-sensitive-spring-boot-starter` | Masking of sensitive fields in responses, logs and audit by sensitivity level |
-| `security` | `axiz-security-spring-boot-starter` | OAuth2 resource server (trusted issuers, audiences, claims), caller context, rate limit |
-| `audit` | `axiz-audit-spring-boot-starter` | @Auditable business audit trail, sanitized by sensitivity, published asynchronously |
-| `jpa` | `axiz-jpa-spring-boot-starter` | Aurora PostgreSQL with JPA, Flyway, AWS JDBC wrapper (IAM, failover, read/write splitting), auditing and encrypted columns |
-| `secrets` | `axiz-secrets-spring-boot-starter` | Secrets from the mounted ExternalSecret directory, environment, Secrets Manager or Parameter Store, cached |
-| `crypto` | `axiz-crypto-spring-boot-starter` | Field encryption (JPA and DynamoDB converters, rotating keys from the secret store), KMS envelope encryption, blind index, JOSE, password hashing |
-| `outbox` | `axiz-outbox-spring-boot-starter` | Transactional outbox in Aurora with a relay to MSK, SNS or SQS (at least once) |
-| `messaging-kafka` | `axiz-messaging-spring-boot-starter` | CloudEvents over Amazon MSK with IAM auth, retries, DLQ and trace propagation |
-| `sequence` | `axiz-sequence-spring-boot-starter` | Business sequences (prefix, width, daily or monthly reset) on JDBC or DynamoDB |
-| `audit-kafka` | `axiz-audit-spring-boot-starter` | Audit events published to MSK |
+| `foundation` | `axiz-foundation-spring-boot-starter` | Reloj y calendario de negocio (zona, fines de semana, feriados), valores por defecto de JSON y validación |
+| `web` | `axiz-web-spring-boot-starter` | Cabeceras de metadatos de la petición, correlación, paginación, versionado de API, CORS y convenciones JSON |
+| `errors` | `axiz-errors-spring-boot-starter` | Detalles de problema RFC 9457, catálogo de errores (ConfigMap `APP_NAME-errors`) y mapeo de errores externos |
+| `logging` | `axiz-logging-spring-boot-starter` | Logs JSON estructurados con contexto de traza y de petición, log de acceso HTTP con enmascaramiento |
+| `observability` | `axiz-observability-spring-boot-starter` | Trazas y métricas OpenTelemetry mediante Micrometer (OTLP), sin agente Java |
+| `metrics` | `axiz-metrics-spring-boot-starter` | Métricas genéricas de eventos (conteo, duración, importes por moneda, valores) con etiquetas acotadas |
+| `config` | `axiz-config-spring-boot-starter` | ConfigMaps montados como archivos (axiz-common, `APP_NAME`, `APP_NAME-errors`; sin acceso a la API de Kubernetes), Parameter Store y comprobación de claves obligatorias |
+| `i18n` | `axiz-i18n-spring-boot-starter` | Mensajes y detalles de problema localizados (es-PE por defecto) desde messages*.properties |
+| `sensitive` | `axiz-sensitive-spring-boot-starter` | Enmascaramiento de campos sensibles en respuestas, logs y auditoría según el nivel de sensibilidad |
+| `security` | `axiz-security-spring-boot-starter` | Servidor de recursos OAuth2 (emisores confiables, audiencias, claims), contexto del llamador y límite de tasa |
+| `audit` | `axiz-audit-spring-boot-starter` | Pista de auditoría de negocio con @Auditable, saneada según sensibilidad y publicada de forma asíncrona |
+| `jpa` | `axiz-jpa-spring-boot-starter` | Aurora PostgreSQL con JPA, Flyway, AWS JDBC wrapper (IAM, failover, separación de lectura y escritura), auditoría y columnas cifradas |
+| `secrets` | `axiz-secrets-spring-boot-starter` | Secretos desde el directorio montado del ExternalSecret, el entorno, Secrets Manager o Parameter Store, con caché |
+| `crypto` | `axiz-crypto-spring-boot-starter` | Cifrado de campos (convertidores JPA y DynamoDB, claves rotativas desde el almacén de secretos), cifrado de sobre con KMS, índice ciego, JOSE y hash de contraseñas |
+| `outbox` | `axiz-outbox-spring-boot-starter` | Outbox transaccional en Aurora con relay hacia MSK, SNS o SQS (al menos una vez) |
+| `messaging-kafka` | `axiz-messaging-spring-boot-starter` | CloudEvents sobre Amazon MSK con autenticación IAM, reintentos, DLQ y propagación de trazas |
+| `sequence` | `axiz-sequence-spring-boot-starter` | Secuencias de negocio (prefijo, ancho, reinicio diario o mensual) sobre JDBC o DynamoDB |
+| `audit-kafka` | `axiz-audit-spring-boot-starter` | Eventos de auditoría publicados en MSK |
 
-Add more with `axiz add <capability>`: it adds the starter, its properties, the ConfigMap keys and a
-usage example.
+Se agregan más con `axiz add <capability>`: añade el starter, sus propiedades, las claves del ConfigMap
+y un ejemplo de uso.
 
-## Configuration
+## Configuración
 
-- `application.yaml` holds defaults only. Environment values live in the ConfigMaps `axiz-common`,
-  `payment-orders` and `payment-orders-errors`, mounted as files by the chart
-  (`deploy/helm/payment-orders/values-<env>.yaml`, keys `config` and `errors`).
-- Secrets never go to the repository nor to ConfigMaps: they come from AWS Secrets Manager through
-  the ExternalSecret and are mounted as files in `/var/run/secrets/axiz`.
-- AWS access uses the pod identity (IRSA or EKS Pod Identity); there are no AWS keys anywhere.
+- `application.yaml` contiene solo valores por defecto. Los valores de cada ambiente están en los ConfigMaps `axiz-common`,
+  `payment-orders` y `payment-orders-errors`, que el chart monta como archivos
+  (`deploy/helm/payment-orders/values-<env>.yaml`, claves `config` y `errors`).
+- Los secretos nunca van al repositorio ni a los ConfigMaps: provienen de AWS Secrets Manager mediante
+  el ExternalSecret y se montan como archivos en `/var/run/secrets/axiz`.
+- El acceso a AWS usa la identidad del pod (IRSA o EKS Pod Identity); no hay claves de AWS en ningún lugar.
 
-Keys each environment must define:
+Claves que cada ambiente debe definir:
 
 - `axiz.foundation.calendar.holidays`
 - `axiz.security.issuers`
@@ -148,19 +148,19 @@ Keys each environment must define:
 - `axiz.messaging.destinations`
 - `axiz.audit.kafka.topic`
 
-## Deployment
+## Despliegue
 
-`deploy/helm/payment-orders` contains the chart: Deployment with probes, Service, HPA, PDB,
-ConfigMaps mounted as files, ExternalSecret, ServiceAccount and a NetworkPolicy. Pods do not
-require Kubernetes API permissions to read their mounted configuration.
-The pipelines in `.github/workflows` call the shared axiz workflows, pinned to an immutable release (`@axiz-workflows-vX.Y.Z`; Renovate proposes grouped updates to the next immutable release tag):
+`deploy/helm/payment-orders` contiene el chart: Deployment con probes, Service, HPA, PDB,
+ConfigMaps montados como archivos, ExternalSecret, ServiceAccount y una NetworkPolicy. Los pods no
+requieren permisos sobre la API de Kubernetes para leer su configuración montada.
+Los pipelines de `.github/workflows` llaman a los workflows compartidos de axiz, fijados a una release inmutable (`@axiz-workflows-vX.Y.Z`; Renovate propone actualizaciones agrupadas hacia el siguiente tag de release inmutable):
 
-- `ci.yaml`: pull requests run the shared checks and the build with every quality gate; `main`
-  builds the image (Jib, signed with cosign) and deploys it to dev and then qa; a tag `v*` deploys
-  to prod after the approval of the `prod` environment.
-- Deployments are GitOps: the pipeline records the release (chart commit, image tag and digest) in
-  the GitOps repository and Argo CD applies it. `cd.yaml` redeploys or rolls back an existing image.
-- `release.yaml`: release-please keeps a release pull request with the next version and the
-  changelog; merging it creates the tag.
+- `ci.yaml`: los pull requests ejecutan las comprobaciones compartidas y el build con todos los controles
+  de calidad; `main` construye la imagen (Jib, firmada con cosign) y la despliega en dev y luego en qa;
+  un tag `v*` despliega en prod tras la aprobación del ambiente `prod`.
+- Los despliegues son GitOps: el pipeline registra la release (commit del chart, tag y digest de la imagen)
+  en el repositorio GitOps y Argo CD la aplica. `cd.yaml` vuelve a desplegar o revierte una imagen existente.
+- `release.yaml`: release-please mantiene un pull request de release con la siguiente versión y el
+  changelog; al fusionarlo se crea el tag.
 
-## Decisions
+## Decisiones

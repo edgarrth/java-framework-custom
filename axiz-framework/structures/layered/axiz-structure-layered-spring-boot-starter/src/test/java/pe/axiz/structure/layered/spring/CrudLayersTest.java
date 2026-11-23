@@ -34,7 +34,10 @@ import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.core.errors.ValidationException;
 import pe.axiz.structure.layered.CrudAction;
 
-/** Actual Hibernate persistence, object ownership, request allowlists and optimistic conflicts. */
+/**
+ * Persistencia real con Hibernate, propiedad de objetos, listas de permitidos de la petición y
+ * conflictos optimistas.
+ */
 class CrudLayersTest {
   @Entity(name = "MaintenanceBranch")
   @Table(name = "maintenance_branch")
@@ -195,7 +198,7 @@ class CrudLayersTest {
       second.getTransaction().begin();
       var a = new Branches(first, "alice");
       var b = new Branches(second, "alice");
-      b.get(created.id()); // retains the old managed version before the other commit
+      b.get(created.id()); // conserva la versión gestionada previa antes del otro commit
       a.update(created.id(), new Change("winner", created.version()));
       first.getTransaction().commit();
       assertThrows(

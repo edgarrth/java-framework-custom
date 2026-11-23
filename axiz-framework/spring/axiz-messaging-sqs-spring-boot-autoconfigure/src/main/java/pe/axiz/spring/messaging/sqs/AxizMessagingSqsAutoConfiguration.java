@@ -20,7 +20,7 @@ import pe.axiz.spring.messaging.EventPublisherAdapter;
 import pe.axiz.spring.messaging.ObservedDispatcher;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
-/** SQS publishers and owned clients. */
+/** Publicadores SQS y clientes propios. */
 @AutoConfiguration(beforeName = "pe.axiz.spring.messaging.AxizMessagingAutoConfiguration")
 @ConditionalOnBooleanProperty(name = "axiz.messaging.enabled", matchIfMissing = true)
 @EnableConfigurationProperties({

@@ -18,7 +18,10 @@ import pe.axiz.core.tokenization.vault.TokenBudget;
 import pe.axiz.core.tokenization.vault.TokenBudgetLeaseAlarm;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 
-/** Explicit Redis budget integration; no local fallback or mutation of a shared Redis client. */
+/**
+ * Integración explícita de presupuestos en Redis; sin respaldo local ni modificación de un cliente
+ * Redis compartido.
+ */
 @AutoConfiguration(
     afterName = "pe.axiz.spring.secrets.AxizSecretsAutoConfiguration",
     beforeName = "pe.axiz.spring.tokenization.vault.AxizTokenizationVaultAutoConfiguration")

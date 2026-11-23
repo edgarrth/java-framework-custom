@@ -6,11 +6,13 @@ import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.common.config.SslConfigs;
 import pe.axiz.core.commons.net.DataTransportSecurityPolicy;
 
-/** Validates native Kafka transport without requiring Boot Kafka or creating a client. */
+/** Valida el transporte nativo de Kafka sin requerir Boot Kafka ni crear un cliente. */
 public final class KafkaTransportSecurity {
   private KafkaTransportSecurity() {}
 
-  /** Checks the exact options about to be passed to the native producer, consumer or admin. */
+  /**
+   * Comprueba las opciones exactas que están por pasarse al productor, consumidor o admin nativo.
+   */
   public static void validate(Map<String, ?> properties, DataTransportSecurityPolicy policy) {
     Object protocolValue = properties.get(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG);
     String protocol =

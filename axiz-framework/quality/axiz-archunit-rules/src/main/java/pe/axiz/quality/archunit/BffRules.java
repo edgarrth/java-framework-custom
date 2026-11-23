@@ -6,7 +6,7 @@ import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.lang.ArchRule;
 import java.util.List;
 
-/** BFF style: no own persistence and no domain model; it composes downstream APIs. */
+/** Estilo BFF: sin persistencia propia ni modelo de dominio; compone API aguas abajo. */
 public final class BffRules {
 
   private BffRules() {}

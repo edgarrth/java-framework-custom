@@ -10,9 +10,10 @@ import org.slf4j.LoggerFactory;
 import pe.axiz.core.errors.Failures;
 
 /**
- * Resumes sagas left unfinished by a crash or a redeploy: non-terminal sagas not updated for a
- * while are resumed from their persisted state (steps are idempotent, so repeating the last one is
- * safe). Call {@link #resumeStale} from a scheduled job guarded by a cluster lock.
+ * Reanuda las sagas que quedaron sin terminar por una caída o un redespliegue: las sagas no
+ * terminales sin actualizar durante un tiempo se reanudan desde su estado persistido (los pasos son
+ * idempotentes, así que repetir el último es seguro). {@link #resumeStale} se llama desde un job
+ * programado protegido por un lock de clúster.
  */
 public final class SagaRecovery {
 
@@ -31,16 +32,16 @@ public final class SagaRecovery {
     this.clock = Objects.requireNonNull(clock);
   }
 
-  /** Makes sagas of this definition resumable. */
+  /** Hace reanudables las sagas de esta definición. */
   public <C> SagaRecovery register(SagaDefinition<C> definition, ContextCodec<C> codec) {
     definitions.put(definition.name(), new Registration<>(definition, codec));
     return this;
   }
 
   /**
-   * Resumes up to {@code max} sagas idle for longer than {@code idle}.
+   * Reanuda hasta {@code max} sagas inactivas durante más de {@code idle}.
    *
-   * @return how many sagas were resumed
+   * @return cuántas sagas se reanudaron
    */
   public int resumeStale(Duration idle, int max) {
     int resumed = 0;

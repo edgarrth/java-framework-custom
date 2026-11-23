@@ -1,28 +1,28 @@
-# Defaults of the {{project.name}} chart; values-<env>.yaml override them per environment.
+# Valores por defecto del chart {{project.name}}; values-<env>.yaml los sobrescribe por entorno.
 nameOverride: ""
 environment: ""
 
 image:
   repository: ghcr.io/edgarrth/java-framework-custom/{{project.name}}
-  tag: ""          # set by the deployment (GitOps): the commit of the image
-  digest: ""       # set by the deployment (GitOps): pins the signed image
+  tag: ""          # lo define el despliegue (GitOps): el commit de la imagen
+  digest: ""       # lo define el despliegue (GitOps): fija la imagen firmada
   pullPolicy: IfNotPresent
 imagePullSecrets: []
 
 serviceAccount:
   create: true
   name: ""
-  annotations: {}  # eks.amazonaws.com/role-arn per environment (IRSA)
-  # the pods never call the Kubernetes API (configuration is mounted as files); the AWS identity
-  # (IRSA or EKS Pod Identity) uses its own projected token
+  annotations: {}  # eks.amazonaws.com/role-arn por entorno (IRSA)
+  # los pods nunca invocan la API de Kubernetes (la configuración se monta como archivos); la identidad de AWS
+  # (IRSA o EKS Pod Identity) usa su propio token proyectado
   automountToken: false
 
-# shared configuration of the namespace (optional ConfigMap, mounted before the service's own)
+# configuración compartida del namespace (ConfigMap opcional, montado antes que el propio del servicio)
 sharedConfigMap: ""
 
 javaOpts: "-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/./urandom"
 env: []
-# Select imports before application.yaml and mounted ConfigMaps are loaded.
+# Las importaciones se seleccionan antes de cargar application.yaml y los ConfigMaps montados.
 configBootstrap:
   parameterStore:
     enabled: false
@@ -65,7 +65,7 @@ pdb:
   enabled: true
   maxUnavailable: 1
 topologySpread:
-  whenUnsatisfiable: ScheduleAnyway   # DoNotSchedule in prod (values-prod.yaml)
+  whenUnsatisfiable: ScheduleAnyway   # DoNotSchedule en prod (values-prod.yaml)
 {{/archetype.deployment}}
 {{#archetype.cronjob}}
 
@@ -80,23 +80,23 @@ cronjob:
 
 networkPolicy:
   enabled: true
-  ingressNamespaces: []   # namespaces allowed to call the service (ingress, gateway, callers)
-  # Outbound traffic is denied except DNS and what is listed here
+  ingressNamespaces: []   # namespaces autorizados a invocar el servicio (ingress, gateway, invocadores)
+  # El tráfico saliente se deniega salvo DNS y lo que se lista aquí
   egress:
-    sameNamespace: true   # sibling services of the namespace
-    namespaces: []        # other namespaces this service calls
+    sameNamespace: true   # servicios hermanos del namespace
+    namespaces: []        # otros namespaces que invoca este servicio
     cidrs: []             # e.g. {cidr: 10.20.0.0/16, ports: [443, 5432]}: VPC endpoints, Aurora,
-                          # ElastiCache, MSK, partners. Fill per environment (values-<env>.yaml)
+                          # ElastiCache, MSK, socios. Se completa por entorno (values-<env>.yaml)
 
-# ConfigMap {{project.name}} (application.yaml): environment values, flat Spring Boot keys
+# ConfigMap {{project.name}} (application.yaml): valores del entorno, claves planas de Spring Boot
 config: {}
 
-# ConfigMap {{project.name}}-errors: error catalog (code, category, title, detail keys...)
+# ConfigMap {{project.name}}-errors: catálogo de errores (código, categoría, título, claves de detalle...)
 errors: []
 
-# Secret files mounted in /var/run/secrets/axiz (one per key). enabled: the External Secrets
-# Operator creates the Secret <fullname>-secrets from AWS Secrets Manager; disabled: the Secret is
-# created by other means (kind and local clusters, see the demo kind/ scripts).
+# Archivos de secretos montados en /var/run/secrets/axiz (uno por clave). enabled: el External Secrets
+# Operator crea el Secret <fullname>-secrets desde AWS Secrets Manager; disabled: el Secret se
+# crea por otros medios (kind y clústeres locales, ver los scripts kind/ de la demo).
 externalSecret:
   enabled: true
   storeName: aws-secrets-manager
@@ -110,11 +110,11 @@ externalSecret:
     []
 {{/config.hasSecrets}}
 
-# Requires Prometheus Operator and an existing scrape configuration for this service.
+# Requiere Prometheus Operator y una configuración de scrape existente para este servicio.
 monitoring:
   prometheusRules:
     enabled: false
-    labels: {} # labels selected by the cluster's Prometheus ruleSelector
-    metricSelector: "" # defaults to namespace + service; adapt to your scrape target labels
+    labels: {} # etiquetas que selecciona el ruleSelector de Prometheus del clúster
+    metricSelector: "" # por defecto namespace + service; se adapta a las etiquetas del target de scrape
     audit: {{#caps.audit}}true{{/caps.audit}}{{^caps.audit}}false{{/caps.audit}}
     outbox: {{#caps.outbox}}true{{/caps.outbox}}{{^caps.outbox}}false{{/caps.outbox}}

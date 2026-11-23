@@ -14,7 +14,10 @@ import pe.axiz.spring.httpclient.AxizHttpClients;
 import pe.axiz.spring.httpclient.AxizWebClients;
 import pe.axiz.spring.httpclient.HttpClientRegistry;
 
-/** Consumer composition has no vault, cryptographic provider or card profile dependency. */
+/**
+ * La composición del consumidor no depende del vault, de un proveedor criptográfico ni de un perfil
+ * de tarjeta.
+ */
 @AutoConfiguration(afterName = "pe.axiz.spring.httpclient.AxizHttpClientAutoConfiguration")
 @EnableConfigurationProperties(AxizTokenizationProperties.class)
 public class AxizTokenizationRemoteAutoConfiguration {

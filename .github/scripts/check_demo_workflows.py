@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the demo deploy callers against the current Mustache template and project manifests."""
+"""Verifica los invocadores de deploy de la demo contra la plantilla Mustache actual y los manifiestos de proyecto."""
 import argparse
 import hashlib
 from pathlib import Path
@@ -17,7 +17,7 @@ FIXTURE = Path('axiz-framework/codegen/axiz-codegen/src/test/resources/workflow-
 
 
 def render_template(template, context):
-    # TemplateSet configures escapeHTML(false); Chevron's default is HTML escaping.
+    # TemplateSet configura escapeHTML(false); Chevron escapa HTML por defecto.
     tokens = [('no escape' if kind == 'variable' else kind, value) for kind, value in tokenize(template)]
     return chevron.render(tokens, context)
 

@@ -7,7 +7,9 @@ import java.util.Map;
 import java.util.Objects;
 import pe.axiz.core.errors.BusinessException;
 
-/** Converts amounts using an {@link ExchangeRateProvider}, trying the inverse rate as fallback. */
+/**
+ * Convierte montos con un {@link ExchangeRateProvider}, probando la tasa inversa como alternativa.
+ */
 public final class CurrencyConverter {
 
   private final ExchangeRateProvider provider;

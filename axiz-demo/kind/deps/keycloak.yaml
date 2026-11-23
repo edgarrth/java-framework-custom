@@ -1,4 +1,4 @@
-# Local start-dev rebuilds only its copied Quarkus runtime on an ephemeral writable volume.
+# start-dev local solo reconstruye su runtime de Quarkus copiado en un volumen efímero con escritura.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

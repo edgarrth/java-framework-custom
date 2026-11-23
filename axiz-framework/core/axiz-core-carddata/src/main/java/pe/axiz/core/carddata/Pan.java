@@ -8,7 +8,7 @@ import pe.axiz.core.identifiers.banking.BankingIdentifiers.CardBrand;
 import pe.axiz.core.sensitive.PanDetector;
 import pe.axiz.core.sensitive.SelfMasking;
 
-/** Validated PAN; logs and default serialization use masked(), never reveal(). */
+/** PAN validado; los logs y la serialización por defecto usan masked(), nunca reveal(). */
 public final class Pan implements SelfMasking {
   private final String digits;
 
@@ -45,7 +45,7 @@ public final class Pan implements SelfMasking {
     return digits.substring(digits.length() - 4);
   }
 
-  /** Display hint only. Routing requires a governed CardSchemeResolver. */
+  /** Solo una pista de presentación. El enrutamiento requiere un CardSchemeResolver gobernado. */
   public CardBrand brand() {
     return CardBrand.guess(digits);
   }

@@ -1,19 +1,20 @@
 # axiz-kafka-spring-boot-autoconfigure
 
-Shared effective Kafka transport validation for messaging and audit. Require SSL or SASL_SSL and peer/hostname verification outside an explicit local/test/ci exception (`axiz.transport.allow-insecure-data-stores=true`).
+Validación compartida del transporte Kafka efectivo para mensajería y auditoría. Se exige SSL o SASL_SSL y verificación del par y del hostname, salvo una excepción explícita local/test/ci (`axiz.transport.allow-insecure-data-stores=true`).
 
-Producer, consumer and admin settings are validated separately, after Boot customizers. Native clients created by Axiz validate again immediately before construction. `KafkaTransportSecurity.properties` preserves per-client overrides, connection details and SSL bundles; the absence of the hostname algorithm uses Kafka's secure HTTPS default, while an empty value is rejected. No raw connection settings or credentials are logged.
+La configuración del productor, del consumidor y de administración se valida por separado, después de los customizers de Boot. Los clientes nativos creados por Axiz vuelven a validar justo antes de su construcción. `KafkaTransportSecurity.properties` conserva las sobrescrituras por cliente, los connection details y los SSL bundles; la ausencia del algoritmo de hostname usa el valor HTTPS seguro por defecto de Kafka, mientras que un valor vacío se rechaza. No se registran en el log configuraciones de conexión crudas ni credenciales.
 
-Custom factories that connect inside their constructor must invoke validation before construction; post-processing cannot undo earlier I/O.
+Las fábricas personalizadas que se conectan dentro de su constructor deben invocar la validación antes de la construcción; el post-procesamiento no puede deshacer la I/O previa.
 
-## Transport contract
+## Contrato de transporte
 
-Managed clients require encryption and certificate and hostname verification. The final native
-options are checked before managed initialization; property names alone are not a transport proof.
-`axiz.transport.allow-insecure-data-stores=true` only permits an explicit `local`, `test` or `ci`
-environment. It never weakens production validation. Configure trust material for each destination.
+Los clientes gestionados exigen cifrado y verificación de certificado y de nombre de host. Las
+opciones nativas finales se comprueban antes de la inicialización gestionada; los nombres de
+propiedad por sí solos no prueban el transporte. `axiz.transport.allow-insecure-data-stores=true` solo admite un ambiente
+`local`, `test` o `ci` explícito y nunca debilita la validación de producción. El material de confianza se
+configura para cada destino.
 
-Kafka defaults to SSL. SSL bundles and per-client `KafkaConnectionDetails` are preserved. Native
-producers and consumers must validate the final map with `KafkaTransportSecurity.validate` before
-constructing their client. Endpoint identification cannot be empty in production. Messaging adds
-its IAM identity to managed producer and consumer factories and the admin client.
+Kafka usa SSL por defecto. Se conservan los SSL bundles y los `KafkaConnectionDetails` por cliente. Los
+productores y consumidores nativos deben validar el mapa final con `KafkaTransportSecurity.validate` antes
+de construir su cliente. La identificación del endpoint no puede estar vacía en producción. Mensajería
+agrega su identidad IAM a las fábricas gestionadas de productores y consumidores y al cliente de administración.

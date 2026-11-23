@@ -21,9 +21,9 @@ import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.errors.NoEffect;
 
 /**
- * Applies {@link Auditable}: records who did what on which resource and with what result. Details
- * are sanitized for the audit channel by {@link AuditTrail}; the business call is never affected by
- * a publishing failure.
+ * Aplica {@link Auditable}: registra quién hizo qué sobre qué recurso y con qué resultado. {@link
+ * AuditTrail} sanea los detalles para el canal de auditoría; un fallo de publicación nunca afecta a
+ * la llamada de negocio.
  */
 public class AuditableInterceptor implements MethodInterceptor {
 
@@ -117,7 +117,7 @@ public class AuditableInterceptor implements MethodInterceptor {
     }
   }
 
-  /** Parameter names, or {@code argN} where the compiler did not keep them. */
+  /** Nombres de los parámetros, o {@code argN} cuando el compilador no los conservó. */
   private String[] parameterNames(Method m) {
     @Nullable String @Nullable [] discovered = discoverer.getParameterNames(m);
     String[] out = new String[m.getParameterCount()];

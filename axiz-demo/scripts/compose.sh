@@ -1,14 +1,14 @@
 #!/bin/bash
-# Whole demo in Docker Compose: infrastructure (local/compose.yaml) and the eight services as
-# containers (local/compose.apps.yaml, profile "apps"), from any directory:
-#   axiz-demo/scripts/compose.sh up [--build|--no-build]   start everything and print the routes
-#   axiz-demo/scripts/compose.sh routes                    routes of every service
-#   axiz-demo/scripts/compose.sh status                    health of every service
-#   axiz-demo/scripts/compose.sh logs [service]            follow the logs (Ctrl+C stops following)
-#   axiz-demo/scripts/compose.sh down                      stop and remove containers and volumes
-# --build rebuilds the service images (jar and Jib image, tests skipped); --no-build uses the
-# images already built and fails when one is missing. Without either, only missing images are
-# built. Images need the framework installed in ~/.m2 (scripts/build.sh at the repository root).
+# Toda la demo en Docker Compose: infraestructura (local/compose.yaml) y los ocho servicios como
+# contenedores (local/compose.apps.yaml, perfil "apps"), desde cualquier directorio:
+#   axiz-demo/scripts/compose.sh up [--build|--no-build]   arranca todo e imprime las rutas
+#   axiz-demo/scripts/compose.sh routes                    rutas de cada servicio
+#   axiz-demo/scripts/compose.sh status                    salud de cada servicio
+#   axiz-demo/scripts/compose.sh logs [service]            sigue los logs (Ctrl+C deja de seguirlos)
+#   axiz-demo/scripts/compose.sh down                      detiene y elimina contenedores y volúmenes
+# --build reconstruye las imágenes de los servicios (jar e imagen Jib, sin pruebas); --no-build usa las
+# imágenes ya construidas y falla si falta alguna. Sin ninguno de los dos, solo se construyen las imágenes
+# faltantes. Las imágenes requieren el framework instalado en ~/.m2 (scripts/build.sh en la raíz del repositorio).
 set -Eeuo pipefail
 trap 'printf "\\033[31m%s: unexpected failure (exit %s) at line %s: %s\\033[0m\\n" "${0##*/}" "$?" "$LINENO" "$BASH_COMMAND" >&2' ERR
 root=$(cd "$(dirname "$0")/.." && pwd)
@@ -16,7 +16,7 @@ services=(payment-orders beneficiaries banking-core payment-network-gateway paym
 declare -A ports=([payments-ux]=8080 [payment-orders]=8081 [beneficiaries]=8082
   [banking-core]=8083 [payment-process]=8084 [notifications-processor]=8085
   [payments-history]=8086 [payment-network-gateway]=8087)
-# contract of each REST service (notifications-processor only consumes events)
+# contrato de cada servicio REST (notifications-processor solo consume eventos)
 declare -A contracts=([payments-ux]=payments-ux [payment-orders]=payment-orders
   [beneficiaries]=beneficiaries [banking-core]=banking-core [payment-process]=payment-process
   [payments-history]=payments-history [payment-network-gateway]=payment-network-gateway)
@@ -70,7 +70,7 @@ wait_up() {
   done
 }
 
-# METHOD path for every operation of a contract (paths at two spaces, methods at four)
+# MÉTODO y ruta de cada operación de un contrato (rutas a dos espacios, métodos a cuatro)
 routes() {
   local s
   for s in "${services[@]}"; do

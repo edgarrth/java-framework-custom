@@ -13,7 +13,7 @@ import pe.axiz.core.messaging.PublishException;
 import pe.axiz.core.messaging.PublishResult;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 
-/** Sqs publisher using the SDK's native asynchronous transport. */
+/** Publicador SQS que usa el transporte asíncrono nativo del SDK. */
 public final class SqsAsyncEventPublisher implements AsyncEventPublisher, BoundedPublisher {
   @SuppressFBWarnings(
       value = "EI_EXPOSE_REP2",

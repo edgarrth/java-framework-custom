@@ -5,7 +5,7 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
-/** IAM token policy; refresh is bounded by the token provider before resources are acquired. */
+/** Política de tokens IAM; el proveedor de tokens acota el refresco antes de adquirir recursos. */
 @ConfigurationProperties("axiz.r2dbc.iam")
 public record AxizR2dbcAwsProperties(
     @DefaultValue("false") boolean enabled,

@@ -7,7 +7,10 @@ import java.util.concurrent.CompletionStage;
 import pe.axiz.core.secrets.AsyncSecretResolver;
 import pe.axiz.core.secrets.SecretValue;
 
-/** CPU-only environment snapshot, with the same logical-name mapping as the synchronous source. */
+/**
+ * Instantánea del entorno solo de CPU, con el mismo mapeo de nombres lógicos que la fuente
+ * síncrona.
+ */
 public final class EnvironmentAsyncSecretResolver implements AsyncSecretResolver {
   private final Map<String, String> environment;
 

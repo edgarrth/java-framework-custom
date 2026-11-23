@@ -11,8 +11,8 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.ResourceNotFoundException;
 
 /**
- * Resolves secrets from AWS Secrets Manager. {@code name#field} extracts one field of a JSON
- * secret. Credentials come from the default SDK chain (IRSA or EKS Pod Identity).
+ * Resuelve secretos desde AWS Secrets Manager. {@code name#field} extrae un campo de un secreto
+ * JSON. Las credenciales provienen de la cadena por defecto del SDK (IRSA o EKS Pod Identity).
  */
 public final class SecretsManagerResolver implements SecretResolver {
 
@@ -40,7 +40,7 @@ public final class SecretsManagerResolver implements SecretResolver {
     }
   }
 
-  /** Extracts a top-level field of a JSON secret. */
+  /** Extrae un campo de primer nivel de un secreto JSON. */
   static final class JsonField {
     private JsonField() {}
 
@@ -52,7 +52,8 @@ public final class SecretsManagerResolver implements SecretResolver {
         }
         return Optional.of(value instanceof String text ? text : JsonWriter.write(value));
       } catch (JsonReader.JsonException e) {
-        // Parser diagnostics can contain a character of the value. Never put them in errors.
+        // Los diagnósticos del parser pueden contener un carácter del valor. Nunca se incluyen en
+        // los errores.
         throw new IllegalStateException(
             "Secret is not a valid JSON object; field extraction failed");
       }

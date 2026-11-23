@@ -1,9 +1,9 @@
 package pe.axiz.kit.r2dbc;
 
 /**
- * Maps a row to an object.
+ * Mapea una fila a un objeto.
  *
- * @param <T> mapped type
+ * @param <T> tipo mapeado
  */
 @FunctionalInterface
 public interface RowMapper<T> {

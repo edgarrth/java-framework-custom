@@ -11,7 +11,9 @@ import pe.axiz.core.inbox.InboxStore;
 import pe.axiz.spring.foundation.lifecycle.WorkerLifecycle;
 import pe.axiz.spring.foundation.lifecycle.WorkerStatus;
 
-/** Deletes expired inbox rows periodically on a virtual thread (JDBC and R2DBC stores). */
+/**
+ * Elimina periódicamente las filas expiradas del inbox en un hilo virtual (almacenes JDBC y R2DBC).
+ */
 public final class InboxPurger implements SmartLifecycle, WorkerStatus {
 
   private static final Logger LOG = LoggerFactory.getLogger(InboxPurger.class);

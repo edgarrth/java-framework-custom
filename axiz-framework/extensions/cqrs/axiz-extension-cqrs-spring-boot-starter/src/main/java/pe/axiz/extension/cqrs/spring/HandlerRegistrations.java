@@ -13,8 +13,9 @@ import pe.axiz.extension.cqrs.ReactiveCommandHandler;
 import pe.axiz.extension.cqrs.ReactiveQueryHandler;
 
 /**
- * Resolves request and result types of handler beans from their generics on the target class (so
- * transactional proxies work). An unresolvable handler is a startup error.
+ * Resuelve los tipos de petición y de resultado de los beans handler a partir de sus genéricos en
+ * la clase destino (para que funcionen los proxies transaccionales). Un handler no resoluble es un
+ * error de arranque.
  */
 final class HandlerRegistrations {
 
@@ -67,7 +68,10 @@ final class HandlerRegistrations {
     return out;
   }
 
-  /** A request type served by both a blocking and a reactive handler is a startup error. */
+  /**
+   * Un tipo de petición atendido por un handler bloqueante y por uno reactivo es un error de
+   * arranque.
+   */
   static void requireSingleStyle(
       List<Buses.Registration> blocking, List<ReactiveBuses.Registration> reactive) {
     for (ReactiveBuses.Registration r : reactive) {

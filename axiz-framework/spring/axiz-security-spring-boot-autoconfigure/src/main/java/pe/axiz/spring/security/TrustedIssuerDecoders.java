@@ -26,9 +26,10 @@ import pe.axiz.core.security.TrustedIssuer;
 import reactor.core.publisher.Mono;
 
 /**
- * One decoder per trusted issuer, created lazily and reused. Keys come from the configured JWKS URI
- * (cached by the decoder); unknown issuers get no decoder at all, so a forged {@code iss} never
- * triggers a network call.
+ * Un decodificador por emisor de confianza, creado de forma diferida y reutilizado. Las claves
+ * provienen del URI JWKS configurado (cacheado por el decodificador); los emisores desconocidos no
+ * reciben ningún decodificador, de modo que un {@code iss} falsificado nunca provoca una llamada de
+ * red.
  */
 public final class TrustedIssuerDecoders implements AutoCloseable {
 
@@ -118,10 +119,10 @@ public final class TrustedIssuerDecoders implements AutoCloseable {
   }
 
   /**
-   * Checks of every access token: an expiration is required ({@code exp}, as in the JWT profile for
-   * OAuth 2.0 access tokens, RFC 9068), it and {@code nbf} are checked with the clock skew, the
-   * issuer must be the trusted one and the audience one of its audiences. The signature algorithm
-   * is restricted by the decoder.
+   * Comprobaciones de cada token de acceso: se exige una expiración ({@code exp}, como en el perfil
+   * JWT para tokens de acceso de OAuth 2.0, RFC 9068), esta y {@code nbf} se comprueban con la
+   * tolerancia de reloj, el emisor debe ser el de confianza y la audiencia una de sus audiencias.
+   * El decodificador restringe el algoritmo de firma.
    */
   OAuth2TokenValidator<Jwt> validator(TrustedIssuer issuer) {
     return new DelegatingOAuth2TokenValidator<>(
@@ -160,7 +161,8 @@ public final class TrustedIssuerDecoders implements AutoCloseable {
   private NimbusJwtDecoder buildServlet(TrustedIssuer issuer, URI jwks) {
     NimbusJwtDecoder decoder =
         NimbusJwtDecoder.withJwkSetUri(jwks.toString())
-            // Type validation is supplied by the issuer's explicit disjoint profile validator.
+            // La validación del tipo la aporta el validador explícito del perfil disjunto del
+            // emisor.
             .validateType(false)
             .restOperations(transport.rest(jwks))
             .jwsAlgorithms(
@@ -177,8 +179,9 @@ public final class TrustedIssuerDecoders implements AutoCloseable {
     return ReactiveDecoders.build(this, issuer);
   }
 
-  // Keep Reactor lambda signatures out of the shared Spring bean. Bean post-processors inspect
-  // every declared method, including synthetic ones, on servlet applications without Reactor.
+  // Las firmas de lambdas de Reactor se mantienen fuera del bean compartido de Spring. Los bean
+  // post-processors inspeccionan todos los métodos declarados, incluidos los sintéticos, en
+  // aplicaciones servlet sin Reactor.
   private static final class ReactiveDecoders {
     static ReactiveJwtDecoder build(TrustedIssuerDecoders owner, TrustedIssuer issuer) {
       var cached = new AtomicReference<@Nullable NimbusReactiveJwtDecoder>();
@@ -215,7 +218,10 @@ public final class TrustedIssuerDecoders implements AutoCloseable {
     }
   }
 
-  /** Non-blocking startup: retries failed discovery in owned virtual threads until closed. */
+  /**
+   * Arranque no bloqueante: reintenta el descubrimiento fallido en hilos virtuales propios hasta el
+   * cierre.
+   */
   public void warmUp() {
     metadata.warmUp(policy.all());
   }

@@ -10,7 +10,7 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.json.JsonReader;
 import pe.axiz.core.json.JsonWriter;
 
-/** Serializes records for key-value stores (Redis, DynamoDB string attribute). */
+/** Serializa registros para almacenes clave-valor (Redis, atributo de tipo cadena en DynamoDB). */
 public final class StoredResponseCodec {
 
   private StoredResponseCodec() {}

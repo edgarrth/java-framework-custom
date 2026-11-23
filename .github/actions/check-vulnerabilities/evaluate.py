@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Fail-closed treatment of complete scanner evidence and protected vulnerability history.
+"""Tratamiento que falla de forma cerrada de la evidencia completa del escáner y del historial protegido de vulnerabilidades.
 
-The caller supplies a protected policy/history and trusted expected artifact descriptors.
-Head-branch exceptions are never used to authorize that same build. No network or auto-commits.
+Quien invoca aporta una política e historial protegidos y descriptores de artefactos esperados de confianza.
+Las excepciones de la rama head nunca se usan para autorizar ese mismo build. Sin red ni commits automáticos.
 """
 import argparse
 import hashlib
@@ -57,7 +57,7 @@ def stamp(value):
 
 
 def scan_stamp(value):
-    """Trivy emits RFC3339 using the runner offset; policy instants still require UTC."""
+    """Trivy emite RFC3339 con el desfase horario del runner; los instantes de la política siguen exigiendo UTC."""
     if not isinstance(value, str) or not SCAN_STAMP.fullmatch(value):
         raise ValueError("Scanner timestamps must contain an explicit RFC3339 offset")
     if value.endswith("-00:00"):
@@ -84,7 +84,7 @@ def component(value):
     text(value)
     if not value.startswith("pkg:") or len(value) > 2048:
         raise ValueError("A package URL is required for component identity")
-    # Keep package ecosystem and namespace; versions/distro qualifiers cannot reset the risk age.
+        # Se conservan el ecosistema y el namespace del paquete; los calificadores de versión o de distribución no pueden reiniciar la antigüedad del riesgo.
     coordinate = value.split("?", 1)[0].split("#", 1)[0]
     return coordinate.rsplit("@", 1)[0] if coordinate.rfind("@") > coordinate.rfind("/") else coordinate
 
@@ -169,7 +169,7 @@ def validate_policy(policy, now):
 
 
 def related(rows, ids, package):
-    """Transitive alias closure across protected history; row ids and versions are not identity."""
+    """Cierre transitivo de alias a lo largo del historial protegido; los ids de fila y las versiones no son identidad."""
     matches = []
     remaining = [r for r in rows if component(r["component"]) == package]
     known = set(ids)
@@ -184,7 +184,7 @@ def related(rows, ids, package):
 
 
 def preserve_history(current, history):
-    """Validate proposed policy updates separately; they do not grant delivery authorization."""
+    """Valida por separado las actualizaciones de política propuestas; no conceden autorización de entrega."""
     for old in history:
         matches = related(current, identifiers(old), component(old["component"]))
         if not matches:
@@ -221,7 +221,7 @@ def scan_findings(report, descriptor, now):
             identifier = text(vulnerability.get("VulnerabilityID"))
             package = vulnerability.get("PkgIdentifier", {}).get("PURL")
             if package is None:
-                # No ambiguous package-name fallback can authorize an exception.
+                                # Ningún fallback ambiguo por nombre de paquete puede autorizar una excepción.
                 package = "pkg:unresolved/" + text(vulnerability.get("PkgName"))
             aliases = vulnerability.get("VendorIDs") or []
             strings(aliases, allow_empty=True)
@@ -232,8 +232,8 @@ def scan_findings(report, descriptor, now):
 
 
 def decide(vulnerability, policy, history, now, minor_release=False):
-    # Edgar's 2026-11-17 decision supersedes the former managed-MEDIUM release allowance.
-    # Historical records remain validated and preserved; they cannot authorize these severities.
+    # MEDIUM, HIGH y CRITICAL bloquean siempre, también en releases. Los registros de riesgo
+    # existentes se validan y conservan, pero no autorizan estas severidades.
     severity = vulnerability["severity"]
     if severity in {"MEDIUM", "HIGH", "CRITICAL"}:
         return "BLOCK", "medium-high-critical"
@@ -292,7 +292,7 @@ def main():
     parser.add_argument("--output", required=True)
     parser.add_argument("--minor-release", action="store_true")
     args = parser.parse_args()
-    # No caller-controlled --now option: deadlines use the runner clock.
+        # Sin opción --now controlada por quien invoca: los plazos usan el reloj del runner.
     now = datetime.now(UTC)
     try:
         historical = read_json(args.history)

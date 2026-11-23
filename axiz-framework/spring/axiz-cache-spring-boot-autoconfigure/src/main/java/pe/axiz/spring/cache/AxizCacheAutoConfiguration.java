@@ -28,7 +28,8 @@ import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * {@link AxizCacheable} and named caches on L1 (Caffeine) plus L2 (ElastiCache) when configured.
+ * {@link AxizCacheable} y cachés con nombre sobre L1 (Caffeine) más L2 (ElastiCache) cuando está
+ * configurado.
  */
 @AutoConfiguration(
     afterName = {

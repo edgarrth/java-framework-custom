@@ -12,8 +12,9 @@ import pe.axiz.core.sensitive.OutputChannel;
 import pe.axiz.core.sensitive.SensitiveField;
 
 /**
- * Writes the entry and exit lines of an operation. Arguments and results are masked with the {@link
- * ObjectMasker}; parameters marked {@link NoLog} are replaced by a placeholder.
+ * Escribe las líneas de entrada y salida de una operación. Los argumentos y los resultados se
+ * enmascaran con el {@link ObjectMasker}; los parámetros marcados con {@link NoLog} se reemplazan
+ * por un marcador.
  */
 public final class OperationLogger {
 
@@ -26,14 +27,14 @@ public final class OperationLogger {
   }
 
   /**
-   * Logs the start of an operation.
+   * Registra en log el inicio de una operación.
    *
-   * @param operation operation name
-   * @param argumentNames parameter names
-   * @param arguments argument values
-   * @param excluded per argument, whether it is marked {@link NoLog}
-   * @param declared sensitivity declared on each argument, if any
-   * @param level level
+   * @param operation nombre de la operación
+   * @param argumentNames nombres de los parámetros
+   * @param arguments valores de los argumentos
+   * @param excluded por argumento, indica si está marcado con {@link NoLog}
+   * @param declared sensibilidad declarada en cada argumento, si existe
+   * @param level nivel
    */
   public void entry(
       String operation,
@@ -64,7 +65,7 @@ public final class OperationLogger {
     }
   }
 
-  /** Logs a successful exit. */
+  /** Registra en log una salida exitosa. */
   public void success(
       String operation,
       Duration duration,
@@ -89,7 +90,9 @@ public final class OperationLogger {
     }
   }
 
-  /** Logs a failed exit; business rejections at WARN, everything else at ERROR. */
+  /**
+   * Registra en log una salida fallida; los rechazos de negocio en WARN y todo lo demás en ERROR.
+   */
   public void failure(
       String operation,
       Duration duration,

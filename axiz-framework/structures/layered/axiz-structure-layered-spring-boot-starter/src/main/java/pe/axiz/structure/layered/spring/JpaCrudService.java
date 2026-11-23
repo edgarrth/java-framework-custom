@@ -26,10 +26,12 @@ import pe.axiz.structure.layered.CrudAction;
 import pe.axiz.structure.layered.CrudService;
 
 /**
- * Authorized maintenance CRUD with separate entity, request and response types. An effective JPA
- * version mapping is mandatory. New entities are persisted, never merged; updates compare the
- * caller's version and keep JPA optimistic locking through commit. Subclasses must select allowed
- * fields, ownership and list scope. Domain commands for money movement belong outside this API.
+ * CRUD de mantenimiento autorizado con tipos de entidad, petición y respuesta separados. Es
+ * obligatorio un mapeo de versión JPA efectivo. Las entidades nuevas se persisten, nunca se
+ * fusionan; las actualizaciones comparan la versión de quien llama y mantienen el bloqueo optimista
+ * de JPA hasta el commit. Las subclases deben seleccionar los campos permitidos, la propiedad y el
+ * alcance de los listados. Los comandos de dominio para movimientos de dinero quedan fuera de esta
+ * API.
  */
 @Transactional
 public abstract class JpaCrudService<E, RequestT, ResponseT, I>
@@ -67,22 +69,29 @@ public abstract class JpaCrudService<E, RequestT, ResponseT, I>
   }
 
   /**
-   * Creates a new entity with server-controlled identity and owner; never copies them from input.
+   * Crea una entidad nueva con identidad y propietario controlados por el servidor; nunca los copia
+   * de la entrada.
    */
   protected abstract E newEntity(RequestT request);
 
-  /** Copies only client-editable fields; never copies identity, owner or version. */
+  /**
+   * Copia solo los campos editables por el cliente; nunca copia la identidad, el propietario ni la
+   * versión.
+   */
   protected abstract void apply(E current, RequestT changes);
 
   protected abstract ResponseT toResponse(E entity);
 
-  /** Expected JPA version, with the same type as the entity version; null is rejected as input. */
+  /**
+   * Versión JPA esperada, del mismo tipo que la versión de la entidad; null se rechaza como
+   * entrada.
+   */
   protected abstract @Nullable Object expectedVersion(RequestT request);
 
-  /** Throws AccessException to deny; entity is null for CREATE and LIST. */
+  /** Lanza AccessException para denegar; la entidad es null para CREATE y LIST. */
   protected abstract void authorize(CrudAction action, @Nullable E entity);
 
-  /** Mandatory row restriction for the authenticated caller; returning null is an error. */
+  /** Restricción de filas obligatoria para el llamador autenticado; devolver null es un error. */
   protected abstract Specification<E> listScope();
 
   protected abstract Set<String> sortableFields();

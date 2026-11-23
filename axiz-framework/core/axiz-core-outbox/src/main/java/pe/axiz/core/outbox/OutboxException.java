@@ -1,6 +1,6 @@
 package pe.axiz.core.outbox;
 
-/** Outbox persistence failure. */
+/** Fallo de persistencia del outbox. */
 public class OutboxException extends RuntimeException {
 
   private static final long serialVersionUID = 1L;

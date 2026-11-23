@@ -19,7 +19,9 @@ import pe.axiz.core.tokenization.vault.TokenBudgetPolicy;
 import pe.axiz.core.tokenization.vault.TokenCaller;
 import pe.axiz.core.tokenization.vault.VaultScope;
 
-/** Native admission with an injected fail-closed limiter; cancellation retains accepted I/O. */
+/**
+ * Admisión nativa con un limitador fail-closed inyectado; la cancelación conserva la E/S aceptada.
+ */
 public final class RedisAsyncTokenBudget implements AsyncTokenBudget {
   private final RedisAsyncCommands<String, String> redis;
   private final AsyncRateLimiter limiter;
@@ -149,7 +151,8 @@ public final class RedisAsyncTokenBudget implements AsyncTokenBudget {
                       TokenErrors.limited(protocol.policy.concurrencyRetryAfter()));
                 } else {
                   Permit permit = permit(leases, lease);
-                  // A grant after cancellation belongs to us until its release is acknowledged.
+                  // Una concesión posterior a la cancelación es propia hasta que se confirma su
+                  // liberación.
                   if (!result.complete(permit)) permit.release();
                 }
               });
@@ -186,7 +189,8 @@ public final class RedisAsyncTokenBudget implements AsyncTokenBudget {
         protocol.uncertain(lease);
         result.completeExceptionally(TokenErrors.failure(TokenErrors.UNAVAILABLE));
       }
-      // Cancelling an observer never cancels the accepted release or changes its shared outcome.
+      // Cancelar un observador nunca cancela la liberación aceptada ni cambia su resultado
+      // compartido.
       return result.copy();
     };
   }

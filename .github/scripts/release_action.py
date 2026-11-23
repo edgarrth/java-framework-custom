@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare immutable upstream metadata, then verify release-planner parity without network."""
+"""Prepara metadatos upstream inmutables y luego verifica la paridad del planificador de releases sin red."""
 import argparse
 import hashlib
 import json

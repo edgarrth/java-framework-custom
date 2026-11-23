@@ -22,14 +22,15 @@ import pe.axiz.payments.beneficiaries.service.BeneficiariesService;
 import pe.axiz.spring.web.Paging;
 
 /**
- * REST adapter of the {@code beneficiaries} operations of the contract (src/main/openapi).
- * Validation of formats comes from the contract models; business rules live in the service. Every
- * operation is limited to the customer of the path, before idempotency replays.
+ * Adaptador REST de las operaciones {@code beneficiaries} del contrato (src/main/openapi). La
+ * validación de formatos proviene de los modelos del contrato; las reglas de negocio residen en el
+ * servicio. Cada operación se limita al cliente de la ruta, previo a las repeticiones de
+ * idempotencia.
  */
 @RestController
 public class BeneficiariesController {
 
-  /** Only the customer named in the path (see {@link CustomerAccess}). */
+  /** Solo el cliente indicado en la ruta (ver {@link CustomerAccess}). */
   static final String CUSTOMER_ONLY = "@customerAccess.isCustomer(authentication, #customerId)";
 
   private final BeneficiariesService service;
@@ -39,7 +40,8 @@ public class BeneficiariesController {
   }
 
   /**
-   * Beneficiaries of a customer (cursor pagination) (GET /v1/customers/{customerId}/beneficiaries).
+   * Beneficiarios de un cliente (paginación por cursor) (GET
+   * /v1/customers/{customerId}/beneficiaries).
    */
   @PreAuthorize(CUSTOMER_ONLY)
   @GetMapping("/v1/customers/{customerId}/beneficiaries")
@@ -51,7 +53,7 @@ public class BeneficiariesController {
         BeneficiaryApiMapper.toApi(service.list(customerId, page.size(), cursor)));
   }
 
-  /** Registers a beneficiary (POST /v1/customers/{customerId}/beneficiaries). */
+  /** Registra un beneficiario (POST /v1/customers/{customerId}/beneficiaries). */
   @Idempotent
   @PreAuthorize(CUSTOMER_ONLY)
   @PostMapping("/v1/customers/{customerId}/beneficiaries")
@@ -61,7 +63,7 @@ public class BeneficiariesController {
     return ResponseEntity.status(201).body(BeneficiaryApiMapper.toApi(created));
   }
 
-  /** Gets a beneficiary (GET /v1/customers/{customerId}/beneficiaries/{beneficiaryId}). */
+  /** Obtiene un beneficiario (GET /v1/customers/{customerId}/beneficiaries/{beneficiaryId}). */
   @PreAuthorize(CUSTOMER_ONLY)
   @GetMapping("/v1/customers/{customerId}/beneficiaries/{beneficiaryId}")
   public ResponseEntity<Beneficiary> getBeneficiary(
@@ -71,7 +73,7 @@ public class BeneficiariesController {
   }
 
   /**
-   * Updates the alias of a beneficiary (PUT
+   * Actualiza el alias de un beneficiario (PUT
    * /v1/customers/{customerId}/beneficiaries/{beneficiaryId}).
    */
   @PreAuthorize(CUSTOMER_ONLY)
@@ -85,7 +87,7 @@ public class BeneficiariesController {
   }
 
   /**
-   * Removes a beneficiary (soft delete) (DELETE
+   * Elimina un beneficiario (borrado lógico) (DELETE
    * /v1/customers/{customerId}/beneficiaries/{beneficiaryId}).
    */
   @PreAuthorize(CUSTOMER_ONLY)

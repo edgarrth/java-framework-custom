@@ -11,7 +11,10 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.codegen.openapi.Json;
 import pe.axiz.codegen.openapi.OpenApiDocument;
 
-/** Generates owned application records; transport annotations remain in the HTTP models. */
+/**
+ * Genera records de aplicación propios; las anotaciones de transporte permanecen en los modelos
+ * HTTP.
+ */
 final class ApplicationModels {
   private ApplicationModels() {}
 

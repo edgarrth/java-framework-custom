@@ -17,10 +17,10 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
-/** The data key caches: exact identity, age and size bounds. */
+/** Cachés de claves de datos: identidad exacta y límites de antigüedad y tamaño. */
 class EnvelopeKeyCacheTest {
 
-  /** A clock the test moves by hand. */
+  /** Reloj que la prueba mueve a mano. */
   static final class MovingClock extends Clock {
     Instant now = Instant.parse("2026-10-24T10:00:00Z");
 
@@ -40,7 +40,7 @@ class EnvelopeKeyCacheTest {
     }
   }
 
-  /** A KMS stand-in: each encrypted key has its own data key; counts the calls. */
+  /** Sustituto de KMS: cada clave cifrada tiene su propia clave de datos; cuenta las llamadas. */
   static final class FakeKms implements DataKeyProvider {
     final Map<String, byte[]> keys = new HashMap<>();
     final AtomicInteger generated = new AtomicInteger();

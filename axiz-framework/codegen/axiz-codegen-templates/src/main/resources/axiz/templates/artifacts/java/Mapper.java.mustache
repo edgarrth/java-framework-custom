@@ -5,8 +5,9 @@ import org.mapstruct.MappingConstants;
 import org.mapstruct.ReportingPolicy;
 
 /**
- * MapStruct mapper ({@code {{artifact.className}}Mapper}) between the API models and the
- * application types; generated at compile time, unmapped target properties fail the build.
+ * Mapper de MapStruct ({@code {{artifact.className}}Mapper}) entre los modelos de la API y los
+ * tipos de aplicación; se genera en tiempo de compilación y las propiedades de destino sin mapear
+ * hacen fallar el build.
  */
 @Mapper(
     componentModel = MappingConstants.ComponentModel.SPRING,
@@ -14,7 +15,7 @@ import org.mapstruct.ReportingPolicy;
 public interface {{artifact.className}}Mapper {
 {{#artifact.hasMapping}}
 
-  /** Maps {@code {{artifact.source}}} to {@code {{artifact.target}}}. */
+  /** Convierte {@code {{artifact.source}}} en {@code {{artifact.target}}}. */
   {{artifact.target}} to{{artifact.targetSimple}}({{artifact.source}} source);
 {{/artifact.hasMapping}}
 }

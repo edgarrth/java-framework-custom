@@ -3,7 +3,10 @@ package pe.axiz.core.saga;
 import java.util.Objects;
 import pe.axiz.core.crypto.PayloadProtector;
 
-/** The one boundary that knows both the context codec and the authoritative saga row identity. */
+/**
+ * Única frontera que conoce tanto el codec del contexto como la identidad autoritativa de la fila
+ * de la saga.
+ */
 final class SagaContextStore<C> {
   private final String context;
   private final ContextCodec<C> codec;

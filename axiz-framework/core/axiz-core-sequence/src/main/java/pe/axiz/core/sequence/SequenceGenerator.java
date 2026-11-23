@@ -6,9 +6,9 @@ import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Formatted, gap-tolerant sequence. Values are allocated from the store in blocks of {@code
- * blockSize} to reduce round trips (block 1 means no gaps unless a transaction fails). Thread-safe;
- * no state is shared between generators.
+ * Secuencia formateada y tolerante a huecos. Los valores se asignan desde el almacén en bloques de
+ * {@code blockSize} para reducir los viajes de ida y vuelta (un bloque de 1 significa sin huecos
+ * salvo que falle una transacción). Thread-safe; no se comparte estado entre generadores.
  */
 public final class SequenceGenerator {
 
@@ -32,7 +32,7 @@ public final class SequenceGenerator {
     this.clock = Objects.requireNonNull(clock);
   }
 
-  /** Next raw value for the current period. */
+  /** Siguiente valor en bruto para el periodo actual. */
   public long nextValue() {
     String period = format.reset().period(LocalDate.now(clock.withZone(format.zone())));
     return nextValue(period);
@@ -55,7 +55,7 @@ public final class SequenceGenerator {
     }
   }
 
-  /** Next formatted value, e.g. {@code OP-20260131-000123}. */
+  /** Siguiente valor formateado, por ejemplo {@code OP-20260131-000123}. */
   public String next() {
     String period = format.reset().period(LocalDate.now(clock.withZone(format.zone())));
     long value = nextValue(period);

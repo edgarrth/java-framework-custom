@@ -6,7 +6,10 @@ import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.tokenization.Token;
 
-/** Restricted durable reconciliation reference, not a replay cache or an idempotency promise. */
+/**
+ * Referencia de reconciliación durable y restringida, no una caché de replay ni una promesa de
+ * idempotencia.
+ */
 public record UncertainTokenOperation(
     UUID operationId,
     VaultScope scope,
@@ -14,14 +17,14 @@ public record UncertainTokenOperation(
     @Nullable Token token,
     Instant at,
     Reason reason) {
-  /** Mutation whose commit acknowledgement is missing. */
+  /** Mutación cuyo acuse de commit falta. */
   public enum Phase {
     CREATE,
     DELETE,
     ROTATE
   }
 
-  /** Closed technical reason catalog. */
+  /** Catálogo cerrado de motivos técnicos. */
   public enum Reason {
     STORAGE_ACK_UNKNOWN,
     COMMITTED_AUDIT_UNCONFIRMED,

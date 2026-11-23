@@ -1,12 +1,12 @@
-# Bruno collection of the axiz demo
+# Colección Bruno de la demo de axiz
 
-Requests against the local demo (`scripts/demo.sh up`). Open this folder in Bruno, select the
-`local` environment and set its two secret variables (they are not stored in the repository):
+Peticiones contra la demo local (`scripts/demo.sh up`). Se abre esta carpeta en Bruno, se selecciona el
+ambiente `local` y se configuran sus dos variables secretas (no se guardan en el repositorio):
 
-| variable | local value |
+| variable | valor local |
 |---|---|
-| `password` | `local-only-ana` (Keycloak demo user `ana`, customer `C-1001`) |
-| `clientSecret` | `local-only-payment-process` (client `payment-process`) |
+| `password` | `local-only-ana` (usuario demo de Keycloak `ana`, cliente `C-1001`) |
+| `clientSecret` | `local-only-payment-process` (cliente `payment-process`) |
 
-Run `00 auth` first: it stores the customer token (`token`) and the machine token (`m2mToken`).
-Every request has tests, so the whole collection can run with `bru run --env local`.
+Primero se ejecuta `00 auth`: guarda el token del cliente (`token`) y el token de máquina (`m2mToken`).
+Cada petición tiene pruebas, por lo que toda la colección puede ejecutarse con `bru run --env local`.

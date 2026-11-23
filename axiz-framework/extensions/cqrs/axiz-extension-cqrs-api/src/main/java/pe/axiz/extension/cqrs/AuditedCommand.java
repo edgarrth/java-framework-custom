@@ -3,19 +3,19 @@ package pe.axiz.extension.cqrs;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Command recorded in the audit trail with its outcome.
+ * Comando registrado en el rastro de auditoría con su resultado.
  *
- * @param <R> result type
+ * @param <R> tipo del resultado
  */
 public interface AuditedCommand<R> extends Command<R> {
 
-  /** Audited action, e.g. {@code card.block}. */
+  /** Acción auditada, por ejemplo {@code card.block}. */
   String auditAction();
 
-  /** Resource type, e.g. {@code card}. */
+  /** Tipo de recurso, por ejemplo {@code card}. */
   String auditResource();
 
-  /** Resource id, if known before handling. */
+  /** Id del recurso, si se conoce antes del manejo. */
   default @Nullable String auditResourceId() {
     return null;
   }

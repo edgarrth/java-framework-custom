@@ -19,7 +19,10 @@ import pe.axiz.payments.orders.domain.PaymentErrors;
 import pe.axiz.payments.orders.domain.PaymentOrder;
 import pe.axiz.payments.orders.domain.PaymentStatus;
 
-/** Status changes: retries, the daily limit given back on rejection and the published events. */
+/**
+ * Cambios de estado: reintentos, el límite diario devuelto ante un rechazo y los eventos
+ * publicados.
+ */
 class ChangePaymentOrderStatusHandlerTest {
 
   static final LocalDate DAY = LocalDate.of(2026, 10, 9);

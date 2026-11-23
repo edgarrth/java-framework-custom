@@ -17,7 +17,7 @@ import pe.axiz.spring.messaging.AxizMessagingProperties;
 import pe.axiz.spring.messaging.EventPublisherAdapter;
 import software.amazon.awssdk.services.sns.SnsClient;
 
-/** SNS publishers and owned clients. */
+/** Publicadores SNS y clientes propios. */
 @AutoConfiguration(beforeName = "pe.axiz.spring.messaging.AxizMessagingAutoConfiguration")
 @ConditionalOnBooleanProperty(name = "axiz.messaging.enabled", matchIfMissing = true)
 @EnableConfigurationProperties({

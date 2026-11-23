@@ -10,9 +10,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Encrypts individual values (database fields) with AES-256-GCM. Text form: {@code
- * axz1:<keyId>:<base64url(iv||ciphertext)>}. The field context (for example {@code
- * customer.document}) is bound as AAD, so a value copied to another column fails to decrypt.
+ * Cifra valores individuales (campos de base de datos) con AES-256-GCM. Forma de texto: {@code
+ * axz1:<keyId>:<base64url(iv||ciphertext)>}. El contexto del campo (por ejemplo {@code
+ * customer.document}) se enlaza como AAD, de modo que un valor copiado a otra columna no se puede
+ * descifrar.
  */
 public final class FieldEncryptor {
 
@@ -71,12 +72,15 @@ public final class FieldEncryptor {
     }
   }
 
-  /** Rebinds authenticated context even when the encryption key is still current. */
+  /**
+   * Vuelve a enlazar el contexto autenticado incluso cuando la clave de cifrado sigue siendo la
+   * actual.
+   */
   public @Nullable String reencrypt(@Nullable String value, String oldContext, String newContext) {
     return encrypt(decrypt(value, oldContext), newContext);
   }
 
-  /** Whether the value was encrypted with an old key and should be re-encrypted. */
+  /** Indica si el valor se cifró con una clave que no es la actual y debería volver a cifrarse. */
   public boolean needsRotation(String value) {
     return !EncryptedValue.parse(value).keyId().equals(keys.currentKeyId());
   }

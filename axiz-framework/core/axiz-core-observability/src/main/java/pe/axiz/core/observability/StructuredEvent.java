@@ -5,16 +5,16 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Structured event written as a JSON log line and as an event on the current span.
+ * Evento estructurado escrito como línea de log JSON y como evento en el span actual.
  *
- * @param kind kind of event
- * @param name event name, e.g. {@code order.created}
- * @param attributes sanitized attributes
- * @param at instant
+ * @param kind tipo de evento
+ * @param name nombre del evento, por ejemplo {@code order.created}
+ * @param attributes atributos saneados
+ * @param at instante
  */
 public record StructuredEvent(Kind kind, String name, Map<String, String> attributes, Instant at) {
 
-  /** Event kinds. */
+  /** Tipos de evento. */
   public enum Kind {
     BUSINESS,
     EXTERNAL_CALL,

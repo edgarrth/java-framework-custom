@@ -25,14 +25,19 @@ import pe.axiz.adapter.aws.transport.CompletionObserver;
 import pe.axiz.adapter.aws.transport.CompletionPool;
 import pe.axiz.core.commons.net.TransportSecurityPolicy;
 
-/** Optional metrics binding; owners with the same stable pool name share aggregate gauges. */
+/**
+ * Enlace opcional de métricas; los propietarios con el mismo nombre estable de pool comparten
+ * gauges agregados.
+ */
 public final class AwsCompletionMetrics {
   private static final IdentityHashMap<MeterRegistry, Map<String, Group>> GROUPS =
       new IdentityHashMap<>();
 
   private AwsCompletionMetrics() {}
 
-  /** Creates an owner whose completion metrics belong to this application's registry. */
+  /**
+   * Crea un propietario cuyas métricas de finalización pertenecen al registro de esta aplicación.
+   */
   public static AsyncAwsClients create(
       String name, int workers, int queueCapacity, MeterRegistry registry) {
     requireName(name);
@@ -45,7 +50,10 @@ public final class AwsCompletionMetrics {
         AwsCredentialSources.create(TransportSecurityPolicy.system()));
   }
 
-  /** Creates an owner of the supplied source; pass a non-owning view for a borrowed provider. */
+  /**
+   * Crea un propietario de la fuente suministrada; para un proveedor prestado se pasa una vista sin
+   * propiedad.
+   */
   public static AsyncAwsClients create(
       String name,
       int workers,
@@ -76,7 +84,10 @@ public final class AwsCompletionMetrics {
     }
   }
 
-  /** Replaces an owner's optional metrics binding; the owner closes it with its resources. */
+  /**
+   * Reemplaza el enlace opcional de métricas de un propietario; el propietario lo cierra con sus
+   * recursos.
+   */
   public static void bind(AsyncAwsClients owner, String name, MeterRegistry registry) {
     requireName(name);
     Objects.requireNonNull(registry, "registry");

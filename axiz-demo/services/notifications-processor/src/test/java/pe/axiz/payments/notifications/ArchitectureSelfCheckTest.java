@@ -3,7 +3,7 @@ package pe.axiz.payments.notifications;
 import org.junit.jupiter.api.Test;
 import pe.axiz.quality.archunit.ArchitectureSelfCheck;
 
-/** Detects an empty or disabled architecture rule configuration. */
+/** Detecta una configuración de reglas de arquitectura vacía o deshabilitada. */
 class ArchitectureSelfCheckTest {
   @Test
   void rejectsAnIntentionallyInvalidFixture() {

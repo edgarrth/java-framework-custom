@@ -99,7 +99,7 @@ compartido con usuarios ni en un cliente que admita también flujos de usuario. 
 con UUID en `sub`, sin la marca configurada, se trata como usuario: configurar la marca en el
 emisor y comprobar ambos tipos de token.
 
-`subject-as-client` ahora vale `false` por defecto. Activarlo solo permite usar `sub` como client id
+`subject-as-client` vale `false` por defecto. Activarlo solo permite usar `sub` como client id
 cuando **también coincide una marca de aplicación confiable**. Un token de usuario sin `azp` o
 `client_id` se rechaza; habilitar la opción no convierte automáticamente a cualquier sujeto en
 aplicación. Siguen admitidos los formatos estándar con `sub` igual al client id o sin usuario final.
@@ -207,7 +207,7 @@ public class GetPaymentOrderAccess implements AccessPolicy<GetPaymentOrderQuery>
   repositorio reactivo, usa `pe.axiz.extension.cqrs.ReactiveAccessPolicy` del módulo API, que devuelve
   `Publisher<Void>` (por ejemplo, `Mono<Void>`) y no bloquea. Las
   reglas de arquitectura de los servicios reactivos prohíben `block()`.
-- Hay dos formas de negar: `AccessException` (403) y `NotFoundException` (404). Usa 404 cuando
+- Hay dos formas de negar: `AccessException` (403) y `NotFoundException` (404). Se usa 404 cuando
   confirmar que el recurso existe ya sería una fuga.
 - Los comandos internos que no nombran recursos de un tercero, por ejemplo los que proyectan
   eventos, se marcan con `@OpenAccess(reason = "...")`. El motivo queda en el código y se revisa.
@@ -216,7 +216,7 @@ public class GetPaymentOrderAccess implements AccessPolicy<GetPaymentOrderQuery>
   hace nada. Un valor desconocido impide arrancar, incluso si aún no hay handlers. Los servicios de dominio usan `fail`.
 
 En HTTP, `@PreAuthorize` y las políticas se evalúan antes de que la idempotencia devuelva una
-respuesta guardada. Así, un replay nunca entrega datos a quien ya no tiene permiso (ver
+respuesta guardada. Así, un replay nunca entrega datos a quien perdió el permiso (ver
 [Idempotencia](idempotencia.md#autorizacion-antes-del-replay)).
 
 La demo aplica esta matriz en payments-business:

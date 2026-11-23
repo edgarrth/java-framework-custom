@@ -1,4 +1,4 @@
-"""Summary of the Surefire and Failsafe XML reports under the working directory (Markdown)."""
+"""Resumen de los reportes XML de Surefire y Failsafe bajo el directorio de trabajo (Markdown)."""
 
 import glob
 import os
@@ -22,7 +22,7 @@ def main() -> None:
         kind = "IT" if "/failsafe-reports/" in path else "unit"
         module = path.split("/target/")[0] or "."
         try:
-            # Trusted build POM/report, after executing the same checkout; no request XML is parsed.
+                        # POM o reporte de build de confianza, tras ejecutar el mismo checkout; no se analiza XML de la petición.
             # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse
             root = ET.parse(path).getroot()
         except ET.ParseError:

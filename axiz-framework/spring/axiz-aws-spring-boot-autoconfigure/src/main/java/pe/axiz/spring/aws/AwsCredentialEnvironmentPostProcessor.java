@@ -8,7 +8,10 @@ import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.util.ClassUtils;
 
-/** Validate effective properties after Config Data; bootstrap validates before its first access. */
+/**
+ * Valida las propiedades efectivas después de Config Data; el bootstrap valida antes de su primer
+ * acceso.
+ */
 public final class AwsCredentialEnvironmentPostProcessor
     implements EnvironmentPostProcessor, Ordered {
   @Override

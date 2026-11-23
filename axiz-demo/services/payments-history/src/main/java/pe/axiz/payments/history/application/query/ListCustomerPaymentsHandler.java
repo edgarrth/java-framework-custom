@@ -6,7 +6,7 @@ import pe.axiz.payments.history.application.port.out.PaymentHistories;
 import pe.axiz.payments.history.domain.PaymentHistory;
 import reactor.core.publisher.Mono;
 
-/** Lists the payments of a customer. */
+/** Lista los pagos de un cliente. */
 public class ListCustomerPaymentsHandler
     implements ReactiveQueryHandler<ListCustomerPaymentsQuery, Page<PaymentHistory>> {
 

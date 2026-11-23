@@ -13,7 +13,10 @@ import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.json.JsonReader;
 
-/** Every boolean switch used for composition must appear in the produced IDE metadata. */
+/**
+ * Cada interruptor booleano que se usa para la composición debe aparecer en los metadatos generados
+ * para el IDE.
+ */
 class BooleanConfigurationMetadataTest {
   private static final Pattern CONDITION =
       Pattern.compile("@ConditionalOnBooleanProperty\\((.*?)\\)", Pattern.DOTALL);

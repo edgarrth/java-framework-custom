@@ -1,6 +1,6 @@
 package pe.axiz.core.notification;
 
-/** Port to request notifications. */
+/** Puerto para solicitar notificaciones. */
 @FunctionalInterface
 public interface NotificationSender {
 

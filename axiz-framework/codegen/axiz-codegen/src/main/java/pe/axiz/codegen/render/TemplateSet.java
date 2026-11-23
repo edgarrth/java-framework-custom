@@ -19,21 +19,22 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.codegen.openapi.SafeYaml;
 
 /**
- * A set of Mustache templates described by {@code axiz/templates/<set>/manifest.yaml}. Each entry
- * has a template, an output path (itself a template), an optional {@code when} condition and an
- * optional {@code each} list: the entry is rendered once per element, available as {@code item}.
+ * Un conjunto de plantillas Mustache descrito por {@code axiz/templates/<set>/manifest.yaml}. Cada
+ * entrada tiene una plantilla, una ruta de salida (que también es una plantilla), una condición
+ * {@code when} opcional y una lista {@code each} opcional: la entrada se renderiza una vez por
+ * elemento, disponible como {@code item}.
  */
 public final class TemplateSet {
 
   /**
-   * One manifest entry.
+   * Una entrada del manifiesto.
    *
-   * @param template template file, relative to the set
-   * @param path output path template
-   * @param when condition: dotted context paths joined with {@code &&} or {@code ||}, {@code !}
-   *     negates
-   * @param each context path of a list to iterate
-   * @param binary copy the template file as is (no rendering)
+   * @param template archivo de plantilla, relativo al conjunto
+   * @param path plantilla de la ruta de salida
+   * @param when condición: rutas de contexto con puntos unidas con {@code &&} o {@code ||}; {@code
+   *     !} niega
+   * @param each ruta de contexto de una lista por iterar
+   * @param binary copia el archivo de plantilla tal cual (sin renderizar)
    */
   public record Entry(
       String template, String path, @Nullable String when, @Nullable String each, boolean binary) {}
@@ -53,7 +54,7 @@ public final class TemplateSet {
             .withLoader(partial -> reader("partials/" + partial + ".mustache"));
   }
 
-  /** Loads a template set from the classpath. */
+  /** Carga un conjunto de plantillas desde el classpath. */
   public static TemplateSet load(String name) {
     Object doc;
     try (InputStream in = resource(name, "manifest.yaml")) {
@@ -82,7 +83,7 @@ public final class TemplateSet {
     return entries;
   }
 
-  /** Renders every applicable entry; returns output path to content. */
+  /** Renderiza cada entrada aplicable; devuelve la ruta de salida con su contenido. */
   public Map<String, byte[]> render(Map<String, Object> context) {
     Map<String, byte[]> out = new LinkedHashMap<>();
     for (Entry e : entries) {
@@ -104,7 +105,7 @@ public final class TemplateSet {
     return out;
   }
 
-  /** Renders one template of the set. */
+  /** Renderiza una plantilla del conjunto. */
   public String renderTemplate(String template, Map<String, Object> context) {
     return cache.computeIfAbsent(template, t -> compiler.compile(reader(t))).execute(context);
   }
@@ -129,7 +130,8 @@ public final class TemplateSet {
   }
 
   /**
-   * Template files are relative to the set; a leading {@code /} makes them relative to all sets.
+   * Los archivos de plantilla son relativos al conjunto; un {@code /} inicial los hace relativos a
+   * todos los conjuntos.
    */
   private static InputStream resource(String set, String file) {
     if (file.contains("..") || file.contains("\\")) {

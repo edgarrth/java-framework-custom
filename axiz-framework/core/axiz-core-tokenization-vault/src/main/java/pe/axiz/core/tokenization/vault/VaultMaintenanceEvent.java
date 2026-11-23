@@ -5,7 +5,10 @@ import java.util.Objects;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 
-/** Closed maintenance evidence. No source value, ciphertext, HMAC or opaque scan cursor. */
+/**
+ * Evidencia de mantenimiento cerrada. Sin valor de origen, texto cifrado, HMAC ni cursor de
+ * recorrido opaco.
+ */
 public record VaultMaintenanceEvent(
     Action action,
     TokenCaller caller,
@@ -16,7 +19,10 @@ public record VaultMaintenanceEvent(
     Result result,
     UUID operationId,
     Instant at) {
-  /** Separate administrative operations; not additional permissions on the consumer API. */
+  /**
+   * Operaciones administrativas separadas; no son permisos adicionales sobre la API de
+   * consumidores.
+   */
   public enum Action {
     INITIALIZE,
     ACTIVATE,
@@ -30,7 +36,7 @@ public record VaultMaintenanceEvent(
     PURGE
   }
 
-  /** Whether a privileged attempt was confirmed, denied or left uncertain. */
+  /** Indica si un intento privilegiado se confirmó, se denegó o quedó incierto. */
   public enum Result {
     STARTED,
     SUCCESS,
@@ -58,12 +64,14 @@ public record VaultMaintenanceEvent(
     return "VaultMaintenanceEvent[" + action + ", " + result + "]";
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción nominal; build verifica los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable Action action = null;
     private @Nullable TokenCaller caller = null;

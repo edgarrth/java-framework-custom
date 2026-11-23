@@ -16,7 +16,7 @@ import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.http.AsyncHttpExchange;
 import pe.axiz.core.http.ClientSettings;
 
-/** Startup-owned native DNS, HTTP and bounded pooling for the token endpoint. */
+/** DNS nativo, HTTP y pooling acotado propiedad del arranque para el endpoint de tokens. */
 final class NativeTokenHttpTransport implements AsyncHttpExchange, AutoCloseable {
   private static final int MAX_BYTES = 65_536;
   private final NativeHttpResources resources;

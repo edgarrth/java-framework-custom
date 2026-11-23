@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify immutable service products and prepare GitOps input without rebuilding them."""
+"""Verifica los productos inmutables del servicio y prepara la entrada de GitOps sin reconstruirlos."""
 import argparse
 import base64
 import hashlib
@@ -18,7 +18,7 @@ import service
 
 def raw_manifest(reference, expected):
     raw = subprocess.check_output(["docker", "buildx", "imagetools", "inspect", reference, "--raw"])
-    # buildx releases may append one display newline to the original manifest.
+        # Las versiones de buildx pueden añadir un salto de línea de presentación al manifiesto original.
     for content in (raw, raw.removesuffix(b"\n")):
         if "sha256:" + hashlib.sha256(content).hexdigest() == expected:
             return json.loads(content)
@@ -76,7 +76,7 @@ def desired(data, manifest_hash, environment, source, record_hash, run):
 
 
 def synced(state, expected):
-    """A healthy previous deployment is insufficient: match both immutable sources and the image."""
+    """Un despliegue previo sano no basta: deben coincidir ambas fuentes inmutables y la imagen."""
     spec = state.get("spec", {})
     sources = spec.get("sources", [])
     if len(sources) != 2:

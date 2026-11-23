@@ -9,7 +9,8 @@ import com.tngtech.archunit.lang.ArchRule;
 import java.util.List;
 
 /**
- * Layered style: {@code controller -> service -> repository}, persistence entities in repositories.
+ * Estilo layered: {@code controller -> service -> repository}, con las entidades de persistencia en
+ * los repositorios.
  */
 public final class LayeredRules {
 

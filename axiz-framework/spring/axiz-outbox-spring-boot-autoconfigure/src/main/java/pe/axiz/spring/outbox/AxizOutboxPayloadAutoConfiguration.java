@@ -15,8 +15,8 @@ import pe.axiz.core.crypto.PayloadProtectionMode;
 import pe.axiz.core.crypto.PayloadProtector;
 
 /**
- * Selects protection independently from store integration; absent keys fail closed in envelope
- * mode.
+ * Selecciona la protección con independencia de la integración del almacén; en modo envelope, las
+ * claves ausentes fallan de forma cerrada.
  */
 @AutoConfiguration(
     beforeName = {

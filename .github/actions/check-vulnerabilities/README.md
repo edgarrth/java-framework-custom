@@ -19,7 +19,7 @@ no promete representar todos los archivos generados o no versionados del workspa
 
 ## Política de aceptación
 
-Por decisión de Edgar del 2026-11-17, MEDIUM, HIGH y CRITICAL bloquean siempre,
+MEDIUM, HIGH y CRITICAL bloquean siempre,
 incluidas dependencias de desarrollo. Una excepción, plazo vigente, mitigación o registro
 marcado `resolved` no autoriza publicar mientras el escáner siga detectándolas. UNKNOWN
 produce evidencia incompleta hasta clasificarla. LOW se inventaría y también bloquea si
@@ -60,7 +60,7 @@ y la [protección clásica](https://docs.github.com/en/rest/branches/branch-prot
 ## Evidencia y pruebas
 
 La carpeta de salida contiene `provenance.json`, `expected.json`, reportes JSON y logs de cada
-escaneo y `decision.json`, con razones por hallazgo y propuestas incompletas. Publicar esa
+escaneo y `decision.json`, con razones por vulnerabilidad detectada y propuestas incompletas. Publicar esa
 carpeta aun cuando falle la puerta. No confundir exit code 0 del escáner (recolección completa)
 con aprobación: `decision.json` y el exit code del evaluador determinan el resultado.
 
@@ -72,8 +72,9 @@ Las pruebas cubren plazos, clasificación, explotación, versiones/scopes, caduc
 inmutable, alias, plataformas, corrupción de evidencia, filtros heredados y protección remota
 simulada. El escaneo y la protección reales necesitan verificarse también en el entorno final.
 
-For exact-version OpenVEX fixes, the image gate queries the GitHub advisory API and requires the
-same CVE/GHSA plus both the vendor advisory and the exact patch commit among its references.
-It separately recomputes commit ancestry and binds the result to the scanned immutable image ID.
-Missing references, upstream verification failures and changed image identity fail the gate.
-Source review remains responsible for patch semantics; a commit URL alone never proves a fix.
+Para las correcciones OpenVEX de versión exacta, la puerta de imágenes consulta la API de avisos de
+GitHub y exige el mismo CVE/GHSA, además del aviso del proveedor y el commit exacto del parche entre
+sus referencias. Recalcula por separado la ascendencia del commit y liga el resultado al ID inmutable
+de la imagen escaneada. Las referencias ausentes, los fallos de verificación en el origen y un cambio
+de identidad de la imagen hacen fallar la puerta. La revisión del código fuente sigue siendo
+responsable de la semántica del parche; una URL de commit por sí sola nunca demuestra una corrección.

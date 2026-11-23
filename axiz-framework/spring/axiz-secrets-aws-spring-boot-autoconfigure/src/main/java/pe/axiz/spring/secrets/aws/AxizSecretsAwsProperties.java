@@ -5,30 +5,30 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
- * Secret resolution ({@code axiz.secrets.*}). AWS Secrets Manager is the source of truth; External
- * Secrets Operator mounts the values as files, which are read first.
+ * Resolución de secretos ({@code axiz.secrets.*}). AWS Secrets Manager es la fuente de verdad;
+ * External Secrets Operator monta los valores como archivos, que se leen primero.
  *
- * @param secretsManager direct Secrets Manager lookups
- * @param parameterStore direct Parameter Store lookups (SecureString)
+ * @param secretsManager consultas directas a Secrets Manager
+ * @param parameterStore consultas directas a Parameter Store (SecureString)
  */
 @ConfigurationProperties("axiz.secrets")
 public record AxizSecretsAwsProperties(
     @DefaultValue SecretsManager secretsManager, @DefaultValue ParameterStore parameterStore) {
 
   /**
-   * Secrets Manager source.
+   * Fuente Secrets Manager.
    *
-   * @param enabled whether it is queried
-   * @param prefix name prefix, e.g. {@code axiz/prod/payments/}
+   * @param enabled indica si se consulta
+   * @param prefix prefijo de nombre, p. ej. {@code axiz/prod/payments/}
    */
   public record SecretsManager(
       @DefaultValue("false") boolean enabled, @DefaultValue("") String prefix) {}
 
   /**
-   * Parameter Store source.
+   * Fuente Parameter Store.
    *
-   * @param enabled whether it is queried
-   * @param path parameter path, e.g. {@code /axiz/prod/payments/}
+   * @param enabled indica si se consulta
+   * @param path ruta de parámetros, p. ej. {@code /axiz/prod/payments/}
    */
   public record ParameterStore(@DefaultValue("false") boolean enabled, @Nullable String path) {}
 }

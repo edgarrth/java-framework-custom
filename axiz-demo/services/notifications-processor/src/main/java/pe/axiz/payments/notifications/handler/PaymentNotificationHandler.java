@@ -21,9 +21,9 @@ import pe.axiz.payments.notifications.repository.ContactDirectory;
 import pe.axiz.payments.notifications.repository.CustomerContact;
 
 /**
- * Tells the customer how a payment ended (completed or rejected) through the channel they chose.
- * The notification request goes to the notifications platform as an event on SNS; its id is the id
- * of the source event, so a redelivered event never notifies twice downstream either.
+ * Informa al cliente cómo terminó un pago (completado o rechazado) por el canal que eligió. La
+ * solicitud de notificación va a la plataforma de notificaciones como un evento en SNS; su id es el
+ * id del evento de origen, por lo que un evento reentregado tampoco notifica dos veces aguas abajo.
  */
 @Component
 @HandlesEvent("pe.axiz.payments.payment-order.status-changed.v1")

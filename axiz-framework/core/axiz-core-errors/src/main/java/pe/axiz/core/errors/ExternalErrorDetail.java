@@ -4,14 +4,14 @@ import java.io.Serializable;
 import org.jspecify.annotations.Nullable;
 
 /**
- * What a dependency answered when it failed. Kept for logs, traces and (optionally) responses; an
- * empty body from the dependency is preserved as such instead of being lost.
+ * Lo que respondió una dependencia al fallar. Se conserva para logs, trazas y (opcionalmente)
+ * respuestas; un cuerpo vacío de la dependencia se preserva como tal en lugar de perderse.
  *
- * @param system logical name of the dependency (client name)
- * @param status HTTP status or -1 for transport errors
- * @param code error code reported by the dependency, if any
- * @param message message reported by the dependency, if any
- * @param body raw body (truncated to {@link #MAX_BODY}), may be empty but never null
+ * @param system nombre lógico de la dependencia (nombre del cliente)
+ * @param status estado HTTP o -1 para errores de transporte
+ * @param code código de error informado por la dependencia, si existe
+ * @param message mensaje informado por la dependencia, si existe
+ * @param body cuerpo en bruto (truncado a {@link #MAX_BODY}), puede estar vacío pero nunca es null
  */
 public record ExternalErrorDetail(
     String system, int status, @Nullable String code, @Nullable String message, String body)

@@ -8,8 +8,8 @@ import pe.axiz.payments.orders.application.query.GetPaymentOrderQuery;
 import pe.axiz.payments.orders.domain.PaymentOrder;
 
 /**
- * An order is visible to its customer and to services that may read orders. Another customer's
- * order is reported as not found, so ids cannot be probed.
+ * Una orden es visible para su cliente y para los servicios que pueden leer órdenes. La orden de
+ * otro cliente se informa como no encontrada, de modo que no se pueden sondear ids.
  */
 public class GetPaymentOrderAccess implements AccessPolicy<GetPaymentOrderQuery> {
 

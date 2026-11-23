@@ -48,7 +48,8 @@ import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
 /**
- * Real Lua/TTL behavior and reconnect/timeout/cancellation on nonblocking callers and callbacks.
+ * Comportamiento real de Lua y TTL y reconexión, timeout y cancelación en invocadores y callbacks
+ * no bloqueantes.
  */
 @ExtendWith(BlockHoundExtension.class)
 class ValkeyReactiveStoresIT {
@@ -67,9 +68,10 @@ class ValkeyReactiveStoresIT {
   static void start() throws Exception {
     Docker.require();
     ReactiveInfrastructureBootstrap.initialize();
-    // Keep the endpoint stable across Docker restart: auto-assigned host ports may change.
-    // Owned local Valkey container without TLS; this fixture tests store contracts and
-    // cancellation.
+    // Se mantiene estable el endpoint tras un reinicio de Docker: los puertos de host asignados de
+    // forma automática pueden cambiar.
+    // Contenedor local propio de Valkey sin TLS; este fixture prueba los contratos de almacén y la
+    // cancelación.
     // nosemgrep: java.lang.security.audit.crypto.unencrypted-socket.unencrypted-socket
     try (var port = new ServerSocket(0)) {
       VALKEY.setPortBindings(List.of(port.getLocalPort() + ":6379"));

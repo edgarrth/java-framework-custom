@@ -12,7 +12,10 @@ import pe.axiz.core.crypto.BlindIndex;
 import pe.axiz.spring.tokenization.vault.AxizTokenizationVaultProperties;
 import pe.axiz.spring.tokenization.vault.AxizTokenizationVaultProperties.TypePolicy;
 
-/** Startup-only coordination; never invoked on a request or reactive event loop. */
+/**
+ * Coordinación exclusiva del arranque; nunca se invoca en una solicitud ni en un event loop
+ * reactivo.
+ */
 final class DynamoVaultStartup {
   private DynamoVaultStartup() {}
 
@@ -32,7 +35,8 @@ final class DynamoVaultStartup {
 
   static void await(
       CompletionStage<Void> verification, AxizTokenizationDynamoDbProperties storage) {
-    // Two metadata reads plus at most two transactions for 64 keysets. SDK bounds every call.
+    // Dos lecturas de metadatos más como máximo dos transacciones para 64 keysets. El SDK acota
+    // cada llamada.
     long millis = storage.requestTimeout().multipliedBy(4).plusSeconds(1).toMillis();
     try {
       verification.toCompletableFuture().get(millis, TimeUnit.MILLISECONDS);

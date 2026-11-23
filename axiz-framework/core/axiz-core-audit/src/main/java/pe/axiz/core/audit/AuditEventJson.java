@@ -9,7 +9,10 @@ import pe.axiz.core.commons.TransactionOutcome;
 import pe.axiz.core.json.JsonReader;
 import pe.axiz.core.json.JsonWriter;
 
-/** The audit wire codec preserves the canonical numeric representation needed for verification. */
+/**
+ * El codec de red de auditoría preserva la representación numérica canónica necesaria para la
+ * verificación.
+ */
 public final class AuditEventJson {
   private static final Set<String> EVENT_FIELDS =
       Set.of(
@@ -38,7 +41,10 @@ public final class AuditEventJson {
     return JsonWriter.writeCanonical(event.toMap());
   }
 
-  /** Rejects unknown fields, malformed or noncanonical numeric values and lossy sanitization. */
+  /**
+   * Rechaza campos desconocidos, valores numéricos mal formados o no canónicos y saneamientos con
+   * pérdida.
+   */
   public static AuditEvent read(String json) {
     try {
       Map<String, @Nullable Object> source = object(JsonReader.parseCanonical(json));
@@ -77,7 +83,8 @@ public final class AuditEventJson {
         throw new IllegalArgumentException("Audit JSON must not lose data during decoding");
       return event;
     } catch (RuntimeException malformed) {
-      // Parser and date conversion exceptions may embed an untrusted field value.
+      // Las excepciones del parser y de conversión de fechas pueden incluir el valor de un campo no
+      // confiable.
       throw new IllegalArgumentException("Invalid audit JSON");
     }
   }

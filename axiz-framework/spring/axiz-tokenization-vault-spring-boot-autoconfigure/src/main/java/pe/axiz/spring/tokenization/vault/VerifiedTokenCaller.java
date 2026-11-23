@@ -13,7 +13,8 @@ import pe.axiz.core.tokenization.TokenErrors;
 import pe.axiz.core.tokenization.vault.TokenCaller;
 
 /**
- * Maps an already verified resource-server JWT; never reads headers, bodies or ThreadLocal state.
+ * Asocia un JWT de resource server ya verificado; nunca lee cabeceras, cuerpos ni estado
+ * ThreadLocal.
  */
 public final class VerifiedTokenCaller {
   private final AxizTokenizationVaultProperties.Auth auth;

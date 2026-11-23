@@ -11,12 +11,12 @@ import org.junit.jupiter.api.Test;
 import pe.axiz.core.inbox.InboxStore;
 
 /**
- * The contracts themselves: a store that breaks a guarantee must fail the check that describes it,
- * otherwise a green contract run would prove nothing.
+ * Los contratos en sí: un almacén que rompe una garantía debe hacer fallar la verificación que la
+ * describe; de lo contrario, una ejecución de contrato en verde no probaría nada.
  */
 class ContractsCatchBrokenStoresTest {
 
-  /** A correct store (JDBC on H2) with one behavior replaced. */
+  /** Un almacén correcto (JDBC sobre H2) con un comportamiento reemplazado. */
   abstract static class Broken implements InboxStore {
     final InboxStore delegate = JdbcInboxStoreContractTest.h2();
 
@@ -64,7 +64,7 @@ class ContractsCatchBrokenStoresTest {
                   public boolean markProcessed(
                       String consumer, String messageId, String owner, Instant at) {
                     delegate.markProcessed(consumer, messageId, owner, at);
-                    return true; // ignores the owner
+                    return true; // ignora al propietario
                   }
                 });
     AssertionError e =

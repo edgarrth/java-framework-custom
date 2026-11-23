@@ -8,8 +8,8 @@ import pe.axiz.core.secrets.SecretResolver;
 import pe.axiz.core.secrets.SecretValue;
 
 /**
- * Resolves secrets from environment variables (populated by External Secrets in Kubernetes). The
- * name {@code payments/db-password} maps to {@code PAYMENTS_DB_PASSWORD}.
+ * Resuelve secretos desde variables de entorno (pobladas por External Secrets en Kubernetes). El
+ * nombre {@code payments/db-password} se mapea a {@code PAYMENTS_DB_PASSWORD}.
  */
 public final class EnvironmentSecretResolver implements SecretResolver {
 

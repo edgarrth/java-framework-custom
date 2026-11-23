@@ -22,7 +22,8 @@ import pe.axiz.kit.jdbc.ConnectionProvider;
 import pe.axiz.kit.sql.SqlIdentifiers;
 
 /**
- * Saga state on Aurora PostgreSQL with optimistic locking (schema in {@code axiz/sql/saga-*.sql}).
+ * Estado de saga sobre Aurora PostgreSQL con bloqueo optimista (esquema en {@code
+ * axiz/sql/saga-*.sql}).
  */
 public final class JdbcSagaStateStore implements SagaStateStore {
 
@@ -244,7 +245,7 @@ public final class JdbcSagaStateStore implements SagaStateStore {
         try {
           connections.release(c);
         } catch (SQLException ignored) {
-          // not actionable
+          // no accionable
         }
       }
     }

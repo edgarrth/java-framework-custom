@@ -30,10 +30,10 @@ import pe.axiz.core.tokenization.vault.VaultPolicy.Fingerprints;
 import pe.axiz.core.tokenization.vault.VaultPolicy.Request;
 
 /**
- * Native asynchronous vault protocol, with explicit identity and no executor or blocking waits.
- * Cancellation prevents the next operation; accepted I/O settles under the provider's mandatory
- * finite deadlines before its lease and owned values are released. In particular, cancellation
- * never disguises an accepted write as a confirmed rollback.
+ * Protocolo asíncrono nativo de la bóveda, con identidad explícita y sin executor ni esperas
+ * bloqueantes. La cancelación impide la siguiente operación; la E/S aceptada se resuelve bajo los
+ * plazos finitos obligatorios del proveedor antes de liberar su lease y los valores propios. En
+ * particular, la cancelación nunca disfraza una escritura aceptada como un rollback confirmado.
  */
 public final class AsyncVaultTokenizer implements AsyncVaultOperations {
   private final VaultPolicy policy;
@@ -214,7 +214,7 @@ public final class AsyncVaultTokenizer implements AsyncVaultOperations {
 
   private void tokenResult(
       Invocation<TokenizationResult> flow, VaultRecord record, boolean created) {
-    // Even when the requester has cancelled, a confirmed write is still audited.
+    // Incluso cuando el solicitante canceló, una escritura confirmada se audita igualmente.
     flow.confirm(
         created ? Result.CREATED : Result.FOUND,
         record.token(),
@@ -436,14 +436,15 @@ public final class AsyncVaultTokenizer implements AsyncVaultOperations {
           try {
             alarm.failed(operation);
           } catch (RuntimeException alertFailure) {
-            /* The uncertain outcome remains authoritative. */
+            /* El resultado incierto sigue siendo autoritativo. */
           }
           flow.fail(TokenErrors.failure(TokenErrors.UNCERTAIN));
         });
   }
 
   /**
-   * A single sequential protocol owns all sensitive resources until I/O and lease release settle.
+   * Un único protocolo secuencial es dueño de todos los recursos sensibles hasta que se resuelven
+   * la E/S y la liberación del lease.
    */
   private final class Invocation<T> {
     private final TokenCaller caller;
@@ -534,7 +535,7 @@ public final class AsyncVaultTokenizer implements AsyncVaultOperations {
                   try {
                     alarm.failed(evidence);
                   } catch (RuntimeException alertFailure) {
-                    /* Preserve the committed outcome. */
+                    /* Se preserva el resultado con commit. */
                   }
                   fail(TokenErrors.failure(TokenErrors.UNCERTAIN));
                 });
@@ -546,11 +547,12 @@ public final class AsyncVaultTokenizer implements AsyncVaultOperations {
     }
 
     @SuppressWarnings(
-        "FutureReturnValueIgnored") // Every callback failure is routed into this protocol's
-    // terminal cleanup.
+        "FutureReturnValueIgnored") // Cada fallo de callback se encamina a la limpieza
+    // terminal de este protocolo.
     <V> void await(
         Supplier<CompletionStage<V>> work, Consumer<V> next, Consumer<Throwable> failure) {
-      // Identity is an immutable explicit argument. No ambient ThreadLocal is consulted here.
+      // La identidad es un argumento explícito inmutable. Aquí no se consulta ningún ThreadLocal
+      // ambiental.
       try {
         Objects.requireNonNull(work.get())
             .whenComplete(
@@ -627,19 +629,21 @@ public final class AsyncVaultTokenizer implements AsyncVaultOperations {
       if (canonical != null) canonical.close();
       if (failure != null) result.completeExceptionally(failure);
       else if (answer != null && result.complete(answer)) {
-        if (answer == revealed) revealed = null; // Ownership transfers only on actual delivery.
+        if (answer == revealed) revealed = null; // La propiedad se transfiere solo al entregar.
       } else if (answer == null)
         result.completeExceptionally(TokenErrors.failure(TokenErrors.UNAVAILABLE));
       if (revealed != null) revealed.close();
     }
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción nominal; build verifica los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable VaultPolicy policy = null;
     private @Nullable AsyncTokenVault vault = null;

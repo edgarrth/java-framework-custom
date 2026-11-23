@@ -18,10 +18,10 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.inbox.InboxStore;
 
-/** The purge of expired inbox rows and the DynamoDB store. */
+/** La purga de las filas expiradas del inbox y el almacén DynamoDB. */
 class InboxWiringTest {
 
-  /** Counts purges; it can fail on demand. */
+  /** Cuenta las purgas; puede fallar bajo demanda. */
   static class PurgeCounter implements InboxStore {
     final AtomicInteger purges = new AtomicInteger();
     final AtomicBoolean failing = new AtomicBoolean();
@@ -98,7 +98,8 @@ class InboxWiringTest {
             try {
               new CountDownLatch(1).await();
             } catch (InterruptedException e) {
-              // like some JDBC drivers: the interrupt is consumed and the call just returns
+              // como algunos drivers JDBC: la interrupción se consume y la llamada simplemente
+              // retorna
             }
             return 0;
           }

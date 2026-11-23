@@ -4,7 +4,7 @@ import java.util.UUID;
 import pe.axiz.core.id.UuidV7;
 
 /**
- * Typed identifier backed by a UUID, implemented by records:
+ * Identificador tipado respaldado por un UUID e implementado por records. Ejemplo:
  *
  * <pre>{@code
  * public record OrderId(UUID value) implements TypedId {

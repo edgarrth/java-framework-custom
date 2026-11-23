@@ -10,7 +10,7 @@ import pe.axiz.core.tokenization.TokenizationResult;
 import pe.axiz.core.tokenization.TokenizerCapabilities;
 import reactor.core.publisher.Mono;
 
-/** CPU-only local simulation. Never used as a fallback for a failed remote operation. */
+/** Simulación local solo de CPU. Nunca se usa como respaldo de una operación remota fallida. */
 final class SyntheticReactiveTokenizer implements ReactiveTokenizer {
   private final SyntheticTokenizer delegate;
 

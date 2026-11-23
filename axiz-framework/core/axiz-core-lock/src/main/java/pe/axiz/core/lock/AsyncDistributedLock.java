@@ -5,7 +5,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Native asynchronous lease acquisition. A busy resource is an empty result, not a blocking wait.
+ * Adquisición asíncrona nativa de leases. Un recurso ocupado es un resultado vacío, no una espera
+ * bloqueante.
  */
 @FunctionalInterface
 public interface AsyncDistributedLock {

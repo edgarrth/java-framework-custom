@@ -19,7 +19,10 @@ import pe.axiz.core.tokenization.vault.WrappingKeyState;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-/** Strict schema-v1 codec. No original value or automatic DynamoDB TTL attribute is stored. */
+/**
+ * Codec estricto del esquema 1 de la bóveda (atributo {@code schema} igual a 1). No se almacena
+ * ningún valor original ni atributo TTL automático de DynamoDB.
+ */
 final class VaultItems {
   private static final Set<String> RECORD_FIELDS =
       Set.of(

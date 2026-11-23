@@ -9,11 +9,12 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 import pe.axiz.core.sequence.ResetPolicy;
 
 /**
- * Business sequences ({@code axiz.sequence.*}), e.g. operation numbers {@code OP-2026-00001234}.
+ * Secuencias de negocio ({@code axiz.sequence.*}), p. ej. números de operación {@code
+ * OP-2026-00001234}.
  *
- * @param store {@code jdbc} (Aurora; native R2DBC in a reactive service), {@code r2dbc}, or {@code
+ * @param store {@code jdbc} (Aurora; R2DBC nativo en un servicio reactivo), {@code r2dbc} o {@code
  *     dynamodb}
- * @param sequences sequences by name
+ * @param sequences secuencias por nombre
  */
 @ConfigurationProperties("axiz.sequence")
 public record AxizSequenceProperties(
@@ -23,14 +24,14 @@ public record AxizSequenceProperties(
   }
 
   /**
-   * One sequence.
+   * Una secuencia.
    *
-   * @param prefix fixed prefix
-   * @param width zero-padded digits
-   * @param reset reset period
-   * @param separator separator between prefix, period and number
-   * @param zone zone of the period
-   * @param blockSize values reserved per round trip (gaps possible on restart)
+   * @param prefix prefijo fijo
+   * @param width dígitos rellenados con ceros
+   * @param reset periodo de reinicio
+   * @param separator separador entre prefijo, periodo y número
+   * @param zone zona del periodo
+   * @param blockSize valores reservados por viaje de ida y vuelta (puede haber huecos al reiniciar)
    */
   public record Spec(
       @DefaultValue("") String prefix,

@@ -311,7 +311,10 @@ class GitHubPublisherTest {
                     .isEqualTo(PublicationException.Phase.CONFLICT));
   }
 
-  /** Stateful fake of the Git database: failures happen AFTER the requested state change. */
+  /**
+   * Fake con estado de la base de datos de Git: las fallas ocurren DESPUÉS del cambio de estado
+   * solicitado.
+   */
   private static final class GitHub {
     final JsonMapper json = JsonMapper.builder().build();
     final RestClient.Builder builder = RestClient.builder();

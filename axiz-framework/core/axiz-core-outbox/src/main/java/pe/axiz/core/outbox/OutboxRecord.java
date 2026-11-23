@@ -10,19 +10,19 @@ import pe.axiz.core.messaging.CloudEventJson;
 import pe.axiz.core.messaging.EventEnvelope;
 
 /**
- * A pending (or processed) outbox entry.
+ * Entrada del outbox pendiente (o procesada).
  *
- * @param id event id
- * @param destination broker destination
- * @param aggregateType aggregate type, for diagnostics
- * @param aggregateId aggregate id
- * @param eventType event type
- * @param envelopeJson CloudEvents JSON of the event
- * @param status status
- * @param attempts publication attempts so far
- * @param createdAt creation time
- * @param nextAttemptAt when the relay may try again
- * @param lastError last publication error, truncated
+ * @param id id del evento
+ * @param destination destino en el broker
+ * @param aggregateType tipo de agregado, para diagnóstico
+ * @param aggregateId id del agregado
+ * @param eventType tipo de evento
+ * @param envelopeJson JSON CloudEvents del evento
+ * @param status estado
+ * @param attempts intentos de publicación hasta el momento
+ * @param createdAt momento de creación
+ * @param nextAttemptAt momento a partir del cual el relay puede volver a intentar
+ * @param lastError último error de publicación, truncado
  */
 public record OutboxRecord(
     String id,
@@ -55,14 +55,17 @@ public record OutboxRecord(
   }
 
   /**
-   * Metadata is reconstructed from the authoritative sequence assigned inside the write
-   * transaction.
+   * Los metadatos se reconstruyen a partir de la secuencia autoritativa asignada dentro de la
+   * transacción de escritura.
    */
   public EventEnvelope event() {
     return event(PayloadProtector.NONE);
   }
 
-  /** Reveals using authoritative row identity, before rebuilding broker sequence metadata. */
+  /**
+   * Revela usando la identidad autoritativa de la fila, antes de reconstruir los metadatos de
+   * secuencia del broker.
+   */
   public EventEnvelope event(PayloadProtector protector) {
     return CloudEventJson.read(protector.reveal(envelopeJson, "purpose:outbox:" + destination, id))
         .withExtension("axizseq", Long.toString(aggregateSequence))
@@ -81,7 +84,7 @@ public record OutboxRecord(
     return "OutboxRecord[status=" + status + ", attempts=" + attempts + ", payload=****]";
   }
 
-  /** Lifecycle of an entry. */
+  /** Ciclo de vida de una entrada. */
   public enum Status {
     PENDING,
     IN_FLIGHT,
@@ -90,13 +93,13 @@ public record OutboxRecord(
     SKIPPED
   }
 
-  /** Named construction of a complete immutable stored snapshot. */
+  /** Construcción nominal de una instantánea almacenada completa e inmutable. */
   public static Builder builder(
       String id, String destination, String eventType, String envelopeJson, Instant createdAt) {
     return new Builder(id, destination, eventType, envelopeJson, createdAt);
   }
 
-  /** Mutable construction state; build validates and creates an independent immutable value. */
+  /** Estado mutable de construcción; build valida y crea un valor inmutable independiente. */
   public static final class Builder {
     private final String id;
     private final String destination;

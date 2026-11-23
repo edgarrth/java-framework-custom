@@ -36,7 +36,7 @@ import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.sensitive.ObjectMasker;
 import pe.axiz.spring.foundation.ReactiveDispatchBoundary;
 
-/** Native audit wiring for reactive applications; never adapts an imperative sink. */
+/** Cableado de auditoría nativa para aplicaciones reactivas; nunca adapta un destino imperativo. */
 @AutoConfiguration(afterName = {"pe.axiz.spring.audit.AxizAuditAutoConfiguration"})
 @ConditionalOnClass(name = "reactor.core.publisher.Mono")
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)

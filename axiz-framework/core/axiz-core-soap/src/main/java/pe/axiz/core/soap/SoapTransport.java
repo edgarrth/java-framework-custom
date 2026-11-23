@@ -9,15 +9,16 @@ import pe.axiz.core.sensitive.Sensitive;
 import pe.axiz.core.sensitive.SensitivityLevel;
 
 /**
- * Synchronous SOAP exchange. Implementations enforce timeout and response size limits, disable
- * automatic redirects, and propagate interruption. The application owns transport resources.
+ * Intercambio SOAP síncrono. Las implementaciones aplican límites de timeout y de tamaño de
+ * respuesta, desactivan las redirecciones automáticas y propagan la interrupción. La aplicación es
+ * dueña de los recursos de transporte.
  */
 @FunctionalInterface
 public interface SoapTransport {
   Reply send(URI endpoint, SoapVersion version, String action, String envelope, Duration timeout)
       throws IOException, InterruptedException;
 
-  /** Explicit payload access; diagnostic output contains no message data. */
+  /** Acceso explícito al payload; la salida de diagnóstico no contiene datos del mensaje. */
   record Reply(
       int status, @Sensitive(level = SensitivityLevel.CRITICAL, mask = MaskType.FULL) String body) {
     public Reply {

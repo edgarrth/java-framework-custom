@@ -1,26 +1,26 @@
 #!/bin/bash
-# Local demo lifecycle:
+# Ciclo de vida de la demo local:
 #   scripts/demo.sh up [--attach] [--no-wait] [--build]
-#                         checks, infrastructure, secrets, then the 8 services; waits until every
-#                         service is UP (or one fails). --attach stays in the terminal showing the
-#                         logs of every service, like `docker compose up`; Ctrl+C stops the services
-#   scripts/demo.sh logs [service]              follows the logs of every service (or one);
-#                                               Ctrl+C only stops following
-#   scripts/demo.sh restart <service> [--debug] restarts one service (--debug: Spring web and axiz
-#                                               loggers at DEBUG)
-#   scripts/demo.sh status                      state of every service (exit 0 only when 8/8 UP)
-#   scripts/demo.sh wait [seconds]              waits until 8/8 UP (default 300 s)
-#   scripts/demo.sh smoke                       end-to-end check (pays a beneficiary)
-#   scripts/demo.sh scenarios [group...]        every functional scenario of the demo (rejections,
-#                                               compensations, security, events, notifications,
-#                                               audit, observability, batch, DLQ, saga recovery)
-#   scripts/demo.sh stop                        stops the services, keeps the infrastructure
-#   scripts/demo.sh down                        stops services and infrastructure (and its volumes)
+#                         verificaciones, infraestructura, secretos y luego los 8 servicios; espera a que
+#                         todos estén UP (o a que uno falle). --attach permanece en la terminal mostrando
+#                         los logs de cada servicio, como `docker compose up`; Ctrl+C detiene los servicios
+#   scripts/demo.sh logs [service]              sigue los logs de todos los servicios (o de uno);
+#                                               Ctrl+C solo deja de seguirlos
+#   scripts/demo.sh restart <service> [--debug] reinicia un servicio (--debug: loggers de Spring web y
+#                                               de axiz en DEBUG)
+#   scripts/demo.sh status                      estado de cada servicio (salida 0 solo con 8/8 UP)
+#   scripts/demo.sh wait [seconds]              espera hasta 8/8 UP (por defecto 300 s)
+#   scripts/demo.sh smoke                       verificación de extremo a extremo (paga a un beneficiario)
+#   scripts/demo.sh scenarios [group...]        todos los escenarios funcionales de la demo (rechazos,
+#                                               compensaciones, seguridad, eventos, notificaciones,
+#                                               auditoría, observabilidad, batch, DLQ, recuperación de la saga)
+#   scripts/demo.sh stop                        detiene los servicios y conserva la infraestructura
+#   scripts/demo.sh down                        detiene los servicios y la infraestructura (y sus volúmenes)
 #
-# Services run from their executable jars (services/<name>/target/<name>-*.jar). `up` rebuilds a
-# jar (clean package) when it is missing, older than the service sources or older than the axiz
-# framework installed in ~/.m2 (AXIZ_M2_REPOSITORY); --build rebuilds all of them.
-# AXIZ_JAVA_OPTS adds JVM options (default: faster startup, modest heap).
+# Los servicios se ejecutan desde sus jars ejecutables (services/<name>/target/<name>-*.jar). `up` reconstruye
+# un jar (clean package) cuando falta, es más antiguo que el código fuente del servicio o más antiguo que el
+# framework axiz instalado en ~/.m2 (AXIZ_M2_REPOSITORY); --build los reconstruye todos.
+# AXIZ_JAVA_OPTS añade opciones de la JVM (por defecto: arranque más rápido, heap moderado).
 set -Eeuo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
 run="$root/.run"
@@ -28,21 +28,21 @@ services=(payment-orders beneficiaries banking-core payment-network-gateway paym
 declare -A ports=([payments-ux]=8080 [payment-orders]=8081 [beneficiaries]=8082
   [banking-core]=8083 [payment-process]=8084 [notifications-processor]=8085
   [payments-history]=8086 [payment-network-gateway]=8087)
-# host ports of local/compose.yaml
+# puertos del host de local/compose.yaml
 infra_ports=(5432 6379 9092 4566 8180 8089 3000 4317 4318)
 
 red() { printf '\033[31m%s\033[0m\n' "$*"; }
 green() { printf '\033[32m%s\033[0m\n' "$*"; }
 yellow() { printf '\033[33m%s\033[0m\n' "$*"; }
-# -E: functions inherit the ERR trap, so an unexpected failure never ends the script silently
+# -E: las funciones heredan el trap de ERR, de modo que un fallo inesperado nunca termina el script en silencio
 trap 'red "demo.sh: unexpected failure (exit $?) at line $LINENO: $BASH_COMMAND" >&2' ERR
 
-# true when something accepts connections on localhost:<port>
+# true cuando algo acepta conexiones en localhost:<port>
 port_busy() { (: >"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
 
-# reads `docker ps` lines (name, image, ports, compose project) and prints the container that
-# publishes host port $1. Docker writes ranges as one mapping ("0.0.0.0:4317-4318->4317-4318/tcp")
-# and exposed but unpublished ports without "->" ("5432/tcp"); both are taken into account
+# lee líneas de `docker ps` (nombre, imagen, puertos, proyecto de compose) e imprime el contenedor que
+# publica el puerto del host $1. Docker escribe los rangos como un único mapeo ("0.0.0.0:4317-4318->4317-4318/tcp")
+# y los puertos expuestos pero no publicados sin "->" ("5432/tcp"); se tienen en cuenta ambos casos
 published_by() {
   awk -F'\t' -v p="$1" '{
     n = split($3, maps, ", ")
@@ -59,7 +59,7 @@ published_by() {
   }'
 }
 
-# who holds a port: a container (name, image and compose project) or, when ss can tell, a process
+# quién ocupa un puerto: un contenedor (nombre, imagen y proyecto de compose) o, cuando ss puede indicarlo, un proceso
 port_owner() {
   local owner
   owner=$(docker ps --format '{{.Names}}\t{{.Image}}\t{{.Ports}}\t{{.Label "com.docker.compose.project"}}' \
@@ -79,7 +79,7 @@ health() {
     | jq -r '.status // empty' 2>/dev/null || true
 }
 
-# one word per service: UP, DOWN, STARTING, EXITED, BUSY or STOPPED
+# una palabra por servicio: UP, DOWN, STARTING, EXITED, BUSY o STOPPED
 state() {
   local h; h=$(health "$1")
   if [ "$h" = UP ]; then echo UP
@@ -108,7 +108,7 @@ print_status() {
   [ "$ready" -eq "${#services[@]}" ]
 }
 
-# waits until 8/8 UP; fails fast when a service process ends
+# espera hasta 8/8 UP; falla rápido cuando termina el proceso de un servicio
 wait_up() {
   local timeout=${1:-300} start=$SECONDS s st ready
   echo "waiting for the services (up to ${timeout}s; the first start takes longer)..."
@@ -123,7 +123,7 @@ wait_up() {
         echo "Fix the cause, then: scripts/demo.sh down && scripts/demo.sh up"
         return 1
       fi
-      # never started (no process, nothing on its port): waiting cannot help
+      # nunca arrancó (sin proceso, nada en su puerto): esperar no sirve de nada
       if [ "$st" = STOPPED ]; then
         echo; red "$s is not running: start the services with scripts/demo.sh up"
         print_status || true
@@ -156,7 +156,7 @@ preflight() {
   if [ "${v%%.*}" -lt 25 ] 2>/dev/null; then red "Java $v found; the demo needs JDK 25 (java -version)"; exit 1; fi
 }
 
-# ports must be free, or held by this demo
+# los puertos deben estar libres u ocupados por esta demo
 check_ports() {
   local p s owner conflicts=0 kind=""
   for s in "${services[@]}"; do
@@ -172,7 +172,7 @@ check_ports() {
     if port_busy "$p"; then
       owner=$(port_owner "$p")
       case "$owner" in
-        *", compose project axiz-demo)") ;; # this demo's infrastructure, already running
+        *", compose project axiz-demo)") ;; # la infraestructura de esta demo, en ejecución
         *-control-plane*) red "port $p (infrastructure) is taken by: $owner"; kind="${owner%% *}"; conflicts=1 ;;
         *) red "port $p (infrastructure) is taken by: $owner"; conflicts=1 ;;
       esac
@@ -192,17 +192,17 @@ check_ports() {
   fi
 }
 
-# the jar of a service, or nothing (fresh checkout: no target/ yet)
+# el jar de un servicio, o nada (checkout recién clonado: sin target/ todavía)
 jar_of() {
   [ -d "$root/services/$1/target" ] || return 0
   find "$root/services/$1/target" -maxdepth 1 -name "$1-*.jar" ! -name '*-sources.jar' ! -name '*-javadoc.jar' \
     ! -name '*-plain.jar' 2>/dev/null | head -1
 }
 
-# the Kafka topics must exist before the services start: without them the outbox relays and the
-# audit publisher wait forever and the payment saga never starts. The check asks the broker for
-# the topics (what matters), not the state of the kafka-topics job: `docker compose wait` on a job
-# that already ended behaves differently across Compose versions and failed with every topic in place
+# los tópicos de Kafka deben existir antes de que arranquen los servicios: sin ellos los relays del outbox y
+# el publicador de auditoría esperan indefinidamente y la saga de pago nunca arranca. La verificación consulta
+# al broker por los tópicos (lo que importa), no el estado del job kafka-topics: `docker compose wait` sobre un job
+# ya terminado se comporta distinto según la versión de Compose y fallaba con todos los tópicos creados
 check_infra() {
   local compose=(docker compose -f "$root/local/compose.yaml") topics t missing deadline state
   deadline=$((SECONDS + 120))
@@ -225,16 +225,16 @@ check_infra() {
   echo "kafka topics ready: payments payments.dlq audit"
 }
 
-# rebuilds the jars that are missing or older than their sources or than the installed framework
-# (all of them with --build)
+# reconstruye los jars que faltan o que son más antiguos que su código fuente o que el framework instalado
+# (todos con --build)
 m2=${AXIZ_M2_REPOSITORY:-$HOME/.m2/repository}
 build() {
   local force=$1 s jar stale=()
-  # settlement-batch is a job, not a service: built here, run by scripts/scenarios.sh settlement
+  # settlement-batch es un job, no un servicio: se construye aquí y lo ejecuta scripts/scenarios.sh settlement
   for s in "${services[@]}" settlement-batch; do
     jar=$(jar_of "$s")
-    # stale: sources changed, or the framework was installed again (./mvnw install in axiz-framework).
-    # Directories count too: deleting or renaming a file only touches its directory
+    # desactualizado: cambió el código fuente o se volvió a instalar el framework (./mvnw install en axiz-framework).
+    # Los directorios también cuentan: eliminar o renombrar un archivo solo modifica su directorio
     if [ "$force" = 1 ] || [ -z "$jar" ] \
       || [ -n "$(find "$root/services/$s/src" "$root/services/$s/pom.xml" -newer "$jar" -print -quit)" ] \
       || [ -n "$(find "$m2/pe/axiz" -name '*.jar' -newer "$jar" -print -quit 2>/dev/null)" ]; then
@@ -242,8 +242,8 @@ build() {
     fi
   done
   [ ${#stale[@]} -eq 0 ] && { echo "jars up to date"; return; }
-  # clean: an incremental package keeps the .class of a renamed or deleted source in target/ and
-  # the jar would carry it (e.g. two @Configuration classes defining the same bean)
+  # clean: un package incremental conserva en target/ el .class de un fuente renombrado o eliminado y
+  # el jar lo incluiría (p. ej. dos clases @Configuration que definen el mismo bean)
   echo "building ${stale[*]} (./mvnw clean package -DskipTests)..."
   (cd "$root" && ./mvnw -q -DskipTests clean package -pl "$(IFS=,; echo "${stale[*]}")" -am) || {
     red "the build failed; run ./mvnw clean package -DskipTests in axiz-demo to see the error"
@@ -257,16 +257,16 @@ start() {
   if alive "$s"; then echo "$s already running (pid $(pid_of "$s"))"; return; fi
   jar=$(jar_of "$s")
   [ -n "$jar" ] || { red "no jar in services/$s/target: scripts/demo.sh up --build compiles it"; exit 1; }
-  # the reason of every rejected request (4xx) is logged at DEBUG by axiz.errors: visible locally
+  # axiz.errors registra en DEBUG el motivo de cada petición rechazada (4xx): visible en local
   extra+=(--logging.level.axiz.errors=DEBUG)
   if [ "${2:-}" = --debug ]; then
     extra+=(--logging.level.org.springframework.web=DEBUG --logging.level.pe.axiz=DEBUG
       --logging.level.axiz=DEBUG)
   fi
-  # the working directory is the service folder: local/secrets is read from there
+  # el directorio de trabajo es la carpeta del servicio: local/secrets se lee desde allí
   (
     cd "$root/services/$s"
-    export AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_REGION=us-east-1   # LocalStack accepts any value
+    export AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_REGION=us-east-1   # LocalStack acepta cualquier valor
     # shellcheck disable=SC2086
     nohup java -Djava.security.egd=file:/dev/./urandom --enable-native-access=ALL-UNNAMED ${AXIZ_JAVA_OPTS:--XX:TieredStopAtLevel=1 -XX:MaxRAMPercentage=10} \
       -jar "$jar" --spring.profiles.active=local,platform "${extra[@]}" > "$run/$s.log" 2>&1 &
@@ -283,11 +283,11 @@ stop() {
   for _ in $(seq 1 20); do port_busy "${ports[$s]}" || return 0; sleep 1; done
 }
 
-# stops the background log followers of this script
+# detiene los procesos en segundo plano de este script que siguen los logs
 unfollow() { pkill -P $$ 2>/dev/null || true; }
 
-# follows the logs of the given services with a colored name per line, like docker compose
-# (the caller sets the Ctrl+C trap)
+# sigue los logs de los servicios indicados con un nombre coloreado por línea, como docker compose
+# (quien invoca define el trap de Ctrl+C)
 follow() {
   local colors=(36 33 32 35 34 91 92 93) i=0 s c
   for s in "$@"; do
@@ -299,7 +299,7 @@ follow() {
   wait
 }
 
-# stops a process and its children (older runs used ./mvnw spring-boot:run, which forks the JVM)
+# detiene un proceso y sus hijos (por si se arrancó con ./mvnw spring-boot:run, que hace fork de la JVM)
 stop_tree() {
   local pid=$1 child
   for child in $(pgrep -P "$pid" 2>/dev/null || true); do stop_tree "$child"; done
@@ -325,7 +325,7 @@ case "${1:-}" in
     bash "$root/scripts/dev-secrets.sh" || exit 1
     for s in "${services[@]}"; do start "$s"; done
     if [ "$attach" = 1 ]; then
-      # like `docker compose up`: logs in the terminal, Ctrl+C stops the services
+      # como `docker compose up`: logs en la terminal, Ctrl+C detiene los servicios
       trap 'unfollow; echo; echo "stopping the services (the infrastructure keeps running: scripts/demo.sh down removes it)"; for s in "${services[@]}"; do stop "$s"; done; exit 0' INT TERM
       ( wait_up "${AXIZ_UP_TIMEOUT:-300}" >/dev/null 2>&1 \
           && printf '\n\033[32m==== all services UP: scripts/demo.sh smoke in another terminal ====\033[0m\n\n' \
@@ -362,7 +362,7 @@ case "${1:-}" in
     docker compose -f "$root/local/compose.yaml" down -v
     ;;
   status)
-    # exit code 1 unless every service is UP (already explained by the table)
+    # código de salida 1 salvo que todos los servicios estén UP (la tabla explica el motivo)
     print_status || exit 1
     ;;
   wait)

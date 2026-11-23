@@ -2,7 +2,10 @@ package pe.axiz.spring.foundation;
 
 import java.security.SecureRandom;
 
-/** Seeds the standard JDK DRBG on the bootstrap thread, before asynchronous handshakes. */
+/**
+ * Inicializa la semilla del DRBG estándar del JDK en el hilo de bootstrap, antes de los handshakes
+ * asíncronos.
+ */
 public final class ReactiveRandomBootstrap {
   private static final SecureRandom RANDOM = new SecureRandom();
 

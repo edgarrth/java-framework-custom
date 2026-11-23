@@ -15,8 +15,9 @@ import org.yaml.snakeyaml.representer.Representer;
 import pe.axiz.codegen.openapi.SafeYaml;
 
 /**
- * Spring Boot properties as YAML: flat keys ({@code a.b[0].c}) are nested into maps and lists and
- * written in block style, so capability properties can be merged without duplicate root keys.
+ * Propiedades de Spring Boot como YAML: las claves planas ({@code a.b[0].c}) se anidan en mapas y
+ * listas y se escriben en estilo de bloque, de modo que las propiedades de las capacidades pueden
+ * combinarse sin claves raíz duplicadas.
  */
 public final class YamlProperties {
 
@@ -24,28 +25,28 @@ public final class YamlProperties {
 
   private YamlProperties() {}
 
-  /** Nests flat keys; later entries override earlier ones. */
+  /** Anida las claves planas; las entradas posteriores sobrescriben a las anteriores. */
   public static Map<String, Object> nest(Map<String, ?> flat) {
     Map<String, Object> root = new LinkedHashMap<>();
     flat.forEach((key, value) -> put(root, key.split("\\.", -1), 0, value));
     return root;
   }
 
-  /** Flattens a nested map back to Spring Boot keys ({@code a.b[0].c}). */
+  /** Aplana un mapa anidado de vuelta a claves de Spring Boot ({@code a.b[0].c}). */
   public static Map<String, Object> flatten(Map<String, ?> nested) {
     Map<String, Object> out = new LinkedHashMap<>();
     flatten("", nested, out);
     return out;
   }
 
-  /** Merges flat properties into an existing YAML document, keeping its other entries. */
+  /** Combina propiedades planas en un documento YAML existente y conserva sus demás entradas. */
   public static String merge(String existingYaml, Map<String, ?> flat) {
     return merge(existingYaml, flat, List.of());
   }
 
   /**
-   * Merges flat properties and drops the keys under the given prefixes (e.g. a placeholder entry
-   * that a real one replaces).
+   * Combina propiedades planas y descarta las claves bajo los prefijos indicados (p. ej., una
+   * entrada provisional que reemplaza una real).
    */
   public static String merge(
       String existingYaml, Map<String, ?> flat, List<String> removePrefixes) {
@@ -61,7 +62,7 @@ public final class YamlProperties {
     return dump(current, 0);
   }
 
-  /** Block-style YAML, each line indented by {@code indent} spaces. */
+  /** YAML en estilo de bloque, con cada línea indentada con {@code indent} espacios. */
   public static String dump(Map<String, ?> nested, int indent) {
     if (nested.isEmpty()) {
       return indent == 0 ? "{}\n" : " ".repeat(indent) + "{}\n";
@@ -84,8 +85,9 @@ public final class YamlProperties {
 
   @SuppressWarnings("unchecked")
   private static void put(Map<String, Object> node, String[] parts, int i, @Nullable Object value) {
-    // Dots in an existing YAML key may be literal (Kubernetes annotations, headers, or
-    // flat Spring keys). Preserve that key instead of flattening and recreating the document.
+    // Los puntos de una clave YAML existente pueden ser literales (anotaciones de Kubernetes,
+    // cabeceras o claves planas de Spring). Esa clave se conserva en lugar de aplanar y recrear el
+    // documento.
     for (int end = parts.length; end > i + 1; end--) {
       String literal = String.join(".", Arrays.copyOfRange(parts, i, end));
       if (!node.containsKey(literal)) {

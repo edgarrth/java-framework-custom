@@ -48,7 +48,7 @@ class SequenceTest {
             clock);
     assertEquals("OP-20260131-000001", gen.next());
     assertEquals("OP-20260131-000002", gen.next());
-    clock.now = Instant.parse("2026-02-01T06:00:00Z"); // 01:00 in Lima
+    clock.now = Instant.parse("2026-02-01T06:00:00Z"); // 01:00 en Lima
     assertEquals("OP-20260201-000001", gen.next());
   }
 

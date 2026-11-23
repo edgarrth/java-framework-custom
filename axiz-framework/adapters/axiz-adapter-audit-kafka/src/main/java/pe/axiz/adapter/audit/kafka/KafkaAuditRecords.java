@@ -5,17 +5,21 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.json.JsonWriter;
 
-/** Binary CloudEvents encoding shared by imperative and asynchronous Kafka publication. */
+/**
+ * Codificación binaria de CloudEvents compartida por la publicación Kafka imperativa y asíncrona.
+ */
 public final class KafkaAuditRecords {
   private KafkaAuditRecords() {}
 
-  /** Binary CloudEvent record shared by synchronous and asynchronous audit publication. */
+  /**
+   * Registro CloudEvent binario compartido por la publicación de auditoría síncrona y asíncrona.
+   */
   public static ProducerRecord<String, String> create(String topic, AuditEvent event) {
     String key =
         event.resourceType() + ":" + (event.resourceId() == null ? event.id() : event.resourceId());
     ProducerRecord<String, String> record =
         new ProducerRecord<>(topic, key, JsonWriter.writeCanonical(event.toMap()));
-    // binary-mode CloudEvent: ce_* headers and the JSON data as value
+    // CloudEvent en modo binario: cabeceras ce_* y los datos JSON como valor
     record.headers().add("content-type", "application/json".getBytes(StandardCharsets.UTF_8));
     event
         .cloudEventAttributes()

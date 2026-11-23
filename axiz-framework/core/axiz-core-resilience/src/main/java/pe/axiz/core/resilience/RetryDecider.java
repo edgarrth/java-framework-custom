@@ -14,9 +14,9 @@ import pe.axiz.core.commons.tx.UnknownTransactionOutcome;
 import pe.axiz.core.errors.AxizException;
 
 /**
- * Decides whether a failed call may be repeated. Only idempotent operations (safe HTTP methods,
- * PUT, DELETE, or any call that carries an {@code Idempotency-Key}) are retried, and only on
- * transient failures. A business rejection is never retried.
+ * Decide si una llamada fallida puede repetirse. Solo se reintentan las operaciones idempotentes
+ * (métodos HTTP seguros, PUT, DELETE o cualquier llamada que lleve un {@code Idempotency-Key}) y
+ * solo ante fallos transitorios. Un rechazo de negocio nunca se reintenta.
  */
 public final class RetryDecider {
 
@@ -30,7 +30,7 @@ public final class RetryDecider {
         || (idempotencyKey != null && !idempotencyKey.isBlank());
   }
 
-  /** Transient: timeouts, connection failures, and errors whose category is retryable. */
+  /** Transitorio: timeouts, fallos de conexión y errores cuya categoría es reintentable. */
   public static boolean isTransient(Throwable failure) {
     var seen = new IdentityHashMap<Throwable, Boolean>();
     boolean transientFailure = false;

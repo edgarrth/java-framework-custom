@@ -4,7 +4,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
 
-/** {@code axiz}: the root command. */
+/** {@code axiz}: el comando raíz. */
 @Command(
     name = "axiz",
     mixinStandardHelpOptions = true,

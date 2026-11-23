@@ -15,12 +15,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.SmartLifecycle;
 
 /**
- * Owns a restartable group of workers. Start is idempotent, stopping refuses new work and callbacks
- * run only after every worker and the associated cleanup have terminated. A shutdown timeout
- * interrupts workers but never pretends that uncooperative I/O has finished.
+ * Posee un grupo reiniciable de workers. El inicio es idempotente, la detención rechaza trabajo
+ * nuevo y los callbacks solo se ejecutan después de que todos los workers y la limpieza asociada
+ * hayan terminado. Un timeout de apagado interrumpe los workers, pero nunca finge que una E/S no
+ * cooperativa ha terminado.
  */
 public final class WorkerLifecycle implements SmartLifecycle, WorkerStatus {
-  /** Operational status; FAILED retains ownership until resources are reconciled. */
+  /** Estado operativo; FAILED conserva la propiedad hasta que se concilien los recursos. */
   public enum State {
     STOPPED,
     RUNNING,
@@ -99,13 +100,16 @@ public final class WorkerLifecycle implements SmartLifecycle, WorkerStatus {
     return grace;
   }
 
-  /** Loop condition for owned workers; false as soon as stop is requested. */
+  /** Condición del bucle para los workers propios; es false en cuanto se solicita la detención. */
   public boolean accepting() {
     Run run = current;
     return run != null && !run.failed && !run.stopping.get();
   }
 
-  /** Use for readiness/health: FAILED requires operator reconciliation, never a silent restart. */
+  /**
+   * Se usa para readiness y salud: FAILED requiere la conciliación de un operador, nunca un
+   * reinicio silencioso.
+   */
   public State state() {
     Run run = current;
     if (run == null) return State.STOPPED;
@@ -137,7 +141,7 @@ public final class WorkerLifecycle implements SmartLifecycle, WorkerStatus {
   }
 
   @Override
-  @SuppressWarnings("FutureReturnValueIgnored") // Callback failures are logged inside the callback.
+  @SuppressWarnings("FutureReturnValueIgnored") // Los fallos se registran dentro del callback.
   public void stop(Runnable callback) {
     Objects.requireNonNull(callback);
     Run run = requestStop();
@@ -145,7 +149,7 @@ public final class WorkerLifecycle implements SmartLifecycle, WorkerStatus {
     else
       run.done.whenComplete(
           (ignored, failure) -> {
-            if (failure != null) return; // Incomplete cleanup is not a stopped lifecycle.
+            if (failure != null) return; // Una limpieza incompleta no es un ciclo de vida detenido.
             try {
               callback.run();
             } catch (RuntimeException callbackFailure) {
@@ -172,7 +176,7 @@ public final class WorkerLifecycle implements SmartLifecycle, WorkerStatus {
                 Thread.currentThread().interrupt();
                 run.workers.forEach(Thread::interrupt);
               } catch (ExecutionException failure) {
-                /* Termination already reported the cleanup failure. */
+                /* La terminación ya informó el fallo de limpieza. */
               }
             });
     return run;

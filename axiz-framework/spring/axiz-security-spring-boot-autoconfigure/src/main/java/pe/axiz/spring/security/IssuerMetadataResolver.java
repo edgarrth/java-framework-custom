@@ -12,7 +12,10 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.security.TrustedIssuer;
 import reactor.core.publisher.Mono;
 
-/** Exact-issuer discovery, sharing bounded transport and per-endpoint failure backoff. */
+/**
+ * Descubrimiento por emisor exacto, que comparte el transporte acotado y el backoff de fallos por
+ * endpoint.
+ */
 final class IssuerMetadataResolver implements AutoCloseable {
   private final IssuerHttpTransport transport;
   private final Map<String, URI> resolved = new ConcurrentHashMap<>();

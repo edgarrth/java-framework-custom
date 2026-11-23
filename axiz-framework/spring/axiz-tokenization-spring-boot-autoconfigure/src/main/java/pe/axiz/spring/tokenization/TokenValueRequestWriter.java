@@ -14,7 +14,10 @@ import pe.axiz.core.tokenization.TokenErrors;
 import pe.axiz.core.tokenization.TokenOperation;
 import pe.axiz.core.tokenization.TokenType;
 
-/** Dedicated request boundary. Never registers a revealing serializer on the application mapper. */
+/**
+ * Límite de solicitud dedicado. Nunca registra un serializador que revela valores en el mapper de
+ * la aplicación.
+ */
 final class TokenValueRequestWriter implements AutoCloseable {
   private final TokenOperation operation;
   private final TokenType type;

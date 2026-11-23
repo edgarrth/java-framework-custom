@@ -34,8 +34,9 @@ import pe.axiz.core.errors.FieldViolation;
 import pe.axiz.core.errors.ValidationException;
 
 /**
- * Translates framework exceptions (Spring MVC/WebFlux, Bean Validation, Spring Security, Spring
- * data access) into axiz errors. Optional libraries are detected by class name.
+ * Traduce las excepciones del framework (Spring MVC/WebFlux, Bean Validation, Spring Security,
+ * acceso a datos de Spring) a errores de axiz. Las bibliotecas opcionales se detectan por nombre de
+ * clase.
  */
 final class SpringExceptionMappers {
 
@@ -45,13 +46,16 @@ final class SpringExceptionMappers {
   private static final boolean SECURITY =
       present("org.springframework.security.access.AccessDeniedException");
   private static final boolean DAO = present("org.springframework.dao.DataAccessException");
-  // Spring MVC's binding exceptions extend jakarta.servlet.ServletException: a reactive service
-  // has no servlet API, so they are only referenced when it is present
+  // las excepciones de binding de Spring MVC extienden jakarta.servlet.ServletException: un
+  // servicio reactivo no tiene API de servlet, por lo que solo se referencian cuando está presente
   private static final boolean SERVLET = present("jakarta.servlet.ServletException");
 
   private SpringExceptionMappers() {}
 
-  /** MVC advice must not turn an anonymous method-security denial into an authenticated 403. */
+  /**
+   * El advice de MVC no debe convertir una denegación anónima de la seguridad de métodos en un 403
+   * autenticado.
+   */
   static Throwable servletSecurityFailure(Throwable failure) {
     if (SECURITY && failure instanceof AccessDeniedException) {
       var authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -188,7 +192,8 @@ final class SpringExceptionMappers {
       return Optional.of(
           new AxizException(
               CoreErrors.forCategory(category),
-              // logged as the reason of the problem: "NoResourceFoundException: No static resource"
+              // se registra como la razón del problema: "NoResourceFoundException: No static
+              // resource"
               failure.getClass().getSimpleName(),
               failure));
     }
@@ -200,13 +205,16 @@ final class SpringExceptionMappers {
         CoreErrors.MISSING_HEADER, "missing header", Map.of("header", header));
   }
 
-  /** Servlet-only exceptions, loaded only when the servlet API is on the classpath. */
+  /**
+   * Excepciones exclusivas de servlet, cargadas solo cuando la API de servlet está en el classpath.
+   */
   private static final class ServletErrors {
     private ServletErrors() {}
 
     static Optional<AxizException> map(Throwable failure) {
-      // Optional container type: malformed query/form encoding fails before Spring binding.
-      // Do not map arbitrary IllegalStateException/IllegalArgumentException or reflect the input.
+      // Tipo opcional del contenedor: una codificación de query o formulario mal formada falla
+      // antes del binding de Spring. No se mapean IllegalStateException/IllegalArgumentException
+      // arbitrarias ni se refleja la entrada.
       if (failure
           .getClass()
           .getName()

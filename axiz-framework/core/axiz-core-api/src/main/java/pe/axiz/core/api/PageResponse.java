@@ -4,12 +4,12 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Standard paginated response body.
+ * Cuerpo de respuesta paginada estándar.
  *
- * @param items elements
- * @param page pagination metadata
- * @param nextCursor cursor for key-based pagination, or null
- * @param <T> element type
+ * @param items elementos
+ * @param page metadatos de paginación
+ * @param nextCursor cursor para paginación por clave, o null
+ * @param <T> tipo de elemento
  */
 public record PageResponse<T>(List<T> items, PageMetadata page, @Nullable String nextCursor) {
 

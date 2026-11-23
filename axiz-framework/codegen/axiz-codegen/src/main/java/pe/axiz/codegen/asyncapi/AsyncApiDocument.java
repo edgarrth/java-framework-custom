@@ -10,11 +10,11 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.codegen.model.Snapshots;
 import pe.axiz.codegen.openapi.SafeYaml;
 
-/** Local AsyncAPI 3 reader for versioned CloudEvents; never retrieves external references. */
+/** Lector local de AsyncAPI 3 para CloudEvents versionados; nunca obtiene referencias externas. */
 public final class AsyncApiDocument {
   public static final int MAX_SIZE = 2 * 1024 * 1024;
 
-  /** The payload and message metadata for one CloudEvents type. */
+  /** El payload y los metadatos del mensaje para un tipo de CloudEvents. */
   public record Event(String type, Map<String, Object> message) {
     public Event {
       message = Snapshots.properties(message);

@@ -9,14 +9,16 @@ import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
- * Injected per-field converter. Install the instance with an explicit Enhanced Client table schema.
+ * Conversor por campo inyectado. La instancia se instala con un esquema de tabla explícito del
+ * Enhanced Client.
  */
 public abstract class EncryptedAttributeConverter implements AttributeConverter<String> {
 
   private final FieldEncryptor encryptor;
 
   protected EncryptedAttributeConverter(FieldEncryptor encryptor) {
-    // Validate before Object construction, so invalid subclasses never become finalizable.
+    // Se valida antes de construir el Object, para que las subclases inválidas nunca lleguen a ser
+    // finalizables.
     Objects.requireNonNull(encryptor);
     super();
     this.encryptor = encryptor;
@@ -35,11 +37,11 @@ public abstract class EncryptedAttributeConverter implements AttributeConverter<
   public String transformTo(AttributeValue input) {
     String encrypted = input.s();
     if (encrypted == null) {
-      // the attribute was not written by this converter (another type): never return a null
+      // el atributo no lo escribió este conversor (otro tipo): nunca se devuelve null
       throw new IllegalArgumentException(
           "Encrypted attribute expected as a string, found " + input.type());
     }
-    // decrypt only answers null for a null input
+    // decrypt solo responde null para una entrada null
     return Objects.requireNonNull(
         encryptor.decrypt(encrypted, EncryptionContext.require(context())));
   }

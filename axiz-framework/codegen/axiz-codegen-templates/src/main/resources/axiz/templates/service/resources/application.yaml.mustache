@@ -1,13 +1,13 @@
-# {{project.title}}: defaults shared by every environment.
-# Environment values come from the ConfigMaps axiz-common, {{project.name}} and {{project.name}}-errors
-# (mounted as files by the chart) and secrets from files mounted by the ExternalSecret. ${VAR:default}
-# placeholders only serve local runs and tests: never write environment values or secrets here.
+# {{project.title}}: valores por defecto compartidos por todos los entornos.
+# Los valores de entorno provienen de los ConfigMaps axiz-common, {{project.name}} y {{project.name}}-errors
+# (montados como archivos por el chart) y los secretos de archivos montados por el ExternalSecret. Los placeholders
+# ${VAR:default} solo sirven para ejecuciones locales y pruebas: nunca se escriben aquí valores de entorno ni secretos.
 {{#caps.audit}}
-# Audit convention: DURABLE with outbox, ASYNC otherwise; SYNC is an explicit alternative.
-# DURABLE joins the business transaction only when both use the same transactional resource.
-# Outside a transaction the default is async; choose durable.outside-transaction=fail to reject it.
+# Convención de auditoría: DURABLE con outbox, ASYNC en otro caso; SYNC es una alternativa explícita.
+# DURABLE se une a la transacción de negocio solo cuando ambas usan el mismo recurso transaccional.
+# Fuera de una transacción el valor por defecto es async; durable.outside-transaction=fail permite rechazarla.
 {{#caps.outbox}}
-# Configure the logical audit destination and the outbox relay transport before deployment.
+# Antes del despliegue se configuran el destino lógico de auditoría y el transporte del relay del outbox.
 {{/caps.outbox}}
 {{/caps.audit}}
 {{{config.applicationYaml}}}

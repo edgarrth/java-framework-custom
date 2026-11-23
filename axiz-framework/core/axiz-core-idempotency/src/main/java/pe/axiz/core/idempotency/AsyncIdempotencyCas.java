@@ -9,13 +9,17 @@ import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.concurrent.Stages;
 
-/** Provider-side bounded CAS protocol; clocks are trusted infrastructure, never request input. */
+/**
+ * Protocolo CAS acotado del lado del proveedor; los relojes son infraestructura confiable, nunca
+ * entrada de la petición.
+ */
 public final class AsyncIdempotencyCas {
   private AsyncIdempotencyCas() {}
 
   /**
-   * Shared owner-fenced completion protocol for CAS stores. Providers supply their injected clock
-   * so every retry rechecks retention; their compare-and-set remains the atomic boundary.
+   * Protocolo de finalización compartido con fencing por propietario para almacenes CAS. Los
+   * proveedores suministran su reloj inyectado para que cada reintento vuelva a verificar la
+   * retención; su compare-and-set sigue siendo la frontera atómica.
    */
   public static CompletionStage<Boolean> complete(
       AsyncIdempotencyStore store,
@@ -28,7 +32,10 @@ public final class AsyncIdempotencyCas {
         store, key, owner, clock::instant, current -> current.completed(response, expiresAt), 0);
   }
 
-  /** Refreshes time after contention; false means no confirmed mutation, including exhaustion. */
+  /**
+   * Refresca el tiempo tras la contención; false significa que no hubo mutación confirmada,
+   * incluido el agotamiento.
+   */
   public static CompletionStage<Boolean> renew(
       AsyncIdempotencyStore store,
       String key,
@@ -48,7 +55,10 @@ public final class AsyncIdempotencyCas {
         0);
   }
 
-  /** Retention and ownership are reevaluated on every retry; no expired record is resurrected. */
+  /**
+   * La retención y la propiedad se reevalúan en cada reintento; ningún registro expirado se
+   * resucita.
+   */
   public static CompletionStage<Boolean> markUnknown(
       AsyncIdempotencyStore store, String key, String owner, String diagnostic, Clock clock) {
     return mutate(store, key, owner, clock::instant, current -> current.unknown(diagnostic), 0);

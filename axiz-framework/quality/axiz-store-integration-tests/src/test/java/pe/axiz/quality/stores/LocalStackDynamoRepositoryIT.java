@@ -48,7 +48,10 @@ import software.amazon.awssdk.services.dynamodb.model.KeyType;
 import software.amazon.awssdk.services.dynamodb.model.ProjectionType;
 import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 
-/** Native repository wire contract, with cold operations and callbacks checked by BlockHound. */
+/**
+ * Contrato de transporte del repositorio nativo, con operaciones en frío y callbacks verificados
+ * por BlockHound.
+ */
 @ExtendWith(BlockHoundExtension.class)
 class LocalStackDynamoRepositoryIT {
   private static final SecretKey CURSOR_KEY = AesGcm.newKey();

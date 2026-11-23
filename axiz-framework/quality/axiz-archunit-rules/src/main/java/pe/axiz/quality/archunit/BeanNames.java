@@ -14,11 +14,12 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Bean names as Spring derives them for scanned components (the uncapitalized simple name, or the
- * stereotype's {@code value}) and {@code @Bean} methods (the method name, or {@code name}/{@code
- * value}). A component whose name is also taken by another component or by a {@code @Bean} method
- * is a violation: the context refuses to start with "A bean with that name has already been
- * defined", which no compiler or unit test notices.
+ * Nombres de beans tal como Spring los deriva para los componentes escaneados (el nombre simple con
+ * la inicial en minúscula, o el {@code value} del estereotipo) y para los métodos {@code @Bean} (el
+ * nombre del método, o {@code name}/{@code value}). Un componente cuyo nombre también lo usa otro
+ * componente o un método {@code @Bean} es una infracción: el contexto se niega a arrancar con "A
+ * bean with that name has already been defined", algo que ningún compilador ni prueba unitaria
+ * detecta.
  */
 final class BeanNames extends ArchCondition<JavaClass> {
 
@@ -66,7 +67,10 @@ final class BeanNames extends ArchCondition<JavaClass> {
             });
   }
 
-  /** The name of a component found by classpath scanning; empty for any other class. */
+  /**
+   * El nombre de un componente encontrado por el escaneo del classpath; vacío para cualquier otra
+   * clase.
+   */
   Optional<String> componentName(JavaClass c) {
     if (c.isAnnotation() || importedByAutoConfiguration(c)) {
       return Optional.empty();
@@ -81,7 +85,9 @@ final class BeanNames extends ArchCondition<JavaClass> {
     return Optional.empty();
   }
 
-  /** Auto-configurations and their nested classes are registered by fully qualified name. */
+  /**
+   * Las autoconfiguraciones y sus clases anidadas se registran por nombre totalmente calificado.
+   */
   private boolean importedByAutoConfiguration(JavaClass c) {
     for (Optional<JavaClass> k = Optional.of(c); k.isPresent(); k = k.get().getEnclosingClass()) {
       if (k.get().isAnnotatedWith(autoConfiguration)) {
@@ -103,7 +109,10 @@ final class BeanNames extends ArchCondition<JavaClass> {
     return names.isEmpty() ? List.of(m.getName()) : names;
   }
 
-  /** Spring's default: the short class name ("Outer.Inner"), uncapitalized like a property. */
+  /**
+   * El valor por defecto de Spring: el nombre corto de la clase ("Outer.Inner"), con la inicial en
+   * minúscula como una propiedad.
+   */
   static String defaultName(JavaClass c) {
     String name =
         c.getName().substring(c.getPackageName().isEmpty() ? 0 : c.getPackageName().length() + 1);

@@ -4,9 +4,9 @@ import org.hibernate.context.spi.CurrentTenantIdentifierResolver;
 import pe.axiz.core.tenancy.TenantContext;
 
 /**
- * Hibernate tenant resolver for entities with {@code @TenantId}: rows are filtered and stamped with
- * the current tenant. Outside a tenant (startup, schedulers) the {@code system} id is used, which
- * matches no tenant data.
+ * Resolvedor de tenant de Hibernate para entidades con {@code @TenantId}: las filas se filtran y se
+ * marcan con el tenant actual. Fuera de un tenant (arranque, schedulers) se usa el id {@code
+ * system}, que no coincide con datos de ningún tenant.
  */
 public class TenantIdentifierResolver implements CurrentTenantIdentifierResolver<String> {
 

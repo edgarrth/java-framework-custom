@@ -22,7 +22,8 @@ import pe.axiz.core.tokenization.vault.TokenVault;
 import pe.axiz.kit.jpa.EncryptedConverter;
 
 /**
- * Intentionally valid and invalid static-analysis inputs; never installed as application mappings.
+ * Entradas de análisis estático válidas e inválidas de forma intencional; nunca se instalan como
+ * mapeos de aplicación.
  */
 public class DataShapes {
   public record RawPan(String maskedPan) {}
@@ -35,7 +36,7 @@ public class DataShapes {
 
   public record Unsupported(String pinBlock) {}
 
-  /** Card secrets whose name does not end with the sensitive term. */
+  /** Secretos de tarjeta cuyo nombre no termina con el término sensible. */
   public record InnerTerms(String cvvCode, String pinCode) {}
 
   public record CardToken(Token cardToken) {}

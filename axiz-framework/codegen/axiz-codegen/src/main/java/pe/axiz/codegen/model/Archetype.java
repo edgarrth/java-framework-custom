@@ -6,19 +6,20 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Role of a service in the ecosystem and the defaults it preselects.
+ * Rol de un servicio en el ecosistema y los valores por defecto que preselecciona.
  *
- * @param name archetype id
- * @param role short description
- * @param structures allowed styles, the first one is the default
- * @param stacks allowed stacks, the first one is the default
- * @param persistence allowed persistence options ({@code none}, {@code aurora}, {@code dynamodb}),
- *     first is default; empty when the archetype has no persistence
- * @param starters capabilities always included
- * @param deployment {@code deployment}, {@code cronjob} or {@code none} (platform archetypes)
- * @param rest whether it exposes a REST API (and therefore needs an OpenAPI contract)
- * @param kind kind of project: service, library or starter
- * @param properties {@code application.yaml} defaults of the archetype (flat keys)
+ * @param name id del arquetipo
+ * @param role descripción breve
+ * @param structures estilos permitidos; el primero es el valor por defecto
+ * @param stacks stacks permitidos; el primero es el valor por defecto
+ * @param persistence opciones de persistencia permitidas ({@code none}, {@code aurora}, {@code
+ *     dynamodb}); la primera es el valor por defecto; vacío cuando el arquetipo no tiene
+ *     persistencia
+ * @param starters capacidades que siempre se incluyen
+ * @param deployment {@code deployment}, {@code cronjob} o {@code none} (arquetipos de plataforma)
+ * @param rest indica si expone una API REST (y, por lo tanto, necesita un contrato OpenAPI)
+ * @param kind tipo de proyecto: servicio, biblioteca o starter
+ * @param properties valores por defecto de {@code application.yaml} del arquetipo (claves planas)
  */
 public record Archetype(
     String name,
@@ -68,12 +69,14 @@ public record Archetype(
     return Snapshots.properties(properties);
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción con nombre; build verifica los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable String name = null;
     private @Nullable String role = null;

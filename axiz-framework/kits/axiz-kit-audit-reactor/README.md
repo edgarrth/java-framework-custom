@@ -1,22 +1,23 @@
 # axiz-kit-audit-reactor
 
-Provider-independent Reactor contract for transactional audit chain state.
+Contrato Reactor, independiente del proveedor, para el estado transaccional de la cadena de auditoría.
 
-This module owns the `pe.axiz.kit.reactor.audit` API.
+Este módulo es dueño de la API `pe.axiz.kit.reactor.audit`.
 
-## Contract
+## Contrato
 
-`ReactiveAuditChainState` joins the subscriber's transaction. `advance` requires an active
-transaction, locks the selected head and applies a pure CPU callback. A rollback must restore
-the previous head. A caller must write the associated audit record before committing.
+`ReactiveAuditChainState` se une a la transacción del suscriptor. `advance` exige una transacción
+activa, bloquea la cabeza seleccionada y aplica un callback puro de CPU. Un rollback debe restaurar
+la cabeza anterior. El llamador debe escribir el registro de auditoría asociado antes del commit.
 
-`transactionResource()` returns the exact borrowed resource identity used by the outbox writer;
-it is not a connection, a transferable transaction or ownership of a pool. A null identity
-cannot establish atomicity and is rejected by framework durable composition.
+`transactionResource()` devuelve la identidad exacta del recurso prestado que usa el escritor del
+outbox; no es una conexión, ni una transacción transferible, ni la propiedad de un pool. Una
+identidad nula no puede garantizar atomicidad y la composición durable del framework la rechaza.
 
-`checkpoint` reads committed state through an independent connection. It must not reuse the
-subscriber's uncommitted connection. Its result is a reference from the database, not proof
-that a remote destination has received the outbox records.
+`checkpoint` lee el estado confirmado mediante una conexión independiente. No debe reutilizar la
+conexión sin confirmar del suscriptor. Su resultado es una referencia de la base de datos, no una
+prueba de que un destino remoto recibió los registros del outbox.
 
-The kit has no Spring binding, database driver, scheduler or imperative adapter. PostgreSQL
-implementation and timeout behavior belong to `axiz-adapter-outbox-r2dbc`.
+El kit no tiene binding de Spring, driver de base de datos, planificador ni adaptador imperativo.
+La implementación para PostgreSQL y el comportamiento de los timeouts pertenecen a
+`axiz-adapter-outbox-r2dbc`.

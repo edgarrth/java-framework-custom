@@ -1,4 +1,4 @@
-/** Stereotypes of the hexagonal style. */
+/** Estereotipos del estilo hexagonal. */
 @NullMarked
 package pe.axiz.structure.hexagonal.annotation;
 

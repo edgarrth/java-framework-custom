@@ -11,13 +11,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
- * Messaging ({@code axiz.messaging.*}): CloudEvents 1.0 envelopes over MSK, SQS and SNS.
+ * Mensajería ({@code axiz.messaging.*}): sobres CloudEvents 1.0 sobre MSK, SQS y SNS.
  *
- * @param source CloudEvents {@code source}; defaults to {@code urn:axiz:<application>}
- * @param typePrefix prefix of event types, e.g. {@code pe.axiz.payments.}
- * @param destinations logical destination name to physical address ({@code kafka:<topic>}, SQS
- *     queue URL or SNS topic ARN)
- * @param consumer consumption settings
+ * @param source {@code source} de CloudEvents; por defecto, {@code urn:axiz:<application>}
+ * @param typePrefix prefijo de los tipos de evento, p. ej. {@code pe.axiz.payments.}
+ * @param destinations nombre lógico del destino asociado a la dirección física ({@code
+ *     kafka:<topic>}, URL de la cola SQS o ARN del topic SNS)
+ * @param consumer configuración de consumo
  */
 @ConfigurationProperties("axiz.messaging")
 public record AxizMessagingProperties(
@@ -30,27 +30,26 @@ public record AxizMessagingProperties(
     destinations = Collections.unmodifiableMap(new LinkedHashMap<>(destinations));
   }
 
-  /**
-   * Physical address of a logical destination (or the value itself when it is already physical).
-   */
+  /** Dirección física de un destino lógico (o el propio valor cuando ya es físico). */
   public String resolve(String destination) {
     return destinations.getOrDefault(destination, destination);
   }
 
   /**
-   * Consumption.
+   * Consumo.
    *
-   * @param name consumer name used for de-duplication; defaults to the application name
-   * @param maxAttempts deliveries before dead-lettering
-   * @param initialDelay first redelivery delay
-   * @param maxDelay redelivery delay cap
-   * @param ignoreUnknownTypes whether events without handler are acknowledged instead of
-   *     dead-lettered
-   * @param subscriptions event types that must have a handler (checked at startup)
-   * @param deferInterval wait between redeliveries of a message another delivery is processing
-   *     (valid inbox lease)
-   * @param deferMaxWait how long such a message keeps being redelivered before it follows the
-   *     failure path; keep it above {@code axiz.inbox.lease}
+   * @param name nombre del consumidor usado para la deduplicación; por defecto, el nombre de la
+   *     aplicación
+   * @param maxAttempts entregas antes de enviar a dead-letter
+   * @param initialDelay retraso de la primera reentrega
+   * @param maxDelay tope del retraso de reentrega
+   * @param ignoreUnknownTypes indica si los eventos sin handler se confirman en lugar de enviarse a
+   *     dead-letter
+   * @param subscriptions tipos de evento que deben tener un handler (se comprueba en el arranque)
+   * @param deferInterval espera entre reentregas de un mensaje que otra entrega está procesando
+   *     (lease del inbox vigente)
+   * @param deferMaxWait tiempo durante el cual se sigue reentregando dicho mensaje antes de que
+   *     siga la ruta de fallo; debe mantenerse por encima de {@code axiz.inbox.lease}
    */
   public record Consumer(
       @Nullable String name,
@@ -67,12 +66,15 @@ public record AxizMessagingProperties(
       subscriptions = List.copyOf(subscriptions);
     }
 
-    /** Named construction; required values and invariants are checked by build. */
+    /** Construcción con nombre; build comprueba los valores obligatorios y las invariantes. */
     public static Builder builder() {
       return new Builder();
     }
 
-    /** Mutable construction state; use one builder per operation, never as shared state. */
+    /**
+     * Estado mutable de construcción; se usa un builder por operación, nunca como estado
+     * compartido.
+     */
     public static final class Builder {
       private @Nullable String name = null;
       private int maxAttempts = 0;
@@ -153,7 +155,7 @@ public record AxizMessagingProperties(
     }
   }
 
-  /** Outbound event routing, independent of the service structure. */
+  /** Enrutamiento de eventos salientes, independiente de la estructura del servicio. */
   public record Routes(
       @DefaultValue("domain-events") String defaultDestination,
       @DefaultValue Map<String, String> byType) {

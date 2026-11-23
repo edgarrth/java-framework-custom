@@ -18,13 +18,14 @@ import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import pe.axiz.kit.sql.SqlIdentifiers;
 
 /**
- * Creates framework tables from {@code axiz/sql/<name>-<dialect>.sql}. Mode {@code embedded} (the
- * default) runs only on H2, for tests and local runs; deployed services own the schema through
- * their Flyway migrations, which the initializr generates from the same scripts.
+ * Crea las tablas del framework desde {@code axiz/sql/<name>-<dialect>.sql}. El modo {@code
+ * embedded} (por defecto) solo se ejecuta en H2, para pruebas y ejecuciones locales; los servicios
+ * desplegados gestionan el esquema mediante sus migraciones Flyway, que el initializr genera a
+ * partir de los mismos scripts.
  */
 public final class SchemaInitializer implements InitializingBean {
 
-  /** When the schema is created. */
+  /** Momento en que se crea el esquema. */
   public enum Mode {
     EMBEDDED,
     ALWAYS,
@@ -49,7 +50,10 @@ public final class SchemaInitializer implements InitializingBean {
     this(dataSource, name, mode, Map.of());
   }
 
-  /** Maps canonical table names, including their auxiliary tables and indexes, to service names. */
+  /**
+   * Asocia los nombres canónicos de tablas, incluidas sus tablas auxiliares e índices, con los
+   * nombres del servicio.
+   */
   public SchemaInitializer(
       DataSource dataSource, String name, Mode mode, Map<String, String> tableNames) {
     this.dataSource = Objects.requireNonNull(dataSource);
@@ -102,7 +106,8 @@ public final class SchemaInitializer implements InitializingBean {
   }
 
   private String configuredIdentifier(String original) {
-    // Match the longest canonical prefix once; never recursively rewrite replacement names.
+    // Se busca una sola vez el prefijo canónico más largo; nunca se reescriben recursivamente los
+    // nombres de reemplazo.
     String canonical =
         tableNames.keySet().stream()
             .filter(key -> original.equals(key) || original.startsWith(key + "_"))

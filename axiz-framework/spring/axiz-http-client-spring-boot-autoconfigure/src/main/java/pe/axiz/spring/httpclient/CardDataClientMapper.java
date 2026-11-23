@@ -7,9 +7,9 @@ import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Creates immutable client-local mappers; never changes the application mapper. A client reads
- * other parties' responses tolerantly (a provider may add fields), even when the service rejects
- * undeclared properties in its own requests.
+ * Crea mappers inmutables locales al cliente; nunca modifica el mapper de la aplicación. Un cliente
+ * lee las respuestas de terceros de forma tolerante (un proveedor puede añadir campos), incluso
+ * cuando el servicio rechaza propiedades no declaradas en sus propias solicitudes.
  */
 final class CardDataClientMapper {
   private CardDataClientMapper() {}

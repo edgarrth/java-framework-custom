@@ -50,7 +50,7 @@ class ReactiveCqrsTest {
 
   public record UnknownQuery() implements Query<String> {}
 
-  /** Changes a row and reads it back in the same reactive transaction. */
+  /** Cambia una fila y la vuelve a leer en la misma transacción reactiva. */
   public static class PayHandler implements ReactiveCommandHandler<PayCommand, String> {
     final AtomicInteger calls = new AtomicInteger();
     final DatabaseClient db;
@@ -168,7 +168,10 @@ class ReactiveCqrsTest {
     }
   }
 
-  /** Owner check that reads the owner reactively, as a reactive repository would. */
+  /**
+   * Verificación de propietario que lee el propietario de forma reactiva, como lo haría un
+   * repositorio reactivo.
+   */
   static final class OwnerOnly implements ReactiveAccessPolicy<PaymentStatusQuery> {
     final AtomicInteger lookups = new AtomicInteger();
 
@@ -182,7 +185,7 @@ class ReactiveCqrsTest {
       return Mono.fromSupplier(
               () -> {
                 lookups.incrementAndGet();
-                return "owner"; // the owner a reactive repository would return
+                return "owner"; // el propietario que devolvería un repositorio reactivo
               })
           .filter(owner -> owner.equals(caller.subject()))
           .switchIfEmpty(Mono.error(new NotFoundException("payment", request.paymentId())))

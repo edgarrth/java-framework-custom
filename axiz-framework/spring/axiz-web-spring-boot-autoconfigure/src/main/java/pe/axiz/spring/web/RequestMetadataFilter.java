@@ -21,13 +21,14 @@ import pe.axiz.core.errors.Problem;
 import pe.axiz.core.errors.ProblemFactory;
 
 /**
- * Servlet filter that opens the request context: correlation and request ids (reused only when
- * safe), catalog header validation, MDC entries and the {@code X-Correlation-Id} response header.
- * It runs inside the HTTP server observation, so trace ids are already set.
+ * Filtro servlet que abre el contexto de la solicitud: ids de correlación y de solicitud
+ * (reutilizados solo cuando es seguro), validación de las cabeceras del catálogo, entradas MDC y la
+ * cabecera de respuesta {@code X-Correlation-Id}. Se ejecuta dentro de la observación del servidor
+ * HTTP, por lo que los ids de traza ya están establecidos.
  */
 public class RequestMetadataFilter extends OncePerRequestFilter implements Ordered {
 
-  /** After Boot's server observation filter and before security. */
+  /** Después del filtro de observación del servidor de Boot y antes de la seguridad. */
   public static final int ORDER = Ordered.HIGHEST_PRECEDENCE + 20;
 
   private final RequestMetadataResolver resolver;

@@ -6,6 +6,6 @@ import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import {{project.basePackage}}.{{fw.entityPackage}}.{{artifact.className}}Entity;
 {{/fw.separateEntityPackage}}
 
-/** Non-blocking data access of {@link {{artifact.className}}Entity} (Spring Data R2DBC). */
+/** Acceso a datos no bloqueante de {@link {{artifact.className}}Entity} (Spring Data R2DBC). */
 public interface {{artifact.className}}Repository
     extends ReactiveCrudRepository<{{artifact.className}}Entity, UUID> {}

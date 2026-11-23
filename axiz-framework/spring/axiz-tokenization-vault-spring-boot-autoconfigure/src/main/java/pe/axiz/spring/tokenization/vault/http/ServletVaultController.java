@@ -14,7 +14,7 @@ import pe.axiz.core.tokenization.TokenErrors;
 import pe.axiz.core.tokenization.vault.VaultOperations;
 import pe.axiz.spring.tokenization.vault.VerifiedTokenCaller;
 
-/** Dedicated servlet boundary; no general JSON mapper sees submitted or revealed values. */
+/** Límite servlet dedicado; ningún mapper JSON general ve los valores enviados o revelados. */
 @RestController
 @AuthenticatedAccess
 public class ServletVaultController {
@@ -44,7 +44,7 @@ public class ServletVaultController {
       policy.transport(request.isSecure());
       if (!(principal instanceof Authentication authentication))
         throw TokenErrors.failure(TokenErrors.DENIED);
-      var caller = callers.resolve(authentication); // Before reading any submitted value.
+      var caller = callers.resolve(authentication); // Antes de leer cualquier valor enviado.
       VaultHttpPolicy.requestHeaders(
           request.getContentType(),
           request.getHeader(HttpHeaders.CONTENT_ENCODING),

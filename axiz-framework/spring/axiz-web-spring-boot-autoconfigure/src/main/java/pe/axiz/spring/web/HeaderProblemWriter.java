@@ -9,7 +9,7 @@ import pe.axiz.core.errors.Problem;
 import pe.axiz.core.errors.ProblemFactory;
 import pe.axiz.core.errors.ProblemJson;
 
-/** Renders the 400 problem for invalid headers, with or without the error catalog. */
+/** Representa el problema 400 para cabeceras inválidas, con o sin el catálogo de errores. */
 final class HeaderProblemWriter {
 
   private HeaderProblemWriter() {}

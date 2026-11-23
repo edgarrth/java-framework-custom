@@ -8,9 +8,9 @@ import org.springframework.context.annotation.Bean;
 import {{project.basePackage}}.{{platform.mainClass}};
 
 /**
- * Auto-configuration of {{project.name}}: every bean backs off when the application defines its
- * own ({@code @ConditionalOnMissingBean}) and the capability can be switched off with {@code
- * {{platform.prefix}}.enabled=false}.
+ * Autoconfiguración de {{project.name}}: cada bean se retira cuando la aplicación define el suyo
+ * ({@code @ConditionalOnMissingBean}) y la capacidad puede desactivarse con
+ * {@code {{platform.prefix}}.enabled=false}.
  */
 @AutoConfiguration
 @ConditionalOnProperty(name = "{{platform.prefix}}.enabled", matchIfMissing = true)

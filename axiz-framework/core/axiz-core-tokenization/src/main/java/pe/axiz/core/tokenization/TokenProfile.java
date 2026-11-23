@@ -2,7 +2,9 @@ package pe.axiz.core.tokenization;
 
 import java.util.Map;
 
-/** Registered, versioned textual codec. Implementations return an owned canonical copy. */
+/**
+ * Codec textual registrado y versionado. Las implementaciones devuelven una copia canónica propia.
+ */
 public interface TokenProfile {
   String id();
 
@@ -14,7 +16,9 @@ public interface TokenProfile {
     return false;
   }
 
-  /** Only explicitly approved non-sensitive metadata; no generic reflection or toString(). */
+  /**
+   * Solo metadatos no sensibles aprobados de forma explícita; sin reflexión genérica ni toString().
+   */
   default Map<String, String> metadata(SensitiveValue canonical) {
     return Map.of();
   }

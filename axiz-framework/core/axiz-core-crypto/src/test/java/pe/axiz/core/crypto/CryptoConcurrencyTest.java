@@ -16,8 +16,9 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 
 /**
- * The encryptor and the blind index are shared singletons in a service: under concurrent use every
- * ciphertext gets its own IV, every value decrypts back, and the index stays deterministic.
+ * El cifrador y el índice ciego son singletons compartidos en un servicio: bajo uso concurrente
+ * cada texto cifrado recibe su propio IV, cada valor se descifra de vuelta y el índice sigue siendo
+ * determinista.
  */
 class CryptoConcurrencyTest {
 

@@ -3,8 +3,9 @@ package pe.axiz.core.tokenization.vault;
 import java.util.Objects;
 
 /**
- * Immutable transition issued only by the maintenance protocol, after its preconditions. This
- * object is not an authorization credential; adapters require a separately privileged client.
+ * Transición inmutable emitida solo por el protocolo de mantenimiento, tras sus precondiciones.
+ * Este objeto no es una credencial de autorización; los adaptadores requieren un cliente con
+ * privilegios separados.
  */
 public final class VaultKeyTransition {
   private final FingerprintKeyState expected;

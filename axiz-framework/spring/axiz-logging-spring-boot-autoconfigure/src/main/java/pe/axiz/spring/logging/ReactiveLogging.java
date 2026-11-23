@@ -5,7 +5,7 @@ import org.jspecify.annotations.Nullable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/** Reactor support, loaded only when Reactor is present. */
+/** Soporte de Reactor, cargado solo cuando Reactor está presente. */
 final class ReactiveLogging {
 
   private ReactiveLogging() {}

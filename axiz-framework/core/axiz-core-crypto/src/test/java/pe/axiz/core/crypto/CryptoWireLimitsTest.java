@@ -101,7 +101,8 @@ class CryptoWireLimitsTest {
                 Clock.systemUTC())) {
       var imperative = new EnvelopePayloadProtector(sync);
       var nativePort = new AsyncEnvelopePayloadProtector(async);
-      // A valid low-level envelope with empty binding must not bypass the storage port policy.
+      // Un envelope de bajo nivel válido con enlace vacío no debe saltarse la política del puerto
+      // de almacenamiento.
       byte[] unbound = PayloadProtection.frame(sync.encrypt(input, "c", ""));
       assertThrows(CryptoException.class, () -> imperative.protect(input, "c", ""));
       assertThrows(CryptoException.class, () -> imperative.reveal(unbound, "c", ""));

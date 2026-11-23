@@ -1,4 +1,6 @@
-/** Package pe.axiz.codegen.model. Types are non-null unless annotated {@code @Nullable}. */
+/**
+ * Paquete pe.axiz.codegen.model. Los tipos no son nulos salvo que se anoten con {@code @Nullable}.
+ */
 @NullMarked
 package pe.axiz.codegen.model;
 

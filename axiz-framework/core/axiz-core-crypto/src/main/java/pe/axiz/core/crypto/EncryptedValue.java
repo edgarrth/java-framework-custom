@@ -5,7 +5,8 @@ import java.util.Objects;
 import pe.axiz.core.sensitive.SelfMasking;
 
 /**
- * Validated storage representation. Parsing does not authenticate it; decrypt with trusted scope.
+ * Representación de almacenamiento validada. Parsearla no la autentica; se descifra con un alcance
+ * confiable.
  */
 public final class EncryptedValue implements SelfMasking {
   static final int MAX_PLAINTEXT_BYTES = 1_000_000;
@@ -47,7 +48,10 @@ public final class EncryptedValue implements SelfMasking {
     return payload.clone();
   }
 
-  /** Explicit persistence boundary; never feed this representation to a plaintext converter. */
+  /**
+   * Frontera de persistencia explícita; esta representación nunca se pasa a un conversor de texto
+   * plano.
+   */
   public String encoded() {
     return envelope;
   }

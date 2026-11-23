@@ -2,7 +2,10 @@ package pe.axiz.core.tokenization.vault;
 
 import org.jspecify.annotations.Nullable;
 
-/** Bounded count of persisted references; even an orphan must block key retirement. */
+/**
+ * Conteo acotado de referencias persistidas; incluso un huérfano debe bloquear el retiro de una
+ * clave.
+ */
 public record VaultReferencePage(int references, @Nullable String nextCursor) {
   public VaultReferencePage {
     if (references < 0

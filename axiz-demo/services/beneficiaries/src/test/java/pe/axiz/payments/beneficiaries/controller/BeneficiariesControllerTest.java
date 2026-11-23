@@ -25,8 +25,8 @@ import pe.axiz.spring.web.PageRequestArgumentResolver;
 import pe.axiz.spring.web.PageRequestParser;
 
 /**
- * The REST adapter over the real service: what each operation answers (status and body in the
- * contract's models) and how the contract models map to the service's.
+ * El adaptador REST sobre el servicio real: lo que responde cada operación (estado y cuerpo en los
+ * modelos del contrato) y cómo los modelos del contrato se convierten en los del servicio.
  */
 class BeneficiariesControllerTest {
 

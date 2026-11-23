@@ -27,7 +27,10 @@ import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
 import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
-/** Privileged planning; operational adapters have no entry point for these requests. */
+/**
+ * Planificación privilegiada; los adaptadores operativos no tienen punto de entrada para estas
+ * peticiones.
+ */
 final class MaintenanceRequests {
   private final VaultRequests requests;
 
@@ -135,7 +138,8 @@ final class MaintenanceRequests {
   }
 
   private TransactWriteItem initialized(String kind, String keyset) {
-    // A deleted control must be restored and reconciled, never silently restarted at version one.
+    // Un control borrado debe restaurarse y reconciliarse, nunca reiniciarse en silencio en la
+    // versión uno.
     return TransactWriteItem.builder()
         .put(
             Put.builder()
@@ -156,7 +160,8 @@ final class MaintenanceRequests {
   }
 
   private TransactWriteItem reserve(String kind, String keyset, String keyId) {
-    // Permanent key-id reservation: removal from the read set must never permit ABA reuse.
+    // Reserva permanente del id de clave: retirarlo del conjunto de lectura nunca debe permitir
+    // reutilización ABA.
     return TransactWriteItem.builder()
         .put(
             Put.builder()
@@ -183,7 +188,8 @@ final class MaintenanceRequests {
     validate(expected, replacement, state);
     var items = new ArrayList<TransactWriteItem>();
     items.add(requests.controlBarrier(state));
-    // Share the same ABA fence as deletion, including the exact ciphertext incarnation.
+    // Se comparte el mismo fence ABA que el borrado, incluida la encarnación exacta del texto
+    // cifrado.
     var fence = requests.recordFence(expected);
     var values = new HashMap<>(fence.expressionAttributeValues());
     values.put(":created", VaultItems.s(expected.createdAt().toString()));

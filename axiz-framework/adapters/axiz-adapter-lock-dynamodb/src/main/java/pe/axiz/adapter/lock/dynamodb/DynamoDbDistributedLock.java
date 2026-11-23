@@ -17,8 +17,9 @@ import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 
 /**
- * Lock on DynamoDB conditional writes: acquire when the item does not exist or its lease expired;
- * renew and release only with the owner's token. The {@code ttl} attribute cleans abandoned items.
+ * Lock sobre escrituras condicionales de DynamoDB: se adquiere cuando el ítem no existe o su lease
+ * expiró; se renueva y libera solo con el token del propietario. El atributo {@code ttl} limpia los
+ * ítems abandonados.
  */
 public final class DynamoDbDistributedLock implements DistributedLock {
 
@@ -108,7 +109,7 @@ public final class DynamoDbDistributedLock implements DistributedLock {
                       .expressionAttributeValues(Map.of(":token", s(token)))
                       .build());
             } catch (ConditionalCheckFailedException e) {
-              // lock already taken by someone else after expiry
+              // lock tomado por otro después de la expiración
             }
           }
         });

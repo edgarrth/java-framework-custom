@@ -6,9 +6,10 @@ import java.util.concurrent.CompletionStage;
 import pe.axiz.core.concurrent.Stages;
 
 /**
- * Non-blocking enqueue over the shared bounded queue. Only its owned virtual worker awaits the
- * native transport acknowledgement; no request thread waits for queue space or network I/O.
- * Immutable events carry audit metadata. This mode intentionally does not propagate a transaction.
+ * Encolado no bloqueante sobre la cola acotada compartida. Solo su worker virtual propio espera el
+ * acuse del transporte nativo; ningún hilo de petición espera espacio en la cola ni E/S de red. Los
+ * eventos inmutables llevan los metadatos de auditoría. Este modo intencionalmente no propaga una
+ * transacción.
  */
 public final class QueuedAsyncAuditPublisher
     implements AsyncAuditEventPublisher, AuditQueueMetrics, AutoCloseable {

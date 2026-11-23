@@ -6,11 +6,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
- * Localization settings ({@code axiz.i18n.*}).
+ * Configuración de localización ({@code axiz.i18n.*}).
  *
- * @param defaultLocale locale used when the client sends no usable {@code Accept-Language}
- * @param supportedLocales locales the service answers in
- * @param basenames service bundles (classpath, UTF-8 properties); they win over framework messages
+ * @param defaultLocale locale usado cuando el cliente no envía un {@code Accept-Language}
+ *     utilizable
+ * @param supportedLocales locales en los que responde el servicio
+ * @param basenames bundles del servicio (classpath, propiedades UTF-8); prevalecen sobre los
+ *     mensajes del framework
  */
 @ConfigurationProperties("axiz.i18n")
 public record AxizI18nProperties(

@@ -28,7 +28,8 @@ class AxizConfigEnvironmentPostProcessorTest {
 
   @Test
   void insideClusterImportsTheMountedConfigMaps() {
-    // shared (optional), then the service and its error catalog (required): later files win
+    // compartido (opcional), luego el servicio y su catálogo de errores (obligatorios): los
+    // archivos posteriores prevalecen
     MockEnvironment env =
         cluster().withProperty("spring.config.import", "optional:file:./extra.yaml");
     epp.postProcessEnvironment(env, new SpringApplication());

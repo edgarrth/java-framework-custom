@@ -27,7 +27,7 @@ import pe.axiz.core.resilience.RetryPolicy;
 
 class SagaTest {
 
-  /** Context: list of completed actions, serialized as comma separated text. */
+  /** Contexto: lista de acciones completadas, serializada como texto separado por comas. */
   static final class Codec implements ContextCodec<List<String>> {
     @Override
     public String encode(List<String> c) {
@@ -183,7 +183,7 @@ class SagaTest {
     Step b = new Step("send", log);
     SagaStateStore store = new InMemorySagaStateStore();
     SagaDefinition<List<String>> def = new SagaDefinition<>("payment", List.of(a, b));
-    // Simulate a crash after step 1 was durably persisted.
+    // Se simula una caída después de persistir de forma durable el paso 1.
     store.create(
         SagaState.builder()
             .sagaId("s-4")
@@ -266,7 +266,9 @@ class SagaTest {
     assertEquals(0, recovery.resumeStale(Duration.ofMinutes(1), 10), "terminal sagas stay");
   }
 
-  /** Store whose n-th update fails once (database unavailable at that moment). */
+  /**
+   * Almacén cuya n-ésima actualización falla una vez (base de datos no disponible en ese momento).
+   */
   static final class FlakyStore implements SagaStateStore {
     final InMemorySagaStateStore delegate = new InMemorySagaStateStore();
     Predicate<SagaState> failWhen = state -> false;
@@ -302,7 +304,9 @@ class SagaTest {
     }
   }
 
-  /** Regression: a listener that throws after a step must not compensate that step. */
+  /**
+   * Regresión: un listener que lanza una excepción después de un paso no debe compensar ese paso.
+   */
   @Test
   void aFailingListenerDoesNotCompensateACompletedStep() {
     List<String> log = new ArrayList<>();
@@ -335,8 +339,8 @@ class SagaTest {
   }
 
   /**
-   * Regression: step "debit" ran but recording its result failed. The saga aborts and "debit" is
-   * compensated too, not only the steps before it.
+   * Regresión: el paso "debit" se ejecutó pero falló el registro de su resultado. La saga aborta y
+   * "debit" también se compensa, no solo los pasos anteriores.
    */
   @Test
   void aStepThatRanButCouldNotBeRecordedIsCompensated() {
@@ -359,7 +363,9 @@ class SagaTest {
     assertEquals(SagaStatus.COMPENSATED, store.find("s-8").orElseThrow().status());
   }
 
-  /** A failure to record compensation progress is not reported as a failed compensation. */
+  /**
+   * Un fallo al registrar el progreso de la compensación no se reporta como compensación fallida.
+   */
   @Test
   void aStoreFailureDuringCompensationPropagatesAndResumeFinishesIt() {
     List<String> log = new ArrayList<>();
@@ -367,7 +373,7 @@ class SagaTest {
     Step b = new Step("send", log);
     b.failExecute = 101;
     FlakyStore store = new FlakyStore();
-    // Fail specifically when recording the completed compensation.
+    // Se falla específicamente al registrar la compensación completada.
     store.failWhen = s -> s.status() == SagaStatus.COMPENSATING && s.stepIndex() == -1;
     SagaDefinition<List<String>> def = new SagaDefinition<>("payment", List.of(a, b));
     assertThrows(
@@ -381,7 +387,7 @@ class SagaTest {
     assertEquals(List.of("do:reserve", "undo:reserve", "undo:reserve"), log);
   }
 
-  /** When even the intent to compensate cannot be recorded, nothing is undone. */
+  /** Cuando ni siquiera puede registrarse la intención de compensar, no se deshace nada. */
   @Test
   void nothingIsUndoneUnlessTheIntentToCompensateWasRecorded() {
     List<String> log = new ArrayList<>();
@@ -403,7 +409,7 @@ class SagaTest {
     assertEquals(SagaStatus.IN_DOUBT, store.find("s-10").orElseThrow().status());
   }
 
-  /** A remote step whose effect happens but whose response is lost (the report's scenario). */
+  /** Paso remoto cuyo efecto ocurre pero cuya respuesta se pierde. */
   static final class LostResponseStep extends Step {
     final AtomicInteger externalEffects = new AtomicInteger();
 
@@ -414,8 +420,8 @@ class SagaTest {
     @Override
     public List<String> execute(List<String> context) throws Exception {
       attempts.incrementAndGet();
-      externalEffects.incrementAndGet(); // the debit happened at the participant...
-      throw new IOException("connection reset"); // ...but the answer never arrived
+      externalEffects.incrementAndGet(); // el débito ocurrió en el participante...
+      throw new IOException("connection reset"); // ...pero la respuesta nunca llegó
     }
   }
 
@@ -425,9 +431,9 @@ class SagaTest {
   }
 
   /**
-   * Regression: an effect confirmed remotely whose response was lost must not produce a COMPENSATED
-   * saga while the effect still exists. Without a verification answer the saga is IN_DOUBT and
-   * nothing is undone.
+   * Regresión: un efecto confirmado de forma remota cuya respuesta se perdió no debe producir una
+   * saga COMPENSATED mientras el efecto siga existiendo. Sin una respuesta de verificación la saga
+   * queda IN_DOUBT y no se deshace nada.
    */
   @Test
   void anUncertainFailureIsNeverTreatedAsNoEffect() {
@@ -475,7 +481,7 @@ class SagaTest {
     List<String> log = new ArrayList<>();
     Step reserve = new Step("reserve", log);
     Step debit = new Step("debit", log);
-    debit.failExecute = 1; // transient failure, no retries configured
+    debit.failExecute = 1; // fallo transitorio, sin reintentos configurados
     debit.verification = StepCheck.rejected();
     SagaResult<List<String>> r =
         noRetry(new InMemorySagaStateStore())
@@ -500,7 +506,7 @@ class SagaTest {
     assertEquals(
         SagaStatus.IN_DOUBT,
         noRetry(store).start(def, new Codec(), "s-14", new ArrayList<>()).status());
-    // still unknown on the next check: stays in doubt, nothing undone
+    // sigue desconocido en la siguiente verificación: permanece en duda, nada se deshace
     assertEquals(SagaStatus.IN_DOUBT, noRetry(store).resume(def, new Codec(), "s-14").status());
     debit.verification = StepCheck.applied(List.of("reserve", "debit"));
     SagaResult<List<String>> r = noRetry(store).resume(def, new Codec(), "s-14");

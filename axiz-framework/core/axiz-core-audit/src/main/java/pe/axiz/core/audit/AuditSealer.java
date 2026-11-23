@@ -5,9 +5,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
-/** Completes one chain step without holding its state lock during delivery. */
+/** Completa un paso de la cadena sin retener su lock de estado durante la entrega. */
 public final class AuditSealer {
-  /** NONE disables seals; HASH detects changes; HMAC additionally requires a protected key. */
+  /** NONE desactiva los sellos; HASH detecta cambios; HMAC además requiere una clave protegida. */
   public enum Mode {
     NONE,
     HASH,
@@ -33,12 +33,15 @@ public final class AuditSealer {
     this.calculator = new AuditSealCalculator(mode, hmacKey, keyId);
   }
 
-  /** Borrowed state resource identity, for atomicity validation at the composition boundary. */
+  /**
+   * Identidad del recurso de estado prestado, para validar la atomicidad en la frontera de
+   * composición.
+   */
   public @Nullable Object transactionResource() {
     return state.transactionResource();
   }
 
-  /** Operational high-water mark; it includes uncommitted attempts and is not a checkpoint. */
+  /** Marca de nivel máximo operativa; incluye intentos sin commit y no es un checkpoint. */
   public long sequence() {
     return sequence.get();
   }

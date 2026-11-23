@@ -8,11 +8,12 @@ import pe.axiz.payments.history.domain.PaymentHistory;
 import pe.axiz.payments.history.domain.PaymentStatus;
 
 /**
- * Payments of a customer, latest change first (GET /v1/customers/{customerId}/payments).
+ * Pagos de un cliente, con el cambio más reciente primero (GET
+ * /v1/customers/{customerId}/payments).
  *
- * @param customerId customer
- * @param status only payments in this status, or all
- * @param page page to read
+ * @param customerId cliente
+ * @param status solo los pagos en este estado, o todos
+ * @param page página por leer
  */
 public record ListCustomerPaymentsQuery(
     String customerId, @Nullable PaymentStatus status, PageRequest page)

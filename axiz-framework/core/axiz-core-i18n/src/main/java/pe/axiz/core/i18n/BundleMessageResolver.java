@@ -13,11 +13,12 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Message resolver over several {@link ResourceBundle} base names (UTF-8 properties).
+ * Resolver de mensajes sobre varios nombres base de {@link ResourceBundle} (propiedades UTF-8).
  *
- * <p>Lookup order for each bundle: requested locale, its language, the configured default locale,
- * then the root bundle. The JVM default locale is never consulted, so results do not depend on the
- * machine where the service runs. Bundles listed first win.
+ * <p>Orden de búsqueda para cada bundle: locale solicitado, su idioma, el locale por defecto
+ * configurado y luego el bundle raíz. Nunca se consulta el locale por defecto de la JVM, de modo
+ * que los resultados no dependen de la máquina donde corre el servicio. Prevalecen los bundles
+ * listados primero.
  */
 public final class BundleMessageResolver implements MessageResolver {
 

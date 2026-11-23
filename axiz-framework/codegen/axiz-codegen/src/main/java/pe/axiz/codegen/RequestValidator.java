@@ -16,16 +16,16 @@ import pe.axiz.codegen.openapi.LintFinding;
 import pe.axiz.codegen.openapi.OpenApiDocument;
 import pe.axiz.codegen.openapi.OpenApiLinter;
 
-/** Compatibility rules of archetype, structure, stack, persistence and capabilities. */
+/** Reglas de compatibilidad de arquetipo, estructura, stack, persistencia y capacidades. */
 public final class RequestValidator {
 
   /**
-   * Result of validating a request.
+   * Resultado de validar una solicitud.
    *
-   * @param archetype resolved archetype, when known
-   * @param contract parsed contract, when present and readable
-   * @param problems blocking problems
-   * @param findings contract lint findings (errors block, warnings do not)
+   * @param archetype arquetipo resuelto, cuando se conoce
+   * @param contract contrato analizado, cuando está presente y es legible
+   * @param problems problemas bloqueantes
+   * @param findings hallazgos de lint del contrato (los errores bloquean, las advertencias no)
    */
   public record Result(
       @Nullable Archetype archetype,
@@ -42,7 +42,7 @@ public final class RequestValidator {
     }
   }
 
-  /** Longest description accepted: one line in every generated file. */
+  /** Descripción más larga aceptada: una línea en cada archivo generado. */
   static final int MAX_DESCRIPTION = 200;
 
   @SuppressFBWarnings(
@@ -80,7 +80,7 @@ public final class RequestValidator {
     }
     if (r.description().length() > MAX_DESCRIPTION
         || r.description().chars().anyMatch(Character::isISOControl)) {
-      // one line of text: it lands in POMs, Javadoc, YAML and Markdown (punctuation is fine)
+      // una línea de texto: termina en POM, Javadoc, YAML y Markdown (la puntuación está permitida)
       problems.add(
           "description must be a single line of at most " + MAX_DESCRIPTION + " characters");
     }

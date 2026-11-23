@@ -1,6 +1,6 @@
 package pe.axiz.core.messaging;
 
-/** Encodes and decodes event payloads (JSON with the service's mapper in the starter). */
+/** Codifica y decodifica payloads de eventos (JSON con el mapper del servicio en el starter). */
 public interface PayloadCodec {
 
   String contentType();

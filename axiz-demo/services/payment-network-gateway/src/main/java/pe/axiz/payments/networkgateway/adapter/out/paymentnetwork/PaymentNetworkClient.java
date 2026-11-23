@@ -8,14 +8,14 @@ import pe.axiz.payments.networkgateway.adapter.out.paymentnetwork.model.NetworkR
 import pe.axiz.payments.networkgateway.adapter.out.paymentnetwork.model.NetworkTransfer;
 
 /**
- * Client of the Clearing payment network (simulated) API (1.0.0), HTTP service group {@code
- * payment-network}: base URL, timeouts, retries, circuit breaker and authentication come from
- * {@code axiz.http-client.clients.payment-network.*}.
+ * Cliente de la API de la red de pagos Clearing (simulada) (1.0.0), grupo de servicios HTTP {@code
+ * payment-network}: la URL base, los timeouts, los reintentos, el circuit breaker y la
+ * autenticación provienen de {@code axiz.http-client.clients.payment-network.*}.
  */
 @HttpExchange
 public interface PaymentNetworkClient {
 
-  /** Submits an immediate inter-bank transfer (POST /api/transfers). */
+  /** Envía una transferencia interbancaria inmediata (POST /api/transfers). */
   @PostExchange("/api/transfers")
   NetworkReceipt submitTransfer(
       @RequestHeader(name = "Idempotency-Key", required = true) String idempotencyKey,

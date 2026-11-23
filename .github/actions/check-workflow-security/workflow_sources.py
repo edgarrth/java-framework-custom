@@ -1,4 +1,4 @@
-"""Select workflow sources and follow local calls without leaving the reviewed checkout."""
+"""Selecciona las fuentes de workflow y sigue las llamadas locales sin salir del checkout revisado."""
 from collections import deque
 from pathlib import Path
 import re
@@ -17,7 +17,7 @@ def read_document(path):
 
 def workflow_files(root):
     for path in root.rglob("*"):
-        # Local audit evidence contains generated copies; executable local calls remain checked.
+        # La evidencia de auditoría local contiene copias generadas; las llamadas locales ejecutables se siguen verificando.
         if path.relative_to(root).parts[0] == "_validacion-framework-axiz":
             continue
         if not path.is_file() or any(p in IGNORED for p in path.parts):
@@ -37,7 +37,7 @@ def local_calls(document):
 
 
 def executable_files(root):
-    """Workflow entrypoints and their transitively invoked local actions/workflows."""
+    """Entrypoints de workflow y las acciones o workflows locales que invocan de forma transitiva."""
     root = root.resolve()
     seeds, seed_errors = [], []
     for path in (root / ".github/workflows").glob("*"):
@@ -99,7 +99,7 @@ def executable_files(root):
                 queue.append(metadata)
         except (OSError, ValueError, AttributeError, TypeError, yaml.YAMLError) as error:
             errors.append(str(path.relative_to(root)) + ": " + str(error))
-    # Kahn's algorithm checks cycles without recursion or repeatedly following a composite call.
+        # El algoritmo de Kahn detecta ciclos sin recursión y sin seguir repetidamente una llamada compuesta.
     indegree = {path: 0 for path in visited}
     for targets in graph.values():
         for target in targets:

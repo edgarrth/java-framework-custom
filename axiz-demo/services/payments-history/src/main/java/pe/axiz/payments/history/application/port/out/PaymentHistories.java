@@ -7,24 +7,27 @@ import pe.axiz.payments.history.domain.PaymentHistory;
 import pe.axiz.payments.history.domain.PaymentStatus;
 import reactor.core.publisher.Mono;
 
-/** Non-blocking store of the payment history (Aurora over R2DBC). */
+/** Almacén no bloqueante del historial de pagos (Aurora sobre R2DBC). */
 public interface PaymentHistories {
 
-  /** A change of one entry, given its current state. */
+  /** Cambio de una entrada, a partir de su estado actual. */
   @FunctionalInterface
   interface Change {
     PaymentHistory apply(@Nullable PaymentHistory current);
   }
 
   /**
-   * Reads the entry of a payment, applies the change and stores the result (optimistic locking: a
-   * concurrent update fails and the event is redelivered).
+   * Lee la entrada de un pago, aplica el cambio y almacena el resultado (bloqueo optimista: una
+   * actualización concurrente falla y el evento se reentrega).
    */
   Mono<PaymentHistory> apply(String paymentId, Change change);
 
   Mono<PaymentHistory> find(String paymentId);
 
-  /** Payments of a customer, latest change first, optionally of one status. */
+  /**
+   * Pagos de un cliente, con el cambio más reciente primero y, de forma opcional, de un solo
+   * estado.
+   */
   Mono<Page<PaymentHistory>> byCustomer(
       String customerId, @Nullable PaymentStatus status, PageRequest page);
 }

@@ -5,7 +5,7 @@ import java.io.InputStream;
 import java.util.Properties;
 import picocli.CommandLine;
 
-/** Version of the CLI and of the axiz framework it generates for. */
+/** Versión de la CLI y del framework axiz para el que genera. */
 final class Version implements CommandLine.IVersionProvider {
 
   private static final Properties PROPERTIES = load();
@@ -41,7 +41,7 @@ final class Version implements CommandLine.IVersionProvider {
         p.load(in);
       }
     } catch (IOException e) {
-      // version stays unknown
+      // la versión queda desconocida
     }
     return p;
   }

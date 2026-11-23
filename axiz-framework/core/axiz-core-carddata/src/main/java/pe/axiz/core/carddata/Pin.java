@@ -5,7 +5,7 @@ import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.identifiers.CheckDigits;
 import pe.axiz.core.secrets.SecretValue;
 
-/** Short-lived authentication data; not serializable and never stored. */
+/** Dato de autenticación de vida corta; no serializable y nunca almacenado. */
 public final class Pin implements SensitiveAuthenticationData, AutoCloseable {
   private final SecretValue value;
 

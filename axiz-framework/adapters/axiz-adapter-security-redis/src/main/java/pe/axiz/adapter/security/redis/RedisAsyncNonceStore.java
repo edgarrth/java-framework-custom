@@ -8,7 +8,10 @@ import java.util.concurrent.CompletionStage;
 import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.security.AsyncNonceStore;
 
-/** Atomic native asynchronous nonce acquisition. Any store failure propagates to authentication. */
+/**
+ * Adquisición atómica asíncrona nativa de nonces. Cualquier fallo del almacén se propaga a la
+ * autenticación.
+ */
 public final class RedisAsyncNonceStore implements AsyncNonceStore {
   private final RedisAsyncCommands<String, String> redis;
   private final String prefix;

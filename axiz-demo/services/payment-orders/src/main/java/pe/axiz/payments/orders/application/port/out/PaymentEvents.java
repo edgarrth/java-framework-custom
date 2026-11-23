@@ -3,7 +3,10 @@ package pe.axiz.payments.orders.application.port.out;
 import pe.axiz.payments.orders.domain.PaymentOrder;
 import pe.axiz.payments.orders.domain.PaymentStatus;
 
-/** Events other services react to; published in the same transaction as the change (outbox). */
+/**
+ * Eventos a los que reaccionan otros servicios; se publican en la misma transacción que el cambio
+ * (outbox).
+ */
 public interface PaymentEvents {
 
   void created(PaymentOrder order);

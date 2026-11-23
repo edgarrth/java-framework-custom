@@ -1,6 +1,6 @@
 package pe.axiz.extension.cqrs;
 
-/** Sends commands through the pipeline to their handler. */
+/** Envía comandos a través del pipeline hasta su handler. */
 public interface CommandBus {
 
   <R> R send(Command<R> command);

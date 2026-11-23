@@ -1,8 +1,8 @@
 package pe.axiz.extension.cqrs;
 
 /**
- * Request for data without side effects; implemented by records.
+ * Petición de datos sin efectos secundarios; la implementan records.
  *
- * @param <R> result type
+ * @param <R> tipo del resultado
  */
 public non-sealed interface Query<R> extends Request<R> {}

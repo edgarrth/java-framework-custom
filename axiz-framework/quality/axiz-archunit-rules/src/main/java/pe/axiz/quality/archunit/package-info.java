@@ -1,4 +1,7 @@
-/** Package pe.axiz.quality.archunit. Types are non-null unless annotated {@code @Nullable}. */
+/**
+ * Paquete pe.axiz.quality.archunit. Los tipos no son nulos salvo que se anoten con
+ * {@code @Nullable}.
+ */
 @NullMarked
 package pe.axiz.quality.archunit;
 

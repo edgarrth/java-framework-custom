@@ -18,7 +18,10 @@ import pe.axiz.core.tokenization.TokenErrors;
 import pe.axiz.core.tokenization.TokenOperation;
 import pe.axiz.core.tokenization.TokenType;
 
-/** Dedicated request reader. Owns the submitted value; never accepts caller identity fields. */
+/**
+ * Lector de solicitudes dedicado. Posee el valor enviado; nunca acepta campos de identidad del
+ * invocante.
+ */
 record VaultValueRequest(
     TokenOperation operation,
     TokenType type,

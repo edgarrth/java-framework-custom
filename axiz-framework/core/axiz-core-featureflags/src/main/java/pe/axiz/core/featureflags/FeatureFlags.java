@@ -9,8 +9,9 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Evaluates feature flags. Unknown flags are off. Percentage rollouts hash {@code flag +
- * targetingKey} so the same user always gets the same answer and different flags are independent.
+ * Evalúa feature flags. Los flags desconocidos están apagados. Los despliegues por porcentaje
+ * calculan el hash de {@code flag + targetingKey}, de modo que el mismo usuario siempre obtiene la
+ * misma respuesta y los distintos flags son independientes.
  */
 public final class FeatureFlags {
 
@@ -20,7 +21,10 @@ public final class FeatureFlags {
     this.provider = Objects.requireNonNull(provider);
   }
 
-  /** Whether the flag is configured at all (an unknown flag is off, but not the same as off). */
+  /**
+   * Indica si el flag está configurado (un flag desconocido está apagado, pero no es lo mismo que
+   * apagado).
+   */
   public boolean isDefined(String flag) {
     return provider.find(flag).isPresent();
   }
@@ -65,7 +69,7 @@ public final class FeatureFlags {
     return bucket(d.name(), ctx.targetingKey()) < d.percentage();
   }
 
-  /** Stable bucket 0-99. */
+  /** Bucket estable 0-99. */
   static int bucket(String flag, String key) {
     try {
       byte[] h =

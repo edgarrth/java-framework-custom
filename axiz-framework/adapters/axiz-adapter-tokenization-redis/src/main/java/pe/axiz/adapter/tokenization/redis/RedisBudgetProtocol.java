@@ -12,7 +12,10 @@ import pe.axiz.core.tokenization.TokenOperation;
 import pe.axiz.core.tokenization.vault.TokenBudgetLeaseAlarm;
 import pe.axiz.core.tokenization.vault.TokenBudgetPolicy;
 
-/** Fixed-size scripts: atomic three-dimensional concurrency, explicit ownership and no expiry. */
+/**
+ * Scripts de tamaño fijo: concurrencia atómica en tres dimensiones, propiedad explícita y sin
+ * expiración.
+ */
 final class RedisBudgetProtocol {
   static final String ACQUIRE =
       """
@@ -125,7 +128,8 @@ final class RedisBudgetProtocol {
     try {
       alarm.uncertain(namespace, lease);
     } catch (RuntimeException unavailable) {
-      // Fail-closed admission/release still fails; never log a provider exception or identities.
+      // La admisión o liberación fail-closed sigue fallando; nunca se registra en log una excepción
+      // del proveedor ni identidades.
       LoggerFactory.getLogger(RedisBudgetProtocol.class)
           .error("Token budget lease reconciliation alarm unavailable");
     }

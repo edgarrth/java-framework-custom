@@ -28,9 +28,9 @@ import pe.axiz.core.soap.SoapEnvelope;
 import pe.axiz.core.soap.WsSecurity;
 
 /**
- * Named SOAP clients. Each call is a CLIENT observation ({@code axiz.soap.client}) with the logical
- * system and SOAP action. Payloads are excluded from diagnostics. Closing the factory closes all
- * its owned transports and prevents new requests.
+ * Clientes SOAP con nombre. Cada llamada es una observación CLIENT ({@code axiz.soap.client}) con
+ * el sistema lógico y la acción SOAP. Los payloads se excluyen del diagnóstico. Cerrar la fábrica
+ * cierra todos sus transportes propios e impide solicitudes nuevas.
  */
 public class SoapClients implements AutoCloseable {
 
@@ -100,7 +100,9 @@ public class SoapClients implements AutoCloseable {
             });
   }
 
-  /** Calls an operation of a configured client and returns the response payload element. */
+  /**
+   * Invoca una operación de un cliente configurado y devuelve el elemento payload de la respuesta.
+   */
   public Element call(String client, String soapAction, String payloadXml) {
     SoapClient c = client(client);
     return Observation.createNotStarted(AxizObservations.SOAP_CLIENT, observations)

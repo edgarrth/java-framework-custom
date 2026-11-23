@@ -10,8 +10,9 @@ import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.crypto.DataKeyProvider.DataKey;
 
 /**
- * Native asynchronous envelope encryption with bounded caches and coalesced key loads. Construct at
- * startup to initialize the JDK random/cipher providers. No executor or blocking remote calls.
+ * Cifrado envelope asíncrono nativo con cachés acotadas y cargas de claves coalescidas. Se
+ * construye al arrancar para inicializar los proveedores de aleatoriedad y de cifrado del JDK. Sin
+ * executor ni llamadas remotas bloqueantes.
  */
 public final class AsyncEnvelopeEncryptor implements AutoCloseable {
   private final AsyncDataKeyProvider provider;
@@ -25,7 +26,8 @@ public final class AsyncEnvelopeEncryptor implements AutoCloseable {
     EnvelopePayload.validatePolicy(Objects.requireNonNull(maxAge), maxUses);
     encryptKeys = new AsyncDataKeyCache(maxAge, maxUses, clock);
     decryptKeys = new AsyncDataKeyCache(maxAge, Long.MAX_VALUE, clock);
-    // Seed this random instance and discover cipher providers before any application subscription.
+    // Se inicializa la semilla de esta instancia aleatoria y se descubren los proveedores de
+    // cifrado antes de cualquier suscripción de la aplicación.
     AesGcm.initialize();
   }
 
@@ -33,7 +35,7 @@ public final class AsyncEnvelopeEncryptor implements AutoCloseable {
     return encrypt(plaintext, context, null);
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored") // Cleanup observes the original cancellable result.
+  @SuppressWarnings("FutureReturnValueIgnored") // La limpieza observa el resultado original.
   public CompletionStage<byte[]> encrypt(
       byte[] plaintext, String context, @Nullable String binding) {
     return Stages.call(

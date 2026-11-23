@@ -7,7 +7,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 
-/** Tells the generic database bootstrap that IAM supplies a dynamic password. */
+/** Indica al bootstrap genérico de base de datos que IAM aporta una contraseña dinámica. */
 public final class AxizR2dbcAwsEnvironmentPostProcessor
     implements EnvironmentPostProcessor, Ordered {
   @Override

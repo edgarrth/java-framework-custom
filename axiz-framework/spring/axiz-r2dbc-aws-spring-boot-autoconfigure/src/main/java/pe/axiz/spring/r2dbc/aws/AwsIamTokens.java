@@ -15,7 +15,7 @@ import pe.axiz.spring.aws.AwsService;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.rds.RdsUtilities;
 
-/** Loaded only after the optional AWS authentication adapter has been checked. */
+/** Solo se carga después de comprobar el adaptador opcional de autenticación de AWS. */
 final class AwsIamTokens {
   private AwsIamTokens() {}
 

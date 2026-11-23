@@ -8,7 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pe.axiz.extension.cqrs.AccessPolicies;
 
-/** Startup check of the commands and queries nothing protects. */
+/** Verificación al arrancar de los comandos y consultas que nada protege. */
 final class AuthorizationCoverage {
 
   private static final Logger LOG = LoggerFactory.getLogger(AuthorizationCoverage.class);
@@ -22,9 +22,10 @@ final class AuthorizationCoverage {
   }
 
   /**
-   * Checks that every command and query declares who may send it.
+   * Verifica que cada comando y consulta declare quién puede enviarlo.
    *
-   * @param mode {@code warn} (log them), {@code fail} (stop startup) or {@code allow}
+   * @param mode {@code warn} (los registra en log), {@code fail} (detiene el arranque) o {@code
+   *     allow}
    */
   static void verify(Collection<Class<?>> requestTypes, AccessPolicies policies, String mode) {
     Mode selected;

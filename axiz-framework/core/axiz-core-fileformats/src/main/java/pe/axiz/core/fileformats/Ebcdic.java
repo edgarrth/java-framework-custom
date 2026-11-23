@@ -6,8 +6,9 @@ import java.math.RoundingMode;
 import java.nio.charset.Charset;
 
 /**
- * EBCDIC text and packed decimal (COMP-3) conversion for files exchanged with mainframes. Default
- * code page IBM037 (US/Canada); IBM1047 and IBM284 are common alternatives.
+ * Conversión de texto EBCDIC y decimal empaquetado (COMP-3) para archivos intercambiados con
+ * mainframes. Página de códigos por defecto IBM037 (EE. UU./Canadá); IBM1047 e IBM284 son
+ * alternativas comunes.
  */
 public final class Ebcdic {
 
@@ -24,8 +25,8 @@ public final class Ebcdic {
   }
 
   /**
-   * Decodes a packed decimal: two digits per byte, sign in the last nibble (C/F positive, D
-   * negative).
+   * Decodifica un decimal empaquetado: dos dígitos por byte, signo en el último nibble (C/F
+   * positivo, D negativo).
    */
   public static BigDecimal unpack(byte[] packed, int scale) {
     if (packed.length == 0) {
@@ -50,7 +51,7 @@ public final class Ebcdic {
     throw new IllegalStateException("unreachable");
   }
 
-  /** Encodes a packed decimal of the given byte length. */
+  /** Codifica un decimal empaquetado de la longitud en bytes indicada. */
   public static byte[] pack(BigDecimal value, int scale, int byteLength) {
     BigInteger unscaled = value.setScale(scale, RoundingMode.UNNECESSARY).unscaledValue();
     String digits = unscaled.abs().toString();

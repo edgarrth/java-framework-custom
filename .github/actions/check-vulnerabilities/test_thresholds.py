@@ -1,4 +1,4 @@
-"""Keep reusable CI entry points at least as strict as the shared vulnerability evaluator."""
+"""Mantiene los puntos de entrada reutilizables de CI al menos tan estrictos como el evaluador compartido de vulnerabilidades."""
 import os
 from pathlib import Path
 import subprocess
@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[3]
 class WorkflowThresholdTest(unittest.TestCase):
     def test_dependency_review_cannot_be_weakened_by_a_caller(self):
         workflow = yaml.safe_load((ROOT / '.github/workflows/pr.yaml').read_text())
-        # PyYAML's YAML 1.1 loader maps the unquoted GitHub Actions key "on" to True.
+                # El cargador YAML 1.1 de PyYAML convierte la clave "on" de GitHub Actions sin comillas en True.
         trigger = workflow.get('on', workflow.get(True))
         self.assertEqual('medium', trigger['workflow_call']['inputs']['fail-severity']['default'])
         steps = workflow['jobs']['hygiene']['steps']

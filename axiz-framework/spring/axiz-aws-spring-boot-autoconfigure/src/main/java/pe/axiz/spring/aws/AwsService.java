@@ -1,6 +1,9 @@
 package pe.axiz.spring.aws;
 
-/** AWS service level for credential selection, independent of framework capabilities. */
+/**
+ * Nivel de servicio AWS para la selección de credenciales, independiente de las capacidades del
+ * framework.
+ */
 public enum AwsService {
   UNSPECIFIED,
   S3,

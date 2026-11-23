@@ -14,7 +14,9 @@ import pe.axiz.core.sequence.AsyncSequenceStore;
 import pe.axiz.core.sequence.SequenceStore;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 
-/** Atomic business sequences on Aurora (counter table) or DynamoDB (atomic counter). */
+/**
+ * Secuencias de negocio atómicas sobre Aurora (tabla de contadores) o DynamoDB (contador atómico).
+ */
 @AutoConfiguration(
     afterName = {
       "pe.axiz.spring.sequence.jdbc.AxizSequenceJdbcAutoConfiguration",

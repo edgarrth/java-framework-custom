@@ -3,15 +3,15 @@ package pe.axiz.core.lock;
 import pe.axiz.core.errors.ErrorCategory;
 import pe.axiz.core.errors.ErrorDefinition;
 
-/** Errors of the lock capability. */
+/** Errores de la capacidad de locks. */
 public final class LockErrors {
 
   public static final ErrorDefinition BUSY =
       ErrorDefinition.of("AXZ-LOCK-0409", ErrorCategory.CONFLICT, "Resource busy, retry later");
 
   /**
-   * The lease ended before the work did: another owner may have taken the resource, so the result
-   * of the work cannot be trusted and must not be reported as a success.
+   * El lease terminó antes que el trabajo: otro propietario puede haber tomado el recurso, así que
+   * el resultado del trabajo no es confiable y no debe informarse como éxito.
    */
   public static final ErrorDefinition LOST =
       ErrorDefinition.of(

@@ -19,7 +19,7 @@ import org.springframework.web.util.pattern.PathPatternParser;
 import pe.axiz.core.logging.HttpLogFormatter;
 import reactor.core.publisher.Mono;
 
-/** Reactive access log: same line as the servlet filter, without bodies. */
+/** Log de acceso reactivo: la misma línea que el filtro servlet, sin cuerpos. */
 public class HttpLoggingWebFilter implements WebFilter, Ordered {
 
   private static final Logger LOG = LoggerFactory.getLogger("axiz.http");

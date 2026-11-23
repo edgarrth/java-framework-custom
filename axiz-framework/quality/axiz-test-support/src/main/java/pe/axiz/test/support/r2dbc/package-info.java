@@ -1,4 +1,4 @@
-/** In-memory R2DBC driver for unit tests of R2DBC stores. */
+/** Driver R2DBC en memoria para las pruebas unitarias de almacenes R2DBC. */
 @NullMarked
 package pe.axiz.test.support.r2dbc;
 

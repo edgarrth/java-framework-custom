@@ -2,7 +2,7 @@ package pe.axiz.core.messaging;
 
 import java.util.List;
 
-/** Delegates to the first publisher that supports the destination. */
+/** Delega en el primer publicador que soporta el destino. */
 public final class RoutingEventPublisher implements EventPublisher, BoundedPublisher {
 
   private final List<EventPublisher> delegates;

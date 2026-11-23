@@ -15,7 +15,10 @@ import pe.axiz.core.secrets.SecretResolver;
 import pe.axiz.kit.dynamodb.CursorCodec;
 import pe.axiz.spring.foundation.ConditionalOnConfiguredProperty;
 
-/** Loads cursor key material at startup; request processing performs no secret-store I/O. */
+/**
+ * Carga el material de claves del cursor en el arranque; el procesamiento de solicitudes no realiza
+ * E/S contra el almacén de secretos.
+ */
 @AutoConfiguration(afterName = "pe.axiz.spring.secrets.AxizSecretsAutoConfiguration")
 @ConditionalOnClass(CursorCodec.class)
 @ConditionalOnConfiguredProperty("axiz.dynamodb.cursor.current-key-id")

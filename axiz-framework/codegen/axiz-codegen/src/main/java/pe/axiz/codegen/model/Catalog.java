@@ -17,7 +17,7 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /**
- * Archetypes and capabilities shipped with the structure ({@code axiz/archetypes/catalog.yaml} and
+ * Arquetipos y capacidades incluidos con la estructura ({@code axiz/archetypes/catalog.yaml} y
  * {@code axiz/archetypes/capabilities.yaml}).
  */
 public final class Catalog {
@@ -92,18 +92,18 @@ public final class Catalog {
     return catalog;
   }
 
-  /** Stores a capability can declare in its {@code persistence} map. */
+  /** Almacenes que una capacidad puede declarar en su mapa {@code persistence}. */
   public static final List<String> STORES = List.of(AURORA, R2DBC, DYNAMODB, "none");
 
   /**
-   * The store of a service: its persistence, except Aurora from the reactive stack, which is
-   * reached over R2DBC instead of JDBC/JPA.
+   * El almacén de un servicio: su persistencia, salvo Aurora desde el stack reactivo, a la que se
+   * accede mediante R2DBC en lugar de JDBC/JPA.
    */
   public static String store(String persistence, Stack stack) {
     return AURORA.equals(persistence) && stack == Stack.REACTIVE ? R2DBC : persistence;
   }
 
-  /** How a store is described to users (validation messages). */
+  /** Cómo se describe un almacén a los usuarios (mensajes de validación). */
   public static String storeLabel(String store) {
     return switch (store) {
       case R2DBC -> "aurora (reactive stack, R2DBC)";
@@ -112,7 +112,7 @@ public final class Catalog {
     };
   }
 
-  /** Every reference between entries must resolve; a broken catalog fails fast. */
+  /** Toda referencia entre entradas debe resolverse; un catálogo roto falla de inmediato. */
   void check() {
     for (Capability c : capabilities.values()) {
       List<String> requires = new ArrayList<>(c.requires());
@@ -158,20 +158,20 @@ public final class Catalog {
   }
 
   /**
-   * The given capabilities plus everything they require regardless of the store, in a stable order
-   * (requirements first).
+   * Las capacidades indicadas más todo lo que requieren, sin importar el almacén, en un orden
+   * estable (primero los requisitos).
    *
-   * @throws IllegalArgumentException for an unknown capability
+   * @throws IllegalArgumentException ante una capacidad desconocida
    */
   public List<Capability> resolve(Collection<String> names) {
     return resolve(names, "none");
   }
 
   /**
-   * The given capabilities plus everything they require on the given store (see {@link #store}), in
-   * a stable order (requirements first).
+   * Las capacidades indicadas más todo lo que requieren en el almacén indicado (ver {@link
+   * #store}), en un orden estable (primero los requisitos).
    *
-   * @throws IllegalArgumentException for an unknown capability
+   * @throws IllegalArgumentException ante una capacidad desconocida
    */
   public List<Capability> resolve(Collection<String> names, String store) {
     Map<String, Capability> out = new LinkedHashMap<>();
@@ -182,8 +182,8 @@ public final class Catalog {
   }
 
   /**
-   * Incomplete or conflicting compositions, shared by new, add and doctor. Does not choose a
-   * provider or invent a production policy.
+   * Composiciones incompletas o en conflicto, compartidas por new, add y doctor. No elige un
+   * proveedor ni inventa una política de producción.
    */
   public List<String> missingAlternatives(Collection<Capability> resolved) {
     var names = resolved.stream().map(Capability::name).collect(Collectors.toSet());
@@ -229,7 +229,9 @@ public final class Catalog {
     out.put(name, c);
   }
 
-  /** What the starter of a style brings by itself ({@link Style#NONE} when nothing). */
+  /**
+   * Lo que aporta por sí mismo el starter de un estilo ({@link Style#NONE} cuando no aporta nada).
+   */
   public Style style(Structure structure) {
     return styles.getOrDefault(structure, Style.NONE);
   }
@@ -304,7 +306,7 @@ public final class Catalog {
     return out;
   }
 
-  /** Unmodifiable copy that keeps insertion order (Map.copyOf does not). */
+  /** Copia no modificable que conserva el orden de inserción (Map.copyOf no lo hace). */
   static Map<String, Object> ordered(Map<String, Object> source) {
     return Snapshots.properties(source);
   }

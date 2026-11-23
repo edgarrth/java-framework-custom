@@ -7,7 +7,8 @@ import pe.axiz.core.secrets.SecretValue;
 import pe.axiz.core.sensitive.SelfMasking;
 
 /**
- * Bounded textual value with defensive ownership and best-effort erasure, never Java serialization.
+ * Valor textual acotado con propiedad defensiva y borrado de mejor esfuerzo, nunca serialización
+ * Java.
  */
 public final class SensitiveValue implements SelfMasking, AutoCloseable {
   public static final int MAX_UTF8_BYTES = 8192;
@@ -50,7 +51,7 @@ public final class SensitiveValue implements SelfMasking, AutoCloseable {
     if (bytes > MAX_UTF8_BYTES) throw TokenErrors.failure(TokenErrors.INVALID);
   }
 
-  /** Callback receives a temporary private copy; it must not retain that array. */
+  /** El callback recibe una copia privada temporal; no debe retener ese array. */
   public <T> T use(Function<char[], T> action) {
     return secret.use(action);
   }
@@ -59,7 +60,9 @@ public final class SensitiveValue implements SelfMasking, AutoCloseable {
     return use(SensitiveValue::of);
   }
 
-  /** Explicit boundary access creates an immutable String which cannot be erased by this object. */
+  /**
+   * El acceso explícito en la frontera crea un String inmutable que este objeto no puede borrar.
+   */
   public String reveal() {
     return secret.reveal();
   }

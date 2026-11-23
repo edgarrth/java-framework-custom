@@ -5,13 +5,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import pe.axiz.core.concurrent.Stages;
 
-/** Native asynchronous secret resolution. Only absence may fall through to another source. */
+/** Resolución asíncrona nativa de secretos. Solo la ausencia puede pasar a otra fuente. */
 @FunctionalInterface
 public interface AsyncSecretResolver {
   CompletionStage<Optional<SecretValue>> resolve(String name);
 
   @SuppressWarnings(
-      "FutureReturnValueIgnored") // Conversion and error completion are handled below.
+      "FutureReturnValueIgnored") // La conversión y la finalización con error se manejan abajo.
   default CompletionStage<SecretValue> require(String name) {
     var source = Stages.call(() -> resolve(name));
     var result =
@@ -23,8 +23,9 @@ public interface AsyncSecretResolver {
             return cancelled;
           }
         };
-    // Pure ownership conversion needs no caller context. Cleanup must also run when capture fails
-    // elsewhere or a native source cannot honour cancellation and produces a late secret.
+    // La conversión pura de propiedad no necesita el contexto de quien llama. La limpieza también
+    // debe ejecutarse cuando la captura falla en otro punto o cuando una fuente nativa no puede
+    // respetar la cancelación y produce un secreto tardío.
     source.whenComplete(
         (value, failure) -> {
           if (failure != null) result.completeExceptionally(Stages.unwrap(failure));

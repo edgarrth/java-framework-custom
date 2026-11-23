@@ -2,7 +2,7 @@ package pe.axiz.codegen.model;
 
 import java.util.Locale;
 
-/** Optional extension of a compatible service structure. */
+/** Extensión opcional de una estructura de servicio compatible. */
 public enum Extension {
   CQRS;
 

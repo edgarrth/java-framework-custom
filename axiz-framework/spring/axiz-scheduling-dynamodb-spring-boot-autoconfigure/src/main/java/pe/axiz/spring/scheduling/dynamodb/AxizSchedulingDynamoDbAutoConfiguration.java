@@ -21,9 +21,9 @@ import pe.axiz.spring.scheduling.AxizSchedulingProperties;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 /**
- * ShedLock on DynamoDB ({@code axiz.scheduling.store=dynamodb}). The client is the application's
- * {@link DynamoDbClient} (DynamoDB starter); without one, and with {@code
- * axiz-adapter-observability-aws} present, it is built with the same settings.
+ * ShedLock sobre DynamoDB ({@code axiz.scheduling.store=dynamodb}). El cliente es el {@link
+ * DynamoDbClient} de la aplicación (starter de DynamoDB); si no existe y está presente {@code
+ * axiz-adapter-observability-aws}, se construye con la misma configuración.
  */
 @AutoConfiguration(afterName = "pe.axiz.spring.dynamodb.AxizDynamoDbAutoConfiguration")
 @ConditionalOnClass(name = "net.javacrumbs.shedlock.provider.dynamodb2.DynamoDBLockProvider")

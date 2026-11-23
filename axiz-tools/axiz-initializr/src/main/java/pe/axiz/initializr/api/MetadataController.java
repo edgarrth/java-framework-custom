@@ -15,7 +15,9 @@ import pe.axiz.codegen.model.Structure;
 import pe.axiz.initializr.config.InitializrProperties;
 import pe.axiz.initializr.service.GenerationService;
 
-/** What can be generated: archetypes with their defaults and rules, styles and capabilities. */
+/**
+ * Lo que se puede generar: arquetipos con sus valores por defecto y reglas, estilos y capacidades.
+ */
 @RestController
 public class MetadataController {
 
@@ -27,7 +29,7 @@ public class MetadataController {
     this.properties = properties;
   }
 
-  /** Catalog of the initializr (used by the web UI and the CLI). */
+  /** Catálogo del initializr (lo usan la UI web y la CLI). */
   @GetMapping("/v1/metadata")
   public Map<String, Object> metadata() {
     Map<String, Object> out = new LinkedHashMap<>();

@@ -1,61 +1,63 @@
-# Security policy
+# Política de seguridad
 
-This policy covers every component of this repository: the framework, the developer tools, the
-documentation site, the payments demo and the shared CI/CD workflows.
+Esta política cubre todos los componentes de este repositorio: el framework, las herramientas para
+desarrolladores, el sitio de documentación, la demo de pagos y los workflows compartidos de CI/CD.
 
-## Release gate
+## Control de release
 
-Every detected **MEDIUM, HIGH or CRITICAL vulnerability blocks merging and publishing**,
-including development dependencies, CI tools and every supported image platform. The same
-gate applies when no upstream fix is available. Upgrade, replace or remove the affected
-component and retain a complete new scan before releasing. An unknown severity, missing
-report or failed scanner is not a clean result.
+Toda **vulnerabilidad MEDIUM, HIGH o CRITICAL detectada bloquea el merge y la publicación**, incluidas
+las dependencias de desarrollo, las herramientas de CI y cada plataforma de imagen admitida. El mismo
+control aplica cuando no existe una corrección en el origen. El componente afectado se actualiza, se
+reemplaza o se elimina, y se conserva un escaneo nuevo y completo antes de publicar. Una severidad
+desconocida, un reporte ausente o un escáner fallido no es un resultado limpio.
 
-The response deadlines below govern incident handling; they do not authorize publishing an
-affected artifact. Historical risk acceptances, mitigations and owner approval cannot waive
-this gate. Preserve those records for audit without using them to suppress current findings.
+Los plazos de respuesta de abajo rigen la gestión de incidentes; no autorizan publicar un artefacto
+afectado. Las aceptaciones de riesgo previas, las mitigaciones y la aprobación del propietario no
+pueden eximir de este control. Esos registros se conservan para trazabilidad sin usarlos para suprimir
+vulnerabilidades vigentes.
 
-## Reporting a vulnerability
+## Reporte de una vulnerabilidad
 
-Do not open a public issue, pull request or chat thread for a suspected vulnerability.
+No se abre un issue público, un pull request ni un hilo de chat por una vulnerabilidad sospechada.
 
-- Use **GitHub private vulnerability reporting** of this repository (Security tab, "Report a
-  vulnerability"), or write to the security team mailbox `security@axiz.internal`.
-- Include: affected module and version (or commit), how to reproduce it, impact as you understand
-  it and whether you know of active exploitation.
-- Never include real customer data, credentials or production secrets in the report. If a secret
-  was exposed, say which one so it can be rotated first.
+- Se usa el **reporte privado de vulnerabilidades de GitHub** de este repositorio (pestaña Security,
+  "Report a vulnerability"), o se escribe al buzón del equipo de seguridad `security@axiz.internal`.
+- Se incluye: el módulo y la versión afectados (o el commit), cómo reproducirla, el impacto según se
+  entiende y si se conoce explotación activa.
+- Nunca se incluyen datos reales de clientes, credenciales ni secretos de producción en el reporte. Si
+  un secreto quedó expuesto, se indica cuál para rotarlo primero.
 
-## What happens next
+## Qué sucede después
 
-| Severity (CVSS 4.0 or equivalent) | Acknowledgement | Triage and owner | Fix released or mitigated |
+| Severidad (CVSS 4.0 o equivalente) | Acuse de recibo | Triaje y responsable | Corrección publicada o mitigada |
 |---|---|---|---|
-| Critical | 24 hours | 2 business days | 7 calendar days |
-| High | 2 business days | 5 business days | 30 calendar days |
-| Medium | 5 business days | 10 business days | next minor release, at most 90 days |
-| Low | 10 business days | best effort | next planned release |
+| Critical | 24 horas | 2 días hábiles | 7 días calendario |
+| High | 2 días hábiles | 5 días hábiles | 30 días calendario |
+| Medium | 5 días hábiles | 10 días hábiles | siguiente release menor, como máximo 90 días |
+| Low | 10 días hábiles | mejor esfuerzo | siguiente release planificada |
 
-1. The security team confirms the report, assigns a severity and an owner from `CODEOWNERS`.
-2. The fix is prepared in a private fork or a GitHub security advisory and released as a patch of
-   every supported version (see `SUPPORT.md`). Currently `@edgarrth` is the sole repository and
-   security owner. Any other risk acceptance requires his explicit, traceable approval with
-   exact scope, mitigation and expiry. This is owner acceptance, not independent review or
-   separation of duties. A second reviewer becomes required when another authorized maintainer
-   is added. Acceptance cannot waive the release gate above or mandatory external requirements.
-3. Services that depend on an affected version are identified from the SBOMs and notified with
-   the upgrade path. Renovate opens the upgrade pull requests.
-4. The advisory is published to the internal organization after the fix is available
-   (coordinated disclosure). Embargoed details are shared only with the people who need them.
+1. El equipo de seguridad confirma el reporte y asigna una severidad y un responsable de `CODEOWNERS`.
+2. La corrección se prepara en un fork privado o en un aviso de seguridad de GitHub y se publica como
+   parche de cada versión admitida (ver `SUPPORT.md`). `@edgarrth` es el único responsable del
+   repositorio y de la seguridad. Cualquier otra aceptación de riesgo requiere su aprobación explícita
+   y trazable, con alcance exacto, mitigación y vencimiento. Es una aceptación del propietario, no una
+   revisión independiente ni una separación de funciones. Un segundo revisor pasa a ser obligatorio
+   cuando se incorpora otro mantenedor autorizado. La aceptación no puede eximir del control de release
+   anterior ni de los requisitos externos obligatorios.
+3. Los servicios que dependen de una versión afectada se identifican a partir de los SBOM y se les
+   notifica con el camino de actualización. Renovate abre los pull requests de actualización.
+4. El aviso se publica para la organización interna cuando la corrección está disponible (divulgación
+   coordinada). Los detalles bajo embargo se comparten solo con las personas que los necesitan.
 
-## Scope and priorities
+## Alcance y prioridades
 
-Areas reviewed with priority:
+Áreas revisadas con prioridad:
 
 - `axiz-framework`: `core/**/*crypto*`, `core/**/*security*`, `spring/axiz-security-*`, `quality/`.
-- `axiz-tools`: `axiz-initializr/` (internet facing) and `axiz-cli/`.
-- `axiz-demo`: `services/*/src/main/java/**/security` and `deploy/`.
-- `.github`: `workflows/`, `actions/` and `gitops/policies/`.
+- `axiz-tools`: `axiz-initializr/` (expuesto a internet) y `axiz-cli/`.
+- `axiz-demo`: `services/*/src/main/java/**/security` y `deploy/`.
+- `.github`: `workflows/`, `actions/` y `gitops/policies/`.
 
-Dependency vulnerabilities are tracked automatically (Trivy on the SBOM, dependency review on pull
-requests, Renovate security updates outside the weekly schedule); report them here only when the
-framework itself makes them exploitable.
+Las vulnerabilidades de dependencias se siguen de forma automática (Trivy sobre el SBOM, dependency
+review en los pull requests, actualizaciones de seguridad de Renovate fuera del calendario semanal);
+se reportan aquí solo cuando el propio framework las hace explotables.

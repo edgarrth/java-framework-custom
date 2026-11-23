@@ -4,7 +4,10 @@ import java.time.YearMonth;
 import java.util.Locale;
 import pe.axiz.core.errors.BusinessException;
 
-/** Expiry checked against an explicit business clock, never the system clock implicitly. */
+/**
+ * Vencimiento verificado contra un reloj de negocio explícito, nunca contra el reloj del sistema de
+ * forma implícita.
+ */
 public record CardExpiry(int month, int year) {
   public CardExpiry {
     if (month < 1 || month > 12 || year < 2000 || year > 2099) throw invalid();

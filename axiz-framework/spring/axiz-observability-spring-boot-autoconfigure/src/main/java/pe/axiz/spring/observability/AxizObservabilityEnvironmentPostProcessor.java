@@ -9,9 +9,10 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 
 /**
- * OpenTelemetry defaults (lowest precedence): OTLP export of traces and metrics to the collector
- * given by {@code OTEL_EXPORTER_OTLP_ENDPOINT}, liveness and readiness probes, and resource
- * attributes. No Java agent is involved, so they also apply to native images.
+ * Valores por defecto de OpenTelemetry (precedencia más baja): exportación OTLP de trazas y
+ * métricas al collector indicado por {@code OTEL_EXPORTER_OTLP_ENDPOINT}, sondas de liveness y
+ * readiness, y atributos del recurso. No interviene ningún agente Java, por lo que también se
+ * aplican a imágenes nativas.
  */
 public class AxizObservabilityEnvironmentPostProcessor
     implements EnvironmentPostProcessor, Ordered {

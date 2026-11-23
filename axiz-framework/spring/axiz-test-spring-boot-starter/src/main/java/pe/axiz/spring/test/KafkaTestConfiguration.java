@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.DynamicPropertyRegistrar;
 import org.testcontainers.kafka.KafkaContainer;
 
-/** Kafka for messaging tests; IAM authentication is switched off for the local broker. */
+/** Kafka para pruebas de mensajería; la autenticación IAM se desactiva para el broker local. */
 @TestConfiguration(proxyBeanMethods = false)
 public class KafkaTestConfiguration {
 

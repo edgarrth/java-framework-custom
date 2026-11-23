@@ -23,7 +23,7 @@ class JpaSupportTest {
 
   static class Account extends AuditableEntity {}
 
-  /** A subclass is another entity type, unless it is a generated proxy. */
+  /** Una subclase es otro tipo de entidad, salvo que sea un proxy generado. */
   static final class SavingsAccount extends Account {}
 
   static final class DocumentConverter extends EncryptedConverter {

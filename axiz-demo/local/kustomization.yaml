@@ -1,4 +1,4 @@
-# Shared fixture data for kind; file paths remain inside this base.
+# Datos de fixtures compartidos para kind; las rutas de archivo permanecen dentro de esta base.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 generatorOptions:

@@ -1,7 +1,7 @@
 # axiz-bom
 
-Bill of materials of the axiz artifacts: every `pe.axiz` module at the same version. Services that
-cannot inherit `axiz-parent-service` import it (together with `axiz-dependencies`) in
+Lista de materiales (BOM) de los artefactos de axiz: todos los módulos `pe.axiz` con la misma versión.
+Los servicios que no pueden heredar `axiz-parent-service` la importan (junto con `axiz-dependencies`) en
 `dependencyManagement`:
 
 ```xml

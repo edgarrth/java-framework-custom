@@ -29,7 +29,7 @@ import pe.axiz.core.crypto.DataKeyProvider.DataKey;
 class AsyncEnvelopeEncryptorTest {
   private static final byte[] PLAIN = "statement".getBytes(StandardCharsets.UTF_8);
 
-  /** CPU-only key emulator; no synchronous remote operation is adapted here. */
+  /** Emulador de claves solo de CPU; aquí no se adapta ninguna operación remota síncrona. */
   private static AsyncDataKeyProvider immediate(EnvelopeKeyCacheTest.FakeKms fake) {
     return new AsyncDataKeyProvider() {
       public CompletionStage<DataKey> generate(String context) {
@@ -138,7 +138,7 @@ class AsyncEnvelopeEncryptorTest {
     assertEquals(2, keys.generated.get());
     assertEquals(2, keys.decrypted.get());
     byte[] wrappedA = {0, 31};
-    byte[] wrappedB = {1, 0}; // same Arrays.hashCode, different key bytes
+    byte[] wrappedB = {1, 0}; // mismo Arrays.hashCode, distintos bytes de clave
     byte[] keyA = AesGcm.newKey().getEncoded();
     byte[] keyB = AesGcm.newKey().getEncoded();
     keys.register(wrappedA, keyA);

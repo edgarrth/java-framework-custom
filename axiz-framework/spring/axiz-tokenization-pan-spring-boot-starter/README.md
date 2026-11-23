@@ -4,9 +4,9 @@ Starter sin código para habilitar el perfil PAN en una bóveda genérica.
 No selecciona proveedor de almacenamiento ni da permisos de revelación.
 Consultar [configuración y pruebas](../axiz-tokenization-pan-spring-boot-autoconfigure/README.md).
 
-## Selection
+## Selección
 
-Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
+Las versiones las gestiona `axiz-bom`; las aplicaciones heredan `axiz-parent-service`.
 
 ```xml
 <dependency>
@@ -15,16 +15,17 @@ Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
 </dependency>
 ```
 
-This artifact composes dependencies; its wiring and operational contract are documented in
+Este artefacto compone dependencias; su configuración y su contrato operativo se documentan en
 [`axiz-tokenization-pan-spring-boot-autoconfigure`](../axiz-tokenization-pan-spring-boot-autoconfigure/README.md).
 
-## Catalog usage
+## Uso desde el catálogo
 
 ```bash
 axiz add tokenization-pan
 ```
 
-Required capabilities: `tokenization-vault`.
+Capacidades requeridas: `tokenization-vault`.
 
-See [tokenization](../../../axiz-docs/docs/guias/tokenizacion.md) for client/vault boundaries,
-profiles, authorization, retention and the independent field-protection flow.
+La [guía de tokenización](../../../axiz-docs/docs/guias/tokenizacion.md) describe los límites entre
+cliente y bóveda, los perfiles, la autorización, la retención y el flujo independiente de protección
+de campos.

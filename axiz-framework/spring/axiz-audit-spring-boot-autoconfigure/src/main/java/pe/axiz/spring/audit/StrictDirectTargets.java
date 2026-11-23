@@ -8,7 +8,7 @@ import pe.axiz.core.audit.AsyncAuditEventPublisher;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.CompositeAsyncAuditPublisher;
 
-/** Direct confirmation has no dependency on Spring transactions, SQL or an outbox. */
+/** La confirmación directa no depende de transacciones de Spring, SQL ni de un outbox. */
 final class StrictDirectTargets {
   private StrictDirectTargets() {}
 

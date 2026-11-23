@@ -7,17 +7,18 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks a class written by a generator, not by a person (the models openapi-generator produces from
- * the contract of a service, see axiz-parent-service).
+ * Marca una clase escrita por un generador y no por una persona (los modelos que openapi-generator
+ * produce a partir del contrato de un servicio, ver axiz-parent-service).
  *
- * <p>It is kept in the class files so coverage tools tell generated code from the code of the
- * service: JaCoCo leaves out of its counters every class annotated with an annotation of class or
- * runtime retention whose simple name contains {@code Generated}. The coverage gates then measure
- * the code the service's tests are meant to exercise; the generated models are covered by the
- * contract (their format) and by the generator's own tests. {@code jakarta.annotation.Generated},
- * which the generator also writes, has source retention and does not reach the class files.
+ * <p>Se conserva en los archivos de clase para que las herramientas de cobertura distingan el
+ * código generado del código del servicio: JaCoCo excluye de sus contadores toda clase anotada con
+ * una anotación de retención de clase o de runtime cuyo nombre simple contenga {@code Generated}.
+ * Así, los umbrales de cobertura miden el código que las pruebas del servicio deben ejercitar; los
+ * modelos generados quedan cubiertos por el contrato (su formato) y por las pruebas propias del
+ * generador. {@code jakarta.annotation.Generated}, que el generador también escribe, tiene
+ * retención de código fuente y no llega a los archivos de clase.
  *
- * <p>Never put it on hand-written code: that would take it out of the coverage gates.
+ * <p>Nunca se coloca en código escrito a mano: lo sacaría de los umbrales de cobertura.
  */
 @Documented
 @Retention(RetentionPolicy.CLASS)
@@ -25,9 +26,9 @@ import java.lang.annotation.Target;
 public @interface Generated {
 
   /**
-   * The generator that wrote the class.
+   * Generador que escribió la clase.
    *
-   * @return its name, such as {@code openapi-generator}
+   * @return su nombre, como {@code openapi-generator}
    */
   String value();
 }

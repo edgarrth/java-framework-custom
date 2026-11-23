@@ -7,7 +7,10 @@ import pe.axiz.core.concurrent.LeaseTiming;
 import pe.axiz.core.messaging.BoundedPublisher;
 import pe.axiz.core.messaging.EventPublisher;
 
-/** Relay safety uses the effective publisher, not broker-property guesses or a wall-clock lease. */
+/**
+ * La seguridad del relay usa el publicador efectivo, no conjeturas sobre propiedades del broker ni
+ * un lease de reloj de pared.
+ */
 final class OutboxLeaseValidation {
   private OutboxLeaseValidation() {}
 

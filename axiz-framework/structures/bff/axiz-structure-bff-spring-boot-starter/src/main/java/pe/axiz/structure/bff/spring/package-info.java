@@ -1,4 +1,4 @@
-/** Spring wiring of the BFF style. */
+/** Configuración de Spring del estilo BFF. */
 @NullMarked
 package pe.axiz.structure.bff.spring;
 

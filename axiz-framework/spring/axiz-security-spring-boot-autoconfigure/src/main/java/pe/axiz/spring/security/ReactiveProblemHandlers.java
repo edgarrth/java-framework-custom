@@ -20,14 +20,14 @@ import pe.axiz.spring.foundation.ReactiveRenderContext;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 
-/** Reactive 401 and 403 handling with problem bodies. */
+/** Manejo reactivo de 401 y 403 con cuerpos de problema. */
 public final class ReactiveProblemHandlers
     implements ServerAuthenticationEntryPoint, ServerAccessDeniedHandler {
 
   private final SecurityProblems problems;
   private final Scheduler scheduler;
 
-  /** The application owns and closes the supplied scheduler. */
+  /** La aplicación posee y cierra el scheduler entregado. */
   public ReactiveProblemHandlers(SecurityProblems problems, Scheduler scheduler) {
     this.problems = Objects.requireNonNull(problems);
     this.scheduler = Objects.requireNonNull(scheduler);
@@ -81,7 +81,8 @@ public final class ReactiveProblemHandlers
 
   static Mono<Void> write(
       Scheduler scheduler, ServerWebExchange exchange, HttpStatus status, Supplier<String> body) {
-    // Error message resolvers can load bundles or consult a synchronous collaborator.
+    // Los resolvedores de mensajes de error pueden cargar bundles o consultar a un colaborador
+    // síncrono.
     return Mono.deferContextual(
             context -> {
               RequestMetadata metadata =
@@ -117,14 +118,14 @@ public final class ReactiveProblemHandlers
     response.getHeaders().remove(HttpHeaders.WWW_AUTHENTICATE);
     response.getHeaders().setContentType(MediaType.parseMediaType(Problem.MEDIA_TYPE));
     response.getHeaders().setCacheControl("no-store");
-    // The quota/issuer may already require a longer pause; saturation must not shorten it.
+    // La cuota o el emisor pueden exigir ya una pausa más larga; la saturación no debe acortarla.
     String retryAfter = response.getHeaders().getFirst(HttpHeaders.RETRY_AFTER);
     long seconds = 1;
     if (retryAfter != null) {
       try {
         seconds = Math.max(1, Long.parseLong(retryAfter));
       } catch (NumberFormatException invalid) {
-        // Only internally generated delta-seconds are accepted at this boundary.
+        // En este límite solo se aceptan delta-seconds generados internamente.
       }
     }
     response.getHeaders().set(HttpHeaders.RETRY_AFTER, Long.toString(seconds));

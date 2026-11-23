@@ -7,8 +7,8 @@ import pe.axiz.kit.reactor.audit.ReactiveAuditChainState;
 import pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter;
 
 /**
- * Isolates the optional reactive outbox contract; loaded only when reactive durable audit is
- * enabled.
+ * Aísla el contrato opcional del outbox reactivo; solo se carga cuando la auditoría durable
+ * reactiva está habilitada.
  */
 final class ReactiveDurableAudit {
   private ReactiveDurableAudit() {}

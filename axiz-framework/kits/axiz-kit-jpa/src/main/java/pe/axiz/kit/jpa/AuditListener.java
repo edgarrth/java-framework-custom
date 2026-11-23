@@ -6,7 +6,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Objects;
 
-/** Fills the audit columns from the injected auditor provider and clock. */
+/** Completa las columnas de auditoría a partir del proveedor de auditor y el reloj inyectados. */
 public class AuditListener {
 
   static final String UNATTRIBUTED = "unattributed";

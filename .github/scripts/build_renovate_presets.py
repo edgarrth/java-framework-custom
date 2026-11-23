@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build published Renovate variants from one base and declarative rule overlays."""
+"""Construye las variantes publicadas de Renovate a partir de una base y de overlays de reglas declarativos."""
 import argparse
 from copy import deepcopy
 import json
@@ -16,8 +16,8 @@ def build(root, *, write=False):
     base = json.loads((root / '.github/renovate/default.json').read_text())
     variants = json.loads((root / '.github/scripts/renovate-presets/variants.json').read_text())
     errors = []
-    # Published JSON remains directly consumable by Renovate; its version grammar is generated
-    # from the same reviewed contract as the validators and Java/Python fixture normalizers.
+        # El JSON publicado sigue siendo consumible directamente por Renovate; su gramática de versiones se genera
+    # a partir del mismo contrato revisado que los validadores y los normalizadores de fixtures de Java y Python.
     derived=deepcopy(base)
     versioning='regex:^'+TAG_PATTERN.replace('v2\\.', 'v(?<major>2)\\.').replace('(?:','(?<minor>',1).replace('(?:','(?<patch>',1)+'$'
     for rule in derived['packageRules']:

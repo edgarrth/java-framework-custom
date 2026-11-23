@@ -21,14 +21,14 @@ import software.amazon.awssdk.core.interceptor.SdkExecutionAttribute;
 import software.amazon.awssdk.http.SdkHttpRequest;
 
 /**
- * AWS SDK v2 interceptor that wraps every call (DynamoDB, SQS, SNS, S3, KMS, Secrets Manager...) in
- * a Micrometer observation: a CLIENT span with service and operation and the {@code axiz.aws.sdk}
- * timer. Works in native images (no agent, no bytecode manipulation). Register it on each client
- * builder through {@code overrideConfiguration}.
+ * Interceptor del AWS SDK v2 que envuelve cada llamada (DynamoDB, SQS, SNS, S3, KMS, Secrets
+ * Manager, etc.) en una observación de Micrometer: un span CLIENT con servicio y operación y el
+ * timer {@code axiz.aws.sdk}. Funciona en imágenes nativas (sin agente ni manipulación de
+ * bytecode). Se registra en cada builder de cliente mediante {@code overrideConfiguration}.
  */
 public final class ObservationExecutionInterceptor implements ExecutionInterceptor {
 
-  /** The observation of one call and the scope it opened, kept together. */
+  /** Observación de una llamada y el scope que abrió, guardados juntos. */
   private record Active(
       Observation observation, @Nullable Scope scope, Map<String, String> propagation) {}
 
@@ -66,8 +66,9 @@ public final class ObservationExecutionInterceptor implements ExecutionIntercept
             .lowCardinalityKeyValue(AxizAttributes.AWS_SERVICE, service)
             .lowCardinalityKeyValue(AxizAttributes.AWS_OPERATION, operation)
             .start();
-    // The SDK identifies both client kinds, including clients configured outside Axiz factories.
-    // Native clients complete on another thread; a scope must never span that thread boundary.
+    // El SDK identifica ambos tipos de cliente, incluidos los clientes configurados fuera de las
+    // fábricas de Axiz. Los clientes nativos terminan en otro hilo; un scope nunca debe cruzar esa
+    // frontera de hilos.
     boolean synchronous =
         attributes.getAttribute(SdkExecutionAttribute.CLIENT_TYPE) != ClientType.ASYNC;
     attributes.putAttribute(
@@ -76,7 +77,10 @@ public final class ObservationExecutionInterceptor implements ExecutionIntercept
             observation, synchronous ? observation.openScope() : null, Map.copyOf(propagation)));
   }
 
-  /** Adds tracing propagation before SigV4 signing, independently for each native request. */
+  /**
+   * Agrega la propagación de trazas antes de la firma SigV4, de forma independiente para cada
+   * petición nativa.
+   */
   @Override
   public SdkHttpRequest modifyHttpRequest(
       Context.ModifyHttpRequest context, ExecutionAttributes attributes) {

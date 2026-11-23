@@ -5,12 +5,12 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Metadata of a stored object.
+ * Metadatos de un objeto almacenado.
  *
- * @param contentType MIME type
- * @param contentLength size in bytes, or -1 when unknown
- * @param checksumSha256 base64 SHA-256 when known
- * @param userMetadata custom metadata (no personal data)
+ * @param contentType tipo MIME
+ * @param contentLength tamaño en bytes, o -1 cuando se desconoce
+ * @param checksumSha256 SHA-256 en base64 cuando se conoce
+ * @param userMetadata metadatos personalizados (sin datos personales)
  */
 public record ObjectMetadata(
     String contentType,

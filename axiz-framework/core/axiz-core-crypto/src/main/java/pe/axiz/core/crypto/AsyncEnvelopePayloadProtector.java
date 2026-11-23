@@ -6,7 +6,8 @@ import java.util.concurrent.CompletionStage;
 import pe.axiz.core.concurrent.Stages;
 
 /**
- * Same payload wire format as the imperative implementation, using only native key-provider calls.
+ * Mismo formato de red del payload que la implementación imperativa, usando solo llamadas nativas
+ * al proveedor de claves.
  */
 public final class AsyncEnvelopePayloadProtector implements AsyncPayloadProtector {
   private final AsyncEnvelopeEncryptor envelope;

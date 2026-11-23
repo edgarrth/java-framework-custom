@@ -10,8 +10,9 @@ import java.util.NoSuchElementException;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Streaming RFC 4180 CSV reader: quoted fields, escaped quotes ({@code ""}), delimiters and line
- * breaks inside quotes, CRLF or LF. Bounded field size protects against malformed files.
+ * Lector CSV RFC 4180 en streaming: campos entre comillas, comillas escapadas ({@code ""}),
+ * delimitadores y saltos de línea dentro de comillas, CRLF o LF. El tamaño de campo acotado protege
+ * frente a archivos mal formados.
  */
 public final class CsvReader implements Iterable<List<String>>, AutoCloseable {
 
@@ -31,7 +32,7 @@ public final class CsvReader implements Iterable<List<String>>, AutoCloseable {
     return lineNumber;
   }
 
-  /** Next record, or null at end of input. */
+  /** Siguiente registro, o null al final de la entrada. */
   public @Nullable List<String> next() {
     try {
       int c = read();

@@ -34,8 +34,8 @@ import pe.axiz.spring.test.RedisTestConfiguration;
 {{/infra.redis}}
 
 /**
- * Starts the whole service against real dependencies in containers (Testcontainers): wiring,
- * configuration, migrations and health. Needs Docker.
+ * Arranca el servicio completo contra dependencias reales en contenedores (Testcontainers):
+ * cableado, configuración, migraciones y salud. Requiere Docker.
  */
 @SpringBootTest({{#caps.web}}webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, {{/caps.web}}{{^archetype.cronjob}}useMainMethod = SpringBootTest.UseMainMethod.ALWAYS, {{/archetype.cronjob}}properties = {
   "axiz.security.issuers[0].issuer=https://issuer.test",

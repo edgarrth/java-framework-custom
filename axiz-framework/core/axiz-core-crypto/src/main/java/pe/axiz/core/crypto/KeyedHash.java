@@ -8,7 +8,8 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.sensitive.SelfMasking;
 
 /**
- * Immutable versioned HMAC. Parsing storage syntax does not authenticate the value or its scope.
+ * HMAC versionado inmutable. Parsear la sintaxis de almacenamiento no autentica el valor ni su
+ * alcance.
  */
 public final class KeyedHash implements SelfMasking {
   private final String keyId;
@@ -31,7 +32,10 @@ public final class KeyedHash implements SelfMasking {
     this.digest = digest.clone();
   }
 
-  /** Bounded canonical storage parser; callers still establish trusted scope and key policy. */
+  /**
+   * Parser canónico acotado del almacenamiento; quienes llaman igualmente establecen el alcance
+   * confiable y la política de claves.
+   */
   public static KeyedHash parse(String value) {
     if (value == null || value.length() > 1500) throw new CryptoException("Invalid index envelope");
     String[] parts = value.split(":", 6);
@@ -71,7 +75,7 @@ public final class KeyedHash implements SelfMasking {
     return digest.clone();
   }
 
-  /** Stable database representation with unambiguous profile encoding. */
+  /** Representación estable en base de datos con codificación inequívoca del perfil. */
   public String encoded() {
     return "axi1:"
         + keyId

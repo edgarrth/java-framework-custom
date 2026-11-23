@@ -30,7 +30,7 @@ import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-/** DynamoDB idempotency store with conditional writes and TTL. */
+/** Almacén de idempotencia en DynamoDB con escrituras condicionales y TTL. */
 @AutoConfiguration(
     beforeName = "pe.axiz.spring.idempotency.AxizIdempotencyAutoConfiguration",
     afterName = "pe.axiz.spring.dynamodb.AxizDynamoDbAutoConfiguration")
@@ -43,7 +43,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 @ConditionalOnBooleanProperty(name = "axiz.idempotency.enabled", matchIfMissing = true)
 public class AxizIdempotencyDynamoDbAutoConfiguration {
 
-  /** Only without the DynamoDB starter (or another {@link DynamoDbClient} bean): same settings. */
+  /** Solo sin el starter de DynamoDB (u otro bean {@link DynamoDbClient}): misma configuración. */
   @Bean(destroyMethod = "close")
   @ConditionalOnMissingBean
   @ConditionalOnImperativeApplication

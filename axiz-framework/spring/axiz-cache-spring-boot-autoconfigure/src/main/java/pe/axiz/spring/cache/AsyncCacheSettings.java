@@ -5,7 +5,7 @@ import java.time.Duration;
 import java.util.Objects;
 import pe.axiz.core.cache.AsyncByteCache;
 
-/** Shared cache identity, TTLs and native asynchronous byte store. */
+/** Identidad de caché compartida, TTL y almacén de bytes asíncrono nativo. */
 public class AsyncCacheSettings {
   private final String prefix;
 

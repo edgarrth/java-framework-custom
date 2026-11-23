@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
 import {{project.basePackage}}.application.model.{{item.name}};
 
-/** Owned model values round-trip without exposing mutable collections. */
+/** Los valores del modelo propio se convierten de ida y vuelta sin exponer colecciones mutables. */
 class {{item.name}}ApplicationModelTest {
   private final JsonMapper mapper = JsonMapper.builder().build();
 

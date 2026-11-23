@@ -8,8 +8,8 @@ import pe.axiz.core.metrics.FailureClassifier;
 import pe.axiz.core.metrics.Outcome;
 
 /**
- * Business, validation and security errors are {@code rejected} with the catalog code as reason;
- * technical and external errors are {@code error} with their code.
+ * Los errores de negocio, de validación y de seguridad son {@code rejected} con el código del
+ * catálogo como motivo; los errores técnicos y externos son {@code error} con su código.
  */
 public class AxizFailureClassifier implements FailureClassifier {
 

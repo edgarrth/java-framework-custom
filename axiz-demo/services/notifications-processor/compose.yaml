@@ -1,9 +1,9 @@
-# Local dependencies of notifications-processor (docker compose up -d, or axiz local up).
-# Development only: no value here is a real credential.
+# Dependencias locales de notifications-processor (docker compose up -d, o axiz local up).
+# Solo para desarrollo: ningún valor de este archivo es una credencial real.
 name: notifications-processor
 
 services:
-  # Grafana, Tempo, Loki, Prometheus and an OpenTelemetry collector (OTLP 4317/4318)
+  # Grafana, Tempo, Loki, Prometheus y un colector de OpenTelemetry (OTLP 4317/4318)
   otel-lgtm:
     image: axiz-local/otel-lgtm:2026.11-r1
     build: {context: ../../local/images/otel-lgtm}

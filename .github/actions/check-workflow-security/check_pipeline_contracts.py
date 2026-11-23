@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep reusable build and deploy workflows independent, with distinct credentials and inputs."""
+"""Mantiene independientes los workflows reutilizables de build y de deploy, con credenciales y entradas distintas."""
 import argparse
 import re
 import sys
@@ -60,7 +60,7 @@ def validate(build, deploy):
 
 
 def validate_consumer(document, workflows, phase):
-    """Validate actual consumer contracts against the selected immutable workflow source."""
+    """Valida los contratos reales de los consumidores contra la fuente de workflow inmutable seleccionada."""
     errors = []
     for name, job in document.get("jobs", {}).items():
         reference = job.get("uses", "")

@@ -16,9 +16,9 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Hexagonal style: {@code domain} at the center, {@code application} (use cases and ports) around
- * it, {@code adapter.in} and {@code adapter.out} outside, {@code config} wiring everything.
- * Dependencies point inwards only.
+ * Estilo hexagonal: {@code domain} en el centro, {@code application} (casos de uso y puertos) a su
+ * alrededor, {@code adapter.in} y {@code adapter.out} en el exterior y {@code config} cableándolo
+ * todo. Las dependencias apuntan solo hacia dentro.
  */
 public final class HexagonalRules {
 
@@ -234,7 +234,8 @@ public final class HexagonalRules {
     return new DescribedPredicate<>("pure language value helpers or field-review metadata") {
       @Override
       public boolean test(JavaClass type) {
-        // Only this compile-time review annotation is allowed, not the whole commons package.
+        // Solo se permite esta anotación de revisión en tiempo de compilación, no el paquete
+        // commons completo.
         if (type.getBaseComponentType().getName().equals("pe.axiz.core.commons.ReviewedState"))
           return true;
         return Set.of(
@@ -259,7 +260,8 @@ public final class HexagonalRules {
           for (var dependency : current.getDirectDependenciesFromSelf()) {
             var target = dependency.getTargetClass();
             String name = target.getName();
-            // Static-analysis metadata on owned contracts does not acquire runtime infrastructure.
+            // Los metadatos de análisis estático sobre contratos propios no adquieren
+            // infraestructura de runtime.
             if (current.getName().startsWith("pe.axiz.core.")
                 && Set.of(
                         "edu.umd.cs.findbugs.annotations.SuppressFBWarnings",

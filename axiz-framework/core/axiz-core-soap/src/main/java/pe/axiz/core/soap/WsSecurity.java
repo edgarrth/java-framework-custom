@@ -13,12 +13,13 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 /**
- * WS-Security UsernameToken header for legacy SOAP counterparties. Both modes are legacy
- * authentication and are only used over TLS (the client refuses plain HTTP unless a local stand-in
- * is explicitly allowed): {@link Mode#TEXT} sends the password inside the TLS channel; {@link
- * Mode#LEGACY_SHA1_DIGEST} sends {@code Base64(SHA-1(nonce + created + password))} with nonce and
- * timestamp, because the UsernameToken Profile 1.0 fixes SHA-1 for that digest. Prefer a modern
- * profile (mutual TLS, X.509 or tokens) whenever the counterparty supports one.
+ * Cabecera UsernameToken de WS-Security para contrapartes SOAP heredadas. Ambos modos son
+ * autenticación heredada y solo se usan sobre TLS (el cliente rechaza HTTP plano salvo que se
+ * permita explícitamente un sustituto local): {@link Mode#TEXT} envía la contraseña dentro del
+ * canal TLS; {@link Mode#LEGACY_SHA1_DIGEST} envía {@code Base64(SHA-1(nonce + created +
+ * password))} con nonce y marca de tiempo, porque UsernameToken Profile 1.0 fija SHA-1 para ese
+ * digest. Es preferible un perfil moderno (TLS mutuo, X.509 o tokens) siempre que la contraparte lo
+ * soporte.
  */
 public final class WsSecurity {
 
@@ -30,14 +31,16 @@ public final class WsSecurity {
       "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0";
   private static final SecureRandom RANDOM = new SecureRandom();
 
-  /** Password modes; there is no default, a client declares the one its counterparty requires. */
+  /**
+   * Modos de contraseña; no hay valor por defecto, un cliente declara el que exige su contraparte.
+   */
   public enum Mode {
-    /** {@code PasswordText}: the password travels inside the TLS channel. */
+    /** {@code PasswordText}: la contraseña viaja dentro del canal TLS. */
     TEXT,
     /**
-     * {@code PasswordDigest} of the UsernameToken Profile 1.0: SHA-1, required by the profile and
-     * not a choice of this framework. Only for counterparties that demand it, over TLS, with the
-     * endpoint on the allow-list of the service; its use is logged when the client is created.
+     * {@code PasswordDigest} de UsernameToken Profile 1.0: SHA-1, exigido por el perfil y no una
+     * elección de este framework. Solo para contrapartes que lo exigen, sobre TLS, con el endpoint
+     * en la lista de permitidos del servicio; su uso se registra en log al crear el cliente.
      */
     LEGACY_SHA1_DIGEST
   }
@@ -84,7 +87,8 @@ public final class WsSecurity {
               + "remains mandatory outside the documented local exception.")
   static String digest(byte[] nonce, String created, char[] password) {
     try {
-      // Required by the explicitly selected legacy WS-Security UsernameToken digest protocol.
+      // Exigido por el protocolo de digest UsernameToken de WS-Security heredado, seleccionado de
+      // forma explícita.
       // nosemgrep: java.lang.security.audit.crypto.use-of-sha1.use-of-sha1
       MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
       sha1.update(nonce);

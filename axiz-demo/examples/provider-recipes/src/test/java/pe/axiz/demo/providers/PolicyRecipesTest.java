@@ -24,7 +24,7 @@ import pe.axiz.spring.sensitive.AxizSensitiveAutoConfiguration;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-/** CPU-only policies apply to both web types and do not perform remote I/O. */
+/** Las políticas que solo usan CPU se aplican a ambos tipos web y no realizan E/S remota. */
 class PolicyRecipesTest {
   @Test
   void maskingMetricsAndFlagsExecuteInBothApplicationTypes(TestReporter evidence) {

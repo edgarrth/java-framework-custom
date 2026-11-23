@@ -3,7 +3,7 @@ package pe.axiz.kit.r2dbc;
 import io.r2dbc.spi.R2dbcNonTransientResourceException;
 import pe.axiz.core.commons.tx.UnknownTransactionOutcome;
 
-/** A commit was attempted but not confirmed; reconcile before retrying the work. */
+/** Se intentó un commit pero no se confirmó; se reconcilia antes de reintentar el trabajo. */
 public final class TransactionOutcomeUnknownException extends R2dbcNonTransientResourceException
     implements UnknownTransactionOutcome {
   private static final long serialVersionUID = 1L;

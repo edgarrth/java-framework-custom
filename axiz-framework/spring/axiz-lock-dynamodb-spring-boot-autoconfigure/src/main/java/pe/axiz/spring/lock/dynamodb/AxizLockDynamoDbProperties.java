@@ -3,7 +3,7 @@ package pe.axiz.spring.lock.dynamodb;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
-/** dynamodb settings retain their public configuration keys. */
+/** Configuración de dynamodb que conserva sus claves de configuración públicas. */
 @ConfigurationProperties("axiz.lock")
 public record AxizLockDynamoDbProperties(@DefaultValue("axiz-locks") String table) {
   public AxizLockDynamoDbProperties {

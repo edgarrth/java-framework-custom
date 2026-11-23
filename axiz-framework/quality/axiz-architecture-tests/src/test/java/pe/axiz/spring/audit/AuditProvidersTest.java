@@ -13,7 +13,7 @@ import pe.axiz.spring.audit.kafka.AxizAuditKafkaAutoConfiguration;
 import pe.axiz.spring.audit.sqs.AxizAuditSqsAutoConfiguration;
 import pe.axiz.spring.aws.AxizAwsIdentityAutoConfiguration;
 
-/** Which events {@code @Auditable} and the HTTP audit record, and how they are delivered. */
+/** Qué eventos registran {@code @Auditable} y la auditoría HTTP, y cómo se entregan. */
 class AuditProvidersTest {
   @Test
   void kafkaAndSqsSinksAreAddedOnlyWhenConfigured() {

@@ -38,15 +38,15 @@ import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse;
 
 /**
- * The DynamoDB repository over the real Enhanced Client and a scripted low-level client: the
- * requests it sends (table, key, filter of removed items, limit, start key) and how a cursor of
- * another customer is refused before any read.
+ * El repositorio DynamoDB sobre el Enhanced Client real y un cliente de bajo nivel guionado: las
+ * solicitudes que envía (tabla, clave, filtro de elementos eliminados, límite, clave de inicio) y
+ * cómo se rechaza el cursor de otro cliente sin realizar ninguna lectura.
  */
 class DynamoBeneficiaryRepositoryTest {
 
   static final Instant NOW = Instant.parse("2026-10-12T15:00:00Z");
 
-  /** Low-level client that records requests and answers from a script. */
+  /** Cliente de bajo nivel que registra las solicitudes y responde según un guion. */
   static final class Scripted implements DynamoDbClient {
     final List<Object> requests = new ArrayList<>();
     final Deque<QueryResponse> pages = new ArrayDeque<>();

@@ -1,6 +1,6 @@
 package pe.axiz.core.messaging;
 
-/** The broker did not confirm the event: the failure is always visible to the caller. */
+/** El broker no confirmó el evento: el fallo siempre es visible para quien llama. */
 public class PublishException extends RuntimeException {
 
   private static final long serialVersionUID = 1L;

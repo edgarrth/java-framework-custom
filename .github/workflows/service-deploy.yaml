@@ -78,7 +78,7 @@ jobs:
         run: |
           echo "DOCKER_CONFIG=$RUNNER_TEMP/axiz-deploy-docker" >> "$GITHUB_ENV"
           echo "HELM_REGISTRY_CONFIG=$RUNNER_TEMP/axiz-deploy-helm/config.json" >> "$GITHUB_ENV"
-      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
       # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
       - uses: edgarrth/java-framework-custom/.github/actions/consume-build@axiz-workflows-v2.0.0 # x-release-please-version
         id: build

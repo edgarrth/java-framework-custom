@@ -15,7 +15,7 @@
   <description>Single execution per cluster for scheduled tasks with ShedLock (JDBC or DynamoDB)</description>
 
   <properties>
-    <!-- dependencies only: the jar holds just the manifest, by design (no "JAR will be empty" warning) -->
+    <!-- solo dependencias: el jar contiene únicamente el manifiesto, por diseño (sin la advertencia "JAR will be empty") -->
     <maven.jar.forceCreation>true</maven.jar.forceCreation>
     <axiz.module.name>pe.axiz.spring.scheduling.starter</axiz.module.name>
   </properties>

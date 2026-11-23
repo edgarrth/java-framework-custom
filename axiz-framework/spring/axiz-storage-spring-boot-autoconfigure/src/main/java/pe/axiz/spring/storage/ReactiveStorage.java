@@ -17,7 +17,10 @@ import reactor.adapter.JdkFlowAdapter;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/** Deferred Reactor facade over the native port; content consumption owns the response lifetime. */
+/**
+ * Fachada diferida de Reactor sobre el puerto nativo; el consumo del contenido posee la vida de la
+ * respuesta.
+ */
 public final class ReactiveStorage {
   @SuppressFBWarnings(
       value = "EI_EXPOSE_REP2",
@@ -35,14 +38,17 @@ public final class ReactiveStorage {
         () -> storage.put(key, JdkFlowAdapter.publisherToFlowPublisher(content), metadata));
   }
 
-  /** The caller owns a present object's lifetime; prefer {@link #content(String)} for streaming. */
+  /**
+   * El invocante posee la vida de un objeto presente; para streaming es preferible {@link
+   * #content(String)}.
+   */
   public Mono<AsyncStoredObject> get(String key) {
     return ReactiveStages.from(() -> storage.get(key))
         .flatMap(Mono::justOrEmpty)
         .doOnDiscard(Object.class, ReactiveStorage::discard);
   }
 
-  /** Releases or aborts the response on completion, failure, or downstream cancellation. */
+  /** Libera o aborta la respuesta al completar, al fallar o ante una cancelación aguas abajo. */
   public Flux<ByteBuffer> content(String key) {
     return Flux.usingWhen(
         get(key),

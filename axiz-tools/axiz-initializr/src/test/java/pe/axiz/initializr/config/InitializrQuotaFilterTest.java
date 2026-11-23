@@ -49,7 +49,8 @@ class InitializrQuotaFilterTest {
     assertThat(call(filter, "/v1/proj%65cts/github", success).getStatus()).isEqualTo(200);
     assertThat(call(filter, "/v1/projects/github", success).getStatus()).isEqualTo(429);
     assertThat(call(filter, "/v1/projects/%67ithub", success).getStatus()).isEqualTo(429);
-    // MVC's default PathPattern matching is case-sensitive with no optional trailing slash.
+    // La coincidencia PathPattern por defecto de MVC distingue mayúsculas y minúsculas y no admite
+    // barra final opcional.
     assertThat(call(filter, "/v1/Projects/github", success).getStatus()).isEqualTo(200);
     assertThat(call(filter, "/v1/projects/github/", success).getStatus()).isEqualTo(200);
   }

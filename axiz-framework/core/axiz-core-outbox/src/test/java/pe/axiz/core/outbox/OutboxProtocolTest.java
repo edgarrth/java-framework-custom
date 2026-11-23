@@ -23,7 +23,10 @@ import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.messaging.PublishResult;
 import pe.axiz.core.resilience.Backoff;
 
-/** Pure orchestration tests; adapters independently prove database fencing and atomicity. */
+/**
+ * Pruebas de orquestación pura; los adaptadores prueban de forma independiente el fencing y la
+ * atomicidad de la base de datos.
+ */
 class OutboxProtocolTest {
   private static final Instant NOW = Instant.parse("2026-11-04T00:00:00Z");
   private static final Clock CLOCK = Clock.fixed(NOW, ZoneOffset.UTC);

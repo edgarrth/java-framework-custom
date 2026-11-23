@@ -53,7 +53,8 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 
 /**
- * Real native audit delivery, FIFO coexistence and reconnect/credential refresh under BlockHound.
+ * Entrega nativa real de auditoría, coexistencia FIFO y reconexión o renovación de credenciales
+ * bajo BlockHound.
  */
 @ExtendWith(BlockHoundExtension.class)
 class LocalStackAuditIT {

@@ -13,8 +13,9 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.StaticAttribute;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.StaticTableSchema;
 
 /**
- * Builds an explicit Enhanced Client schema with injected converters and unique encrypted-column
- * contexts. Does not use annotation instantiation or a process-global encryption registry.
+ * Construye un esquema explícito del Enhanced Client con conversores inyectados y contextos únicos
+ * por columna cifrada. No usa instanciación por anotaciones ni un registro de cifrado global del
+ * proceso.
  */
 public final class EncryptedTableSchema<T> {
   private final StaticTableSchema.Builder<T> builder;
@@ -29,7 +30,10 @@ public final class EncryptedTableSchema<T> {
     this.encryptor = Objects.requireNonNull(encryptor);
   }
 
-  /** Adds a normal SDK attribute, including partition/sort keys and version tags. */
+  /**
+   * Agrega un atributo normal del SDK, incluidas las claves de partición y de ordenamiento y las
+   * etiquetas de versión.
+   */
   public EncryptedTableSchema<T> attribute(StaticAttribute<T, ?> attribute) {
     Objects.requireNonNull(attribute);
     requireName(attribute.name());
@@ -38,8 +42,9 @@ public final class EncryptedTableSchema<T> {
   }
 
   /**
-   * Installs an injected String converter for this column. Context is explicit and unique in the
-   * schema; this prevents column substitution, not substitution between rows in the same column.
+   * Instala un conversor de String inyectado para esta columna. El contexto es explícito y único en
+   * el esquema; esto impide la sustitución de columnas, no la sustitución entre filas de la misma
+   * columna.
    */
   public EncryptedTableSchema<T> encryptedString(
       String name, String context, Function<T, String> getter, BiConsumer<T, String> setter) {

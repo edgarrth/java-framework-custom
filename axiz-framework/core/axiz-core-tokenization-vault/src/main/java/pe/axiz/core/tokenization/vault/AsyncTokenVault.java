@@ -7,8 +7,8 @@ import pe.axiz.core.crypto.KeyedHash;
 import pe.axiz.core.tokenization.Token;
 
 /**
- * Strongly consistent storage; writes are atomic and unknown outcomes throw
- * VaultUncertainException.
+ * Almacenamiento fuertemente consistente; las escrituras son atómicas y los resultados desconocidos
+ * lanzan VaultUncertainException.
  */
 public interface AsyncTokenVault {
   CompletionStage<FingerprintKeyState> keyState(String keysetId);

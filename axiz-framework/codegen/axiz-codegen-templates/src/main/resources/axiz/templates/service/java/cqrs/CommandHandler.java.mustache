@@ -17,11 +17,11 @@ import {{item.modelPackage}}.{{item.responseModel}};
 {{/item.hasResponseModel}}
 
 /**
- * Handles {@link {{item.commandName}}}. The command pipeline adds validation, authorization,
- * idempotency, the transaction, audit and metrics around it.
+ * Atiende {@link {{item.commandName}}}. El pipeline de comandos agrega a su alrededor validación,
+ * autorización, idempotencia, la transacción, auditoría y métricas.
 {{#fw.reactiveHandlers}}
- * Non-blocking: return a {@code Mono} built from reactive collaborators (R2DBC repositories,
- * WebClient); the transaction is a reactive one.
+ * No bloqueante: se devuelve un {@code Mono} construido a partir de colaboradores reactivos
+ * (repositorios R2DBC, WebClient); la transacción es reactiva.
 {{/fw.reactiveHandlers}}
  */
 {{#fw.reactiveHandlers}}

@@ -4,7 +4,8 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * Names of standard headers used across HTTP and messaging. Business headers live in the catalog.
+ * Nombres de las cabeceras estándar usadas en HTTP y mensajería. Las cabeceras de negocio residen
+ * en el catálogo.
  */
 public final class StandardHeaders {
 
@@ -20,7 +21,7 @@ public final class StandardHeaders {
   public static final String SET_COOKIE = "Set-Cookie";
   public static final String API_VERSION = "API-Version";
 
-  /** Headers that must never be logged, audited or propagated blindly. */
+  /** Cabeceras que nunca deben registrarse en log, auditarse ni propagarse a ciegas. */
   public static final Set<String> NEVER_LOG =
       Set.of("authorization", "cookie", "set-cookie", "proxy-authorization", "x-api-key");
 

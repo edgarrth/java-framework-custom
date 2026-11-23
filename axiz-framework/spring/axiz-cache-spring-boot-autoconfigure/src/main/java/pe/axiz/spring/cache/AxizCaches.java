@@ -9,7 +9,9 @@ import pe.axiz.core.cache.AxizCache;
 import pe.axiz.core.cache.ByteCache;
 import pe.axiz.core.cache.ValueCodec;
 
-/** Named caches over the shared two-level store, with the TTL configured per name. */
+/**
+ * Cachés con nombre sobre el almacén compartido de dos niveles, con el TTL configurado por nombre.
+ */
 public final class AxizCaches {
 
   private final String prefix;

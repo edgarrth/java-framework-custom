@@ -7,9 +7,10 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import pe.axiz.quality.containers.TestContainerImages;
 
 /**
- * Containers matching the approved infrastructure: Aurora PostgreSQL, MSK (Kafka), ElastiCache
- * (Valkey) and LocalStack for DynamoDB, SQS, SNS, S3, KMS, Secrets Manager and Parameter Store.
- * Images are built lazily from the central patched recipes and must pass the vulnerability gate.
+ * Contenedores que coinciden con la infraestructura aprobada: Aurora PostgreSQL, MSK (Kafka),
+ * ElastiCache (Valkey) y LocalStack para DynamoDB, SQS, SNS, S3, KMS, Secrets Manager y Parameter
+ * Store. Las imágenes se construyen de forma diferida a partir de las recetas centrales parcheadas
+ * y deben superar el control de vulnerabilidades.
  */
 public final class AxizContainers {
 

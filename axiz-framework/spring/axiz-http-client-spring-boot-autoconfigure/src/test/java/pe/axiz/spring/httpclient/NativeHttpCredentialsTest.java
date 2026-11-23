@@ -83,7 +83,7 @@ class NativeHttpCredentialsTest {
 
   @BeforeEach
   void start() throws Exception {
-    // The token URI uses localhost: the first request also exercises the native resolver.
+    // La URI de tokens usa localhost: la primera solicitud también ejercita el resolvedor nativo.
     server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
     server.setExecutor(handlers);
     server.createContext(

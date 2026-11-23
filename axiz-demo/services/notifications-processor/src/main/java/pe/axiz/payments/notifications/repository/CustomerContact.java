@@ -5,8 +5,8 @@ import pe.axiz.core.sensitive.Sensitive;
 import pe.axiz.core.sensitive.SensitivityLevel;
 
 /**
- * Decrypted delivery preferences used in memory. DynamoDB stores {@link ContactItem}, with the
- * address encrypted and authenticated against the customer and channel.
+ * Preferencias de entrega descifradas que se usan en memoria. DynamoDB almacena {@link
+ * ContactItem}, con la dirección cifrada y autenticada respecto del cliente y el canal.
  */
 public class CustomerContact {
 
@@ -39,7 +39,7 @@ public class CustomerContact {
     this.customerId = customerId;
   }
 
-  /** EMAIL, SMS or PUSH. */
+  /** EMAIL, SMS o PUSH. */
   public String getChannel() {
     return channel;
   }
@@ -48,7 +48,9 @@ public class CustomerContact {
     this.channel = channel;
   }
 
-  /** E-mail address, phone number or device token, depending on the channel. */
+  /**
+   * Dirección de correo electrónico, número de teléfono o token del dispositivo, según el canal.
+   */
   @Sensitive(level = SensitivityLevel.HIGH)
   public String getAddress() {
     return address;
@@ -58,7 +60,7 @@ public class CustomerContact {
     this.address = address;
   }
 
-  /** BCP 47 language tag; the service default when absent. */
+  /** Etiqueta de idioma BCP 47; si falta, se usa el valor por defecto del servicio. */
   public @Nullable String getLocale() {
     return locale;
   }
@@ -67,7 +69,7 @@ public class CustomerContact {
     this.locale = locale;
   }
 
-  /** Whether the customer accepts payment alerts. */
+  /** Indica si el cliente acepta alertas de pagos. */
   public boolean isPaymentAlerts() {
     return paymentAlerts;
   }

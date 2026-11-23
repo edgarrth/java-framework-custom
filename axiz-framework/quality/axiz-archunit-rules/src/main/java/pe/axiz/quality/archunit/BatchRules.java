@@ -7,7 +7,7 @@ import com.tngtech.archunit.lang.ArchRule;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Batch style: readers, processors and writers in {@code job}; no HTTP controllers. */
+/** Estilo batch: lectores, procesadores y escritores en {@code job}; sin controladores HTTP. */
 public final class BatchRules {
 
   private BatchRules() {}

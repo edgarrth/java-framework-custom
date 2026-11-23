@@ -57,7 +57,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
-/** What is reachable without a token, and how the filters behave at the edges. */
+/** Lo que es accesible sin token y cómo se comportan los filtros en los límites. */
 class SecurityDefaultsTest {
 
   private static final String ISSUER = "https://idp.example.com/realms/axiz";
@@ -139,7 +139,7 @@ class SecurityDefaultsTest {
         .run(ctx -> assertThat(ctx).hasFailed());
   }
 
-  /** Status of a request through the servlet chain; 0 when it reached the application. */
+  /** Estado de una solicitud a través de la cadena servlet; 0 cuando llegó a la aplicación. */
   private static int call(Filter chain, String path, String bearer) throws Exception {
     MockHttpServletRequest request = new MockHttpServletRequest("GET", path);
     request.setServletPath(path);
@@ -275,7 +275,7 @@ class SecurityDefaultsTest {
         : exchange.getResponse().getStatusCode().value();
   }
 
-  // --- reactive caller context ---------------------------------------------------------------
+  // --- contexto reactivo del invocante -------------------------------------------------------
 
   private static AxizAuthentication authentication() {
     Jwt jwt =
@@ -345,7 +345,7 @@ class SecurityDefaultsTest {
     assertEquals(original, exchange.getAttribute(RequestContext.KEY));
   }
 
-  // --- rate limits -------------------------------------------------------------------------------
+  // --- límites de tasa ---------------------------------------------------------------------------
 
   @Test
   void bothSecurityChainsAuthorizeBeforeConsumingAnAnonymousQuota() {
@@ -496,7 +496,7 @@ class SecurityDefaultsTest {
     assertEquals(429, second.getResponse().getStatusCode().value());
     assertTrue(second.getResponse().getHeaders().containsHeader("Retry-After"));
 
-    // other paths, anonymous callers and empty contexts pass untouched
+    // las demás rutas, los invocantes anónimos y los contextos vacíos pasan sin cambios
     MockServerWebExchange other = MockServerWebExchange.from(MockServerHttpRequest.get("/other"));
     filter.filter(other, x -> Mono.fromRunnable(calls::incrementAndGet)).block();
     MockServerWebExchange anonymous =
@@ -610,7 +610,7 @@ class SecurityDefaultsTest {
         open.anonymousPaths("/manage"));
   }
 
-  // --- decoders and servlet caller context ---------------------------------------------------
+  // --- decodificadores y contexto servlet del invocante --------------------------------------
 
   @Test
   void decodersExistOnlyForTrustedIssuersAndAreReused() {
@@ -633,7 +633,8 @@ class SecurityDefaultsTest {
     assertThat(decoders.reactive(ISSUER)).isSameAs(decoders.reactive(ISSUER));
     assertThat(decoders.servlet("https://evil.example.com")).isNull();
     assertThat(decoders.reactive("https://evil.example.com")).isNull();
-    // without a JWKS URI the reactive decoder discovers the keys from the issuer on first use
+    // sin URI JWKS, el decodificador reactivo descubre las claves a partir del emisor en el primer
+    // uso
     assertThat(decoders.reactive("https://idp.example.com/realms/partners")).isNotNull();
     assertThat(decoders.policy()).isSameAs(policy);
     Jwt good =
@@ -746,7 +747,8 @@ class SecurityDefaultsTest {
     servlet.withPropertyValues(base).run(ctx -> assertThat(ctx).hasFailed());
     reactive.withPropertyValues(base).run(ctx -> assertThat(ctx).hasFailed());
 
-    // A new integration supplies a port; the neutral base has no provider enum to extend.
+    // Una integración nueva aporta un puerto; la base neutral no tiene un enum de proveedores que
+    // extender.
     var custom = mock(RateLimiter.class);
     servlet
         .withPropertyValues(base)

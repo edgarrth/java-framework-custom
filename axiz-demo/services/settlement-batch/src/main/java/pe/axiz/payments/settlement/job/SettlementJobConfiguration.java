@@ -21,14 +21,14 @@ import pe.axiz.core.storage.ObjectStorage;
 import pe.axiz.structure.batch.spring.StorageRecordItemReader;
 
 /**
- * The {@code settlement} job, one instance per file (the identifying {@code input.key} parameter):
- * a file already loaded is never loaded again and a failed run restarts after the last committed
- * chunk.
+ * El job {@code settlement}, una instancia por archivo (el parámetro identificador {@code
+ * input.key}): un archivo ya cargado nunca se vuelve a cargar y una ejecución fallida se reinicia
+ * tras el último chunk confirmado.
  *
  * <ol>
- *   <li>{@code validate}: control totals of the trailer, before loading anything.
- *   <li>{@code load}: detail lines into {@code settlement_line} in chunks (idempotent insert).
- *   <li>{@code summary}: totals per currency and status as metrics and as a JSON summary.
+ *   <li>{@code validate}: totales de control del trailer, sin haber cargado nada.
+ *   <li>{@code load}: líneas de detalle en {@code settlement_line} por chunks (insert idempotente).
+ *   <li>{@code summary}: totales por moneda y estado como métricas y como resumen JSON.
  * </ol>
  */
 @Configuration(proxyBeanMethods = false)

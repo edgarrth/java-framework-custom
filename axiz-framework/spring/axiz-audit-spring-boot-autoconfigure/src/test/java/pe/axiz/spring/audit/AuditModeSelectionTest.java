@@ -14,7 +14,7 @@ import pe.axiz.core.secrets.SecretResolver;
 import reactor.core.publisher.Mono;
 
 class AuditModeSelectionTest {
-  /** Outside local/test/ci the audit chain must be keyed. */
+  /** Fuera de local/test/ci la cadena de auditoría debe tener clave. */
   private static final String[] HMAC = {
     "axiz.audit.integrity.mode=HMAC",
     "axiz.audit.integrity.hmac-secret=audit-hmac-key",
@@ -101,7 +101,7 @@ class AuditModeSelectionTest {
     imperative()
         .withBean(AuditPublisher.class, LoggingAuditPublisher::new)
         .run(ctx -> assertThat(ctx).hasNotFailed());
-    // the framework still seals what the application publishes: its chain must be keyed
+    // el framework sigue sellando lo que publica la aplicación: su cadena debe tener clave
     reactive()
         .withBean(
             AsyncAuditEventPublisher.class, () -> event -> CompletableFuture.completedFuture(null))

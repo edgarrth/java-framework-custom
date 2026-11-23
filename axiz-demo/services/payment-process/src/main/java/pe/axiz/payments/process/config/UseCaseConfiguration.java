@@ -5,8 +5,8 @@ import org.springframework.context.annotation.Configuration;
 import pe.axiz.structure.hexagonal.annotation.UseCase;
 
 /**
- * Registers the {@code @UseCase} classes of the application layer as beans, so the application
- * layer needs no Spring stereotype.
+ * Registra como beans las clases {@code @UseCase} de la capa de aplicación, de modo que esa capa no
+ * necesita estereotipos de Spring.
  */
 @Configuration(proxyBeanMethods = false)
 @ComponentScan(

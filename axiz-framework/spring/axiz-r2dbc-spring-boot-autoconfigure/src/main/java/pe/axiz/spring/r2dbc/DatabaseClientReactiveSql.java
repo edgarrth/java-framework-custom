@@ -12,9 +12,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * {@link ReactiveSql} over Spring's {@link DatabaseClient}: statements join the reactive
- * transaction of the caller ({@code @Transactional} or {@code TransactionalOperator}) and are
- * observed by the R2DBC instrumentation.
+ * {@link ReactiveSql} sobre el {@link DatabaseClient} de Spring: las sentencias se unen a la
+ * transacción reactiva del invocante ({@code @Transactional} o {@code TransactionalOperator}) y las
+ * observa la instrumentación de R2DBC.
  */
 public final class DatabaseClientReactiveSql implements ReactiveSql {
 

@@ -56,9 +56,10 @@ import pe.axiz.spring.foundation.ConfigurationErrors;
 import pe.axiz.spring.foundation.DispatchBoundary;
 
 /**
- * Audit: {@link Auditable} through an infrastructure advisor, sanitized immutable events, real
- * asynchronous publication (bounded queue, virtual thread, log fallback) and optional HTTP audit.
- * Sinks come from adapter auto-configurations (MSK, SQS); without sinks events go to the log.
+ * Auditoría: {@link Auditable} mediante un advisor de infraestructura, eventos inmutables saneados,
+ * publicación asíncrona real (cola acotada, hilo virtual, respaldo en log) y auditoría HTTP
+ * opcional. Los destinos provienen de las autoconfiguraciones de adaptadores (MSK, SQS); sin
+ * destinos, los eventos van al log.
  */
 @AutoConfiguration(
     afterName = {
@@ -132,7 +133,7 @@ public class AxizAuditAutoConfiguration {
                 && AuditModeSelection.strictManaged(beans);
         if (!durable && !strict) return;
         var relay = beans.getBeanProvider(OutboxRelay.class).getIfAvailable();
-        // A writer-only service must explicitly disable its local relay.
+        // Un servicio que solo escribe debe desactivar explícitamente su relay local.
         if (!environment.getProperty("axiz.outbox.relay.enabled", Boolean.class, true)) return;
         if (relay == null)
           throw new IllegalStateException(
@@ -151,7 +152,8 @@ public class AxizAuditAutoConfiguration {
     if (environment instanceof ConfigurableEnvironment configurable) {
       var resolver = new PropertySourcesPropertyResolver(configurable.getPropertySources());
       resolver.setIgnoreUnresolvableNestedPlaceholders(true);
-      // Bind the same scalar map as messaging: both dotted and bracketed keys are legal.
+      // Se enlaza el mismo mapa escalar que en mensajería: las claves con puntos y con corchetes
+      // son válidas.
       var binder =
           new Binder(
               ConfigurationPropertySources.get(configurable),
@@ -211,9 +213,9 @@ public class AxizAuditAutoConfiguration {
   }
 
   /**
-   * Health of the asynchronous publisher as metrics: {@code axiz.audit.pending}, {@code
-   * axiz.audit.lost} (alert when it grows), {@code axiz.audit.fallback}, {@code
-   * axiz.audit.failures} and {@code axiz.audit.worker.alive} (1 or 0).
+   * Salud del publicador asíncrono como métricas: {@code axiz.audit.pending}, {@code
+   * axiz.audit.lost} (alertar cuando crece), {@code axiz.audit.fallback}, {@code
+   * axiz.audit.failures} y {@code axiz.audit.worker.alive} (1 o 0).
    */
   @Bean
   @Role(BeanDefinition.ROLE_INFRASTRUCTURE)

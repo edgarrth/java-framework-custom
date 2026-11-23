@@ -22,7 +22,9 @@ import software.amazon.awssdk.services.kms.model.KmsException;
 
 class KmsDataKeyProviderTest {
 
-  /** In-memory KMS: encrypts data keys with a master key bound to the encryption context. */
+  /**
+   * KMS en memoria: cifra las claves de datos con una clave maestra ligada al contexto de cifrado.
+   */
   static final class FakeKms implements KmsClient {
     final SecretKey master = AesGcm.newKey();
     boolean fail;

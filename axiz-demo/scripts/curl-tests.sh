@@ -1,24 +1,24 @@
 #!/bin/bash
-# Calls every REST endpoint of the demo in the order of the payment flow and checks the expected
-# HTTP status. Works against both ways of running the demo (scripts/demo.sh up or
-# scripts/compose.sh up), from any directory:
-#   axiz-demo/scripts/curl-tests.sh            prints each request, status and response
-#   QUIET=1 axiz-demo/scripts/curl-tests.sh    prints one line per check
-# Exit status 0 only when every check passes.
+# Invoca cada endpoint REST de la demo en el orden del flujo de pago y verifica el estado HTTP
+# esperado. Funciona con las dos formas de ejecutar la demo (scripts/demo.sh up o
+# scripts/compose.sh up), desde cualquier directorio:
+#   axiz-demo/scripts/curl-tests.sh            imprime cada petición, estado y respuesta
+#   QUIET=1 axiz-demo/scripts/curl-tests.sh    imprime una línea por verificación
+# Código de salida 0 solo cuando todas las verificaciones pasan.
 set -Eeuo pipefail
 trap 'printf "\\033[31m%s: unexpected failure (exit %s) at line %s: %s\\033[0m\\n" "${0##*/}" "$?" "$LINENO" "$BASH_COMMAND" >&2' ERR
 KC=${KC_URL:-http://localhost:8180}
 UX=http://localhost:8080 ORDERS=http://localhost:8081 BENEFICIARIES=http://localhost:8082
 CORE=http://localhost:8083 PROCESS=http://localhost:8084 HISTORY=http://localhost:8086
 GATEWAY=http://localhost:8087
-ACCOUNT=1910012345678            # account of the customer C-1001 (ana) in the simulated core
-CCI=00219100123456789053         # destination account accepted by the simulated network
-CCI_CLOSED=00219100123456780052  # destination account the network rejects (closed)
+ACCOUNT=1910012345678            # cuenta del cliente C-1001 (ana) en el core simulado
+CCI=00219100123456789053         # cuenta de destino que acepta la red simulada
+CCI_CLOSED=00219100123456780052  # cuenta de destino que la red rechaza (cerrada)
 for tool in curl jq; do command -v "$tool" >/dev/null || { echo "missing tool: $tool"; exit 1; }; done
 
 passed=0 failed=0
 key() { cat /proc/sys/kernel/random/uuid; }
-# check "description" expected-status METHOD URL [curl args...]: sets $body and $code
+# check "descripción" estado-esperado MÉTODO URL [args de curl...]: asigna $body y $code
 check() {
   local what=$1 expected=$2 method=$3 url=$4 out
   shift 4
@@ -32,7 +32,7 @@ check() {
   fi
   [ -n "${QUIET:-}" ] || { [ -n "$body" ] && jq -C . <<<"$body" 2>/dev/null | head -20 || printf '%s\n' "${body:0:400}"; echo; }
 }
-# field "description" jq-expression expected: checks a value of the last response body
+# field "descripción" expresión-jq esperado: verifica un valor del cuerpo de la última respuesta
 field() {
   local actual
   actual=$(jq -r "$2 // empty" <<<"$body" 2>/dev/null || true)
@@ -47,8 +47,8 @@ token() {
 }
 JSON=(-H 'Content-Type: application/json')
 
-# Access tokens from the local Keycloak: two customers (password grant of the web channel client,
-# local only) and the service account of payment-process (client credentials).
+# Tokens de acceso del Keycloak local: dos clientes (password grant del cliente del canal web,
+# solo local) y la cuenta de servicio de payment-process (client credentials).
 ANA=$(token -d grant_type=password -d client_id=payments-web -d username=ana -d password=local-only-ana)
 LUIS=$(token -d grant_type=password -d client_id=payments-web -d username=luis -d password=local-only-luis)
 M2M=$(token -d grant_type=client_credentials -d client_id=payment-process -d client_secret=local-only-payment-process)
@@ -75,7 +75,7 @@ temporary=$(jq -r --arg cci "$CCI_CLOSED" '[.items[] | select(.cci == $cci)][0].
 check "the temporary beneficiary is removed (soft delete)" 204 \
   DELETE "$BENEFICIARIES/v1/customers/C-1001/beneficiaries/$temporary" -H "Authorization: Bearer $ANA"
 
-# channel (payments-ux) and the payment saga
+# canal (payments-ux) y la saga de pago
 check "the channel lists the beneficiaries of the signed-in customer (masked)" 200 \
   GET "$UX/v1/beneficiaries" -H "Authorization: Bearer $ANA"
 pay_key=$(key)
@@ -95,7 +95,7 @@ check "the channel reads the payment" 200 \
   GET "$UX/v1/payments/$payment" -H "Authorization: Bearer $ANA"
 field "the saga completes the payment" .status COMPLETED
 
-# payment orders and payment process
+# órdenes de pago y proceso de pago
 check "the payment order is read in payment-orders" 200 \
   GET "$ORDERS/v1/payment-orders/$payment" -H "Authorization: Bearer $ANA"
 check "the payment orders of C-1001 are listed" 200 \
@@ -114,7 +114,7 @@ check "a payment process for an unknown order ends rejected" 201 \
   -d "{\"paymentOrderId\":\"$(key)\",\"operationNumber\":\"OP-CURL-1\",\"debtorAccount\":\"$ACCOUNT\",\"creditorCci\":\"$CCI\",\"amount\":1.00,\"currency\":\"PEN\",\"customerId\":\"C-1001\"}"
 field "the saga of an unknown order is rejected" .status REJECTED
 
-# banking core and payment network (service to service)
+# core bancario y red de pagos (servicio a servicio)
 check "the core debits the account of its holder" 201 \
   POST "$CORE/v1/debits" -H "Authorization: Bearer $M2M" "${JSON[@]}" -H "Idempotency-Key: $(key)" \
   -d "{\"accountId\":\"$ACCOUNT\",\"amount\":1.00,\"currency\":\"PEN\",\"holderId\":\"C-1001\",\"reference\":\"CURL-$RANDOM\"}"
@@ -134,7 +134,7 @@ check "the network rejects a transfer to a closed account (422)" 422 \
   POST "$GATEWAY/v1/transfers" -H "Authorization: Bearer $M2M" "${JSON[@]}" -H "Idempotency-Key: $(key)" \
   -d "{\"creditorCci\":\"$CCI_CLOSED\",\"amount\":1.00,\"currency\":\"PEN\",\"reference\":\"CURL-$RANDOM\"}"
 
-# history read model
+# modelo de lectura del historial
 for _ in $(seq 1 30); do
   [ "$(curl -s -H "Authorization: Bearer $ANA" "$HISTORY/v1/payments/$payment" | jq -r '.status // empty')" = COMPLETED ] && break
   sleep 2
@@ -145,7 +145,7 @@ field "the history projects the final status" .status COMPLETED
 check "the payments of C-1001 are listed, latest change first" 200 \
   GET "$HISTORY/v1/customers/C-1001/payments?page=0&size=5" -H "Authorization: Bearer $ANA"
 
-# security
+# seguridad
 check "a request without a token is rejected (401)" 401 GET "$UX/v1/beneficiaries"
 check "another customer cannot read the payment (404)" 404 \
   GET "$UX/v1/payments/$payment" -H "Authorization: Bearer $LUIS"

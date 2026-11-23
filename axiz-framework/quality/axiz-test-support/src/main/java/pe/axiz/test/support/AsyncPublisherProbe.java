@@ -9,8 +9,8 @@ import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.messaging.PublishResult;
 
 /**
- * Test boundary only: applies the same wire contract to synchronous and native asynchronous
- * publishers.
+ * Solo frontera de pruebas: aplica el mismo contrato de transporte a publishers síncronos y
+ * asíncronos nativos.
  */
 public final class AsyncPublisherProbe implements EventPublisher {
   private final AsyncEventPublisher publisher;

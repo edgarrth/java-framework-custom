@@ -10,14 +10,14 @@ import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
 import software.amazon.awssdk.services.rds.RdsUtilities;
 
 /**
- * IAM authentication tokens for Aurora PostgreSQL. A token is valid for 15 minutes; it is reused
- * until {@code refreshAfter} and then generated again (signed locally with the credentials of the
- * pod, IRSA or EKS Pod Identity: no call to AWS). Connections already open stay valid after their
- * token expires; the pool's maximum lifetime renews them.
+ * Tokens de autenticación IAM para Aurora PostgreSQL. Un token es válido durante 15 minutos; se
+ * reutiliza hasta {@code refreshAfter} y luego se genera de nuevo (firmado localmente con las
+ * credenciales del pod, IRSA o EKS Pod Identity: sin llamada a AWS). Las conexiones abiertas siguen
+ * siendo válidas después de que su token expira; la vida máxima del pool las renueva.
  */
 public final class RdsIamPasswordProvider implements DatabasePasswordProvider, AutoCloseable {
 
-  /** Lifetime of an RDS authentication token. */
+  /** Vida de un token de autenticación de RDS. */
   public static final Duration TOKEN_LIFETIME = Duration.ofMinutes(15);
 
   private final RdsUtilities rds;
@@ -41,7 +41,9 @@ public final class RdsIamPasswordProvider implements DatabasePasswordProvider, A
     this(rds, host, port, username, clock, refreshAfter, () -> {});
   }
 
-  /** With lifecycle ownership of the warmed credential provider used by the signer. */
+  /**
+   * Con propiedad del ciclo de vida del proveedor de credenciales precalentado que usa el firmante.
+   */
   public RdsIamPasswordProvider(
       RdsUtilities rds,
       String host,

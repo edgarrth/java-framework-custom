@@ -1,10 +1,10 @@
-// Release version of a generated project, computed by release-please itself (the library that the
-// pinned release-please-action uses) against actual generated projects: no remote calls.
+// Versión de release de un proyecto generado, calculada por el propio release-please (la biblioteca que usa
+// release-please-action fijado) sobre proyectos generados reales: sin llamadas remotas.
 //
 //   npm ci --prefix .github/scripts/release-version
 //   node .github/scripts/release-version/test.cjs target/samples/modules.json
 //
-// The configuration under test is the template every generated project gets.
+// La configuración bajo prueba es la plantilla que recibe cada proyecto generado.
 'use strict';
 const path = require('path');
 const fs = require('fs');
@@ -33,7 +33,7 @@ function pomVersions(xml) {
 
 const RELEASE_SHA = 'r'.repeat(40);
 
-/** A repository whose history is `commits` (newest first) on top of an optional release. */
+/** Repositorio cuyo historial es `commits` (el más reciente primero) sobre una release opcional. */
 function repository(commits, released) {
   const manifest = {'.': released || initial};
   const text = (file) =>
@@ -76,11 +76,11 @@ async function next(commits, released) {
 
 const INITIAL = 'feat: generate orders-business with axiz initializr';
 const CASES = [
-  // no release yet: the first one is the version the generated pom targets, whatever the commits
+  // sin ninguna release: la primera es la versión a la que apunta el pom generado, sean cuales sean los commits
   {name: 'first release, initial commit', commits: [INITIAL], expected: '0.1.0'},
   {name: 'first release, a fix only', commits: ['fix: rounding of fees'], expected: '0.1.0'},
   {name: 'first release, a breaking change', commits: ['feat!: new contract', INITIAL], expected: '0.1.0'},
-  // after a release, Conventional Commits decide (no bump-minor-pre-major: a break goes to 1.0.0)
+  // tras una release deciden los Conventional Commits (sin bump-minor-pre-major: un cambio incompatible pasa a 1.0.0)
   {name: 'after 0.1.0, a fix', released: '0.1.0', commits: ['fix: rounding of fees'], expected: '0.1.1'},
   {name: 'after 0.1.0, a feature', released: '0.1.0', commits: ['feat: list by date'], expected: '0.2.0'},
   {name: 'after 0.1.0, a breaking change', released: '0.1.0', commits: ['feat!: new contract'], expected: '1.0.0'},

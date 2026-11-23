@@ -9,14 +9,16 @@ import pe.axiz.core.sensitive.MaskType;
 import pe.axiz.core.sensitive.SensitivityLevel;
 
 /**
- * Masking policy ({@code axiz.sensitive.*}).
+ * Política de enmascaramiento ({@code axiz.sensitive.*}).
  *
- * @param response minimum level masked in API responses
- * @param log minimum level masked in logs
- * @param audit minimum level masked in audit events
- * @param fullMaskLevel from this level on, values are always fully masked
- * @param keys extra property or header names treated as sensitive, with their level and mask
- * @param detectPan detect PAN candidates in logs and audit regardless of property name
+ * @param response nivel mínimo enmascarado en las respuestas de la API
+ * @param log nivel mínimo enmascarado en los logs
+ * @param audit nivel mínimo enmascarado en los eventos de auditoría
+ * @param fullMaskLevel a partir de este nivel, los valores siempre se enmascaran por completo
+ * @param keys nombres adicionales de propiedades o cabeceras tratados como sensibles, con su nivel
+ *     y su máscara
+ * @param detectPan detecta candidatos a PAN en logs y auditoría sin importar el nombre de la
+ *     propiedad
  */
 @ConfigurationProperties("axiz.sensitive")
 public record AxizSensitiveProperties(
@@ -31,10 +33,10 @@ public record AxizSensitiveProperties(
   }
 
   /**
-   * A sensitive key.
+   * Clave sensible.
    *
-   * @param level sensitivity
-   * @param mask mask
+   * @param level sensibilidad
+   * @param mask máscara
    */
   public record Key(
       @DefaultValue("HIGH") SensitivityLevel level, @DefaultValue("PARTIAL") MaskType mask) {}

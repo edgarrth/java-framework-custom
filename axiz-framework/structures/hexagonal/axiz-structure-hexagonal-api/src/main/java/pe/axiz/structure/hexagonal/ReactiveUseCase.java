@@ -3,8 +3,8 @@ package pe.axiz.structure.hexagonal;
 import org.reactivestreams.Publisher;
 
 /**
- * An asynchronous use case. Work starts on subscription, emits at most one result and propagates
- * cancellation.
+ * Caso de uso asíncrono. El trabajo empieza con la suscripción, emite como máximo un resultado y
+ * propaga la cancelación.
  */
 @FunctionalInterface
 public interface ReactiveUseCase<I, O> {

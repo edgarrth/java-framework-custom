@@ -5,14 +5,14 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
- * Multi-tenancy ({@code axiz.tenancy.*}); only active when the service declares it.
+ * Multi-tenancy ({@code axiz.tenancy.*}); solo está activo cuando el servicio lo declara.
  *
- * @param enabled whether the service is multi-tenant
- * @param header header carrying the tenant when it is trusted
- * @param trustHeader whether the header is trusted (only when set by the platform, never by
- *     clients)
- * @param required whether requests without a tenant are rejected
- * @param excludedPaths path patterns that need no tenant
+ * @param enabled indica si el servicio es multi-tenant
+ * @param header cabecera que lleva el tenant cuando es de confianza
+ * @param trustHeader indica si la cabecera es de confianza (solo cuando la establece la plataforma,
+ *     nunca los clientes)
+ * @param required indica si se rechazan las solicitudes sin tenant
+ * @param excludedPaths patrones de ruta que no necesitan tenant
  */
 @ConfigurationProperties("axiz.tenancy")
 public record AxizTenancyProperties(

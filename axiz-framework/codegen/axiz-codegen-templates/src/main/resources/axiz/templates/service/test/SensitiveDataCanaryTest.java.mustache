@@ -54,7 +54,10 @@ import pe.axiz.core.sensitive.Sensitive;
 import pe.axiz.core.sensitive.SensitiveField;
 import pe.axiz.core.sensitive.SensitivityLevel;
 
-/** Synthetic values only. Uses the running service's masking, logging and response configuration. */
+/**
+ * Solo valores sintéticos. Usa la configuración de enmascaramiento, logging y respuestas del
+ * servicio en ejecución.
+ */
 @ExtendWith(OutputCaptureExtension.class)
 class SensitiveDataCanaryTest extends {{project.className}}ApplicationTestSupport {
   private static final String PAN = "4111111111111111";
@@ -127,7 +130,7 @@ class SensitiveDataCanaryTest extends {{project.className}}ApplicationTestSuppor
         var error = assertThrows(RuntimeException.class, () ->
             em.createNativeQuery("INSERT INTO axiz_sensitive_canary VALUES (:value)")
                 .setParameter("value", value).executeUpdate());
-        // PostgreSQL actually returned the rejected value: this is not a synthetic logger call.
+        // PostgreSQL devolvió realmente el valor rechazado: no es una llamada sintética al logger.
         assertThat(error).hasStackTraceContaining(PASSWORD);
         operations.failure("canary.constraint", Duration.ZERO, error, false, "CONFLICT");
         assertClean(problems.create(error, Locale.ROOT, "/canary", "canary-correlation").toString());
@@ -143,7 +146,8 @@ class SensitiveDataCanaryTest extends {{project.className}}ApplicationTestSuppor
 
   private static void assertClean(String value) {
     assertThat(value).doesNotContain(PAN, PASSWORD);
-    // Match the labelled CVV, not an unrelated three-digit timestamp or elapsed time.
+    // Se busca el CVV etiquetado, no una marca de tiempo ni un tiempo transcurrido de tres dígitos
+    // sin relación.
     assertThat(value).doesNotContainPattern("(?i)(?:cvv|cvc)[^\\r\\n0-9]{0,16}" + CVV + "(?![0-9])");
   }
 
@@ -169,7 +173,8 @@ class SensitiveDataCanaryTest extends {{project.className}}ApplicationTestSuppor
 {{/stack.reactive}}
 {{/caps.web}}
 {{^caps.web}}
-    // Workers have no HTTP response converter; never mask the application's event serializer.
+    // Los workers no tienen conversor de respuestas HTTP; nunca se enmascara el serializador de
+    // eventos de la aplicación.
     return masker.describe(value, OutputChannel.RESPONSE).toString();
 {{/caps.web}}
   }

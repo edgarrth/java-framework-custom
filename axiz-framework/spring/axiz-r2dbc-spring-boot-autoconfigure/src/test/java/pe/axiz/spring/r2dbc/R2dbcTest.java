@@ -146,7 +146,7 @@ class R2dbcTest {
               FakeR2dbc.Execution update = db.last("UPDATE payments");
               assertEquals(
                   "UPDATE payments SET status = $1, error = $2 WHERE id = $3", update.sql());
-              // the null error travels as a typed null (Spring binds Parameters.in(String.class))
+              // el error null viaja como un null tipado (Spring enlaza Parameters.in(String.class))
               assertNull(update.binds().get(1));
               assertEquals(String.class, update.types().get(1));
               assertEquals("p-1", update.binds().get(2));

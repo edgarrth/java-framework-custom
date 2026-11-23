@@ -11,7 +11,10 @@ import pe.axiz.core.tokenization.vault.AsyncVaultOperations;
 import pe.axiz.core.tokenization.vault.VaultOperations;
 import pe.axiz.spring.tokenization.vault.VerifiedTokenCaller;
 
-/** Selects only the application's HTTP stack; no unprotected disable switch for vault routes. */
+/**
+ * Selecciona solo la pila HTTP de la aplicación; sin interruptor de desactivación desprotegido para
+ * las rutas del vault.
+ */
 @AutoConfiguration(
     afterName = "pe.axiz.spring.tokenization.vault.AxizTokenizationVaultAutoConfiguration")
 @ConditionalOnWebApplication

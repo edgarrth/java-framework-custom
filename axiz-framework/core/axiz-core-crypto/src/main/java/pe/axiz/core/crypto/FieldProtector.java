@@ -7,7 +7,8 @@ import java.util.Objects;
 import pe.axiz.core.secrets.SecretValue;
 
 /**
- * Stateless field protection without storage or tokenization. Keys for encryption and HMAC differ.
+ * Protección de campos sin estado, sin almacenamiento ni tokenización. Las claves de cifrado y de
+ * HMAC son distintas.
  */
 public final class FieldProtector {
   private final FieldEncryptor cipher;
@@ -44,7 +45,8 @@ public final class FieldProtector {
   }
 
   public ProtectedField protect(SecretValue original, FieldScope scope, String stableRowId) {
-    // Snapshot once so caller closure cannot split the two operations.
+    // Se toma un snapshot una sola vez para que un cierre por parte de quien llama no pueda separar
+    // las dos operaciones.
     return original.use(
         chars -> {
           try (SecretValue snapshot = SecretValue.of(chars)) {
@@ -72,7 +74,8 @@ public final class FieldProtector {
   }
 
   private String context(FieldScope scope) {
-    // A fixed-length digest of unambiguous framing keeps the primitive context bounded.
+    // Un digest de longitud fija de una delimitación inequívoca mantiene acotado el contexto de la
+    // primitiva.
     byte[] framed =
         Aad.of(
             Aad.FIELD,
@@ -82,7 +85,8 @@ public final class FieldProtector {
             scope.domain(),
             policy.profileId(),
             Integer.toString(policy.canonicalVersion()));
-    // A base64url digest may start with a digit or '_' and is not itself a field identifier.
+    // Un digest base64url puede empezar con un dígito o '_' y no es en sí un identificador de
+    // campo.
     return "field.v1_"
         + Base64.getUrlEncoder().withoutPadding().encodeToString(Hashing.sha256(framed));
   }

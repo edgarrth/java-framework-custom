@@ -15,8 +15,8 @@ import pe.axiz.spring.dynamodb.DynamoRepositories;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 
 /**
- * Fictitious contacts only for the explicitly enabled local demo: LocalStack on loopback (services
- * on the host) or the {@code localstack} container of the demo Compose network.
+ * Contactos ficticios solo para la demo local habilitada de forma explícita: LocalStack en loopback
+ * (servicios en el host) o el contenedor {@code localstack} de la red Compose de la demo.
  */
 @Configuration(proxyBeanMethods = false)
 @Profile("local")
@@ -47,7 +47,8 @@ class LocalContactSeed {
         try {
           table.insert(ContactItem.protect(contact, cipher), "customerId");
         } catch (ConditionalCheckFailedException existingContact) {
-          // Preserve profile updates and existing ciphertext on every restart.
+          // Se conservan las actualizaciones de perfil y el texto cifrado existente en cada
+          // reinicio.
         }
       }
     };

@@ -4,7 +4,8 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 /**
- * Rejects a known MSK IAM listener with IAM explicitly disabled, without restricting generic Kafka.
+ * Rechaza un listener MSK IAM conocido con IAM desactivado explícitamente, sin restringir Kafka
+ * genérico.
  */
 final class MskAuthentication {
   private static final Pattern IAM_LISTENER =

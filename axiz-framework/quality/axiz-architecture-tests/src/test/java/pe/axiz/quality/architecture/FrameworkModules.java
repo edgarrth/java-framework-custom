@@ -8,7 +8,10 @@ import java.util.Set;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-/** Uses real Maven module namespaces, including independently packaged integrations. */
+/**
+ * Usa los espacios de nombres reales de los módulos Maven, incluidas las integraciones empaquetadas
+ * de forma independiente.
+ */
 final class FrameworkModules {
   private record Module(String namespace, boolean neutral) {}
 
@@ -38,7 +41,8 @@ final class FrameworkModules {
         own.startsWith("pe.axiz.spring.tokenization.vault")
             ? "tokenization.vault"
             : own.substring("pe.axiz.spring.".length()).split("\\.")[0];
-    // An integration can depend on its base; the inverse and sibling dependencies are forbidden.
+    // Una integración puede depender de su base; se prohíben la dependencia inversa y las
+    // dependencias entre hermanas.
     if (!own.equals("pe.axiz.spring." + capability) && other.equals("pe.axiz.spring." + capability))
       return true;
     if (other.equals("pe.axiz.spring.aws"))
@@ -52,13 +56,13 @@ final class FrameworkModules {
       return own.equals("pe.axiz.spring.messaging.msk");
     if (other.equals("pe.axiz.spring.httpclient")) return own.equals("pe.axiz.spring.tokenization");
     if (other.equals("pe.axiz.spring.sensitive")) return own.equals("pe.axiz.spring.httpclient");
-    // Spring JDBC support (transaction-bound connections, schema initialization, dialects) serves
-    // the relational technologies and every capability's JDBC integration.
+    // El soporte JDBC de Spring (conexiones ligadas a la transacción, inicialización del esquema,
+    // dialectos) atiende a las tecnologías relacionales y a la integración JDBC de cada capacidad.
     if (other.equals("pe.axiz.spring.jdbc"))
       return Set.of("pe.axiz.spring.jpa", "pe.axiz.spring.r2dbc").contains(own)
           || own.matches("pe\\.axiz\\.spring\\.[^.]+\\.jdbc");
-    // Messaging owns the inbox completion ports its transactional handlers use; inbox stores
-    // implement them.
+    // Mensajería es dueña de los puertos de finalización del inbox que usan sus handlers
+    // transaccionales; los almacenes inbox los implementan.
     if (other.equals("pe.axiz.spring.messaging"))
       return own.equals("pe.axiz.spring.inbox") || own.startsWith("pe.axiz.spring.inbox.");
     return false;

@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 import pe.axiz.core.errors.ExternalServiceException;
 
-/** Reading SOAP answers without a server, and the credentials value type. */
+/** Lectura de respuestas SOAP sin servidor, y el tipo de valor de las credenciales. */
 class SoapResponseTest {
   @Test
   void qualifiedSoap11FaultsAndSoap12ReasonsRetainTheirCodesWithoutReturningAPayload() {

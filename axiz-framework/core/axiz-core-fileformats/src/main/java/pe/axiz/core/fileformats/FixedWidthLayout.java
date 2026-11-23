@@ -16,8 +16,8 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Layout of a fixed-width record: parses lines into typed values and formats values back.
- * Overlapping fields are rejected when the layout is built.
+ * Disposición de un registro de ancho fijo: parsea líneas en valores tipados y vuelve a formatear
+ * los valores. Los campos superpuestos se rechazan al construir la disposición.
  */
 public final class FixedWidthLayout {
 

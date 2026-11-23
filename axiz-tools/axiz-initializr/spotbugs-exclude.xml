@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FindBugsFilter>
-  <!-- Injected collaborator: identity and lifecycle are shared with the application context. -->
+  <!-- Colaborador inyectado: la identidad y el ciclo de vida se comparten con el contexto de la aplicación. -->
   <Match>
     <Class name="pe.axiz.initializr.service.GenerationService"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="meters"/>
   </Match>
-  <!-- Session authorization boundary is deliberately shared with Spring Security, not copied. -->
+  <!-- El límite de autorización de la sesión se comparte de forma deliberada con Spring Security, no se copia. -->
   <Match>
     <Class name="pe.axiz.initializr.api.GitHubController"/>
     <Bug pattern="EI_EXPOSE_REP2"/>

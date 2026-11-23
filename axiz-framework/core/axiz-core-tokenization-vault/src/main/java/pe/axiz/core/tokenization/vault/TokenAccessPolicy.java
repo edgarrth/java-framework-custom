@@ -6,7 +6,8 @@ import pe.axiz.core.tokenization.TokenOperation;
 import pe.axiz.core.tokenization.TokenType;
 
 /**
- * Additional server-owned access restrictions; the built-in authority/domain checks always apply.
+ * Restricciones de acceso adicionales propiedad del servidor; las verificaciones integradas de
+ * autoridad y dominio siempre aplican.
  */
 @FunctionalInterface
 public interface TokenAccessPolicy {

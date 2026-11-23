@@ -8,7 +8,10 @@ import pe.axiz.core.errors.ErrorCategory;
 import pe.axiz.core.errors.ErrorDefinition;
 import pe.axiz.core.errors.RateLimitedException;
 
-/** Stable failure catalog; messages never include submitted or stored sensitive values. */
+/**
+ * Catálogo de fallos estable; los mensajes nunca incluyen valores sensibles enviados ni
+ * almacenados.
+ */
 public final class TokenErrors {
   private TokenErrors() {}
 
@@ -40,7 +43,10 @@ public final class TokenErrors {
     return new RateLimitedException(LIMITED, retryAfter);
   }
 
-  /** Closed public error catalog; preserve typed retry delay, never provider messages or causes. */
+  /**
+   * Catálogo de errores público cerrado; se preserva el retraso de reintento tipado, nunca mensajes
+   * ni causas del proveedor.
+   */
   public static BusinessException sanitize(Throwable failure) {
     Throwable current = failure;
     for (int depth = 0; current != null && depth < 64; depth++, current = current.getCause()) {

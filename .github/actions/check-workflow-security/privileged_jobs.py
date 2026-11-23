@@ -1,4 +1,4 @@
-"""Closed reviewed roles: grants and App-token minting must match trusted workflow contracts."""
+"""Roles revisados cerrados: los permisos y la emisión de tokens de App deben coincidir con los contratos de workflow de confianza."""
 import hashlib
 import json
 from pathlib import Path
@@ -13,7 +13,7 @@ NORMALIZED='__IMMUTABLE_WORKFLOWS_RELEASE__'
 TOKEN=re.compile(r'(?<![A-Za-z0-9_.-])'+TAG_PATTERN+r'(?![A-Za-z0-9_.-])',re.ASCII)
 
 def fingerprint(value):
-    # JSON keys are strings in the normalized YAML representation (including the YAML 1.1 on key).
+        # Las claves JSON son strings en la representación YAML normalizada (incluida la clave on de YAML 1.1).
     text=json.dumps(value,sort_keys=True,separators=(',',':'))
     return hashlib.sha256(TOKEN.sub(NORMALIZED,text).encode()).hexdigest()
 

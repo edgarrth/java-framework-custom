@@ -164,7 +164,7 @@ class SqsConsumerLifecycleTest {
 
   // --- AWS -----------------------------------------------------------------------------------
 
-  /** Answers one message, then fails once, then has nothing more. */
+  /** Responde un mensaje, luego falla una vez y después no tiene nada más. */
   static final class ScriptedSqs implements SqsClient {
     final AtomicInteger receives = new AtomicInteger();
     int expectedBatchSize = 10;
@@ -373,7 +373,7 @@ class SqsConsumerLifecycleTest {
       assertEquals(List.of("hello"), handler.seen);
       assertEquals(List.of("delete"), sqs.settled);
       assertEquals(0, consumer.inFlightCount());
-      consumer.renewVisibility(); // nothing in flight: no call
+      consumer.renewVisibility(); // nada en curso: ninguna llamada
     } finally {
       consumer.stop();
     }

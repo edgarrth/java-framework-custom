@@ -6,12 +6,12 @@ import io.micrometer.core.instrument.MeterRegistry;
 import pe.axiz.core.metrics.MetricNames;
 import pe.axiz.core.metrics.MetricTags;
 
-/** Reads generic event metrics in tests without depending on a test framework. */
+/** Lee métricas genéricas de eventos en pruebas sin depender de un framework de pruebas. */
 public final class MetricAssertions {
 
   private MetricAssertions() {}
 
-  /** Count of an event with an outcome (all other tags summed). */
+  /** Cantidad de un evento con un resultado (sumando todas las demás etiquetas). */
   public static double count(MeterRegistry registry, String event, String outcome) {
     return registry
         .find(MetricNames.COUNT)
@@ -23,7 +23,7 @@ public final class MetricAssertions {
         .sum();
   }
 
-  /** Total amount of an event in a currency. */
+  /** Monto total de un evento en una moneda. */
   public static double amount(MeterRegistry registry, String event, String currency) {
     return registry
         .find(MetricNames.AMOUNT)
@@ -35,7 +35,7 @@ public final class MetricAssertions {
         .sum();
   }
 
-  /** Fails with a readable message when the count differs. */
+  /** Falla con un mensaje legible cuando la cantidad difiere. */
   public static void assertCount(
       MeterRegistry registry, String event, String outcome, double expected) {
     double actual = count(registry, event, outcome);

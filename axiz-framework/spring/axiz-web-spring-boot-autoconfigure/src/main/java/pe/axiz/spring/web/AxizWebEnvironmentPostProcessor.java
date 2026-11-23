@@ -9,9 +9,10 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 
 /**
- * Safe web defaults with the lowest precedence: virtual threads, graceful shutdown, no stack traces
- * or exception messages in error responses, Boot's own problem details off (the errors starter owns
- * them) and OpenAPI metadata from the application name.
+ * Valores web seguros por defecto con la precedencia más baja: hilos virtuales, apagado ordenado,
+ * sin stack traces ni mensajes de excepción en las respuestas de error, los problem details propios
+ * de Boot desactivados (el starter de errores se encarga de ellos) y metadatos OpenAPI a partir del
+ * nombre de la aplicación.
  */
 public class AxizWebEnvironmentPostProcessor implements EnvironmentPostProcessor, Ordered {
 

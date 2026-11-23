@@ -6,7 +6,7 @@ import pe.axiz.core.crypto.FieldEncryptor;
 import pe.axiz.kit.dynamodb.DynamoRepository;
 import pe.axiz.spring.dynamodb.DynamoRepositories;
 
-/** {@link ContactDirectory} on the {@code notification-contacts} table. */
+/** {@link ContactDirectory} sobre la tabla {@code notification-contacts}. */
 @Component
 class DynamoContactDirectory implements ContactDirectory {
 

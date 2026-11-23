@@ -5,12 +5,15 @@ import java.sql.SQLException;
 import java.util.Locale;
 import javax.sql.DataSource;
 
-/** Detects the database product to choose SQL dialects (PostgreSQL in clusters, H2 in tests). */
+/**
+ * Detecta el producto de base de datos para elegir los dialectos SQL (PostgreSQL en clústeres, H2
+ * en pruebas).
+ */
 public final class SqlDialects {
 
   private SqlDialects() {}
 
-  /** Lowercase product name, e.g. {@code postgresql} or {@code h2}. */
+  /** Nombre del producto en minúsculas, p. ej. {@code postgresql} o {@code h2}. */
   public static String product(DataSource dataSource) {
     try (Connection c = dataSource.getConnection()) {
       return c.getMetaData().getDatabaseProductName().toLowerCase(Locale.ROOT);

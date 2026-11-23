@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  axiz-parent-core: parent of layer 1 (pure Java) modules and of teams' pure Java libraries.
-  Adds: no Spring/Quarkus allowed, JSpecify, JUnit, code standards, mutation testing on core.
+  axiz-parent-core: parent de los módulos de la capa 1 (Java puro) y de las bibliotecas Java puras de los equipos.
+  Añade: sin Spring ni Quarkus, JSpecify, JUnit, estándares de código, mutation testing en el core.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -104,8 +104,8 @@
             </execution></executions>
             <configuration>
               <failOnWarning>true</failOnWarning>
-              <!-- JUnit's aggregate/launcher are the shared test harness; the bytecode
-                   analyzer cannot observe engine discovery or source-only analysis metadata. -->
+              <!-- aggregate y launcher de JUnit son el harness de pruebas compartido; el analizador
+                   de bytecode no puede observar el descubrimiento de engines ni los metadatos de análisis solo de código fuente. -->
               <ignoredUnusedDeclaredDependencies>
                 <ignoredUnusedDeclaredDependency>org.junit.jupiter:junit-jupiter</ignoredUnusedDeclaredDependency>
                 <ignoredUnusedDeclaredDependency>org.junit.platform:junit-platform-launcher</ignoredUnusedDeclaredDependency>

@@ -3,14 +3,18 @@ package pe.axiz.spring.foundation;
 import io.micrometer.context.ContextRegistry;
 import org.springframework.util.ClassUtils;
 
-/** Initializes optional context SPI discovery and entropy before request subscriptions. */
+/**
+ * Inicializa el descubrimiento opcional de SPI del contexto y la entropía antes de las
+ * suscripciones de solicitudes.
+ */
 public final class ReactiveInfrastructureBootstrap {
   private ReactiveInfrastructureBootstrap() {}
 
   public static void initialize() {
     ReactiveRandomBootstrap.initialize();
-    // Netty probes optional native codecs while decoding HTTP responses. Their first load reads
-    // native libraries from JAR files; perform that discovery on the bootstrap thread.
+    // Netty sondea los códecs nativos opcionales al decodificar respuestas HTTP. Su primera carga
+    // lee bibliotecas nativas desde archivos JAR; ese descubrimiento se realiza en el hilo de
+    // bootstrap.
     initializeOptional("io.netty.handler.codec.compression.Zstd");
     initializeOptional("io.netty.handler.codec.compression.Brotli");
     if (ClassUtils.isPresent(
@@ -21,13 +25,14 @@ public final class ReactiveInfrastructureBootstrap {
         ReactiveInfrastructureBootstrap.class.getClassLoader())) Micrometer.initialize();
   }
 
-  // Only absence is optional. An installed but incompatible codec must fail startup, so an
-  // application never accepts traffic with a corrupt classpath and delayed decoder failures.
+  // Solo la ausencia es opcional. Un códec instalado pero incompatible debe hacer fallar el
+  // arranque, de modo que una aplicación nunca acepte tráfico con un classpath corrupto y fallos
+  // diferidos del decodificador.
   private static void initializeOptional(String type) {
     try {
       Class.forName(type, true, ReactiveInfrastructureBootstrap.class.getClassLoader());
     } catch (ClassNotFoundException absent) {
-      // Optional transport dependency; applications without Netty need not bring it in.
+      // Dependencia de transporte opcional; las aplicaciones sin Netty no necesitan incluirla.
     }
   }
 

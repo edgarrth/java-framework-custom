@@ -29,7 +29,10 @@ import pe.axiz.spring.outbox.ReactiveTransactionalEvents;
 import pe.axiz.spring.outbox.TransactionalEvents;
 import reactor.core.publisher.Mono;
 
-/** Reactions route each emitted event to its destination, and handlers keep checked failures. */
+/**
+ * Las reacciones encaminan cada evento emitido a su destino, y los handlers conservan los fallos
+ * comprobados.
+ */
 class ReactionsTest {
 
   private static final EventEnvelope ENVELOPE =
@@ -72,7 +75,7 @@ class ReactionsTest {
         Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[] {type}, (p, m, a) -> null);
   }
 
-  /** Records where each event was sent. */
+  /** Registra adónde se envió cada evento. */
   static final class RecordingEvents extends TransactionalEvents {
     final List<String> sent = new CopyOnWriteArrayList<>();
 
@@ -93,7 +96,7 @@ class ReactionsTest {
     }
   }
 
-  /** The reactive counterpart. */
+  /** Contraparte reactiva. */
   static final class RecordingReactiveEvents extends ReactiveTransactionalEvents {
     final List<String> sent = new CopyOnWriteArrayList<>();
 

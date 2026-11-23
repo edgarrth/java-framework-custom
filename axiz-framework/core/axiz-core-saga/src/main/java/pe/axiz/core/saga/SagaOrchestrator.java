@@ -19,17 +19,18 @@ import pe.axiz.core.resilience.Retry;
 import pe.axiz.core.resilience.RetryPolicy;
 
 /**
- * Runs sagas: executes steps in order (with retries for transient failures), persists state after
- * every step and, when a step fails, compensates the completed steps in reverse order. A saga
- * interrupted by a crash is resumed from its persisted state.
+ * Ejecuta sagas: ejecuta los pasos en orden (con reintentos para fallos transitorios), persiste el
+ * estado tras cada paso y, cuando un paso falla, compensa los pasos completados en orden inverso.
+ * Una saga interrumpida por una caída se reanuda desde su estado persistido.
  *
- * <p>Guarantees: a failed step is only treated as "no effect" when the participant rejected it
- * definitely ({@link StepFailures#isDefiniteRejection}) or confirmed it through {@link
- * SagaStep#verify}; an uncertain outcome leaves the saga IN_DOUBT instead of compensating or
- * declaring a result. A step whose execution succeeded is always compensated if the saga aborts,
- * also when recording its result failed; listener failures never trigger or alter compensation; the
- * intent to compensate is persisted before anything is undone. Steps and compensations must be
- * idempotent, since a crash between running one and recording it repeats it on resume.
+ * <p>Garantías: un paso fallido solo se trata como "sin efecto" cuando el participante lo rechazó
+ * de forma definitiva ({@link StepFailures#isDefiniteRejection}) o lo confirmó mediante {@link
+ * SagaStep#verify}; un resultado incierto deja la saga IN_DOUBT en lugar de compensar o declarar un
+ * resultado. Un paso cuya ejecución tuvo éxito siempre se compensa si la saga aborta, también
+ * cuando falló el registro de su resultado; los fallos de los listeners nunca disparan ni alteran
+ * la compensación; la intención de compensar se persiste antes de deshacer cualquier cosa. Los
+ * pasos y las compensaciones deben ser idempotentes, ya que una caída entre ejecutar uno y
+ * registrarlo lo repite al reanudar.
  */
 public final class SagaOrchestrator {
 
@@ -167,7 +168,8 @@ public final class SagaOrchestrator {
       for (int i = state.stepIndex(); i < steps.size(); i++) {
         SagaStep<C> step = steps.get(i);
         C current = context;
-        // Durable intent precedes the call. Recovery never treats an interrupted call as absent.
+        // La intención durable precede a la llamada. La recuperación nunca trata una llamada
+        // interrumpida como ausente.
         state =
             save(
                 state.next(
@@ -196,10 +198,10 @@ public final class SagaOrchestrator {
         } catch (Exception e) {
           lease.ensureHeld();
           if (!uncertainAttempt.get() && StepFailures.isDefiniteRejection(e)) {
-            // the participant refused: step i has no effect, compensate the steps before it
+            // el participante rechazó: el paso i no tiene efecto, se compensan los pasos anteriores
             return abort(definition, contexts, state, context, step, i - 1, e, lease);
           }
-          // uncertain: the effect may exist, ask the participant before deciding anything
+          // incierto: el efecto puede existir, se consulta al participante antes de decidir nada
           Resolution<C> r = resolve(definition, contexts, state, context, step, i, e, lease);
           if (r instanceof Resolution.Done<C> done) {
             return done.result();
@@ -220,9 +222,9 @@ public final class SagaOrchestrator {
                       clock.instant()),
                   lease);
         } catch (SagaConcurrencyException e) {
-          throw e; // another instance owns this saga
+          throw e; // otra instancia es dueña de esta saga
         } catch (RuntimeException e) {
-          // step i ran but its result could not be recorded: it must be compensated as well
+          // el paso i se ejecutó pero su resultado no pudo registrarse: también debe compensarse
           return abort(definition, contexts, state, context, step, i, e, lease);
         }
         String stepName = step.name();
@@ -251,8 +253,9 @@ public final class SagaOrchestrator {
   }
 
   /**
-   * Either a final result, or the state and context to continue with (step {@code i} applied). Two
-   * types instead of nullable fields: each case carries exactly what it needs, never a null.
+   * Un resultado final, o el estado y el contexto con los que continuar (paso {@code i} aplicado).
+   * Dos tipos en lugar de campos que admiten null: cada caso lleva exactamente lo que necesita,
+   * nunca un null.
    */
   private sealed interface Resolution<C> permits Resolution.Done, Resolution.Continue {
 
@@ -264,18 +267,18 @@ public final class SagaOrchestrator {
       return new Continue<>(state, context);
     }
 
-    /** The saga ended here. */
+    /** La saga terminó aquí. */
     record Done<C>(SagaResult<C> result) implements Resolution<C> {}
 
-    /** The saga goes on from this state. */
+    /** La saga continúa desde este estado. */
     record Continue<C>(SagaState state, C context) implements Resolution<C> {}
   }
 
   /**
-   * Step {@code i} failed with an uncertain outcome: verifies it with the participant. Applied: the
-   * saga continues as if the step succeeded. Terminally rejected: the previous steps are
-   * compensated. Observed absence stays uncertain. Unknown: the saga is left IN_DOUBT (nothing
-   * compensated, nothing declared) for recovery.
+   * El paso {@code i} falló con un resultado incierto: lo verifica con el participante. Aplicado:
+   * la saga continúa como si el paso hubiera tenido éxito. Rechazado de forma terminal: se
+   * compensan los pasos anteriores. La ausencia observada sigue siendo incierta. Desconocido: la
+   * saga queda IN_DOUBT (nada compensado, nada declarado) para la recuperación.
    */
   private <C> Resolution<C> resolve(
       SagaDefinition<C> definition,
@@ -386,9 +389,10 @@ public final class SagaOrchestrator {
   }
 
   /**
-   * Records the intent to compensate and then compensates from {@code lastToCompensate} down to the
-   * first step. The intent is persisted first: when even that write fails the exception propagates,
-   * nothing is undone and the saga stays IN_DOUBT, so recovery verifies the pending effect.
+   * Registra la intención de compensar y luego compensa desde {@code lastToCompensate} hasta el
+   * primer paso. La intención se persiste primero: cuando incluso esa escritura falla, la excepción
+   * se propaga, no se deshace nada y la saga queda IN_DOUBT, de modo que la recuperación verifica
+   * el efecto pendiente.
    */
   private <C> SagaResult<C> abort(
       SagaDefinition<C> definition,
@@ -462,8 +466,8 @@ public final class SagaOrchestrator {
                 lease);
         return new SagaResult<>(state.sagaId(), SagaStatus.FAILED, context, failedStep);
       }
-      // a failure to record progress propagates: resuming compensates step j again
-      // (compensations must be idempotent), it is never reported as a failed compensation
+      // un fallo al registrar el progreso se propaga: al reanudar se compensa de nuevo el paso j
+      // (las compensaciones deben ser idempotentes); nunca se informa como compensación fallida
       state =
           save(
               state.next(
@@ -480,7 +484,7 @@ public final class SagaOrchestrator {
     return new SagaResult<>(state.sagaId(), SagaStatus.COMPENSATED, context, failedStep);
   }
 
-  /** Listeners observe the saga; their failures never change its outcome. */
+  /** Los listeners observan la saga; sus fallos nunca cambian su resultado. */
   private static void notifyListener(Runnable call) {
     try {
       call.run();

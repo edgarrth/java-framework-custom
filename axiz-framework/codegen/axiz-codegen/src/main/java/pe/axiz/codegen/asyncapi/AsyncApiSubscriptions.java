@@ -15,7 +15,7 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.codegen.openapi.SafeYaml;
 import pe.axiz.codegen.output.SafePaths;
 
-/** Checks declared subscriptions without starting Spring or resolving environment secrets. */
+/** Verifica las suscripciones declaradas sin arrancar Spring ni resolver secretos del entorno. */
 public final class AsyncApiSubscriptions {
   private static final String KEY = "axiz.messaging.consumer.subscriptions";
 
@@ -99,7 +99,7 @@ public final class AsyncApiSubscriptions {
     if (map.containsKey(path)) return map.get(path);
     int dot = path.indexOf('.');
     if (dot < 0) return map.get(path);
-    // Spring accepts nested keys and dotted prefixes such as axiz.messaging.
+    // Spring acepta claves anidadas y prefijos con puntos como axiz.messaging.
     for (int split = dot; split >= 0; split = path.indexOf('.', split + 1)) {
       Object value = lookup(map.get(path.substring(0, split)), path.substring(split + 1));
       if (value != null) return value;

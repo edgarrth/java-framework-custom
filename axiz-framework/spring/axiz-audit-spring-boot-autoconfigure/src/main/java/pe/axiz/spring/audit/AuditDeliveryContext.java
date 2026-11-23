@@ -5,7 +5,10 @@ import io.micrometer.observation.contextpropagation.ObservationThreadLocalAccess
 import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.context.RequestContext;
 
-/** Queue submissions retain request/observation metadata, excluding transaction accessors. */
+/**
+ * Los envíos a la cola conservan los metadatos de solicitud y observación, sin los accesores de
+ * transacción.
+ */
 final class AuditDeliveryContext {
   private static final ContextSnapshotFactory SNAPSHOTS =
       ContextSnapshotFactory.builder()

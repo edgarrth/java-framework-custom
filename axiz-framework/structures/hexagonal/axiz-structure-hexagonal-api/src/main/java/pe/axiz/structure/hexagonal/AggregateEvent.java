@@ -2,9 +2,9 @@ package pe.axiz.structure.hexagonal;
 
 import pe.axiz.core.domain.DomainEvent;
 
-/** A domain event that names its aggregate type, used for routing and partitioning. */
+/** Evento de dominio que nombra su tipo de agregado, usado para enrutamiento y particionado. */
 public interface AggregateEvent extends DomainEvent {
 
-  /** Aggregate type, e.g. {@code payment}. */
+  /** Tipo de agregado, por ejemplo {@code payment}. */
   String aggregateType();
 }

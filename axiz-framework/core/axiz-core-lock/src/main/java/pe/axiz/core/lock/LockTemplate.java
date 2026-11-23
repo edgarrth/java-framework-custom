@@ -14,30 +14,31 @@ import pe.axiz.core.concurrent.LeaseTiming;
 import pe.axiz.core.errors.BusinessException;
 
 /**
- * Serializes work on a resource: waits up to {@code waitTimeout} for the lock, renews the lease in
- * the background (virtual thread, every third of the lease) while the work runs and always releases
- * it. If the lock cannot be obtained the caller gets a 409 business error.
+ * Serializa el trabajo sobre un recurso: espera hasta {@code waitTimeout} por el lock, renueva el
+ * lease en segundo plano (hilo virtual, cada tercio del lease) mientras corre el trabajo y siempre
+ * lo libera. Si no puede obtenerse el lock, quien llama recibe un error de negocio 409.
  *
- * <p>A lease that is lost while the work runs is never reported as a success: the store answered
- * that another owner holds it, or it could not be renewed before it expired. The thread running the
- * work is interrupted at that moment (cooperative cancellation: blocking calls end with an {@link
- * InterruptedException}), and the work ends in a {@link LockLostException} (503, retryable) instead
- * of returning its result; if the work failed on its own, its exception is thrown with the loss
- * attached as suppressed. Work with external effects receives the {@link LockLease} to check it
- * right before each effect and to use its token in conditional writes; see {@link LockLease} for
- * why the resource itself must also reject an old owner.
+ * <p>Un lease que se pierde mientras corre el trabajo nunca se informa como éxito: el almacén
+ * respondió que otro propietario lo tiene, o no pudo renovarse antes de expirar. En ese momento se
+ * interrumpe el hilo que ejecuta el trabajo (cancelación cooperativa: las llamadas bloqueantes
+ * terminan con una {@link InterruptedException}), y el trabajo termina en una {@link
+ * LockLostException} (503, reintentable) en lugar de devolver su resultado; si el trabajo falló por
+ * sí mismo, se lanza su excepción con la pérdida adjunta como suprimida. El trabajo con efectos
+ * externos recibe el {@link LockLease} para verificarlo justo antes de cada efecto y para usar su
+ * token en escrituras condicionales; ver {@link LockLease} para saber por qué el propio recurso
+ * también debe rechazar a un propietario anterior.
  *
- * <p>The lease is counted from before each request to the store, on the monotonic clock, minus a
- * margin for clock drift between this process and the store (1% of the lease plus 2 ms): time spent
- * waiting for the answer is time the store already counted. An acquisition that answers after its
- * lease ran out is released and not used (another owner may hold the resource by then); the
- * template keeps trying until {@code waitTimeout}.
+ * <p>El lease se cuenta desde antes de cada petición al almacén, con el reloj monotónico, menos un
+ * margen por la deriva de reloj entre este proceso y el almacén (1% del lease más 2 ms): el tiempo
+ * de espera de la respuesta es tiempo que el almacén ya contó. Una adquisición que responde después
+ * de agotado su lease se libera y no se usa (para entonces otro propietario puede tener el
+ * recurso); la plantilla sigue intentando hasta {@code waitTimeout}.
  */
 public final class LockTemplate {
 
   private static final Logger LOG = LoggerFactory.getLogger(LockTemplate.class);
 
-  /** Work that receives its lease. */
+  /** Trabajo que recibe su lease. */
   @FunctionalInterface
   public interface LeasedWork<T extends @Nullable Object> {
     T call(LockLease lease) throws Exception;
@@ -54,10 +55,10 @@ public final class LockTemplate {
   }
 
   /**
-   * Runs work under the lock.
+   * Ejecuta un trabajo bajo el lock.
    *
-   * @throws BusinessException {@link LockErrors#BUSY} when the lock is not acquired in time
-   * @throws LockLostException when the lease was lost before the work finished
+   * @throws BusinessException {@link LockErrors#BUSY} cuando el lock no se adquiere a tiempo
+   * @throws LockLostException cuando el lease se perdió antes de que el trabajo terminara
    */
   public <T extends @Nullable Object> T withLock(
       String resource, Duration lease, Duration waitTimeout, Callable<T> work) throws Exception {
@@ -65,10 +66,10 @@ public final class LockTemplate {
   }
 
   /**
-   * Runs work that checks its lease under the lock.
+   * Ejecuta bajo el lock un trabajo que verifica su lease.
    *
-   * @throws BusinessException {@link LockErrors#BUSY} when the lock is not acquired in time
-   * @throws LockLostException when the lease was lost before the work finished
+   * @throws BusinessException {@link LockErrors#BUSY} cuando el lock no se adquiere a tiempo
+   * @throws LockLostException cuando el lease se perdió antes de que el trabajo terminara
    */
   public <T extends @Nullable Object> T withLock(
       String resource, Duration lease, Duration waitTimeout, LeasedWork<T> work) throws Exception {
@@ -132,7 +133,7 @@ public final class LockTemplate {
     }
   }
 
-  /** A handle and the moment (monotonic nanos) its lease stops being trusted. */
+  /** Handle y momento (nanos monotónicos) en que su lease deja de ser confiable. */
   private record Acquired(LockHandle handle, long validUntil) {}
 
   private Acquired acquire(String resource, Duration lease, Duration waitTimeout)
@@ -160,7 +161,10 @@ public final class LockTemplate {
     }
   }
 
-  /** Until when a lease asked for at {@code sent} is trusted: the lease minus the drift margin. */
+  /**
+   * Hasta cuándo se confía en un lease solicitado en {@code sent}: el lease menos el margen de
+   * deriva.
+   */
   static long validUntil(long sent, Duration lease) {
     return LeaseTiming.validUntil(sent, lease);
   }
@@ -169,15 +173,16 @@ public final class LockTemplate {
     try {
       handle.release();
     } catch (RuntimeException e) {
-      // the store expires it anyway; releasing only shortens the wait of the next owner
+      // el almacén lo expira de todos modos; liberar solo acorta la espera del siguiente
+      // propietario
       LOG.debug("Lock on {} not released: {}", handle.resource(), e.getClass().getSimpleName());
     }
   }
 
   /**
-   * Renews every third of the lease. A renewal the store refuses loses the lease at once; one that
-   * fails (store unavailable) is retried, and the lease is lost when its time runs out without a
-   * renewal.
+   * Renueva cada tercio del lease. Una renovación que el almacén rechaza pierde el lease de
+   * inmediato; una que falla (almacén no disponible) se reintenta, y el lease se pierde cuando se
+   * agota su tiempo sin una renovación.
    */
   static void renewLoop(Lease held, Duration lease, AtomicBoolean done) {
     long every = Math.max(10, lease.toMillis() / 3);
@@ -213,16 +218,16 @@ public final class LockTemplate {
     }
   }
 
-  /** State of one acquisition, shared by the work and the renewer. */
+  /** Estado de una adquisición, compartido por el trabajo y el renovador. */
   static final class Lease implements LockLease {
 
     private final LockHandle handle;
     private final Thread worker;
-    // monotonic nanos (System.nanoTime) after which the lease is no longer trusted
+    // nanos monotónicos (System.nanoTime) a partir de los cuales el lease deja de ser confiable
     private volatile long heldUntil;
     private volatile boolean lost;
     private volatile @Nullable Throwable cause;
-    // guarded by this: lose() and finish() decide together whether the work gets interrupted
+    // protegido por this: lose() y finish() deciden juntos si el trabajo se interrumpe
     private boolean running = true;
     private boolean interrupted;
 
@@ -232,7 +237,7 @@ public final class LockTemplate {
       this.worker = worker;
     }
 
-    /** Marks the lease lost and interrupts the work if it is still running. */
+    /** Marca el lease como perdido e interrumpe el trabajo si sigue en ejecución. */
     synchronized void lose(@Nullable Throwable why) {
       if (lost) {
         return;
@@ -246,9 +251,10 @@ public final class LockTemplate {
     }
 
     /**
-     * Called by the work's thread when the work ended; clears the interrupt this lease caused.
+     * La llama el hilo del trabajo cuando el trabajo terminó; limpia la interrupción que causó este
+     * lease.
      *
-     * @return whether the lease was lost
+     * @return indica si el lease se perdió
      */
     boolean finish() {
       boolean interruptedByLease;

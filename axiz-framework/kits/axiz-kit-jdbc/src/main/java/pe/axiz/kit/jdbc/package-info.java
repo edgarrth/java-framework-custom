@@ -1,4 +1,6 @@
-/** Transaction-aware JDBC connections, SQLSTATE helpers and local transactions. */
+/**
+ * Conexiones JDBC conscientes de la transacción, utilidades de SQLSTATE y transacciones locales.
+ */
 @NullMarked
 package pe.axiz.kit.jdbc;
 

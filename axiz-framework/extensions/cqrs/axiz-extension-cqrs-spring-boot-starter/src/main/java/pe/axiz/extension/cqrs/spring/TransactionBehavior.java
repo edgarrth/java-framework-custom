@@ -6,7 +6,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 import pe.axiz.extension.cqrs.Invocation;
 import pe.axiz.extension.cqrs.PipelineBehavior;
 
-/** Commands run in a read-write transaction, queries in a read-only one. */
+/**
+ * Los comandos se ejecutan en una transacción de lectura y escritura; las consultas, en una de solo
+ * lectura.
+ */
 public final class TransactionBehavior implements PipelineBehavior {
 
   private final TransactionTemplate write;

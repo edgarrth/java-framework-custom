@@ -3,13 +3,14 @@ package pe.axiz.core.secrets;
 import java.time.Duration;
 
 /**
- * Bounded cache measurements: callbacks receive no secret identifier or secret value.
- * Implementations must return promptly without blocking; failures cannot change cache results.
+ * Mediciones de una caché acotada: los callbacks no reciben ningún identificador ni valor de
+ * secreto. Las implementaciones deben retornar rápido sin bloquear; los fallos no pueden cambiar
+ * los resultados de la caché.
  */
 public interface SecretCacheObserver {
   SecretCacheObserver NONE = new SecretCacheObserver() {};
 
-  /** Result of an actual delegated load, distinct from a cache lookup miss. */
+  /** Resultado de una carga delegada real, distinto de un fallo de búsqueda en la caché. */
   enum LoadOutcome {
     FOUND,
     ABSENT,

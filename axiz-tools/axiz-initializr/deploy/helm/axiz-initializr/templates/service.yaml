@@ -6,7 +6,7 @@ metadata:
     {{- include "service.labels" . | nindent 4 }}
 spec:
   type: ClusterIP
-  # Servlet sessions are local. Ingresses routing directly to pods must also enable affinity.
+  # Las sesiones servlet son locales. Los ingress que enrutan directamente a los pods también deben habilitar la afinidad.
   sessionAffinity: ClientIP
   sessionAffinityConfig:
     clientIP:

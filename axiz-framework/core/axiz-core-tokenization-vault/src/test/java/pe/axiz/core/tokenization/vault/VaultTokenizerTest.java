@@ -237,7 +237,7 @@ class VaultTokenizerTest {
     assertEquals(
         UncertainTokenOperation.Reason.COMMITTED_AUDIT_UNCONFIRMED, uncertain.getLast().reason());
     assertEquals(
-        2, store.records.size()); // Confirmed mutation is never rolled back as audit compensation.
+        2, store.records.size()); // Una mutación confirmada no se revierte como compensación.
     auditDown = false;
     assertFalse(tokenize("00112233", DNI, "one").created());
   }

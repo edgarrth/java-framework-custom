@@ -154,7 +154,7 @@ class HttpClientTest {
         .block(Duration.ofSeconds(5));
     assertEquals("Bearer inbound-token", sent.get().headers().getFirst("Authorization"));
 
-    // without an inbound token nothing is relayed
+    // sin token entrante no se reenvía nada
     filter.filter(request, next).block(Duration.ofSeconds(5));
     assertNull(sent.get().headers().getFirst("Authorization"));
   }

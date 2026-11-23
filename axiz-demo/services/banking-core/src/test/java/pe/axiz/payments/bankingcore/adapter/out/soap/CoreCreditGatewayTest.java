@@ -21,7 +21,7 @@ import pe.axiz.spring.soap.SoapClients;
 
 class CoreCreditGatewayTest {
 
-  /** SOAP clients that answer a fixed payload and record what was called. */
+  /** Clientes SOAP que responden un payload fijo y registran lo que se invocó. */
   static final class Answering extends SoapClients {
     final List<String> calls = new ArrayList<>();
     String response = "";

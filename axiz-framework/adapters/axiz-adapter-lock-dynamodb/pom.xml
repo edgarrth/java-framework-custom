@@ -29,8 +29,8 @@
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
-    <!-- how the framework builds this adapter's AWS client (endpoint, region, observation): the
-         auto-configuration uses it, so it travels with the adapter -->
+    <!-- cómo construye el framework el cliente de AWS de este adaptador (endpoint, región, observación): la
+         autoconfiguración lo usa, así que viaja con el adaptador -->
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-adapter-aws</artifactId>

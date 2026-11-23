@@ -10,8 +10,9 @@ import pe.axiz.core.concurrent.AsyncLoadingCache;
 import pe.axiz.core.concurrent.Stages;
 
 /**
- * Synchronous secret cache. Shares bounded TTL/coalescing/eviction bookkeeping with the native
- * variant; its delegate executes on the synchronous caller, outside the cache bookkeeping lock.
+ * Caché síncrona de secretos. Comparte la contabilidad acotada de TTL, coalescencia y desalojo con
+ * la variante nativa; su delegado se ejecuta en el llamador síncrono, fuera del lock de
+ * contabilidad de la caché.
  */
 public final class CachingSecretResolver implements SecretResolver, AutoCloseable {
   static final int MAX_CACHED_SECRETS = 1000;

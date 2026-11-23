@@ -11,7 +11,7 @@ var scope = new FieldScope(authenticatedTenant, "customers");
 
 try (var original = SecretValue.of("00123456")) {
   ProtectedField stored = protection.protect(original, scope, customerId);
-  // Persist both fields atomically, with parameterized queries and application authorization.
+  // Ambos campos se persisten de forma atómica, con consultas parametrizadas y autorización de la aplicación.
   repository.save(customerId, stored.ciphertext().encoded(), stored.index().encoded());
 }
 try (var sought = SecretValue.of("00123456")) {

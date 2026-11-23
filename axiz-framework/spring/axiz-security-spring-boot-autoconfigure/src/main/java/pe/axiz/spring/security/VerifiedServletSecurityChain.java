@@ -5,7 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import org.springframework.security.web.SecurityFilterChain;
 
-/** Identifies the chain whose rules were actually compiled by this auto-configuration. */
+/** Identifica la cadena cuyas reglas compiló realmente esta autoconfiguración. */
 final class VerifiedServletSecurityChain implements SecurityFilterChain {
   private final SecurityFilterChain delegate;
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bind native CLI components to one signed Maven build before independent promotion."""
+"""Vincula los componentes nativos de la CLI a un único build de Maven firmado antes de la promoción independiente."""
 import argparse
 import io
 import json
@@ -97,7 +97,7 @@ def create(root, metadata, spec, target, output):
     executable = spec["binary"] + (".exe" if target == "windows-x64" else "")
     path = safe_file(root, str(PurePosixPath(spec["module"]) / "target" / executable))
     data = target_binary(path, target)
-    # Smoke commands inherit no repository credentials.
+        # Los comandos de smoke no heredan credenciales del repositorio.
     allowed = {"PATH", "JAVA_HOME", "SYSTEMROOT", "SystemRoot", "COMSPEC", "WINDIR", "TMP", "TEMP", "TMPDIR", "HOME", "USERPROFILE", "LANG"}
     environment = {key: value for key, value in os.environ.items() if key in allowed}
     commands = [[str(path), "--version"]]
@@ -189,7 +189,7 @@ def verify_archive(path, binary, target):
 
 
 def new_file(root, relative):
-    """Preflight paths without following even a dangling link or overwriting evidence."""
+    """Verifica previamente las rutas sin seguir ni siquiera un enlace colgante y sin sobrescribir evidencia."""
     if root.is_symlink() or not root.is_dir():
         raise ValueError("Native staging root must be a directory, not a symlink")
     name = PurePosixPath(relative)
@@ -248,7 +248,7 @@ def merge(root, metadata_path, components, staging, reports):
         group = own_coordinate["groupId"].replace(".", "/")
         artifact = own_coordinate["artifactId"]
         prefix = f"{group}/{artifact}/{data['version']}/{artifact}-{data['version']}"
-        safe_file(staging, prefix + ".pom")  # Only enrich a coordinate already built by Maven.
+        safe_file(staging, prefix + ".pom")  # Solo se enriquece una coordenada que Maven ya construyó.
         relative = prefix + "-native-" + target + "." + PLATFORMS[target][2]
         new_file(staging, relative)
         new_file(staging, relative + ".sha256")
@@ -257,7 +257,7 @@ def merge(root, metadata_path, components, staging, reports):
         planned.append((target, component, directory, relative))
     if {item.name for item in components.iterdir()} != {f"native-component-{data['build']['run_attempt']}-{target}" for target in spec["platforms"]}:
         raise ValueError("Unexpected native platform bundle")
-    # Preflight every platform and signature before changing Maven staging.
+        # Se verifica previamente cada plataforma y firma antes de modificar el staging de Maven.
     records = []
     for target, component, directory, relative in planned:
         source = safe_file(directory, component["archive"]["path"])
@@ -276,7 +276,7 @@ def merge(root, metadata_path, components, staging, reports):
 
 
 def validate_manifest(data, bundle=None):
-    """Check the evidence chain sealed by the main build signature, without trusting extra files."""
+    """Verifica la cadena de evidencia sellada por la firma del build principal, sin confiar en archivos adicionales."""
     spec = data["parameters"].get("native")
     gates = [gate for gate in data["gates"] if gate["name"] == "native"]
     if spec is None:
@@ -341,7 +341,7 @@ def validate_manifest(data, bundle=None):
 
 
 def release_assets(data, bundle):
-    """Expose platform downloads only for native bytes bound to the approved main manifest."""
+    """Expone las descargas por plataforma solo para bytes nativos vinculados al manifiesto principal aprobado."""
     items = validate_manifest(data, bundle)
     if not items:
         return {}

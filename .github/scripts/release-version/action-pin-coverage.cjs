@@ -1,5 +1,5 @@
 "use strict";
-// Called with the effective preset resolved by Renovate itself in the adoption regression.
+// Se invoca con el preset efectivo resuelto por el propio Renovate en la regresión de adopción.
 module.exports = async function actionCoverage({ config, source, moduleAt, python, temporary }) {
   const assert = require('node:assert/strict');
   const fs = require('node:fs');

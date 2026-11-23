@@ -6,7 +6,10 @@ import java.util.Objects;
 import java.util.function.Function;
 import pe.axiz.core.sensitive.SelfMasking;
 
-/** Closeable secret with identity equality; clearing memory is best effort, not a JVM guarantee. */
+/**
+ * Secreto cerrable con igualdad por identidad; limpiar la memoria es de mejor esfuerzo, no una
+ * garantía de la JVM.
+ */
 public final class SecretValue implements SelfMasking, AutoCloseable {
   private final char[] value;
   private final Object lock = new Object();
@@ -24,7 +27,10 @@ public final class SecretValue implements SelfMasking, AutoCloseable {
     return new SecretValue(Objects.requireNonNull(value).clone());
   }
 
-  /** Returns an immutable copy which the JVM cannot erase. Prefer use for bounded operations. */
+  /**
+   * Devuelve una copia inmutable que la JVM no puede borrar. Es preferible use para operaciones
+   * acotadas.
+   */
   public String reveal() {
     synchronized (lock) {
       requireOpen();
@@ -40,7 +46,8 @@ public final class SecretValue implements SelfMasking, AutoCloseable {
   }
 
   /**
-   * Decodes bounded Base64 without an immutable String; the caller owns and must clear the result.
+   * Decodifica Base64 acotado sin un String inmutable; quien llama es dueño del resultado y debe
+   * limpiarlo.
    */
   public byte[] base64Bytes(int minimum, int maximum) {
     synchronized (lock) {
@@ -73,7 +80,8 @@ public final class SecretValue implements SelfMasking, AutoCloseable {
   }
 
   /**
-   * Supplies a private copy and erases it on success or failure; the callback must not retain it.
+   * Suministra una copia privada y la borra en caso de éxito o de fallo; el callback no debe
+   * retenerla.
    */
   public <T> T use(Function<char[], T> action) {
     Objects.requireNonNull(action);
@@ -85,7 +93,9 @@ public final class SecretValue implements SelfMasking, AutoCloseable {
     }
   }
 
-  /** Compares snapshots without String conversion or locks held while acquiring another lock. */
+  /**
+   * Compara snapshots sin conversión a String ni locks retenidos mientras se adquiere otro lock.
+   */
   public boolean matches(SecretValue other) {
     Objects.requireNonNull(other);
     char[] left = revealChars();

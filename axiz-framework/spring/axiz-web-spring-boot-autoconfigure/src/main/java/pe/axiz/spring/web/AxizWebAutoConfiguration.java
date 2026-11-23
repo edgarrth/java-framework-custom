@@ -23,8 +23,9 @@ import tools.jackson.core.StreamReadConstraints;
 import tools.jackson.databind.DeserializationFeature;
 
 /**
- * Web conventions for servlet and reactive applications: request context, header catalog, paging,
- * CORS, API versioning and JSON customization (Boot's mapper is customized, never replaced).
+ * Convenciones web para aplicaciones servlet y reactivas: contexto de la solicitud, catálogo de
+ * cabeceras, paginación, CORS, versionado de la API y personalización de JSON (el mapper de Boot se
+ * personaliza, nunca se reemplaza).
  */
 @AutoConfiguration(
     afterName = "pe.axiz.spring.errors.AxizErrorsAutoConfiguration",
@@ -65,7 +66,10 @@ public class AxizWebAutoConfiguration {
         properties.pagination().defaultSize(), properties.pagination().maxSize());
   }
 
-  /** Jackson: omits nulls and rejects undeclared request properties unless configured otherwise. */
+  /**
+   * Jackson: omite los nulos y rechaza las propiedades de solicitud no declaradas salvo
+   * configuración en contrario.
+   */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnClass(
       name = "org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer")

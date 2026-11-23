@@ -97,8 +97,8 @@ comprueba logs, auditoría, problemas y el conversor/encoder de respuestas con P
 sintéticos. Recorre éxito, fallo, timeout y evidencia de rollback. Los servicios JPA provocan
 además una violación UNIQUE en PostgreSQL y revierten la transacción, comprobando que el mensaje
 del driver no sale al log. Los workers sin HTTP prueban el canal de respuesta del enmascarador;
-su serializador de eventos conserva los datos. Amplía este canario con tus DTO, integraciones y
-appenders; no uses datos reales. Ejecuta `./mvnw -Dtest=SensitiveDataCanaryTest test` con Docker.
+su serializador de eventos conserva los datos. Este canario se amplía con los DTO, integraciones y
+appenders propios, sin datos reales. Se ejecuta `./mvnw -Dtest=SensitiveDataCanaryTest test` con Docker.
 
 ## Auditoría
 
@@ -127,5 +127,5 @@ no demuestra entrega ni persistencia durable. Los proveedores se seleccionan por
 El tipo CloudEvents es `pe.axiz.audit.event.v1`, así un `event-processor` puede consumirlos como
 cualquier otro evento (en el demo, `notifications-processor` los archiva en S3).
 
-Consulta [Seguridad](seguridad.md#auditoria-durable) para fallos, sellado, publicación estricta,
+Ver [Seguridad](seguridad.md#auditoria-durable) para fallos, sellado, publicación estricta,
 checkpoints y límites de las garantías.

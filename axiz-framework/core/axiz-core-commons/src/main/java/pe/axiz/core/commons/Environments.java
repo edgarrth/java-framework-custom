@@ -5,19 +5,21 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Operational profile of a deployment ({@code axiz.config.environment}). State kept in one process
- * (in-memory idempotency keys, locks, object storage) is only correct with a single replica and no
- * restarts, so it is accepted in {@link #SINGLE_PROCESS} environments and rejected anywhere else: a
- * deployed environment must use a shared store for the guarantees the framework declares.
+ * Perfil operativo de un despliegue ({@code axiz.config.environment}). El estado guardado en un
+ * proceso (claves de idempotencia, locks y almacenamiento de objetos en memoria) solo es correcto
+ * con una única réplica y sin reinicios, por lo que se acepta en entornos {@link #SINGLE_PROCESS} y
+ * se rechaza en cualquier otro: un entorno desplegado debe usar un almacén compartido para las
+ * garantías que declara el framework.
  *
- * <p>This is also the common allowlist for explicitly requested transport exceptions (HTTP and
- * data-store TLS), embedded databases, schema-changing JPA modes, credentialed CORS policy and
- * local audit defaults. Active Spring profiles never grant these exceptions. Each integration must
- * still require its own explicit exception flag or selector where applicable.
+ * <p>Es también la lista común de permitidos para excepciones de transporte solicitadas de forma
+ * explícita (TLS de HTTP y de almacenes de datos), bases de datos embebidas, modos de JPA que
+ * cambian el esquema, política CORS con credenciales y valores por defecto de auditoría local. Los
+ * perfiles activos de Spring nunca conceden estas excepciones. Cada integración debe igualmente
+ * exigir su propio flag o selector de excepción explícito cuando corresponda.
  */
 public final class Environments {
 
-  /** Environments where per-process state is acceptable. */
+  /** Entornos donde el estado por proceso es aceptable. */
   public static final Set<String> SINGLE_PROCESS = Set.of("local", "test", "ci");
 
   private Environments() {}
@@ -28,18 +30,18 @@ public final class Environments {
   }
 
   /**
-   * Fails when {@code environment} is a deployed one, or is not set.
+   * Falla cuando {@code environment} es un entorno desplegado o no está definido.
    *
-   * @param setting the property that selected the in-memory implementation, e.g. {@code
+   * @param setting la propiedad que seleccionó la implementación en memoria, por ejemplo {@code
    *     axiz.lock.store=memory}
-   * @param alternatives what to use instead, e.g. {@code redis or dynamodb}
-   * @param reason the guarantee that a per-process store would break
+   * @param alternatives qué usar en su lugar, por ejemplo {@code redis or dynamodb}
+   * @param reason la garantía que rompería un almacén por proceso
    */
   public static void requireSingleProcess(
       @Nullable String environment, String setting, String alternatives, String reason) {
     if (!allowsInMemoryState(environment)) {
-      // an unset environment is never taken for a local one: a deployment that lost the setting
-      // must not fall back to per-process state
+      // un entorno no definido nunca se toma por uno local: un despliegue que perdió la
+      // configuración no debe recurrir al estado por proceso
       String current =
           environment == null || environment.isBlank()
               ? "axiz.config.environment is not set; set it to local or test where one process"

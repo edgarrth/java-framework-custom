@@ -1,92 +1,93 @@
 # Settlement Batch
 
-Daily settlement and reconciliation.
+Liquidación y conciliación diarias.
 
 | | |
 |---|---|
-| Archetype | `batch`: Scheduled batch processing |
-| Structure | `batch` |
-| Extensions | None |
+| Arquetipo | `batch`: Procesamiento batch programado |
+| Estructura | `batch` |
+| Extensiones | Ninguna |
 | Stack | `servlet` |
-| Persistence | `aurora` |
+| Persistencia | `aurora` |
 | axiz | `2.0.0` |
-| Base package | `pe.axiz.payments.settlement` |
+| Paquete base | `pe.axiz.payments.settlement` |
 
-## In the demo
+## En la demo
 
-Kubernetes CronJob that loads the daily settlement file of the payment network (fixed width,
-`in/settlement/NET-SETTLE-<yyyyMMdd>.txt`, previous business day by default) into Aurora:
+CronJob de Kubernetes que carga en Aurora el archivo diario de liquidación de la red de pagos
+(ancho fijo, `in/settlement/NET-SETTLE-<yyyyMMdd>.txt`, por defecto el día hábil anterior):
 
-1. `validate`: trailer control totals (count and amount) before loading anything.
-2. `load`: chunks of 500 lines, idempotent insert by end-to-end id, invalid CCIs filtered.
-3. `summary`: totals per currency and status as metrics and `out/settlement/<file>.summary.json`.
+1. `validate`: totales de control del trailer (cantidad e importe) antes de cargar nada.
+2. `load`: bloques de 500 líneas, inserción idempotente por id de extremo a extremo y CCI inválidos filtrados.
+3. `summary`: totales por moneda y estado como métricas y en `out/settlement/<file>.summary.json`.
 
-One job instance per file (a file is never loaded twice) and a ShedLock cluster lock so manual and
-scheduled runs never overlap. The pod exits with the job's exit code.
+Una instancia de job por archivo (un archivo nunca se carga dos veces) y un lock de clúster con
+ShedLock para que las ejecuciones manuales y programadas nunca se superpongan. El pod termina con el
+código de salida del job.
 
-## Requirements
+## Requisitos
 
-- JDK 25 (Maven comes with the wrapper `./mvnw`)
-- Docker, for `docker compose` and the Testcontainers tests
-- Access to the GitHub Packages repository that publishes axiz
+- JDK 25 (Maven viene con el wrapper `./mvnw`)
+- Docker, para `docker compose` y las pruebas con Testcontainers
+- Acceso al repositorio de GitHub Packages que publica axiz
 
-## Build and test
+## Compilación y pruebas
 
 ```bash
-./mvnw verify                 # enforcer rules, tests and architecture rules
-./mvnw spotless:apply         # formats the code (run it before pushing)
-./mvnw -Pquality verify       # CI gate: + format check, Checkstyle, Error Prone + NullAway, SpotBugs/FindSecBugs,
-                              # dependency convergence and coverage thresholds
-./mvnw -Pnative native:compile  # GraalVM native image
+./mvnw verify                 # reglas de enforcer, pruebas y reglas de arquitectura
+./mvnw spotless:apply         # formatea el código (se ejecuta antes de hacer push)
+./mvnw -Pquality verify       # control de CI: además formato, Checkstyle, Error Prone con NullAway, SpotBugs/FindSecBugs,
+                              # convergencia de dependencias y umbrales de cobertura
+./mvnw -Pnative native:compile  # imagen nativa con GraalVM
 ```
 
-`ArchitectureTest` enforces the rules of the `batch` style and the general axiz rules;
-`SettlementBatchApplicationTest` starts the service against real dependencies in containers.
+`ArchitectureTest` hace cumplir las reglas del estilo `batch` y las reglas generales de axiz;
+`SettlementBatchApplicationTest` arranca el servicio contra dependencias reales en contenedores.
 
-## Run locally
+## Ejecución local
 
 ```bash
 local/dev-secrets.sh       # random development-only secrets in local/secrets (git-ignored)
 docker compose up -d
-export AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_REGION=us-east-1   # LocalStack, not real credentials
+export AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_REGION=us-east-1   # LocalStack, no son credenciales reales
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-Or `axiz local up` / `axiz local down`. Traces, metrics and logs are in Grafana at
-<http://localhost:3000> (OpenTelemetry collector on ports 4317/4318).
+También `axiz local up` / `axiz local down`. Las trazas, métricas y logs están en Grafana en
+<http://localhost:3000> (colector OpenTelemetry en los puertos 4317/4318).
 
-## Structure
+## Estructura
 
-- `pe.axiz.payments.settlement.job`: Jobs, steps, readers, processors and writers.
+- `pe.axiz.payments.settlement.job`: Jobs, pasos, readers, processors y writers.
 
-## Capabilities
+## Capacidades
 
-| Capability | Starter | What it brings |
+| Capacidad | Starter | Qué aporta |
 |---|---|---|
-| `foundation` | `axiz-foundation-spring-boot-starter` | Clock and business calendar (zone, weekends, holidays), JSON and validation defaults |
-| `errors` | `axiz-errors-spring-boot-starter` | RFC 9457 problem details, error catalog (ConfigMap `APP_NAME-errors`), external error mapping |
-| `logging` | `axiz-logging-spring-boot-starter` | Structured JSON logs with trace and request context, HTTP access log with masking |
-| `observability` | `axiz-observability-spring-boot-starter` | OpenTelemetry traces and metrics through Micrometer (OTLP), no Java agent |
-| `metrics` | `axiz-metrics-spring-boot-starter` | Generic event metrics (count, duration, amounts by currency, values) with bounded tags |
-| `config` | `axiz-config-spring-boot-starter` | ConfigMaps mounted as files (axiz-common, `APP_NAME`, `APP_NAME-errors`; no Kubernetes API access), Parameter Store, required keys check |
-| `storage-s3` | `axiz-storage-spring-boot-starter` | Object storage on S3 (streaming, presigned URLs, metadata), observed |
-| `audit` | `axiz-audit-spring-boot-starter` | @Auditable business audit trail, sanitized by sensitivity, published asynchronously |
-| `jpa` | `axiz-jpa-spring-boot-starter` | Aurora PostgreSQL with JPA, Flyway, AWS JDBC wrapper (IAM, failover, read/write splitting), auditing and encrypted columns |
-| `scheduling` | `axiz-scheduling-spring-boot-starter` | @Scheduled jobs with ShedLock (JDBC or DynamoDB) so only one replica runs them |
+| `foundation` | `axiz-foundation-spring-boot-starter` | Reloj y calendario de negocio (zona, fines de semana, feriados), valores por defecto de JSON y validación |
+| `errors` | `axiz-errors-spring-boot-starter` | Detalles de problema RFC 9457, catálogo de errores (ConfigMap `APP_NAME-errors`) y mapeo de errores externos |
+| `logging` | `axiz-logging-spring-boot-starter` | Logs JSON estructurados con contexto de traza y de petición, log de acceso HTTP con enmascaramiento |
+| `observability` | `axiz-observability-spring-boot-starter` | Trazas y métricas OpenTelemetry mediante Micrometer (OTLP), sin agente Java |
+| `metrics` | `axiz-metrics-spring-boot-starter` | Métricas genéricas de eventos (conteo, duración, importes por moneda, valores) con etiquetas acotadas |
+| `config` | `axiz-config-spring-boot-starter` | ConfigMaps montados como archivos (axiz-common, `APP_NAME`, `APP_NAME-errors`; sin acceso a la API de Kubernetes), Parameter Store y comprobación de claves obligatorias |
+| `storage-s3` | `axiz-storage-spring-boot-starter` | Almacenamiento de objetos en S3 (streaming, URL prefirmadas, metadatos), observado |
+| `audit` | `axiz-audit-spring-boot-starter` | Pista de auditoría de negocio con @Auditable, saneada según sensibilidad y publicada de forma asíncrona |
+| `jpa` | `axiz-jpa-spring-boot-starter` | Aurora PostgreSQL con JPA, Flyway, AWS JDBC wrapper (IAM, failover, separación de lectura y escritura), auditoría y columnas cifradas |
+| `scheduling` | `axiz-scheduling-spring-boot-starter` | Jobs @Scheduled con ShedLock (JDBC o DynamoDB) para que solo una réplica los ejecute |
 
-Add more with `axiz add <capability>`: it adds the starter, its properties, the ConfigMap keys and a
-usage example.
+Se agregan más con `axiz add <capability>`: añade el starter, sus propiedades, las claves del ConfigMap
+y un ejemplo de uso.
 
-## Configuration
+## Configuración
 
-- `application.yaml` holds defaults only. Environment values live in the ConfigMaps `axiz-common`,
-  `settlement-batch` and `settlement-batch-errors`, mounted as files by the chart
-  (`deploy/helm/settlement-batch/values-<env>.yaml`, keys `config` and `errors`).
-- Secrets never go to the repository nor to ConfigMaps: they come from AWS Secrets Manager through
-  the ExternalSecret and are mounted as files in `/var/run/secrets/axiz`.
-- AWS access uses the pod identity (IRSA or EKS Pod Identity); there are no AWS keys anywhere.
+- `application.yaml` contiene solo valores por defecto. Los valores de cada ambiente están en los ConfigMaps `axiz-common`,
+  `settlement-batch` y `settlement-batch-errors`, que el chart monta como archivos
+  (`deploy/helm/settlement-batch/values-<env>.yaml`, claves `config` y `errors`).
+- Los secretos nunca van al repositorio ni a los ConfigMaps: provienen de AWS Secrets Manager mediante
+  el ExternalSecret y se montan como archivos en `/var/run/secrets/axiz`.
+- El acceso a AWS usa la identidad del pod (IRSA o EKS Pod Identity); no hay claves de AWS en ningún lugar.
 
-Keys each environment must define:
+Claves que cada ambiente debe definir:
 
 - `axiz.foundation.calendar.holidays`
 - `axiz.storage.bucket`
@@ -95,19 +96,19 @@ Keys each environment must define:
 - `axiz.jpa.aws-wrapper.enabled`
 - `axiz.jpa.aws-wrapper.iam`
 
-## Deployment
+## Despliegue
 
-`deploy/helm/settlement-batch` contains the chart: CronJob,
-ConfigMaps mounted as files, ExternalSecret, ServiceAccount and a NetworkPolicy. Pods do not
-require Kubernetes API permissions to read their mounted configuration.
-The pipelines in `.github/workflows` call the shared axiz workflows, pinned to an immutable release (`@axiz-workflows-vX.Y.Z`; Renovate proposes grouped updates to the next immutable release tag):
+`deploy/helm/settlement-batch` contiene el chart: CronJob,
+ConfigMaps montados como archivos, ExternalSecret, ServiceAccount y una NetworkPolicy. Los pods no
+requieren permisos sobre la API de Kubernetes para leer su configuración montada.
+Los pipelines de `.github/workflows` llaman a los workflows compartidos de axiz, fijados a una release inmutable (`@axiz-workflows-vX.Y.Z`; Renovate propone actualizaciones agrupadas hacia el siguiente tag de release inmutable):
 
-- `ci.yaml`: pull requests run the shared checks and the build with every quality gate; `main`
-  builds the image (Jib, signed with cosign) and deploys it to dev and then qa; a tag `v*` deploys
-  to prod after the approval of the `prod` environment.
-- Deployments are GitOps: the pipeline records the release (chart commit, image tag and digest) in
-  the GitOps repository and Argo CD applies it. `cd.yaml` redeploys or rolls back an existing image.
-- `release.yaml`: release-please keeps a release pull request with the next version and the
-  changelog; merging it creates the tag.
+- `ci.yaml`: los pull requests ejecutan las comprobaciones compartidas y el build con todos los controles
+  de calidad; `main` construye la imagen (Jib, firmada con cosign) y la despliega en dev y luego en qa;
+  un tag `v*` despliega en prod tras la aprobación del ambiente `prod`.
+- Los despliegues son GitOps: el pipeline registra la release (commit del chart, tag y digest de la imagen)
+  en el repositorio GitOps y Argo CD la aplica. `cd.yaml` vuelve a desplegar o revierte una imagen existente.
+- `release.yaml`: release-please mantiene un pull request de release con la siguiente versión y el
+  changelog; al fusionarlo se crea el tag.
 
-## Decisions
+## Decisiones

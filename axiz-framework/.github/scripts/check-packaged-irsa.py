@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check final Boot JAR STS closure and resolve IRSA from a non-Kafka consumer against local STS."""
+"""Verifica el cierre de STS del JAR de Boot final y resuelve IRSA desde un consumidor sin Kafka contra un STS local."""
 import argparse
 import hashlib
 import json

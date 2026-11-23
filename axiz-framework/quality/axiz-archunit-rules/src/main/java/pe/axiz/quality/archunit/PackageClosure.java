@@ -15,7 +15,10 @@ import com.tngtech.archunit.lang.conditions.ArchConditions;
 import java.util.Collection;
 import java.util.List;
 
-/** Closed package ownership: adding a package cannot silently escape the dependency rules. */
+/**
+ * Propiedad cerrada de paquetes: agregar un paquete no puede eludir en silencio las reglas de
+ * dependencias.
+ */
 final class PackageClosure {
   static final String BOOT = "org.springframework.boot.autoconfigure.SpringBootApplication";
 

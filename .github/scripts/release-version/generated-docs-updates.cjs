@@ -1,5 +1,5 @@
 "use strict";
-// Real manager extraction/replacement: registry source + generated YAML, and one Node version file.
+// Extracción y reemplazo reales del manager: fuente del registry + YAML generado, y un archivo de versión de Node.
 module.exports=async function documentationUpdates({config,source,moduleAt,python}) {
   const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
   const {execFileSync,spawnSync}=require('node:child_process');

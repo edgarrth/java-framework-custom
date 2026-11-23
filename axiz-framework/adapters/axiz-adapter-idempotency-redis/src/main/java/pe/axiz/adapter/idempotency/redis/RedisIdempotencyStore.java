@@ -15,13 +15,14 @@ import pe.axiz.core.idempotency.StoredResponse;
 import pe.axiz.core.idempotency.StoredResponseCodec;
 
 /**
- * Idempotency store on Redis/Valkey: {@code SET NX PX} to start; completion and release run as Lua
- * scripts that check, in the same atomic step, that the record is still IN_PROGRESS and held by the
- * caller's owner token. The TTL is always set on the same key that is written.
+ * Almacén de idempotencia sobre Redis/Valkey: {@code SET NX PX} para iniciar; la finalización y la
+ * liberación se ejecutan como scripts Lua que verifican, en el mismo paso atómico, que el registro
+ * sigue IN_PROGRESS y en poder del token de propietario de quien llama. El TTL siempre se fija en
+ * la misma clave que se escribe.
  */
 public final class RedisIdempotencyStore implements IdempotencyStore {
 
-  /** KEYS[1] record; ARGV[1] owner, ARGV[2] new value, ARGV[3] ttl millis. */
+  /** KEYS[1] registro; ARGV[1] propietario, ARGV[2] valor nuevo, ARGV[3] ttl en milisegundos. */
   static final String COMPLETE_SCRIPT =
       """
       local v = redis.call('GET', KEYS[1])
@@ -32,7 +33,7 @@ public final class RedisIdempotencyStore implements IdempotencyStore {
       return 1
       """;
 
-  /** KEYS[1] record; ARGV[1] owner. */
+  /** KEYS[1] registro; ARGV[1] propietario. */
   static final String RELEASE_SCRIPT =
       """
       local v = redis.call('GET', KEYS[1])

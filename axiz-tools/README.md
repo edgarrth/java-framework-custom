@@ -1,15 +1,16 @@
 # axiz-tools
 
-Developer tooling of the axiz platform. Every tool uses the generation engine of the framework
-(`pe.axiz:axiz-codegen`), so the web generator, the CLI and CI produce exactly the same code.
+Herramientas para desarrolladores de la plataforma axiz. Todas usan el motor de generación del
+framework (`pe.axiz:axiz-codegen`), de modo que el generador web, la CLI y CI producen exactamente el
+mismo código.
 
-| Module | What it is |
+| Módulo | Qué es |
 |---|---|
-| `axiz-cli` | The `axiz` command (picocli, native binary with GraalVM) |
-| `axiz-initializr` | Web generator and REST API behind the corporate SSO (also the CLI's online mode) |
-| `axiz-rewrite-recipes` | OpenRewrite recipes that `axiz upgrade` applies between versions |
+| `axiz-cli` | El comando `axiz` (picocli, binario nativo con GraalVM) |
+| `axiz-initializr` | Generador web y API REST detrás del SSO corporativo (también el modo en línea de la CLI) |
+| `axiz-rewrite-recipes` | Recetas de OpenRewrite que `axiz upgrade` aplica entre versiones |
 
-## axiz CLI
+## CLI de axiz
 
 ```text
 axiz new <name> --archetype <a> [--structure] [--stack] [--persistence] [-c <capability>]... --openapi <file>
@@ -27,61 +28,64 @@ axiz local up | down [-v]                     docker compose of the service
 axiz catalog [archetypes|capabilities]
 ```
 
-Offline by default (templates embedded in the binary). `--server https://initializr...` generates
-through the initializr with the user's token from `AXIZ_TOKEN` (never stored by the CLI).
+Sin conexión por defecto (plantillas incluidas en el binario). `--server https://initializr...` genera
+mediante el initializr con el token del usuario tomado de `AXIZ_TOKEN` (la CLI nunca lo guarda).
 
-Build: `mvn -pl axiz-cli package` (JVM jar `axiz-cli-*-jar-with-dependencies.jar`) or
-`mvn -pl axiz-cli -Pnative package` (binary `target/axiz`; needs GraalVM 25).
+Compilación: `mvn -pl axiz-cli package` (jar JVM `axiz-cli-*-jar-with-dependencies.jar`) o
+`mvn -pl axiz-cli -Pnative package` (binario `target/axiz`; necesita GraalVM 25).
 
-## Upgrades
+## Actualizaciones
 
-`axiz upgrade` stages updates of current v2 projects in a private temporary copy. It updates
-Axiz parents, preserves application versions and unrelated parents, validates with doctor and
-applies changes atomically. `--dry-run` retains a patch without changing the project. Manifests
-must use schema 2; any other schema or unknown key is rejected.
+`axiz upgrade` prepara las actualizaciones de los proyectos en una copia temporal privada. Actualiza
+los parents de Axiz, conserva las versiones de la aplicación y los parents no relacionados, valida con
+doctor y aplica los cambios de forma atómica. `--dry-run` conserva un parche sin modificar el proyecto.
+Los manifiestos deben usar el esquema 2; cualquier otro esquema o clave desconocida se rechaza.
 
-Current workflow bindings can be renamed safely without discarding custom jobs. Identity ledgers,
-chart paths and stateful identities protect future renames of v2 services. Java/Spring/JSpecify
-conventions and runtime adapter scope repair are available.
+Los bindings de workflows vigentes pueden renombrarse de forma segura sin descartar jobs
+personalizados. Los registros de identidad, las rutas de los charts y las identidades con estado
+protegen los renombres futuros de los servicios. Están disponibles las convenciones de Java, Spring y
+JSpecify y la reparación del scope de los adaptadores de runtime.
 
-## axiz initializr
+## Initializr de axiz
 
-- Web UI at `/` and API under `/v1` (contract in `axiz-initializr/docs/openapi.yaml`):
+- Interfaz web en `/` y API bajo `/v1` (contrato en `axiz-initializr/docs/openapi.yaml`):
   `GET /v1/metadata`, `POST /v1/projects` (ZIP), `POST /v1/projects/validate`,
   `POST /v1/contracts/lint`, `POST /v1/projects/github`.
-- Security: OIDC login for the UI (SPA CSRF cookie, strict CSP), bearer JWT for the CLI and
-  automations, health probes only anonymous. GitHub repositories are created with the user's own
-  OAuth authorization; tokens are never stored.
-- Generation happens in memory (no temporary directories, no paths built from user input), with
-  size limits on contracts and archives; every generation is audited and counted
-  (`axiz.initializr.generations` by archetype, style, stack and outcome).
-- Deployed with its own chart (`axiz-initializr/deploy/helm`), configuration in ConfigMaps and
-  client secrets from the ExternalSecret.
+- Seguridad: login OIDC para la interfaz (cookie CSRF de SPA, CSP estricta), JWT bearer para la CLI y
+  las automatizaciones, y solo las probes de salud son anónimas. Los repositorios de GitHub se crean
+  con la autorización OAuth del propio usuario; los tokens nunca se guardan.
+- La generación ocurre en memoria (sin directorios temporales ni rutas construidas a partir de la
+  entrada del usuario), con límites de tamaño en contratos y archivos comprimidos; cada generación se
+  audita y se contabiliza (`axiz.initializr.generations` por arquetipo, estilo, stack y resultado).
+- Se despliega con su propio chart (`axiz-initializr/deploy/helm`), con la configuración en ConfigMaps
+  y los secretos de cliente desde el ExternalSecret.
 
 ## Releases
 
-Tags `axiz-tools-v*` build the CLI JVM artifact, signed native components for all three supported operating
-systems, the recipes and the Initializr image. `ci.yaml` does not publish a release or deploy an
-environment. A manual build may request native components with `native-cli` before creating a tag.
-The recipes version must match the framework version it upgrades to.
+Los tags `axiz-tools-v*` construyen el artefacto JVM de la CLI, los componentes nativos firmados para
+los tres sistemas operativos admitidos, las recetas y la imagen del Initializr. `ci.yaml` no publica
+una release ni despliega un ambiente. Un build manual puede solicitar componentes nativos con
+`native-cli` antes de crear un tag. La versión de las recetas debe coincidir con la versión del
+framework hacia la que actualizan.
 
-`deploy.yaml` independently promotes the verified Maven product and publishes the prepared draft
-release, including CLI archives and SHA-256 aliases. `deploy-initializr.yaml` independently
-promotes the Initializr image and chart through GitOps. Both require the completed producer run,
-attempt, external manifest hash, protected environment and predecessor; Initializr additionally
-requires a full values commit. The two products have distinct manifest hashes, even in one CI run.
+`deploy.yaml` promueve de forma independiente el producto Maven verificado y publica el borrador de
+release preparado, incluidos los archivos de la CLI y los alias SHA-256. `deploy-initializr.yaml`
+promueve de forma independiente la imagen y el chart del Initializr mediante GitOps. Ambos requieren
+la ejecución productora completada, el intento, el hash del manifiesto externo, el ambiente protegido
+y el predecesor; el Initializr además requiere un commit completo de values. Los dos productos tienen
+hashes de manifiesto distintos, incluso en una sola ejecución de CI.
 
-Builds read Maven dependencies with `GITHUB_TOKEN` (`packages: read`) or the optional
-`PACKAGES_READ_USERNAME` / `PACKAGES_READ_TOKEN` for cross-repository access. Maven promotion and
-GHCR publication use the job token with `packages: write`; service deployment reads GHCR and
-uses separate GitOps credentials. See [registry configuration](../.github/docs/github-packages.md).
-Configure `AXIZ_JVM_BASE_IMAGE` and `AXIZ_NATIVE_BASE_IMAGE`
-as digest-pinned repository variables. Optional framework candidates are passed to the JVM,
-native and Initializr builders through the same repository/run/attempt/hash inputs.
+Los builds leen las dependencias Maven con `GITHUB_TOKEN` (`packages: read`) o con los opcionales
+`PACKAGES_READ_USERNAME` / `PACKAGES_READ_TOKEN` para acceder a otros repositorios. La promoción Maven
+y la publicación en GHCR usan el token del job con `packages: write`; el despliegue de servicios lee
+GHCR y usa credenciales de GitOps separadas. Ver la [configuración del registro](../.github/docs/github-packages.md).
+`AXIZ_JVM_BASE_IMAGE` y `AXIZ_NATIVE_BASE_IMAGE` se configuran como variables del repositorio fijadas
+por digest. Los candidatos opcionales del framework se pasan a los builders JVM, nativo y del
+Initializr mediante las mismas entradas de repositorio, ejecución, intento y hash.
 
-The complete contract is in [the pipeline documentation](../.github/docs/pipelines.md).
+El contrato completo está en [la documentación de pipelines](../.github/docs/pipelines.md).
 
 `deploy-initializr.yaml` también recibe `workflow_run` del CI y resuelve un comprobante firmado
 específico de `axiz-initializr`. El modo automático promueve a dev desde el HEAD protegido de main;
-el manual conserva los inputs externos. Configure `GITOPS_READ_TOKEN` con lectura del repositorio
+el manual conserva los inputs externos. `GITOPS_READ_TOKEN` se configura con lectura del repositorio
 GitOps para observar el predecesor; las credenciales de escritura siguen en el deploy protegido.

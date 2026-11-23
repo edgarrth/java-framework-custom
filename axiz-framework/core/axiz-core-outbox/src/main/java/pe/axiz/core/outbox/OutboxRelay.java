@@ -18,15 +18,16 @@ import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.resilience.Backoff;
 
 /**
- * Moves outbox entries to the broker (at-least-once). Each run locks a batch, publishes in order
- * and marks every entry as published or schedules a retry with backoff; after {@code maxAttempts}
- * the entry is marked FAILED and reported. Concurrent relays on PostgreSQL skip locked rows.
+ * Mueve las entradas del outbox al broker (al menos una vez). Cada ejecución bloquea un lote,
+ * publica en orden y marca cada entrada como publicada o programa un reintento con backoff; tras
+ * {@code maxAttempts} la entrada se marca como FAILED y se informa. Los relays concurrentes en
+ * PostgreSQL omiten las filas bloqueadas.
  *
- * <p>A monotonic deadline, captured before obtaining the claim connection, prevents starting a
- * publication without enough remaining lease for its declared budget. This is an admission
- * guarantee: process pauses and broker operations continuing after a timeout can still exceed the
- * lease. Owner fencing and idempotent consumers remain necessary for uncertain outcomes and
- * physical duplicate deliveries.
+ * <p>Un plazo monotónico, capturado antes de obtener la conexión del claim, impide iniciar una
+ * publicación sin lease restante suficiente para su presupuesto declarado. Es una garantía de
+ * admisión: las pausas del proceso y las operaciones del broker que continúan después de un timeout
+ * aún pueden exceder el lease. El fencing por propietario y los consumidores idempotentes siguen
+ * siendo necesarios para los resultados inciertos y las entregas duplicadas físicas.
  */
 public final class OutboxRelay {
 
@@ -46,18 +47,21 @@ public final class OutboxRelay {
   private final LongSupplier nanoTime;
   private final OutboxRelayListener listener;
 
-  /** Declared routing compatibility of the effective publisher; does not query the broker. */
+  /** Compatibilidad de enrutamiento declarada por el publicador efectivo; no consulta al broker. */
   public boolean supportsDestination(String destination) {
     return publisher.supports(destination);
   }
 
-  /** Starts explicit construction; batch, retry and publication budgets must be supplied. */
+  /**
+   * Inicia la construcción explícita; deben suministrarse los presupuestos de lote, reintento y
+   * publicación.
+   */
   public static Builder builder(
       OutboxStore store, EventPublisher publisher, TransactionRunner transactions, Clock clock) {
     return new Builder(store, publisher, transactions, clock);
   }
 
-  /** Mutable construction state; build validates and creates an independent immutable value. */
+  /** Estado mutable de construcción; build valida y crea un valor inmutable independiente. */
   public static final class Builder {
     private final OutboxStore store;
     private final EventPublisher publisher;
@@ -160,7 +164,7 @@ public final class OutboxRelay {
     this.listener = Objects.requireNonNull(listener);
   }
 
-  /** Result of one relay run. */
+  /** Resultado de una ejecución del relay. */
   public record RunResult(int published, int retried, int failed) {
     public int total() {
       return published + retried + failed;
@@ -250,7 +254,10 @@ public final class OutboxRelay {
     return new RunResult(published, retried, failed);
   }
 
-  /** Runs until a batch comes back smaller than the batch size (drains the backlog). */
+  /**
+   * Se ejecuta hasta que un lote vuelve con menos elementos que el tamaño de lote (drena el
+   * atraso).
+   */
   public int drain() {
     int total = 0;
     RunResult r;

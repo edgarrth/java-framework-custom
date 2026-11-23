@@ -32,7 +32,7 @@ import software.amazon.awssdk.services.dynamodb.model.PutItemResponse;
 
 class DynamoDbIdempotencyStoreTest {
 
-  /** Evaluates the two condition expressions used by the store. */
+  /** Evalúa las dos expresiones de condición que usa el almacén. */
   static final class FakeDynamo implements DynamoDbClient {
     final Map<String, Map<String, AttributeValue>> items = new HashMap<>();
 
@@ -137,7 +137,7 @@ class DynamoDbIdempotencyStoreTest {
     assertTrue(store.find("none", Instant.now()).isEmpty());
   }
 
-  /** Regression: A's lock expires, B takes the key, A finishes late. */
+  /** Regresión: el lock de A expira, B toma la clave y A termina tarde. */
   @Test
   void aLateOwnerCannotOverwriteOrReleaseTheKeyOfTheNewOwner() {
     FakeDynamo dynamo = new FakeDynamo();

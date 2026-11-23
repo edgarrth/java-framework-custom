@@ -20,12 +20,15 @@ import pe.axiz.spring.foundation.ReactiveRenderContext;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 
-/** WebFlux exception handler producing RFC 9457 problems (runs before Boot's default handler). */
+/**
+ * Manejador de excepciones de WebFlux que produce problemas RFC 9457 (se ejecuta antes del
+ * manejador por defecto de Boot).
+ */
 public class ProblemWebExceptionHandler implements WebExceptionHandler {
   private final ProblemResponder responder;
   private final Scheduler scheduler;
 
-  /** The application owns the supplied bounded scheduler and disposes it at shutdown. */
+  /** La aplicación posee el scheduler acotado entregado y lo libera al apagarse. */
   @SuppressFBWarnings(
       value = "CT_CONSTRUCTOR_THROW",
       justification =

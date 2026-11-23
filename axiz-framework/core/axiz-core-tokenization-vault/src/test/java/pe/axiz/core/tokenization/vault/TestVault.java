@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import pe.axiz.core.crypto.KeyedHash;
 import pe.axiz.core.tokenization.Token;
 
-/** Test-only atomic model. No in-memory production vault is shipped. */
+/** Modelo atómico solo para pruebas. No se entrega ninguna bóveda en memoria para producción. */
 class TestVault implements TokenVault {
   FingerprintKeyState state = new FingerprintKeyState("main", 1, "old", List.of("old"));
   final Map<Token, VaultRecord> records = new HashMap<>();

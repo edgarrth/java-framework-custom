@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Installs this framework in the local Maven repository and generates sample projects with the
-# generation engine (one per archetype by default, every combination with MODE=all) into
-# target/samples. Used by CI to build the generated projects exactly as a team would.
+# Instala este framework en el repositorio Maven local y genera proyectos de ejemplo con el motor de
+# generación (uno por arquetipo por defecto, todas las combinaciones con MODE=all) en
+# target/samples. CI lo usa para construir los proyectos generados exactamente como lo haría un equipo.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 MODE="${MODE:-defaults}"
@@ -16,7 +16,7 @@ revision=$(./mvnw -q -N help:evaluate -Dexpression=revision -DforceStdout)
   org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
   -Dexec.mainClass=pe.axiz.codegen.tools.SampleProjects \
   -Dexec.args="target/audit-samples codegen/axiz-codegen/src/test/resources/contracts/orders.yaml ${revision} audit"
-# Internal assertions belong to the framework harness, not the consumer templates.
+# Las aserciones internas pertenecen al harness del framework, no a las plantillas de los consumidores.
 ./mvnw -B -ntp -q -pl codegen/axiz-codegen \
   org.codehaus.mojo:exec-maven-plugin:3.5.1:exec \
   -Dexec.executable=java -Dexec.classpathScope=runtime \

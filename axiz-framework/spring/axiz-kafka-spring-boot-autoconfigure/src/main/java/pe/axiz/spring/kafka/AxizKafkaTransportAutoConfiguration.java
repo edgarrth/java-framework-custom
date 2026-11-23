@@ -11,8 +11,11 @@ import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.ProducerFactory;
 import pe.axiz.core.commons.net.DataTransportSecurityPolicy;
 
-/** Checks managed factories after Boot customizers and before they initialize clients. */
-// Spring instantiates the configuration; infrastructure BeanPostProcessors must be static.
+/**
+ * Comprueba las fábricas gestionadas después de los customizers de Boot y antes de que inicialicen
+ * los clientes.
+ */
+// Spring instancia la configuración; los BeanPostProcessor de infraestructura deben ser estáticos.
 @SuppressWarnings("checkstyle:HideUtilityClassConstructor")
 @AutoConfiguration(
     beforeName = "org.springframework.boot.kafka.autoconfigure.KafkaAutoConfiguration")

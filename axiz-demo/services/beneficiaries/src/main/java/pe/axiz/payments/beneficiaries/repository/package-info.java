@@ -1,4 +1,4 @@
-/** Data access. */
+/** Acceso a datos. */
 @NullMarked
 package pe.axiz.payments.beneficiaries.repository;
 

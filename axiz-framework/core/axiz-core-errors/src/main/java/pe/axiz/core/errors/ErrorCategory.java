@@ -1,10 +1,10 @@
 package pe.axiz.core.errors;
 
 /**
- * Error categories with their HTTP status. No HTTP status is produced without a category.
+ * Categorías de error con su estado HTTP. No se produce ningún estado HTTP sin una categoría.
  *
- * <p>{@link #retryable()} tells clients and resilience policies whether repeating the same request
- * can succeed.
+ * <p>{@link #retryable()} indica a los clientes y a las políticas de resiliencia si repetir la
+ * misma petición puede tener éxito.
  */
 public enum ErrorCategory {
   BAD_REQUEST(400, ErrorType.VALIDATION, false),
@@ -23,7 +23,9 @@ public enum ErrorCategory {
   BAD_GATEWAY(502, ErrorType.EXTERNAL, true),
   SERVICE_UNAVAILABLE(503, ErrorType.TECHNICAL, true),
   GATEWAY_TIMEOUT(504, ErrorType.EXTERNAL, true),
-  /** The mutation may have committed; reconcile before any deliberate retry. */
+  /**
+   * La mutación puede haber hecho commit; se reconcilia antes de cualquier reintento deliberado.
+   */
   OUTCOME_UNKNOWN(504, ErrorType.TECHNICAL, false);
 
   private final int httpStatus;
@@ -49,13 +51,14 @@ public enum ErrorCategory {
   }
 
   /**
-   * Default category for an HTTP status received from a dependency. A bare 504 cannot distinguish a
-   * timeout from an uncertain mutation; protocol clients must preserve the explicit error code.
-   * Unknown 4xx become {@link #UNPROCESSABLE}; unknown 5xx become {@link #BAD_GATEWAY}; anything
-   * else {@link #INTERNAL}.
+   * Categoría por defecto para un estado HTTP recibido de una dependencia. Un 504 sin más no
+   * permite distinguir un timeout de una mutación incierta; los clientes de protocolo deben
+   * preservar el código de error explícito. Los 4xx desconocidos se convierten en {@link
+   * #UNPROCESSABLE}; los 5xx desconocidos, en {@link #BAD_GATEWAY}; cualquier otro, en {@link
+   * #INTERNAL}.
    *
-   * @param status HTTP status code
-   * @return matching category
+   * @param status código de estado HTTP
+   * @return categoría correspondiente
    */
   public static ErrorCategory fromHttpStatus(int status) {
     for (ErrorCategory c : values()) {
@@ -76,15 +79,15 @@ public enum ErrorCategory {
   }
 
   /**
-   * Category used when a dependency answers with the given status: our own server errors are
-   * reported as gateway errors because the fault is not in this service.
+   * Categoría usada cuando una dependencia responde con el estado indicado: los errores de servidor
+   * propios se informan como errores de gateway porque la falla no está en este servicio.
    *
-   * @param status HTTP status returned by the dependency
-   * @return the category this service reports
+   * @param status estado HTTP devuelto por la dependencia
+   * @return la categoría que informa este servicio
    */
   public static ErrorCategory forExternalStatus(int status) {
     return switch (status) {
-      case 401, 403 -> BAD_GATEWAY; // our credentials towards the dependency are wrong
+      case 401, 403 -> BAD_GATEWAY; // las credenciales propias ante la dependencia son incorrectas
       case 404 -> NOT_FOUND;
       case 409 -> CONFLICT;
       case 408, 504 -> GATEWAY_TIMEOUT;

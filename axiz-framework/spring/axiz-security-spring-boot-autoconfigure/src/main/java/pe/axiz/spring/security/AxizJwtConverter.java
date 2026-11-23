@@ -11,7 +11,7 @@ import pe.axiz.core.security.AuthorityMapper;
 import pe.axiz.core.security.AxizPrincipal;
 import pe.axiz.core.security.ClaimsMapper;
 
-/** Maps a validated JWT to an {@link AxizAuthentication} with scope and role authorities. */
+/** Asocia un JWT validado a un {@link AxizAuthentication} con autoridades de scope y de rol. */
 public final class AxizJwtConverter implements Converter<Jwt, AxizAuthentication> {
 
   private final ClaimsMapper mapper;

@@ -5,9 +5,9 @@ Incluye el adaptador y soporte AWS; se instala solo en el servicio propietario d
 Requiere infraestructura y colaboradores explícitos. Configuración, permisos y pruebas en
 [la autoconfiguración](../axiz-tokenization-vault-dynamodb-spring-boot-autoconfigure/README.md).
 
-## Selection
+## Selección
 
-Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
+Las versiones las gestiona `axiz-bom`; las aplicaciones heredan `axiz-parent-service`.
 
 ```xml
 <dependency>
@@ -16,30 +16,31 @@ Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
 </dependency>
 ```
 
-This artifact composes dependencies; its wiring and operational contract are documented in
+Este artefacto compone dependencias; su configuración y su contrato operativo se documentan en
 [`axiz-tokenization-vault-dynamodb-spring-boot-autoconfigure`](../axiz-tokenization-vault-dynamodb-spring-boot-autoconfigure/README.md).
 
-## Catalog usage
+## Uso desde el catálogo
 
 ```bash
 axiz add tokenization-vault-dynamodb
 ```
 
-Required capabilities: `tokenization-vault`, `dynamodb`, `crypto-kms`.
+Capacidades requeridas: `tokenization-vault`, `dynamodb`, `crypto-kms`.
 
-The catalog supplies the following properties. Environment placeholders must resolve in the
-service configuration; they are not credentials or provisioned infrastructure.
+El catálogo aporta las siguientes propiedades. Los marcadores de entorno deben resolverse en la
+configuración del servicio; no son credenciales ni infraestructura aprovisionada.
 
 ```yaml
 axiz.tokenization.vault.dynamodb.table: ${TOKEN_VAULT_TABLE}
 ```
 
-## Operations
+## Operación
 
-Provide region, workload identity, TLS and least-privilege permissions for the selected AWS
-resources. Provision production tables, queues, topics, keys and buckets through reviewed IaC.
-LocalStack tests exercise behavior but do not attest deployed IAM or service durability.
-Never place long-lived credentials in generated YAML.
+Se proporcionan región, identidad de carga de trabajo, TLS y permisos mínimos para los recursos de
+AWS seleccionados. Las tablas, colas, tópicos, claves y buckets de producción se aprovisionan con IaC
+revisada. Las pruebas con LocalStack ejercitan el comportamiento, pero no certifican el IAM desplegado
+ni la durabilidad del servicio. Nunca se colocan credenciales de larga duración en el YAML generado.
 
-See [tokenization](../../../axiz-docs/docs/guias/tokenizacion.md) for client/vault boundaries,
-profiles, authorization, retention and the independent field-protection flow.
+La [guía de tokenización](../../../axiz-docs/docs/guias/tokenizacion.md) describe los límites entre
+cliente y bóveda, los perfiles, la autorización, la retención y el flujo independiente de protección
+de campos.

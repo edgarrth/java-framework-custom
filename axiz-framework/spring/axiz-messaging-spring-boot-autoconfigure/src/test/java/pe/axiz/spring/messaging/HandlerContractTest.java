@@ -22,7 +22,7 @@ import pe.axiz.core.messaging.TypedEventHandler;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/** Edge cases of the handler base classes: type resolution, delegation and awaiting. */
+/** Casos límite de las clases base de handlers: resolución de tipos, delegación y espera. */
 class HandlerContractTest {
 
   static final EventEnvelope ENVELOPE =
@@ -47,7 +47,7 @@ class HandlerContractTest {
     }
   }
 
-  /** A subclass of a concrete handler: the payload comes from the class that binds it. */
+  /** Subclase de un handler concreto: el payload proviene de la clase que lo vincula. */
   @HandlesEvent("pe.axiz.test.thing-happened.v2")
   static class Derived extends Recording {}
 
@@ -62,7 +62,7 @@ class HandlerContractTest {
     protected void on(X payload, EventEnvelope envelope) {}
   }
 
-  /** The payload is a type variable at the level of the base class: it cannot be resolved. */
+  /** El payload es una variable de tipo al nivel de la clase base: no puede resolverse. */
   @HandlesEvent("pe.axiz.test.generic.v1")
   static class Unresolvable extends Generic<String> {}
 
@@ -130,7 +130,7 @@ class HandlerContractTest {
         assertThrows(
             AssertionError.class,
             () -> ReactiveTypedEventHandler.await(Mono.error(error), Duration.ofSeconds(1))));
-    // a Throwable that is neither an Exception nor an Error keeps its wrapper
+    // un Throwable que no es ni Exception ni Error conserva su wrapper
     Throwable odd = new Throwable("odd");
     ExecutionException e =
         assertThrows(

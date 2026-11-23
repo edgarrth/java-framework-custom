@@ -41,10 +41,10 @@ import pe.axiz.initializr.config.InitializrProperties;
 import pe.axiz.initializr.config.SecurityConfiguration;
 import pe.axiz.initializr.service.PublicationException.Phase;
 
-/** Resumable publication of one authenticated operation into its own private repository. */
+/** Publicación reanudable de una operación autenticada en su propio repositorio privado. */
 @Service
 public class GitHubPublisher {
-  /** Confirmed publication destination, without credentials or generated content. */
+  /** Destino de publicación confirmado, sin credenciales ni contenido generado. */
   public record Repository(String fullName, String url) {}
 
   private final RestClient.Builder clients;
@@ -64,8 +64,9 @@ public class GitHubPublisher {
   }
 
   /**
-   * Resumes only repositories bearing this operation's authenticated marker and project digest.
-   * Other repositories and intervening user commits are never adopted, forced or deleted.
+   * Reanuda solo los repositorios que llevan el marcador autenticado y el digest del proyecto de
+   * esta operación. Nunca se adoptan, fuerzan ni eliminan otros repositorios ni commits intermedios
+   * del usuario.
    */
   public Repository publish(
       GeneratedProject project,
@@ -154,7 +155,7 @@ public class GitHubPublisher {
       String parent =
           sha(map(initialRef(github, "/repos/" + fullName + "/git/ref/heads/" + branch), "object"));
       Map<?, ?> parentCommit = get(github, "/repos/" + fullName + "/git/commits/" + parent);
-      // A previous PATCH may have succeeded even if its response was lost.
+      // Un PATCH previo pudo haber tenido éxito aunque se perdiera su respuesta.
       boolean alreadyPublished = message.equals(parentCommit.get("message"));
       Object parents = parentCommit.get("parents");
       if (!(parents instanceof List<?> ancestry))
@@ -251,7 +252,8 @@ public class GitHubPublisher {
               .build());
     } catch (RuntimeException failure) {
       if (!remoteStarted) throw failure;
-      // An audit sink failure cannot rewrite the already confirmed/uncertain remote outcome.
+      // Una falla del destino de auditoría no puede reescribir el resultado remoto ya confirmado o
+      // incierto.
       LoggerFactory.getLogger(GitHubPublisher.class)
           .error("Publication audit delivery not confirmed");
     }
@@ -351,12 +353,17 @@ public class GitHubPublisher {
     }
   }
 
-  /** Pure preflight; invalid requests retain their unused delegated authorization. */
+  /**
+   * Verificación previa pura; las solicitudes inválidas conservan su autorización delegada sin
+   * usar.
+   */
   public void validate(GeneratedProject project, @Nullable String description) {
     prepare(project, description);
   }
 
-  /** GitHub's bounded public description has a different limit from ZIP generation. */
+  /**
+   * La descripción pública acotada de GitHub tiene un límite distinto del de la generación del ZIP.
+   */
   public static void validateDescription(@Nullable String description) {
     if (description != null && description.length() > 160)
       throw new PublicationInputException(PublicationInputException.Field.DESCRIPTION);
@@ -407,7 +414,8 @@ public class GitHubPublisher {
         .files()
         .forEach(
             (path, content) -> {
-              // GeneratedProject already validates traversal, absolute paths and controls.
+              // GeneratedProject ya valida el recorrido de directorios, las rutas absolutas y los
+              // caracteres de control.
               if (Arrays.stream(path.split("/")).anyMatch(part -> part.equalsIgnoreCase(".git")))
                 throw new PublicationInputException(PublicationInputException.Field.CONTENT);
               Map<String, Object> entry = new LinkedHashMap<>();

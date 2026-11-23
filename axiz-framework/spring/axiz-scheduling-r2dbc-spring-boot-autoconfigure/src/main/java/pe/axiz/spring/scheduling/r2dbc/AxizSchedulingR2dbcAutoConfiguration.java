@@ -15,8 +15,8 @@ import pe.axiz.spring.scheduling.AxizSchedulingAutoConfiguration;
 import pe.axiz.spring.scheduling.AxizSchedulingProperties;
 
 /**
- * ShedLock on Aurora over R2DBC ({@code axiz.scheduling.store=r2dbc}) for reactive services; the
- * lock table comes from the service's Flyway migrations.
+ * ShedLock sobre Aurora mediante R2DBC ({@code axiz.scheduling.store=r2dbc}) para servicios
+ * reactivos; la tabla de locks proviene de las migraciones Flyway del servicio.
  */
 @AutoConfiguration(
     afterName = "org.springframework.boot.r2dbc.autoconfigure.R2dbcAutoConfiguration",

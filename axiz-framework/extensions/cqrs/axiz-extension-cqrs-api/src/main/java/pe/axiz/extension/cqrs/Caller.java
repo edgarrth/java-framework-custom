@@ -6,13 +6,13 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Who sends a command or query, as seen by an {@link AccessPolicy}.
+ * Quién envía un comando o una consulta, tal como lo ve una {@link AccessPolicy}.
  *
- * @param subject end user ({@code sub}); null or equal to the client for machine tokens
- * @param clientId calling application
- * @param tenant tenant, if any
- * @param issuer token issuer, if any
- * @param authorities granted authorities ({@code SCOPE_...}, {@code ROLE_...})
+ * @param subject usuario final ({@code sub}); null o igual al cliente para tokens de máquina
+ * @param clientId aplicación que llama
+ * @param tenant tenant, si existe
+ * @param issuer emisor del token, si existe
+ * @param authorities autoridades concedidas ({@code SCOPE_...}, {@code ROLE_...})
  */
 public record Caller(
     @Nullable String subject,
@@ -25,7 +25,7 @@ public record Caller(
     authorities = Set.copyOf(Objects.requireNonNull(authorities));
   }
 
-  /** No authenticated caller. */
+  /** Ningún llamador autenticado. */
   public static Caller anonymous() {
     return new Caller(null, null, null, null, Set.of());
   }
@@ -34,12 +34,12 @@ public record Caller(
     return subject != null || clientId != null;
   }
 
-  /** An application acting on its own (no end user). */
+  /** Aplicación que actúa por sí misma (sin usuario final). */
   public boolean isMachine() {
     return subject == null || subject.equals(clientId);
   }
 
-  /** The end user {@code id} is the caller. */
+  /** El usuario final {@code id} es quien llama. */
   public boolean isUser(@Nullable String id) {
     return id != null && !isMachine() && id.equals(subject);
   }

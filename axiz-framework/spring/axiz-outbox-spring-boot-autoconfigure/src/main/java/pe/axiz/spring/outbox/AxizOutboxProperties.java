@@ -7,20 +7,24 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.ConstructorBinding;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
-/** Shared relay policy; persistence settings belong to the selected integration. */
+/**
+ * Política compartida del relay; la configuración de persistencia pertenece a la integración
+ * seleccionada.
+ */
 @ConfigurationProperties("axiz.outbox")
 public record AxizOutboxProperties(@DefaultValue("jdbc") String store, @DefaultValue Relay relay) {
   /**
-   * Relay to the broker (at-least-once; safe with several replicas thanks to {@code SKIP LOCKED}).
+   * Relay hacia el broker (al menos una vez; seguro con varias réplicas gracias a {@code SKIP
+   * LOCKED}).
    *
-   * @param enabled whether this instance relays
-   * @param pollInterval wait between polls when the outbox is empty
-   * @param batchSize records per transaction
-   * @param maxAttempts attempts before a record is marked failed
-   * @param initialDelay first retry delay
-   * @param maxDelay retry delay cap
-   * @param retention how long published records are kept
-   * @param purgeInterval how often published records are purged
+   * @param enabled indica si esta instancia hace relay
+   * @param pollInterval espera entre sondeos cuando el outbox está vacío
+   * @param batchSize registros por transacción
+   * @param maxAttempts intentos antes de marcar un registro como fallido
+   * @param initialDelay retraso del primer reintento
+   * @param maxDelay tope del retraso de reintento
+   * @param retention tiempo durante el cual se conservan los registros publicados
+   * @param purgeInterval frecuencia con la que se purgan los registros publicados
    */
   public record Relay(
       @DefaultValue("true") boolean enabled,
@@ -47,12 +51,15 @@ public record AxizOutboxProperties(@DefaultValue("jdbc") String store, @DefaultV
             "outbox claim-allowance and publish-budget must be positive");
     }
 
-    /** Named construction; required values and invariants are checked by build. */
+    /** Construcción con nombre; build comprueba los valores obligatorios y las invariantes. */
     public static Builder builder() {
       return new Builder();
     }
 
-    /** Mutable construction state; use one builder per operation, never as shared state. */
+    /**
+     * Estado mutable de construcción; se usa un builder por operación, nunca como estado
+     * compartido.
+     */
     public static final class Builder {
       private boolean enabled = false;
       private @Nullable Duration pollInterval = null;

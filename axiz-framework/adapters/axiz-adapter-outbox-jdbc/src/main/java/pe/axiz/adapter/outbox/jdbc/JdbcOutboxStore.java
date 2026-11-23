@@ -19,7 +19,10 @@ import pe.axiz.core.outbox.OutboxStore;
 import pe.axiz.kit.jdbc.ConnectionProvider;
 import pe.axiz.kit.sql.SqlIdentifiers;
 
-/** Transaction-aware JDBC outbox with persistent aggregate counters and fenced short claims. */
+/**
+ * Outbox JDBC consciente de la transacción, con contadores de agregado persistentes y claims cortos
+ * con fencing.
+ */
 public final class JdbcOutboxStore implements OutboxStore {
   private static final String COLUMNS =
       "id,destination,aggregate_type,aggregate_id,event_type,envelope,status,attempts,"

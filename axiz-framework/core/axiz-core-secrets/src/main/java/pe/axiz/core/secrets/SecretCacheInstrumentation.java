@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import pe.axiz.core.concurrent.Stages;
 
-/** Observes actual coalesced loads without wrapping or replacing their cancellation target. */
+/** Observa las cargas coalescidas reales sin envolver ni reemplazar su objetivo de cancelación. */
 final class SecretCacheInstrumentation {
   private final SecretCacheObserver observer;
   private final AtomicBoolean reported = new AtomicBoolean();

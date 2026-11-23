@@ -7,19 +7,21 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /**
- * RFC 9457 problem details plus axiz extension members ({@code code}, {@code correlationId}, {@code
- * timestamp}, {@code violations}, {@code external}).
+ * Problem details RFC 9457 más los miembros de extensión de axiz ({@code code}, {@code
+ * correlationId}, {@code timestamp}, {@code violations}, {@code external}).
  *
- * @param type problem type URI
- * @param title short summary
- * @param status HTTP status
- * @param detail localized explanation for this occurrence (never an internal exception message)
- * @param instance URI of the request that failed
- * @param code axiz error code
- * @param correlationId correlation id of the flow
- * @param timestamp when it happened
- * @param violations field violations, for validation errors
- * @param external public summary of a dependency failure, only when exposure is enabled
+ * @param type URI del tipo de problema
+ * @param title resumen breve
+ * @param status estado HTTP
+ * @param detail explicación localizada de esta ocurrencia (nunca el mensaje de una excepción
+ *     interna)
+ * @param instance URI de la petición que falló
+ * @param code código de error de axiz
+ * @param correlationId id de correlación del flujo
+ * @param timestamp cuándo ocurrió
+ * @param violations violaciones de campos, para errores de validación
+ * @param external resumen público del fallo de una dependencia, solo cuando la exposición está
+ *     habilitada
  */
 public record Problem(
     String type,
@@ -40,12 +42,14 @@ public record Problem(
 
   public static final String MEDIA_TYPE = "application/problem+json";
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción nominal; build verifica los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable String type = null;
     private @Nullable String title = null;

@@ -1,57 +1,58 @@
-# Contributing
+# Contribuciones
 
-These rules apply to every component of the repository: framework, tools, documentation, demo
-and shared workflows. They keep it safe for production banking services.
+Estas reglas aplican a todos los componentes del repositorio: framework, herramientas, documentación,
+demo y workflows compartidos. Mantienen el repositorio seguro para servicios bancarios de producción.
 
-## Before you start
+## Antes de empezar
 
-- Discuss new capabilities, breaking changes and new third-party dependencies in an issue first.
-  Public API changes and new dependencies require code-owner review, updated usage documentation
-  and the corresponding compatibility and integration checks.
-- Never commit secrets, real customer data or production endpoints. Local examples use the
-  placeholders of the local environment only. gitleaks runs on every pull request.
-- Do not add deprecated libraries, or APIs and versions that are not yet released.
+- Las capacidades nuevas, los cambios incompatibles y las dependencias de terceros nuevas se discuten
+  primero en un issue. Los cambios de API pública y las dependencias nuevas requieren revisión de un
+  code owner, documentación de uso actualizada y las comprobaciones de compatibilidad e integración
+  correspondientes.
+- Nunca se hace commit de secretos, datos reales de clientes ni endpoints de producción. Los ejemplos
+  locales usan solo los marcadores del ambiente local. gitleaks se ejecuta en cada pull request.
+- No se agregan librerías deprecadas ni APIs o versiones que aún no se han publicado.
 
-## Branches and commits
+## Ramas y commits
 
-- `main` holds released code. Work happens in short-lived branches; `develop`, `release/*` and
-  `hotfix/*` run the same CI as `main`.
-- Commit messages and pull request titles follow Conventional Commits (`feat:`, `fix:`,
-  `refactor:`, `docs:`, ...). release-please derives versions and changelogs from them; mark a
-  breaking change with `!` and a `BREAKING CHANGE:` footer. See [RELEASING.md](../RELEASING.md).
-- Commits are signed (GPG, SSH or S/MIME) and branches are protected: no direct pushes to `main`
-  or `develop`, linear history, required checks green.
-- On WSL with `core.filemode=false`, add new or renamed wrappers and shell entry points with
-  `git -c core.filemode=true add --all` so their executable bit reaches the commit. The
-  build-input check verifies the index.
+- `main` contiene el código publicado. El trabajo ocurre en ramas de vida corta; `develop`, `release/*`
+  y `hotfix/*` ejecutan el mismo CI que `main`.
+- Los mensajes de commit y los títulos de los pull requests siguen Conventional Commits (`feat:`, `fix:`,
+  `refactor:`, `docs:`, etc.). release-please deriva de ellos las versiones y los changelogs; un cambio
+  incompatible se marca con `!` y un pie `BREAKING CHANGE:`. Ver [RELEASING.md](../RELEASING.md).
+- Los commits se firman (GPG, SSH o S/MIME) y las ramas están protegidas: sin push directo a `main` ni a
+  `develop`, historial lineal y comprobaciones obligatorias en verde.
+- En WSL con `core.filemode=false`, los wrappers y los puntos de entrada de shell nuevos o renombrados
+  se agregan con `git -c core.filemode=true add --all` para que su bit de ejecución llegue al commit. La
+  comprobación de entradas del build verifica el índice.
 
 ## Pull requests
 
-- Every change comes with tests that would have failed without it. Quality gates enforce coverage
-  (lines and branches), mutation testing on the core, architecture rules and static analysis.
-- Warnings are fixed, not suppressed. A suppression needs a comment that explains why the code is
-  correct (for example `@SuppressWarnings("EqualsGetClass")` with its reason).
-- Import unambiguous types instead of qualifying them inline. Error Prone's
-  `UnnecessarilyFullyQualified` check defaults to `WARN`; cleaned modules set
-  `axiz.errorprone.fqn.severity` to `ERROR`. Keep qualification when names collide and leave
-  generated sources to their generator.
-- Update the module `README.md` and the documentation site when behavior or usage changes.
-  Public APIs carry Javadoc.
-- Reviews: at least one approval from a code owner; two approvals (one from the security team)
-  for security, cryptography, authentication, payment flows and CI/CD changes.
+- Cada cambio llega con pruebas que habrían fallado sin él. Los controles de calidad exigen cobertura
+  (líneas y ramas), pruebas de mutación en el núcleo, reglas de arquitectura y análisis estático.
+- Las advertencias se corrigen, no se suprimen. Una supresión necesita un comentario que explique por
+  qué el código es correcto (por ejemplo `@SuppressWarnings("EqualsGetClass")` con su motivo).
+- Los tipos sin ambigüedad se importan en lugar de calificarlos en línea. La comprobación
+  `UnnecessarilyFullyQualified` de Error Prone usa `WARN` por defecto; los módulos depurados fijan
+  `axiz.errorprone.fqn.severity` en `ERROR`. La calificación se mantiene cuando los nombres colisionan y
+  las fuentes generadas quedan a cargo de su generador.
+- El `README.md` del módulo y el sitio de documentación se actualizan cuando cambia el comportamiento o
+  el uso. Las APIs públicas llevan Javadoc.
+- Revisiones: al menos una aprobación de un code owner; dos aprobaciones (una del equipo de seguridad)
+  para cambios de seguridad, criptografía, autenticación, flujos de pago y CI/CD.
 
-## Local checks
+## Comprobaciones locales
 
-| Component | Command |
+| Componente | Comando |
 |---|---|
 | `axiz-framework` | `./mvnw -B -ntp clean verify -Pquality` |
 | `axiz-tools` | `./mvnw -B -ntp clean verify -Pquality` |
-| `axiz-demo` | `./mvnw -B -ntp clean verify` and `scripts/smoke.sh` |
+| `axiz-demo` | `./mvnw -B -ntp clean verify` y `scripts/smoke.sh` |
 | `axiz-docs` | `mkdocs build --strict` |
-| `.github` | `actionlint` and `python .github/scripts/workflows_policy_checks.py --output <directory>` |
+| `.github` | `actionlint` y `python .github/scripts/workflows_policy_checks.py --output <directory>` |
 
-The framework policy scripts use the dependencies pinned in
-`axiz-framework/.github/scripts/requirements.txt`. From `axiz-framework`:
+Los scripts de políticas del framework usan las dependencias fijadas en
+`axiz-framework/.github/scripts/requirements.txt`. Desde `axiz-framework`:
 
 ```bash
 python3 -m venv /tmp/axiz-framework-policy
@@ -59,15 +60,15 @@ python3 -m venv /tmp/axiz-framework-policy
 /tmp/axiz-framework-policy/bin/python -m unittest discover -s .github/scripts -p 'test_*.py'
 ```
 
-`axiz-framework/.github/scripts/samples.sh` generates the catalog defaults and checks that
-`native-nightly.yaml` selects exactly the generated service projects. `MODE=all` generates the
-full structure, extension, stack and persistence matrix. `reactive-native-sample.sh` requires
-GraalVM JDK 25 and Docker; it generates a reactive service, runs its JVM tests and boots the
-native executable against disposable dependencies.
+`axiz-framework/.github/scripts/samples.sh` genera los valores por defecto del catálogo y comprueba que
+`native-nightly.yaml` seleccione exactamente los proyectos de servicio generados. `MODE=all` genera la
+matriz completa de estructuras, extensiones, stacks y persistencia. `reactive-native-sample.sh` requiere
+GraalVM JDK 25 y Docker; genera un servicio reactivo, ejecuta sus pruebas en la JVM y arranca el
+ejecutable nativo contra dependencias desechables.
 
-## Compatibility
+## Compatibilidad
 
-Public APIs and SPIs follow semantic versioning. The API gate compares class-file signatures with
-the approved inventory and, after the first publication, with the published baseline. See the
-[API policy](../axiz-framework/docs/api/README.md). Document changes in the module README and
-provide an OpenRewrite recipe when the transformation can be automated.
+Las APIs y SPIs públicas siguen versionado semántico. El control de API compara las firmas de los
+archivos de clase con el inventario aprobado y, después de la primera publicación, con la línea base
+publicada. Ver la [política de API](../axiz-framework/docs/api/README.md). Los cambios se documentan en
+el README del módulo y se aporta una receta de OpenRewrite cuando la transformación puede automatizarse.

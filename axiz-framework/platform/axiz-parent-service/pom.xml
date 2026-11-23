@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  axiz-parent-service: parent of every microservice.
-  Adds: axiz BOM, executable JAR, container image with Jib (JVM) or GraalVM native image,
-  contract-first code generation, integration tests, coverage gates and code standards.
+  axiz-parent-service: parent de cada microservicio.
+  Añade: BOM de axiz, JAR ejecutable, imagen de contenedor con Jib (JVM) o imagen nativa de GraalVM,
+  generación de código contract-first, pruebas de integración, gates de cobertura y estándares de código.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -22,22 +22,22 @@
 
   <properties>
     <axiz.version>${revision}</axiz.version>
-    <!-- Container image -->
+    <!-- Imagen de contenedor -->
     <axiz.image.registry>ghcr.io/edgarrth/java-framework-custom</axiz.image.registry>
     <axiz.image.repository>${axiz.image.registry}/${project.artifactId}</axiz.image.repository>
-    <!-- Base images by tag and digest: Renovate pins and updates the digest (customManagers of the
-         axiz preset); a release image is only built from a pinned base (service-ci) -->
+    <!-- Imágenes base por tag y digest: Renovate fija y actualiza el digest (customManagers del
+         preset de axiz); una imagen de release solo se construye desde una base fijada (service-ci) -->
     <!-- renovate: datasource=docker depName=azul/zulu-openjdk-alpine -->
     <axiz.image.base>azul/zulu-openjdk-alpine:25-jre@sha256:8eaca94dd76729a65ce7d693d8aa84c12f9ae656624ae3b118d6a8d411764cd8</axiz.image.base>
-    <!-- BlockHound (reactive services) redefines JDK classes; ignored where the JVM lacks the flag -->
-    <!-- native access: see Enable-Native-Access below; the tests start the same Netty servers -->
+    <!-- BlockHound (servicios reactivos) redefine clases del JDK; se ignora donde la JVM no tiene el flag -->
+    <!-- acceso nativo: ver Enable-Native-Access más abajo; las pruebas arrancan los mismos servidores Netty -->
     <axiz.test.argLine>-XX:+IgnoreUnrecognizedVMOptions -XX:+AllowRedefinitionToAddDeleteMethods --enable-native-access=ALL-UNNAMED -Djava.security.egd=file:/dev/./urandom</axiz.test.argLine>
-    <!-- native images: glibc base without a JVM, non-root -->
+    <!-- imágenes nativas: base glibc sin JVM, sin root -->
     <!-- renovate: datasource=docker depName=cgr.dev/chainguard/wolfi-base -->
     <axiz.image.native-base>cgr.dev/chainguard/wolfi-base@sha256:7135c6a5e9f29b2542aaefee63d474973312bfdea95555963aef0e648210e4d2</axiz.image.native-base>
     <jib-native-image-extension.version>0.1.0</jib-native-image-extension.version>
     <axiz.image.tag>${project.version}</axiz.image.tag>
-    <!-- Contract-first: OpenAPI contract location and generated packages -->
+    <!-- Contract-first: ubicación del contrato OpenAPI y paquetes generados -->
     <axiz.openapi.contract>${project.basedir}/src/main/openapi/openapi.yaml</axiz.openapi.contract>
     <axiz.openapi.api-package>${axiz.base-package}.api</axiz.openapi.api-package>
     <axiz.openapi.model-package>${axiz.base-package}.api.model</axiz.openapi.model-package>
@@ -102,11 +102,11 @@
     </pluginManagement>
 
     <plugins>
-      <!-- Netty (WebFlux, Reactor Netty, Lettuce) loads its native transport with System.loadLibrary,
-           a restricted method since JDK 24: without native access the JVM warns ("Restricted methods
-           will be blocked in a future release") and a future release refuses it. The executable jar
-           grants it to the class path (JEP 472 manifest attribute; repackage keeps it) and the image
-           does the same with the JVM flag, because Jib starts the main class, not the jar -->
+      <!-- Netty (WebFlux, Reactor Netty, Lettuce) carga su transporte nativo con System.loadLibrary,
+           un método restringido desde JDK 24: sin acceso nativo la JVM advierte ("Restricted methods
+           will be blocked in a future release") y una versión futura lo rechazará. El jar ejecutable
+           lo concede al class path (atributo del manifiesto de JEP 472; repackage lo conserva) y la imagen
+           hace lo mismo con el flag de la JVM, porque Jib arranca la clase main, no el jar -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
@@ -134,9 +134,9 @@
           </execution>
         </executions>
       </plugin>
-      <!-- integration tests run after package, when spring-boot:repackage has replaced the jar with
-           the executable one (classes under BOOT-INF/classes): Failsafe must use the compiled
-           classes, or it cannot load the service's own types (NoClassDefFoundError) -->
+      <!-- las pruebas de integración se ejecutan después de package, cuando spring-boot:repackage ha reemplazado el jar por
+           el ejecutable (clases bajo BOOT-INF/classes): Failsafe debe usar las clases
+           compiladas, o no puede cargar los tipos propios del servicio (NoClassDefFoundError) -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
@@ -219,7 +219,7 @@
   </build>
 
   <profiles>
-    <!-- Contract-first: generates API interfaces and models from src/main/openapi/openapi.yaml -->
+    <!-- Contract-first: genera las interfaces de la API y los modelos a partir de src/main/openapi/openapi.yaml -->
     <profile>
       <id>openapi</id>
       <activation>
@@ -243,7 +243,7 @@
                   <generatorName>spring</generatorName>
                   <apiPackage>${axiz.openapi.api-package}</apiPackage>
                   <modelPackage>${axiz.openapi.model-package}</modelPackage>
-                  <!-- models only: controllers are generated once as versioned skeletons  -->
+                  <!-- solo modelos: los controladores se generan una sola vez como esqueletos versionados  -->
                   <generateApis>false</generateApis>
                   <generateModels>true</generateModels>
                   <generateSupportingFiles>false</generateSupportingFiles>
@@ -258,7 +258,7 @@
                     <useTags>true</useTags>
                     <skipDefaultInterface>true</skipDefaultInterface>
                     <openApiNullable>false</openApiNullable>
-                    <!-- inclusion and null handling stay with the global JsonMapper (axiz-web) -->
+                    <!-- la inclusión y el manejo de nulos quedan a cargo del JsonMapper global (axiz-web) -->
                     <generateJsonIncludeAnnotations>false</generateJsonIncludeAnnotations>
                     <generateJsonSetterNullsAnnotations>false</generateJsonSetterNullsAnnotations>
                     <dateLibrary>java8</dateLibrary>
@@ -266,8 +266,8 @@
                     <annotationLibrary>none</annotationLibrary>
                     <useResponseEntity>true</useResponseEntity>
                     <sourceFolder>src/main/java</sourceFolder>
-                    <!-- class-retention marker: JaCoCo leaves generated models out of the coverage
-                         gates, which measure the code of the service (see pe.axiz.core.commons.Generated) -->
+                    <!-- marcador con retención de clase: JaCoCo deja los modelos generados fuera de los gates
+                         de cobertura, que miden el código del servicio (ver pe.axiz.core.commons.Generated) -->
                     <additionalModelTypeAnnotations>@pe.axiz.core.commons.Generated("openapi-generator")</additionalModelTypeAnnotations>
                     <additionalEnumTypeAnnotations>@pe.axiz.core.commons.Generated("openapi-generator")</additionalEnumTypeAnnotations>
                   </configOptions>
@@ -276,8 +276,8 @@
             </executions>
           </plugin>
           <plugin>
-            <!-- generated models use JSpecify's @Nullable, the null-safety annotations of Spring 7
-                 and of axiz, instead of the deprecated org.springframework.lang.Nullable -->
+            <!-- los modelos generados usan @Nullable de JSpecify, las anotaciones de null-safety de Spring 7
+                 y de axiz, en lugar del obsoleto org.springframework.lang.Nullable -->
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-antrun-plugin</artifactId>
             <executions>
@@ -289,7 +289,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <!-- A valid contract may generate no model classes (for example, only 204 responses). -->
+                    <!-- Un contrato válido puede no generar clases de modelo (por ejemplo, solo respuestas 204). -->
                     <mkdir dir="${project.build.directory}/generated-sources/openapi/src/main/java" />
                     <replace dir="${project.build.directory}/generated-sources/openapi/src/main/java"
                              token="import org.springframework.lang.Nullable;"
@@ -305,7 +305,7 @@
       </build>
     </profile>
 
-    <!-- GraalVM native image: ./mvnw -Pnative native:compile (or spring-boot:build-image) -->
+    <!-- Imagen nativa de GraalVM: ./mvnw -Pnative native:compile (o spring-boot:build-image) -->
     <profile>
       <id>native</id>
       <build>
@@ -328,13 +328,13 @@
             <extensions>true</extensions>
             <configuration>
               <imageName>${project.artifactId}</imageName>
-              <!-- Spring Boot repackages the artifact under BOOT-INF; compile the AOT classes. -->
+              <!-- Spring Boot reempaqueta el artefacto bajo BOOT-INF; se compilan las clases AOT. -->
               <classesDirectory>${project.build.outputDirectory}</classesDirectory>
               <buildArgs>
                 <buildArg>--no-fallback</buildArg>
                 <buildArg>-H:+ReportExceptionStackTraces</buildArg>
                 <buildArg>--enable-sbom=cyclonedx</buildArg>
-                <!-- Native Image captures the default PRNG during analysis; a runtime -D is late. -->
+                <!-- Native Image captura el PRNG por defecto durante el análisis; un -D en tiempo de ejecución llega tarde. -->
                 <buildArg>-Djava.security.egd=file:/dev/./urandom</buildArg>
               </buildArgs>
             </configuration>
@@ -347,8 +347,8 @@
               </execution>
             </executions>
           </plugin>
-          <!-- native image published by CI as <tag>-native: the Jib extension copies the binary
-               (target/<artifactId>) and makes it the entrypoint -->
+          <!-- imagen nativa publicada por CI como <tag>-native: la extensión de Jib copia el binario
+               (target/<artifactId>) y lo convierte en el entrypoint -->
           <plugin>
             <groupId>com.google.cloud.tools</groupId>
             <artifactId>jib-maven-plugin</artifactId>
@@ -417,7 +417,7 @@
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-maven-plugin</artifactId>
             <configuration>
-              <!-- OpenAPI owns mutable wire models; all other detectors remain active. -->
+              <!-- OpenAPI es dueño de los modelos de transmisión mutables; todos los demás detectores siguen activos. -->
               <excludeFilterFile>axiz/spotbugs/generated-dtos.xml</excludeFilterFile>
             </configuration>
             <dependencies>

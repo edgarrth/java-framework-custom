@@ -10,11 +10,11 @@ import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
 /**
- * CloudEvents 1.0 envelope. {@code data} is the encoded payload (JSON by default); extensions carry
- * correlation, tracing, tenant and declared business headers.
+ * Envelope CloudEvents 1.0. {@code data} es el payload codificado (JSON por defecto); las
+ * extensiones llevan correlación, tracing, tenant y las cabeceras de negocio declaradas.
  *
- * <p>Immutable: {@code data} is copied on the way in and out. Two envelopes are equal when they
- * have the same CloudEvents identity ({@code source} and {@code id}).
+ * <p>Inmutable: {@code data} se copia a la entrada y a la salida. Dos envelopes son iguales cuando
+ * tienen la misma identidad CloudEvents ({@code source} e {@code id}).
  */
 public final class EventEnvelope {
 
@@ -24,13 +24,13 @@ public final class EventEnvelope {
   public static final String TRACESTATE = "tracestate";
 
   /**
-   * Trace context (W3C {@code traceparent}) of the outbox write that stored the event. The relay
-   * publishes the event later, outside the request: it continues this trace and removes the
-   * extension, so it never reaches the broker.
+   * Contexto de traza (W3C {@code traceparent}) de la escritura en el outbox que almacenó el
+   * evento. El relay publica el evento más tarde, fuera de la petición: continúa esta traza y
+   * elimina la extensión, de modo que nunca llega al broker.
    */
   public static final String OUTBOX_TRACEPARENT = "outboxtraceparent";
 
-  /** {@code tracestate} that goes with {@link #OUTBOX_TRACEPARENT}. */
+  /** {@code tracestate} que acompaña a {@link #OUTBOX_TRACEPARENT}. */
   public static final String OUTBOX_TRACESTATE = "outboxtracestate";
 
   public static final String TENANT = "tenant";
@@ -46,9 +46,9 @@ public final class EventEnvelope {
   private final Map<String, String> extensions;
 
   /**
-   * Creates an envelope.
+   * Crea un envelope.
    *
-   * @param builder named construction state
+   * @param builder estado de construcción nominal
    */
   private EventEnvelope(Builder builder) {
     String id = Objects.requireNonNull(builder.id, "id");
@@ -98,12 +98,12 @@ public final class EventEnvelope {
     return dataContentType;
   }
 
-  /** CloudEvents extensions, unmodifiable. */
+  /** Extensiones CloudEvents, no modificables. */
   public Map<String, String> extensions() {
     return extensions;
   }
 
-  /** A copy of the encoded payload. */
+  /** Copia del payload codificado. */
   public byte[] data() {
     return data.clone();
   }
@@ -116,7 +116,7 @@ public final class EventEnvelope {
     return extension(CORRELATION_ID);
   }
 
-  /** Copy with an extra extension. */
+  /** Copia con una extensión adicional. */
   public EventEnvelope withExtension(String name, String value) {
     Map<String, String> ext = new LinkedHashMap<>(extensions);
     ext.put(name.toLowerCase(Locale.ROOT), value);
@@ -132,7 +132,7 @@ public final class EventEnvelope {
         .build();
   }
 
-  /** Copy without the given extensions. */
+  /** Copia sin las extensiones indicadas. */
   public EventEnvelope withoutExtensions(String... names) {
     Map<String, String> ext = new LinkedHashMap<>(extensions);
     for (String n : names) {
@@ -175,12 +175,14 @@ public final class EventEnvelope {
         + "]";
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción nominal; build verifica los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable String id = null;
     private @Nullable String source = null;

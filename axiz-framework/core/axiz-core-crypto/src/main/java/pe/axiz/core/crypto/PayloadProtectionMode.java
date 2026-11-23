@@ -4,7 +4,8 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
- * Explicit technical-store policy. Selecting encryption requires the corresponding native stack.
+ * Política explícita del almacén técnico. Seleccionar cifrado requiere la pila nativa
+ * correspondiente.
  */
 public enum PayloadProtectionMode {
   NONE,

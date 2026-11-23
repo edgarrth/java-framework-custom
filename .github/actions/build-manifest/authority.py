@@ -1,4 +1,4 @@
-"""Actions authority for an isolated signer; uploaded reports never establish job success."""
+"""Autoridad de Actions para un firmante aislado; los reportes subidos nunca establecen el éxito de un job."""
 import re
 
 from prepare import api

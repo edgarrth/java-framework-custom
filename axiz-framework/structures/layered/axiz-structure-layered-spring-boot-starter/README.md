@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-structure-layered-spring-boot-starter
 
-Layered style for simple CRUD services: controller, service and repository.
+Estilo en capas para servicios CRUD simples: controller, service y repository.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,25 +12,26 @@ Layered style for simple CRUD services: controller, service and repository.
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `CrudController` | REST endpoints of a simple resource on top of a `CrudService`. |
-| `JpaCrudService` | `CrudService` over a Spring Data JPA repository. |
+| `CrudController` | Endpoints REST de un recurso simple sobre un `CrudService`. |
+| `JpaCrudService` | `CrudService` sobre un repositorio Spring Data JPA. |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl structures/layered/axiz-structure-layered-spring-boot-starter verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl structures/layered/axiz-structure-layered-spring-boot-starter verify`.
 
-## Conditional deletion
+## Borrado condicional
 
-`CommandService.delete(id, expectedVersion)` requires the version previously read by the client.
-`CrudController` accepts it as one strong quoted `If-Match` value, for example `If-Match: "3"`.
-Missing/invalid headers return 400; a stale version returns 412 and preserves the resource.
-Wildcard, weak and multiple validators are rejected. Ownership authorization runs before the
-version comparison, and JPA optimistic locking still protects concurrent transactional writes.
-Update retains the expected version in its request DTO. Clients obtain the version from their
-application response DTO; the generic controller does not invent an ETag for arbitrary DTOs.
+`CommandService.delete(id, expectedVersion)` requiere la versión que el cliente leyó previamente.
+`CrudController` la acepta como un único valor fuerte y entre comillas en `If-Match`, por ejemplo
+`If-Match: "3"`. Las cabeceras ausentes o inválidas devuelven 400; una versión desfasada devuelve 412
+y conserva el recurso. Se rechazan los comodines, los validadores débiles y los múltiples. La
+autorización de propiedad se ejecuta antes de comparar la versión, y el bloqueo optimista de JPA
+también protege las escrituras transaccionales concurrentes. La actualización conserva la versión
+esperada en su DTO de petición. Los clientes obtienen la versión desde el DTO de respuesta de su
+aplicación; el controlador genérico no inventa un ETag para DTO arbitrarios.

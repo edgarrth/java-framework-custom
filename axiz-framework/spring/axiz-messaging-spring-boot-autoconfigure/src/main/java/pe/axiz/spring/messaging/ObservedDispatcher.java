@@ -19,8 +19,8 @@ import pe.axiz.core.observability.AxizObservations;
 import pe.axiz.spring.foundation.DispatchBoundary;
 
 /**
- * Runs the dispatcher inside a CONSUMER observation continuing the producer's trace, with the
- * request context (correlation id, tenant, channel) restored from the envelope.
+ * Ejecuta el dispatcher dentro de una observación CONSUMER que continúa la traza del productor, con
+ * el contexto de la solicitud (id de correlación, tenant, canal) restaurado desde el sobre.
  */
 public class ObservedDispatcher {
 
@@ -61,7 +61,7 @@ public class ObservedDispatcher {
     this.clock = Objects.requireNonNull(clock);
   }
 
-  /** Dispatches one delivery; deferred deliveries carry the delay before the redelivery. */
+  /** Despacha una entrega; las entregas diferidas llevan el retraso previo a la reentrega. */
   public EventDispatcher.Outcome dispatch(String source, EventEnvelope envelope, int attempt) {
     ReceiverContext<EventEnvelope> context =
         new ReceiverContext<>((e, key) -> e != null ? e.extensions().get(key) : null);

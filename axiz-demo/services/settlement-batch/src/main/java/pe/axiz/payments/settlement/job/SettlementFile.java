@@ -16,19 +16,20 @@ import pe.axiz.core.fileformats.FixedWidthLayout;
 import pe.axiz.structure.batch.FixedWidthRecordReader;
 
 /**
- * Layout of the daily settlement file of the payment network (fixed width, ISO-8859-1 safe ASCII):
+ * Formato del archivo diario de liquidación de la red de pagos (ancho fijo, ASCII seguro en
+ * ISO-8859-1):
  *
  * <pre>
- * H yyyyMMdd sender(10)                                  header
- * D e2e(20) transfer(12) cci(20) amount(15,2) ccy(3) S|R yyyyMMddHHmmss   detail (86 chars)
- * T count(9) total(17,2)                                 trailer (control totals)
+ * H yyyyMMdd sender(10)                                  cabecera
+ * D e2e(20) transfer(12) cci(20) amount(15,2) ccy(3) S|R yyyyMMddHHmmss   detalle (86 caracteres)
+ * T count(9) total(17,2)                                 trailer (totales de control)
  * </pre>
  */
 public final class SettlementFile {
 
   static final DateTimeFormatter STAMP = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
-  /** Detail record layout. */
+  /** Formato del registro de detalle. */
   public static final FixedWidthLayout DETAIL =
       new FixedWidthLayout(
           "settlement-detail",
@@ -42,7 +43,7 @@ public final class SettlementFile {
               FixedField.text("status", 72, 1),
               FixedField.text("settledAt", 73, 14)));
 
-  /** Trailer record layout. */
+  /** Formato del registro trailer. */
   public static final FixedWidthLayout TRAILER =
       new FixedWidthLayout(
           "settlement-trailer",
@@ -53,7 +54,10 @@ public final class SettlementFile {
 
   private SettlementFile() {}
 
-  /** Reader of the detail records; header and trailer lines are skipped (trailer kept). */
+  /**
+   * Lector de los registros de detalle; se omiten las líneas de cabecera y trailer (el trailer se
+   * conserva).
+   */
   public static FixedWidthRecordReader<SettlementLine> reader(InputStream in) {
     return new FixedWidthRecordReader<>(
         in,
@@ -83,7 +87,7 @@ public final class SettlementFile {
         LocalDateTime.parse(text(f, "settledAt"), STAMP));
   }
 
-  /** Count and total declared by the trailer line. */
+  /** Cantidad y total declarados por la línea trailer. */
   public record Trailer(long count, BigDecimal total) {}
 
   public static Trailer trailer(@Nullable String line, int lineNumber) {
@@ -96,7 +100,7 @@ public final class SettlementFile {
         (BigDecimal) Objects.requireNonNull(t.get("total")));
   }
 
-  /** Default object key of the file of a day. */
+  /** Clave de objeto por defecto del archivo de un día. */
   public static String keyFor(String prefix, LocalDate day) {
     return prefix + "NET-SETTLE-" + day.format(DateTimeFormatter.BASIC_ISO_DATE) + ".txt";
   }

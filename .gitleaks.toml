@@ -1,4 +1,4 @@
-# gitleaks configuration shared by all axiz repositories
+# Configuración de gitleaks compartida por todos los repositorios de axiz
 title = "axiz gitleaks config"
 
 [extend]
@@ -16,7 +16,7 @@ description = "Password embedded in a JDBC URL"
 regex = '''jdbc:[a-z0-9]+://[^\s'"]*password=[^\s&'"]{4,}'''
 tags = ["database", "credential"]
 
-# Only a reviewed false positive of this rule, at these exact paths and on a digest-only line.
+# Solo un falso positivo revisado de esta regla, en estas rutas exactas y en una línea con únicamente un digest.
 [[rules]]
 id = "generic-api-key"
 [[rules.allowlists]]

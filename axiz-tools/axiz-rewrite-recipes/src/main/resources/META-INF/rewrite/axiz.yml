@@ -1,4 +1,4 @@
-# Current Axiz development conventions.
+# Convenciones de desarrollo vigentes de Axiz.
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: pe.axiz.UpgradeToAxiz

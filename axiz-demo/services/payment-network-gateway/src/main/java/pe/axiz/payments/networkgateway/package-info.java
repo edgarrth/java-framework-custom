@@ -1,6 +1,6 @@
 /**
- * Payment Network Gateway: Facade and security for external systems. Archetype gateway, hexagonal
- * style, servlet stack. Types are non-null unless annotated {@code @Nullable}.
+ * Payment Network Gateway: fachada y seguridad para sistemas externos. Arquetipo gateway, estilo
+ * hexagonal, stack servlet. Los tipos no son nulos salvo que se anoten con {@code @Nullable}.
  */
 @NullMarked
 package pe.axiz.payments.networkgateway;

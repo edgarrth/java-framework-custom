@@ -32,7 +32,10 @@ import pe.axiz.spring.tokenization.vault.AxizTokenizationVaultProperties;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-/** Operational identity/client separated from ordinary repositories and privileged maintenance. */
+/**
+ * Identidad y cliente operativos separados de los repositorios ordinarios y del mantenimiento
+ * privilegiado.
+ */
 @AutoConfiguration(
     afterName = "pe.axiz.spring.aws.AxizAwsIdentityAutoConfiguration",
     beforeName = "pe.axiz.spring.tokenization.vault.AxizTokenizationVaultAutoConfiguration")
@@ -80,7 +83,10 @@ public class AxizTokenizationDynamoDbAutoConfiguration {
     return () -> readiness.verify(client);
   }
 
-  /** Native SDK client with owned bounded completion resources, never a blocking wrapper. */
+  /**
+   * Cliente nativo del SDK con recursos de finalización propios y acotados, nunca un wrapper
+   * bloqueante.
+   */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
   static class Native {

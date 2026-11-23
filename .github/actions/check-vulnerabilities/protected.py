@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read inventory and immutable identity history exclusively from the protected base commit."""
+"""Lee el inventario y el historial de identidades inmutables exclusivamente desde el commit base protegido."""
 import argparse
 import json
 import re
@@ -41,7 +41,7 @@ def from_base(root, base):
     for commit in commits:
         previous = git(root, "show", commit + ":" + POLICY, missing=True)
         if previous is None:
-            continue  # A deletion commit does not delete its earlier evidence from git log.
+            continue  # Un commit de borrado no elimina del git log su evidencia anterior.
         total += len(previous)
         if total > 64 * 1024 * 1024:
             raise ValueError("Protected policy history exceeds the bounded input size")

@@ -222,7 +222,8 @@ class ClientResilienceLifecycleTest {
         .thenReturn(
             Mono.defer(
                 () -> {
-                  // Permit termination precedes asynchronous draining of the abandoned response.
+                  // La terminación del permiso precede al drenado asíncrono de la respuesta
+                  // abandonada.
                   r.acquire();
                   r.release(System.nanoTime(), null, 200);
                   return Mono.error(cleanup);

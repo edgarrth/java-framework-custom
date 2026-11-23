@@ -6,9 +6,9 @@ import java.util.Optional;
 import org.jspecify.annotations.Nullable;
 
 /**
- * A cached value read together with what the tier knows about its expiration: the time it still has
- * to live, that it never expires, or that the tier cannot tell. The three cases are distinct
- * because a local copy may only be kept for as long as the original is known to be valid.
+ * Valor en caché leído junto con lo que el nivel sabe de su expiración: el tiempo que aún le queda
+ * de vida, que nunca expira o que el nivel no puede saberlo. Los tres casos son distintos porque
+ * una copia local solo puede conservarse mientras se sepa que el original es válido.
  */
 public final class CachedValue {
 
@@ -28,37 +28,37 @@ public final class CachedValue {
     this.remaining = remaining;
   }
 
-  /** The entry expires after {@code remaining} (measured by the tier when it was read). */
+  /** La entrada expira tras {@code remaining} (medido por el nivel al leerla). */
   public static CachedValue expiringIn(byte[] value, Duration remaining) {
     return new CachedValue(value, Expiry.IN, Objects.requireNonNull(remaining));
   }
 
-  /** The entry has no expiration in the tier: it lives until it is evicted. */
+  /** La entrada no tiene expiración en el nivel: vive hasta que se desaloja. */
   public static CachedValue withoutExpiry(byte[] value) {
     return new CachedValue(value, Expiry.NEVER, null);
   }
 
-  /** The tier cannot tell when the entry expires. */
+  /** El nivel no puede saber cuándo expira la entrada. */
   public static CachedValue unknownExpiry(byte[] value) {
     return new CachedValue(value, Expiry.UNKNOWN, null);
   }
 
-  /** A copy of the value. */
+  /** Copia del valor. */
   public byte[] value() {
     return value.clone();
   }
 
-  /** Time left before the entry expires, when it expires and the tier knows when. */
+  /** Tiempo restante antes de que la entrada expire, cuando expira y el nivel sabe cuándo. */
   public Optional<Duration> remaining() {
     return Optional.ofNullable(remaining);
   }
 
-  /** Whether the entry lives until it is evicted. */
+  /** Indica si la entrada vive hasta que se desaloja. */
   public boolean neverExpires() {
     return expiry == Expiry.NEVER;
   }
 
-  /** Whether the tier knows the expiration (a remaining time, or no expiration at all). */
+  /** Indica si el nivel conoce la expiración (un tiempo restante, o ninguna expiración). */
   public boolean expiryKnown() {
     return expiry != Expiry.UNKNOWN;
   }

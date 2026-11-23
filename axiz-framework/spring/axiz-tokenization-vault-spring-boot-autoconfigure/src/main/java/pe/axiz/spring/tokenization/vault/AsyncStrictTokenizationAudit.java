@@ -9,7 +9,7 @@ import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.tokenization.vault.AsyncTokenizationAudit;
 import pe.axiz.core.tokenization.vault.TokenAuditEntry;
 
-/** Native confirmed audit; no wrapper around the blocking publisher and no fallback. */
+/** Auditoría confirmada nativa; sin wrapper alrededor del publicador bloqueante y sin respaldo. */
 public final class AsyncStrictTokenizationAudit implements AsyncTokenizationAudit {
   private final AsyncStrictAuditPublisher publisher;
   private final TokenAuditEvents events;

@@ -98,7 +98,7 @@ class AsyncVaultTokenizerTest {
           if (pendingWrite == null)
             return completed(() -> store.putIfAbsent(record, state, others));
           store.putIfAbsent(
-              record, state, others); // Committed but the transport acknowledgement is pending.
+              record, state, others); // Con commit, pero el acuse del transporte está pendiente.
           return pendingWrite;
         }
 
@@ -208,7 +208,7 @@ class AsyncVaultTokenizerTest {
       return engine
           .tokenize(caller(tenant), DNI, value, DOMAIN, random.operationId().toString())
           .toCompletableFuture();
-    } // The async operation must own its snapshot before this method returns.
+    } // La operación asíncrona debe poseer su snapshot antes de que este método retorne.
   }
 
   static void code(String expected, CompletionStage<?> work) {
@@ -293,7 +293,7 @@ class AsyncVaultTokenizerTest {
     assertEquals(1, canonicalValues.size());
     assertTrue(result.cancel(true));
     assertFalse(pendingRead.isCancelled());
-    assertEquals(0, released.get()); // The accepted operation still owns its distributed lease.
+    assertEquals(0, released.get()); // La operación aceptada aún posee su lease distribuido.
     pendingRead.complete(store.state);
     assertEquals(1, released.get());
     assertEquals(0, store.writes.get());

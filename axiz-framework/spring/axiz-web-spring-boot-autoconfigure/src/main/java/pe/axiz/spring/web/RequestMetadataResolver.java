@@ -16,8 +16,8 @@ import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.id.CorrelationIds;
 
 /**
- * Builds {@link RequestMetadata} from an inbound request and validates the header catalog. Shared
- * by the servlet filter and the reactive web filter.
+ * Construye {@link RequestMetadata} a partir de una solicitud entrante y valida el catálogo de
+ * cabeceras. Lo comparten el filtro servlet y el web filter reactivo.
  */
 public final class RequestMetadataResolver {
 
@@ -39,14 +39,15 @@ public final class RequestMetadataResolver {
   }
 
   /**
-   * Whether the path skips header validation (matched with {@code PathPattern}, never substrings).
+   * Indica si la ruta omite la validación de cabeceras (coincidencia con {@code PathPattern}, nunca
+   * con subcadenas).
    */
   public boolean isExcluded(String path) {
     PathContainer container = PathContainer.parsePath(path);
     return excluded.stream().anyMatch(p -> p.matches(container));
   }
 
-  /** Names of the missing or invalid catalog headers; empty for excluded paths. */
+  /** Nombres de las cabeceras del catálogo ausentes o inválidas; vacío para las rutas excluidas. */
   public List<String> invalidHeaders(String path, Function<String, @Nullable String> headers) {
     if (isExcluded(path)) {
       return List.of();

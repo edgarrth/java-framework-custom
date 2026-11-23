@@ -6,7 +6,7 @@ import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.commons.Environments;
 
-/** Immutable transport boundary. HTTP requires an explicit exception in local/test/ci. */
+/** Frontera de transporte inmutable. HTTP requiere una excepción explícita en local/test/ci. */
 public record TransportSecurityPolicy(@Nullable String environment, boolean allowPlainHttp) {
   public static final String SETTING = "axiz.transport.allow-plain-http";
 
@@ -14,12 +14,18 @@ public record TransportSecurityPolicy(@Nullable String environment, boolean allo
     return new TransportSecurityPolicy(null, false);
   }
 
-  /** Explicit process configuration for standalone users, never an automatic loopback exemption. */
+  /**
+   * Configuración de proceso explícita para usuarios independientes, nunca una exención automática
+   * de loopback.
+   */
   public static TransportSecurityPolicy system() {
     return from(key -> null);
   }
 
-  /** Context properties take precedence over explicit process settings. No DNS is performed. */
+  /**
+   * Las propiedades de contexto tienen precedencia sobre la configuración explícita del proceso. No
+   * se realiza DNS.
+   */
   public static TransportSecurityPolicy from(Function<String, @Nullable String> properties) {
     Objects.requireNonNull(properties);
     String environment =
@@ -57,7 +63,7 @@ public record TransportSecurityPolicy(@Nullable String environment, boolean allo
             + "=true and axiz.config.environment=local/test/ci");
   }
 
-  /** An authenticated logical client cannot send its credentials to another origin. */
+  /** Un cliente lógico autenticado no puede enviar sus credenciales a otro origen. */
   public void validateTarget(URI base, URI target, boolean authenticated, String setting) {
     validate(target, setting);
     if (authenticated

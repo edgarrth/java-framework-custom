@@ -1,8 +1,8 @@
 # adapters
 
-Technology adapters implement core ports or the documented technology contracts. Services select them at runtime; their code imports ports and persistence kits instead of adapter implementations.
+Los adaptadores tecnológicos implementan los puertos de core o los contratos tecnológicos documentados. Los servicios los seleccionan en runtime; su código importa puertos y kits de persistencia, no las implementaciones de los adaptadores.
 
-`axiz-adapter-database-auth-aws` implements the R2DBC kit's neutral `DatabasePasswordProvider`
-contract. Its documented dependency exception keeps the RDS SDK in the adapter, outside the kit.
+`axiz-adapter-database-auth-aws` implementa el contrato neutral `DatabasePasswordProvider` del kit
+R2DBC. Su excepción de dependencias documentada mantiene el SDK de RDS en el adaptador, fuera del kit.
 
-Build from the framework root using `./mvnw verify`. See the framework architecture guide for dependency rules.
+Se compila desde la raíz del framework con `./mvnw verify`. Las reglas de dependencias están en la guía de arquitectura del framework.

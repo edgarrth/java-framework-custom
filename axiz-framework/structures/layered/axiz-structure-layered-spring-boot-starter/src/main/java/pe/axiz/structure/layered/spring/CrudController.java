@@ -22,16 +22,18 @@ import pe.axiz.core.errors.ValidationException;
 import pe.axiz.structure.layered.CrudService;
 
 /**
- * REST endpoints of a simple resource on top of a {@link CrudService}. Subclasses add
- * {@code @RestController} and {@code @RequestMapping("/v1/<resources>")}; errors become RFC 9457
- * problems through the errors starter. Paging uses {@code page}, {@code size} and {@code sort}.
+ * Endpoints REST de un recurso simple sobre un {@link CrudService}. Las subclases agregan
+ * {@code @RestController} y {@code @RequestMapping("/v1/<resources>")}; los errores se convierten
+ * en problemas RFC 9457 mediante el starter de errores. La paginación usa {@code page}, {@code
+ * size} y {@code sort}.
  *
- * <p>Declare route authorization through axiz.security.authorization.rules; per-object checks
- * belong to the service. Entity classes must never be used as request or response types.
+ * <p>La autorización de rutas se declara mediante axiz.security.authorization.rules; las
+ * verificaciones por objeto corresponden al servicio. Las clases de entidad nunca deben usarse como
+ * tipos de petición o de respuesta.
  *
- * @param <RequestT> accepted request fields
- * @param <ResponseT> public response
- * @param <I> id type
+ * @param <RequestT> campos de petición aceptados
+ * @param <ResponseT> respuesta pública
+ * @param <I> tipo del id
  */
 public abstract class CrudController<RequestT, ResponseT, I> {
 

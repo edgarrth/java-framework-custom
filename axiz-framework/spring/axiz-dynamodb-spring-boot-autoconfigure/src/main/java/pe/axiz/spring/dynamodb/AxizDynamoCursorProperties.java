@@ -5,7 +5,10 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
-/** Shared cursor keys from secrets; retain old ids until clients can restart pagination. */
+/**
+ * Claves de cursor compartidas tomadas de secretos; los ids anteriores se conservan hasta que los
+ * clientes puedan reiniciar la paginación.
+ */
 @ConfigurationProperties("axiz.dynamodb.cursor")
 public record AxizDynamoCursorProperties(
     @Nullable String currentKeyId,

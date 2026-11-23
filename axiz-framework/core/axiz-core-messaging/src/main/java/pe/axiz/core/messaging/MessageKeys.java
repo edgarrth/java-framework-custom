@@ -6,14 +6,17 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 
 /**
- * Identity of a message for deduplication. CloudEvents makes an event unique by {@code source}
- * <b>and</b> {@code id}: two producers may legitimately use the same id, so the key carries both.
- * The source length is part of the key, so no pair of different (source, id) values produces the
- * same key; keys longer than {@link #MAX_LENGTH} are replaced by a SHA-256 digest of the pair.
+ * Identidad de un mensaje para la deduplicación. CloudEvents hace único a un evento por {@code
+ * source} <b>e</b> {@code id}: dos productores pueden usar legítimamente el mismo id, así que la
+ * clave lleva ambos. La longitud del source forma parte de la clave, de modo que ningún par de
+ * valores (source, id) distintos produce la misma clave; las claves más largas que {@link
+ * #MAX_LENGTH} se reemplazan por un digest SHA-256 del par.
  */
 public final class MessageKeys {
 
-  /** Longest key stored as is (column {@code message_id} of the inbox is 128). */
+  /**
+   * Clave más larga que se almacena tal cual (la columna {@code message_id} del inbox es de 128).
+   */
   public static final int MAX_LENGTH = 128;
 
   private MessageKeys() {}
@@ -23,11 +26,11 @@ public final class MessageKeys {
   }
 
   /**
-   * Key of a message from its source and id (an id is only unique within its source).
+   * Clave de un mensaje a partir de su source e id (un id solo es único dentro de su source).
    *
-   * @param source CloudEvents source
-   * @param id CloudEvents id
-   * @return {@code <source length>:<source>|<id>}, or {@code sha256:<hex>} when longer
+   * @param source source de CloudEvents
+   * @param id id de CloudEvents
+   * @return {@code <source length>:<source>|<id>}, o {@code sha256:<hex>} cuando es más larga
    */
   public static String of(String source, String id) {
     String key = source.length() + ":" + source + "|" + id;

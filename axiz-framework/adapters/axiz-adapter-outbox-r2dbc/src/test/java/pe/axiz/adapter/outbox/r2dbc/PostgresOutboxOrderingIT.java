@@ -87,7 +87,7 @@ import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-/** PostgreSQL semantics, independently exercised through both production drivers. */
+/** Semántica de PostgreSQL, ejercitada de forma independiente con ambos drivers de producción. */
 @Timeout(180)
 class PostgresOutboxOrderingIT {
   private static final PostgreSQLContainer POSTGRES = TestContainerImages.postgres();
@@ -221,7 +221,8 @@ class PostgresOutboxOrderingIT {
     new SecureRandom().nextBytes(new byte[32]);
     BlockHound.builder()
         .loadIntegrations()
-        // Netty 4.2 allocator maintenance; scoped to this integration-test JVM only.
+        // Mantenimiento del allocator de Netty 4.2; limitado solo a esta JVM de pruebas de
+        // integración.
         .allowBlockingCallsInside("io.netty.buffer.AdaptivePoolingAllocator$Magazine", "free")
         .install();
     source = new PGSimpleDataSource();
@@ -458,7 +459,7 @@ class PostgresOutboxOrderingIT {
     assertTrue(
         failure.toString().contains("injected-client-decoding")
             || containsInjectedFailure(failure));
-    // Three seconds is deliberately shorter than the 30-second server safety net.
+    // Tres segundos es deliberadamente menos que la red de seguridad de 30 segundos del servidor.
     Awaitility.await()
         .atMost(Duration.ofSeconds(3))
         .untilAsserted(
@@ -479,7 +480,7 @@ class PostgresOutboxOrderingIT {
                 }
               }
             });
-    // The server and row remain usable, and the failed transaction has not claimed the event.
+    // El servidor y la fila siguen utilizables, y la transacción fallida no ha reclamado el evento.
     assertEquals(
         1,
         standard
@@ -496,8 +497,8 @@ class PostgresOutboxOrderingIT {
   }
 
   /**
-   * Fault injection through the driver's supported CodecRegistrar extension, without private SDK
-   * access.
+   * Inyección de fallos mediante la extensión CodecRegistrar soportada por el driver, sin acceso
+   * privado al SDK.
    */
   private record FailingStringCodec(Codec<String> delegate, AtomicBoolean fired, boolean fatal)
       implements Codec<String>, CodecMetadata {

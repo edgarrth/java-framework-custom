@@ -1,9 +1,9 @@
-# Local dependencies of payments-ux (docker compose up -d, or axiz local up).
-# Development only: no value here is a real credential.
+# Dependencias locales de payments-ux (docker compose up -d, o axiz local up).
+# Solo para desarrollo: ningún valor de este archivo es una credencial real.
 name: payments-ux
 
 services:
-  # Grafana, Tempo, Loki, Prometheus and an OpenTelemetry collector (OTLP 4317/4318)
+  # Grafana, Tempo, Loki, Prometheus y un colector de OpenTelemetry (OTLP 4317/4318)
   otel-lgtm:
     image: axiz-local/otel-lgtm:2026.11-r1
     build: {context: ../../local/images/otel-lgtm}
@@ -14,7 +14,7 @@ services:
     build: {context: ../../local/images/valkey}
     ports: ["127.0.0.1:6379:6379"]
 
-  # OIDC provider for local tokens (realm axiz, client local-client)
+  # Proveedor OIDC para tokens locales (realm axiz, cliente local-client)
   keycloak:
     image: axiz-local/keycloak:26.8.2-r1
     build: {context: ../../local/images/keycloak}
@@ -26,7 +26,7 @@ services:
     volumes:
       - ./local/keycloak:/opt/keycloak/data/import:ro
 
-  # Stubs of downstream HTTP/SOAP services (local/wiremock/mappings)
+  # Stubs de los servicios HTTP/SOAP downstream (local/wiremock/mappings)
   wiremock:
     image: axiz-local/wiremock:3.13.2-r1
     build: {context: ../../local/images/wiremock}

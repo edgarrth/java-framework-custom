@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# A real reactive service checks generated contracts, BlockHound, AOT and native bootstrap.
+# Un servicio reactivo real verifica los contratos generados, BlockHound, AOT y el arranque nativo.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 ./mvnw --bootstrap
@@ -18,7 +18,7 @@ fixture="$acceptance_root/sample-native-orders"
   ./mvnw -B -ntp spotless:check verify -Daxiz.it.requireDocker=true
   ./mvnw -B -ntp -Pnative -DskipTests package
 )
-# Check generated definitions before spending time compiling the ELF; no runtime annotation scans.
+# Se verifican las definiciones generadas antes de invertir tiempo en compilar el ELF; sin escaneos de anotaciones en tiempo de ejecución.
 python3 .github/scripts/check-native-reactive-sample.py --module "$fixture" --runtime jvm-aot
 (
   cd "$fixture"

@@ -14,8 +14,9 @@ import pe.axiz.core.concurrent.AsyncLoadingCache;
 import pe.axiz.core.concurrent.Stages;
 
 /**
- * Coalesced native token renewal and asynchronous secret lookup through a JDK-only transport port.
- * The application owns the supplied transport and initializes it before accepting requests.
+ * Renovación nativa coalescida de tokens y consulta asíncrona de secretos mediante un puerto de
+ * transporte solo del JDK. La aplicación es dueña del transporte suministrado y lo inicializa antes
+ * de aceptar peticiones.
  */
 public final class ClientCredentialsAsyncTokenProvider implements AsyncAccessTokenProvider {
   private final AsyncHttpExchange http;
@@ -89,12 +90,14 @@ public final class ClientCredentialsAsyncTokenProvider implements AsyncAccessTok
         });
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción nominal; build verifica los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable AsyncHttpExchange http = null;
     private @Nullable URI tokenUri = null;

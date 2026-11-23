@@ -3,10 +3,10 @@ package pe.axiz.core.messaging;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Confirmation of a published event.
+ * Confirmación de un evento publicado.
  *
- * @param eventId event id
- * @param destination topic, queue or SNS topic
- * @param brokerMessageId id assigned by the broker (offset, message id), if any
+ * @param eventId id del evento
+ * @param destination tópico, cola o tópico SNS
+ * @param brokerMessageId id asignado por el broker (offset, id de mensaje), si existe
  */
 public record PublishResult(String eventId, String destination, @Nullable String brokerMessageId) {}

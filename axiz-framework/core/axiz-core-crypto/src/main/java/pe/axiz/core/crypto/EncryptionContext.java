@@ -2,7 +2,7 @@ package pe.axiz.core.crypto;
 
 import java.util.Objects;
 
-/** A declared field or shared purpose; generic context is forbidden. */
+/** Campo declarado o propósito compartido; se prohíbe el contexto genérico. */
 public final class EncryptionContext {
   private EncryptionContext() {}
 

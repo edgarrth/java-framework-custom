@@ -14,7 +14,10 @@ import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.ReturnValuesOnConditionCheckFailure;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 
-/** Shared wire conditions: asynchronous and poll-thread boundaries cannot diverge in ownership. */
+/**
+ * Condiciones de red compartidas: las fronteras asíncrona y del hilo de sondeo no pueden divergir
+ * en propiedad.
+ */
 final class DynamoDbInboxRequests {
   private final String table;
 

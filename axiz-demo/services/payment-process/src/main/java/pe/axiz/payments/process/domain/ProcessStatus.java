@@ -1,20 +1,20 @@
 package pe.axiz.payments.process.domain;
 
-/** Status of a payment process as the API shows it. */
+/** Estado de un proceso de pago tal como lo muestra la API. */
 public enum ProcessStatus {
-  /** Steps are running. */
+  /** Los pasos están en ejecución. */
   RUNNING,
   /**
-   * The outcome of a debit or transfer is uncertain (timeout, lost answer): it is being verified
-   * with the participant and nothing is undone meanwhile.
+   * El resultado de un débito o de una transferencia es incierto (timeout, respuesta perdida): se
+   * está verificando con el participante y mientras tanto no se deshace nada.
    */
   VERIFYING,
-  /** A step failed and completed steps are being undone. */
+  /** Un paso falló y se están deshaciendo los pasos completados. */
   COMPENSATING,
-  /** Debit and transfer done; the order is completed. */
+  /** Débito y transferencia realizados; la orden está completada. */
   COMPLETED,
-  /** A step failed and everything was undone; the order is rejected. */
+  /** Un paso falló y se deshizo todo; la orden está rechazada. */
   REJECTED,
-  /** An undo failed: operations must review the payment. */
+  /** Falló una acción de deshacer: operaciones debe revisar el pago. */
   NEEDS_ATTENTION
 }

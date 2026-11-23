@@ -32,7 +32,8 @@ class SafeFailureLoggingTest {
             }
 
             public void handle(String value, EventEnvelope event) {
-              // a service handler: its messages may echo business data and are never logged
+              // un handler de servicio: sus mensajes pueden repetir datos de negocio y nunca se
+              // registran en log
               var serviceFrame =
                   new StackTraceElement[] {
                     new StackTraceElement("com.example.payments.Handler", "handle", "H.java", 7)

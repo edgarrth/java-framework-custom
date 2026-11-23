@@ -4,7 +4,10 @@ import java.net.URI;
 import org.jspecify.annotations.Nullable;
 import org.springframework.web.util.UriComponentsBuilder;
 
-/** Stable route diagnostics; expanded paths and query values never become log fallbacks. */
+/**
+ * Diagnóstico estable de rutas; las rutas expandidas y los valores de la query nunca se usan como
+ * respaldo en los logs.
+ */
 final class ClientLogRoute {
   private ClientLogRoute() {}
 
@@ -14,10 +17,11 @@ final class ClientLogRoute {
         && text.chars().noneMatch(Character::isISOControl)) {
       try {
         String path = UriComponentsBuilder.fromUriString(text).build().getPath();
-        // A literal string URI can already contain caller data. Only keep variable templates.
+        // Una URI de texto literal ya puede contener datos del invocante. Solo se conservan las
+        // plantillas con variables.
         if (path != null && path.contains("{") && path.contains("}")) return path;
       } catch (IllegalArgumentException ignored) {
-        // Invalid template metadata is not a reason to disclose the expanded URI.
+        // Los metadatos de plantilla inválidos no son motivo para revelar la URI expandida.
       }
     }
     return configuredBase.getHost() + " [no-template]";

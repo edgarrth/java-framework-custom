@@ -11,7 +11,7 @@ import pe.axiz.core.idempotency.IdempotencyService;
 import pe.axiz.core.idempotency.IdempotencyStore;
 import pe.axiz.core.idempotency.InMemoryIdempotencyStore;
 
-/** Which store and which filter a service gets, and where the in-memory store is refused. */
+/** Qué almacén y qué filtro recibe un servicio, y dónde se rechaza el almacén en memoria. */
 class IdempotencyAutoConfigurationTest {
 
   private final WebApplicationContextRunner servlet =

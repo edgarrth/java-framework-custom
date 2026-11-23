@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bind service build parameters and actual registry descriptors to the manifest."""
+"""Vincula los parámetros de build del servicio y los descriptores reales del registry al manifiesto."""
 import argparse
 import json
 import re
@@ -125,7 +125,7 @@ def inspect(reference, expression="{{json .}}", *, env=None):
 
 
 def set_project_version(data, root):
-    """Apply final reactor coordinates while preserving external parents and dependencies."""
+    """Aplica las coordenadas finales del reactor conservando los parents externos y las dependencias."""
     path = safe_file(Path(root), (PurePosixPath(data["parameters"]["module"]) / "pom.xml").as_posix())
     document = minidom.parseString(path.read_bytes())
     try:

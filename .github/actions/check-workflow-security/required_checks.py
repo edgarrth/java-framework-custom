@@ -1,4 +1,4 @@
-"""Validate complete, reviewed coverage of pull-request verdicts."""
+"""Valida la cobertura completa y revisada de los veredictos de pull request."""
 import json
 from pathlib import Path
 

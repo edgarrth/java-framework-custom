@@ -6,11 +6,14 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** Records review of shared mutable state; it does not prove immutability or thread safety. */
+/**
+ * Registra la revisión de estado mutable compartido; no prueba inmutabilidad ni seguridad entre
+ * hilos.
+ */
 @Documented
 @Retention(RetentionPolicy.CLASS)
 @Target(ElementType.FIELD)
 public @interface ReviewedState {
-  /** Concrete reason: immutable copy, synchronization strategy or bounded concurrent cache. */
+  /** Motivo concreto: copia inmutable, estrategia de sincronización o caché concurrente acotada. */
   String reason();
 }

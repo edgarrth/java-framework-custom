@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate local links in the repository's Markdown documentation without network requests."""
+"""Valida los enlaces locales de la documentación Markdown del repositorio sin peticiones de red."""
 import argparse
 from html.parser import HTMLParser
 import json

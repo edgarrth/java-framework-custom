@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Select the release tag from the verified source project, never from an artifact filename."""
+"""Selecciona el tag de release a partir del proyecto fuente verificado, nunca del nombre de archivo de un artefacto."""
 import argparse
 import re
 from pathlib import Path

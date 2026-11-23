@@ -6,7 +6,9 @@ import pe.axiz.payments.orders.adapter.in.rest.model.PaymentOrder;
 import pe.axiz.payments.orders.adapter.in.rest.model.PaymentOrderPage;
 import pe.axiz.payments.orders.adapter.in.rest.model.PaymentStatus;
 
-/** Domain to API models. The creditor account always leaves masked. */
+/**
+ * Conversión del dominio a los modelos de la API. La cuenta del acreedor siempre sale enmascarada.
+ */
 final class PaymentOrderApiMapper {
 
   private PaymentOrderApiMapper() {}

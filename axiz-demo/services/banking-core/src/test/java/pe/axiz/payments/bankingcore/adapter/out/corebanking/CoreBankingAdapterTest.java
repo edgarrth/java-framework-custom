@@ -33,7 +33,7 @@ class CoreBankingAdapterTest {
         new ExternalErrorDetail("core-banking", status, code, "core says no", "{}"));
   }
 
-  /** Core REST facade fake. */
+  /** Fake de la fachada REST del core. */
   static final class FakeClient implements CoreBankingClient {
     RuntimeException failure;
     String lastAccount;

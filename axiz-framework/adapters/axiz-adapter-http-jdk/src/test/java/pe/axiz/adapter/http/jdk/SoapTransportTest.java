@@ -25,7 +25,7 @@ import pe.axiz.core.soap.SoapClient;
 import pe.axiz.core.soap.SoapException;
 import pe.axiz.core.soap.SoapVersion;
 
-/** What goes on the wire: HTTP headers per SOAP version, envelope and WS-Security token. */
+/** Lo que viaja por la red: cabeceras HTTP por versión de SOAP, envelope y token WS-Security. */
 class SoapTransportTest {
 
   private static final String SOAP11 = "http://schemas.xmlsoap.org/soap/envelope/";
@@ -51,7 +51,7 @@ class SoapTransportTest {
           contentType.set(exchange.getRequestHeaders().getFirst("Content-Type"));
           soapAction.set(exchange.getRequestHeaders().getFirst("SOAPAction"));
           try {
-            // Deliberately stall the HTTP peer to exercise the real transport timeout.
+            // Se bloquea deliberadamente el par HTTP para ejercitar el timeout real del transporte.
             Thread.sleep(delayMs);
           } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

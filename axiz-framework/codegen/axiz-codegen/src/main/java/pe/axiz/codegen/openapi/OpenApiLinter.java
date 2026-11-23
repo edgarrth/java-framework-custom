@@ -8,15 +8,16 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * Corporate contract rules, the same as the Spectral ruleset in axiz-code-standards, applied by the
- * initializr and the CLI before generating code. CI runs Spectral with the full ruleset as well.
+ * Reglas corporativas de contratos, las mismas que el ruleset de Spectral de axiz-code-standards,
+ * que el initializr y la CLI aplican previo a generar código. La CI también ejecuta Spectral con el
+ * ruleset completo.
  */
 public final class OpenApiLinter {
 
   private static final Pattern PARAMETER = Pattern.compile("^[A-Za-z][A-Za-z0-9_.-]{0,63}$");
   private static final Pattern CAMEL = Pattern.compile("^[a-z][a-zA-Z0-9]*$");
-  // One path segment: kebab-case or a {parameter}. Checked segment by segment, so the match is
-  // linear in the length of the path (no nested repetition).
+  // Un segmento de ruta: kebab-case o un {parameter}. Se verifica segmento por segmento, por lo que
+  // la coincidencia es lineal en la longitud de la ruta (sin repeticiones anidadas).
   private static final Pattern SEGMENT =
       Pattern.compile("^(?:[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9]))*|\\{[a-zA-Z0-9]+\\})$");
   private static final Pattern VERSIONED = Pattern.compile("^/v[0-9]+/.*");
@@ -116,8 +117,9 @@ public final class OpenApiLinter {
       Pattern.compile("^(amount|[a-z]+Amount|price|total|balance|fee)$");
 
   /**
-   * Component schemas: monetary numbers declare their scale and range (error); objects decide on
-   * unknown fields and strings are bounded (warnings). Same ids as the Spectral ruleset.
+   * Esquemas de componentes: los números monetarios declaran su escala y su rango (error); los
+   * objetos deciden sobre los campos desconocidos y las cadenas están acotadas (advertencias). Los
+   * mismos ids que el ruleset de Spectral.
    */
   private static void checkSchemas(OpenApiDocument doc, List<LintFinding> out) {
     Map<String, Object> schemas =
@@ -165,10 +167,10 @@ public final class OpenApiLinter {
   }
 
   /**
-   * Every operation declares how it is accessed: OAuth2/OpenID Connect scopes or bearer
-   * authentication, inherited from the document or its own, or {@code security: []} for explicit
-   * public access. The generator, {@code axiz contract lint}, {@code axiz doctor} and the
-   * Initializr apply this same rule.
+   * Cada operación declara cómo se accede a ella: alcances de OAuth2/OpenID Connect o autenticación
+   * bearer, heredados del documento o propios, o {@code security: []} para acceso público
+   * explícito. El generador, {@code axiz contract lint}, {@code axiz doctor} y el Initializr
+   * aplican esta misma regla.
    */
   private static void checkAccess(OpenApiDocument doc, List<LintFinding> out) {
     for (var operation : doc.operations()) {

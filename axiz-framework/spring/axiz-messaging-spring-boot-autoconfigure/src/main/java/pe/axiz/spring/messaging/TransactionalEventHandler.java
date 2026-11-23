@@ -9,10 +9,10 @@ import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventHandler;
 
 /**
- * Runs a handler in one transaction, so its writes and the events it enqueues in the outbox commit
- * together or not at all.
+ * Ejecuta un handler en una única transacción, de modo que sus escrituras y los eventos que encola
+ * en el outbox hacen commit juntos o no lo hacen.
  *
- * @param <T> payload type
+ * @param <T> tipo del payload
  */
 public final class TransactionalEventHandler<T> implements CompletesInTransaction<T> {
 

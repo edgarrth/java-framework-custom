@@ -17,9 +17,9 @@ import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
 /**
- * Reactive side of {@link PreBindingAuthorization}. It runs after the security filter chain, which
- * has established the caller and translates the denial into the problem response, and before the
- * dispatcher reads the request body.
+ * Lado reactivo de {@link PreBindingAuthorization}. Se ejecuta después de la cadena de filtros de
+ * seguridad, que ha establecido el invocante y traduce la denegación a la respuesta de problema, y
+ * antes de que el dispatcher lea el cuerpo de la solicitud.
  */
 final class PreBindingAuthorizationWebFilter implements WebFilter, Ordered {
 
@@ -28,11 +28,11 @@ final class PreBindingAuthorizationWebFilter implements WebFilter, Ordered {
   private final PreBindingAuthorization policy = new PreBindingAuthorization();
 
   /**
-   * Creates the filter.
+   * Crea el filtro.
    *
-   * @param mapping the application's request mappings, resolved on first use (the filter is created
-   *     before the WebFlux infrastructure)
-   * @param manager evaluates {@code @PreAuthorize} expressions against the reactive caller
+   * @param mapping los mapeos de solicitudes de la aplicación, resueltos en el primer uso (el
+   *     filtro se crea antes que la infraestructura de WebFlux)
+   * @param manager evalúa las expresiones {@code @PreAuthorize} contra el invocante reactivo
    */
   PreBindingAuthorizationWebFilter(
       Supplier<RequestMappingHandlerMapping> mapping,
@@ -43,7 +43,7 @@ final class PreBindingAuthorizationWebFilter implements WebFilter, Ordered {
 
   @Override
   public int getOrder() {
-    return 0; // after Spring Security's WebFilterChainProxy (-100)
+    return 0; // después del WebFilterChainProxy de Spring Security (-100)
   }
 
   @Override

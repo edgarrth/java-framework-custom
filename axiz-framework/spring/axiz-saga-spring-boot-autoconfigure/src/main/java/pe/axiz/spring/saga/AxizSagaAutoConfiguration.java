@@ -19,7 +19,7 @@ import pe.axiz.core.saga.SagaOrchestrator;
 import pe.axiz.core.saga.SagaRecovery;
 import pe.axiz.core.saga.SagaStateStore;
 
-/** Provider-neutral saga policies, recovery and context protection. */
+/** Políticas de sagas neutrales respecto del proveedor, recuperación y protección del contexto. */
 @AutoConfiguration(afterName = "pe.axiz.spring.saga.jdbc.AxizSagaJdbcAutoConfiguration")
 @ConditionalOnBooleanProperty(name = "axiz.saga.enabled", matchIfMissing = true)
 @EnableConfigurationProperties({AxizSagaProperties.class, AxizSagaProtectionProperties.class})
@@ -45,7 +45,10 @@ public class AxizSagaAutoConfiguration {
         p.executionLease());
   }
 
-  /** Resumption of sagas interrupted by a crash; services register their definitions on it. */
+  /**
+   * Reanudación de las sagas interrumpidas por una caída; los servicios registran en ella sus
+   * definiciones.
+   */
   @Bean
   @ConditionalOnMissingBean
   SagaRecovery axizSagaRecovery(

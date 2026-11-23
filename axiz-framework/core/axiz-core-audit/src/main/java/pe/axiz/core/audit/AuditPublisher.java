@@ -1,6 +1,9 @@
 package pe.axiz.core.audit;
 
-/** Port to publish audit events (log, MSK, SQS...). Implementations must be thread-safe. */
+/**
+ * Puerto para publicar eventos de auditoría (log, MSK, SQS, etc.). Las implementaciones deben ser
+ * thread-safe.
+ */
 @FunctionalInterface
 public interface AuditPublisher {
 

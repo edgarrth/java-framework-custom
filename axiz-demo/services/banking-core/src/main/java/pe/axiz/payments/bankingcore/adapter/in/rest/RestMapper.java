@@ -5,7 +5,7 @@ import pe.axiz.payments.bankingcore.adapter.in.rest.model.Movement;
 import pe.axiz.payments.bankingcore.adapter.in.rest.model.MovementRequest;
 import pe.axiz.payments.bankingcore.domain.MovementOrder;
 
-/** Maps contract models to domain values and back. */
+/** Convierte los modelos del contrato en valores de dominio y viceversa. */
 final class RestMapper {
 
   private RestMapper() {}

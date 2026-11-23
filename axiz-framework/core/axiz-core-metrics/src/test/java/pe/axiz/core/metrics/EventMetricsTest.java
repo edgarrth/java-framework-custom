@@ -96,7 +96,7 @@ class EventMetricsTest {
   void begunOperationsAreRecordedOnceWhenTheyFinish() {
     EventMetrics.Observed ok = metrics.begin("payment.query", "query", true, List.of());
     ok.succeed(null);
-    ok.fail(new IllegalStateException("late")); // ignored
+    ok.fail(new IllegalStateException("late")); // se ignora
     metrics.begin("payment.query", "query", true, List.of()).fail(new IllegalStateException("x"));
     assertEquals(
         1.0,

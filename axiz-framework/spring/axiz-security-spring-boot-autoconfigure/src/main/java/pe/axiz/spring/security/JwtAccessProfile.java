@@ -12,13 +12,20 @@ import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
 import org.springframework.security.oauth2.jwt.Jwt;
 import pe.axiz.core.json.JsonReader;
 
-/** Disjoint access-token contracts selected by trusted issuer, never by an incoming token. */
+/**
+ * Contratos disjuntos de token de acceso seleccionados por el emisor de confianza, nunca por un
+ * token entrante.
+ */
 public enum JwtAccessProfile {
   /**
-   * Legacy JWT access tokens with absent typ or JWT; issuer/audience isolation remains mandatory.
+   * Tokens de acceso JWT sin typ o con typ JWT; el aislamiento por emisor y audiencia sigue siendo
+   * obligatorio.
    */
   COMPATIBLE,
-  /** Explicit access-token type and RFC 9068 required identity claims; RS256 is forbidden. */
+  /**
+   * Tipo de token de acceso explícito y claims de identidad obligatorios de RFC 9068; RS256 está
+   * prohibido.
+   */
   STRICT;
 
   OAuth2TokenValidator<Jwt> validator() {
@@ -41,8 +48,9 @@ public enum JwtAccessProfile {
   }
 
   private static boolean originalClaims(String token) {
-    // Runs after signature verification. Nimbus coerces numeric sub to text, and Spring synthesizes
-    // absent iat from exp. The strict contract must validate the original signed JSON as well.
+    // Se ejecuta después de verificar la firma. Nimbus convierte un sub numérico en texto y Spring
+    // sintetiza un iat ausente a partir de exp. El contrato estricto también debe validar el JSON
+    // firmado original.
     if (token.length() > 65_536) return false;
     int first = token.indexOf('.');
     int last = token.lastIndexOf('.');

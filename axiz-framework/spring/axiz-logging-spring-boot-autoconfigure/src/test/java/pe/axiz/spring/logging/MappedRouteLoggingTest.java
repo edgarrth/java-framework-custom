@@ -20,7 +20,8 @@ import pe.axiz.core.logging.HttpLogFormatter;
 import pe.axiz.core.sensitive.ObjectMasker;
 
 /**
- * Real MVC and functional WebFlux mapping metadata must reach the access logger without raw IDs.
+ * Los metadatos reales de mapeo de MVC y de WebFlux funcional deben llegar al logger de acceso sin
+ * IDs sin procesar.
  */
 @ExtendWith(OutputCaptureExtension.class)
 class MappedRouteLoggingTest {

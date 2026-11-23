@@ -26,9 +26,10 @@ import pe.axiz.extension.cqrs.QueryHandler;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * CQRS buses over all {@link CommandHandler} and {@link QueryHandler} beans with the ordered
- * pipeline: observation, validation, authorization, idempotency, transaction, audit and metrics.
- * Each behavior is added only when its capability is present; duplicated handlers fail startup.
+ * Buses CQRS sobre todos los beans {@link CommandHandler} y {@link QueryHandler} con el pipeline
+ * ordenado: observación, validación, autorización, idempotencia, transacción, auditoría y métricas.
+ * Cada behavior se agrega solo cuando su capacidad está presente; los handlers duplicados hacen
+ * fallar el arranque.
  */
 @AutoConfiguration(
     afterName = {
@@ -43,9 +44,10 @@ import tools.jackson.databind.json.JsonMapper;
 public class AxizCqrsAutoConfiguration {
 
   /**
-   * What to do at startup with commands and queries that nothing protects (no {@code
-   * RequiresAuthority}, {@code AccessPolicy} or {@code OpenAccess}): {@code fail} (default), {@code
-   * warn} (explicit warning-only policy) or {@code allow}. Unknown values reject startup.
+   * Qué hacer al arrancar con los comandos y consultas que nada protege (sin {@code
+   * RequiresAuthority}, {@code AccessPolicy} ni {@code OpenAccess}): {@code fail} (por defecto),
+   * {@code warn} (política explícita de solo advertencia) o {@code allow}. Los valores desconocidos
+   * rechazan el arranque.
    */
   public static final String UNPROTECTED_PROPERTY = "axiz.cqrs.authorization.unprotected";
 

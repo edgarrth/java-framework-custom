@@ -6,7 +6,10 @@ import pe.axiz.extension.cqrs.AccessPolicy;
 import pe.axiz.extension.cqrs.Caller;
 import pe.axiz.payments.orders.application.command.ChangePaymentOrderStatusCommand;
 
-/** Status changes belong to the payment process; customers cannot move their own orders. */
+/**
+ * Los cambios de estado corresponden al proceso de pagos; los clientes no pueden mover sus propias
+ * órdenes.
+ */
 public class ChangePaymentOrderStatusAccess
     implements AccessPolicy<ChangePaymentOrderStatusCommand> {
 

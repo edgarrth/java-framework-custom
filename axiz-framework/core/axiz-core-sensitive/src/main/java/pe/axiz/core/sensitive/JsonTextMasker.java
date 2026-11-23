@@ -11,9 +11,10 @@ import pe.axiz.core.json.JsonReader;
 import pe.axiz.core.json.JsonWriter;
 
 /**
- * Masks bounded RFC 8259 documents using the shared strict JSON parser and writer. Escapes,
- * whitespace and numeric notation are canonicalized; semantic values are retained unless masked.
- * Invalid or incomplete input never falls back to the original body.
+ * Enmascara documentos RFC 8259 acotados con el parser y el escritor JSON estrictos compartidos.
+ * Los escapes, los espacios y la notación numérica se canonicalizan; los valores semánticos se
+ * conservan salvo que se enmascaren. Una entrada inválida o incompleta nunca recurre al cuerpo
+ * original.
  */
 public final class JsonTextMasker {
   public static final int MAX_DEPTH = JsonReader.MAX_DEPTH;

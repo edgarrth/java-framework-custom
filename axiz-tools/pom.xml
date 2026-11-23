@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  axiz-tools: developer tooling of the axiz platform.
-    axiz-cli              picocli CLI (native binary): new, add, generate, contract, upgrade, doctor, local
-    axiz-initializr       web generator and REST API (SSO), the CLI's online mode
-    axiz-rewrite-recipes  OpenRewrite recipes applied by `axiz upgrade`
-  All of them use the generation engine of the framework (pe.axiz:axiz-codegen).
+  axiz-tools: herramientas de desarrollo de la plataforma axiz.
+    axiz-cli              CLI con picocli (binario nativo): new, add, generate, contract, upgrade, doctor, local
+    axiz-initializr       generador web y API REST (SSO), el modo online de la CLI
+    axiz-rewrite-recipes  recetas de OpenRewrite que aplica `axiz upgrade`
+  Todas usan el motor de generación del framework (pe.axiz:axiz-codegen).
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -18,7 +18,7 @@
 
   <properties>
     <maven.deploy.skip>true</maven.deploy.skip>
-    <!-- The aggregator is not deployed, but must inventory the published tools and Initializr. -->
+    <!-- El agregador no se despliega, pero debe inventariar las herramientas publicadas y el Initializr. -->
     <cyclonedx.skipNotDeployed>false</cyclonedx.skipNotDeployed>
   </properties>
 

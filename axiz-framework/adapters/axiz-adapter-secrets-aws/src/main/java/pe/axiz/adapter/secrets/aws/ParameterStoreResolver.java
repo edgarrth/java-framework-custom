@@ -11,9 +11,9 @@ import software.amazon.awssdk.services.ssm.model.GetParameterRequest;
 import software.amazon.awssdk.services.ssm.model.ParameterNotFoundException;
 
 /**
- * Resolves parameters (including SecureString) from AWS Systems Manager Parameter Store under a
- * path such as {@code /axiz/prod/payments/}. Complementary source: credentials belong in Secrets
- * Manager.
+ * Resuelve parámetros (incluidos SecureString) desde AWS Systems Manager Parameter Store bajo una
+ * ruta como {@code /axiz/prod/payments/}. Fuente complementaria: las credenciales corresponden a
+ * Secrets Manager.
  */
 public final class ParameterStoreResolver implements SecretResolver {
 

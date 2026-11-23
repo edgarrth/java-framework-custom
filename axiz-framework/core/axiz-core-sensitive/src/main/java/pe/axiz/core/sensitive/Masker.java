@@ -2,10 +2,13 @@ package pe.axiz.core.sensitive;
 
 import pe.axiz.core.identifiers.IdentifierMasks;
 
-/** Masking functions. All of them are total: any input (even empty) gives a safe output. */
+/**
+ * Funciones de enmascaramiento. Todas son totales: cualquier entrada (incluso vacía) da una salida
+ * segura.
+ */
 public final class Masker {
 
-  /** Fixed replacement for fully masked values; does not reveal the length. */
+  /** Reemplazo fijo para valores enmascarados por completo; no revela la longitud. */
   public static final String FULL_MASK = IdentifierMasks.FULL;
 
   private Masker() {}

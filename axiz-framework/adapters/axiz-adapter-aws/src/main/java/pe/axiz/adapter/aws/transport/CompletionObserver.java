@@ -2,7 +2,10 @@ package pe.axiz.adapter.aws.transport;
 
 import software.amazon.awssdk.utils.SdkAutoCloseable;
 
-/** Non-blocking completion signals; the resource owner releases the observer on shutdown. */
+/**
+ * Señales de finalización no bloqueantes; el propietario del recurso libera el observador al
+ * apagar.
+ */
 public interface CompletionObserver extends SdkAutoCloseable {
   CompletionObserver NOOP =
       new CompletionObserver() {

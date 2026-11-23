@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render framework and demo charts; check bootstrap selectors and versioned ConfigMap selection."""
+"""Renderiza los charts del framework y de la demo; verifica los selectores de bootstrap y la selección versionada de ConfigMaps."""
 import argparse
 import hashlib
 import json
@@ -87,7 +87,7 @@ def main():
                 if "when" in item and not active[item["when"]]:
                     continue
                 shutil.copyfile(template_root / template, templates / Path(template).name)
-            # Concrete values fixture; resource templates and role selection come from the SDK manifest.
+                        # Fixture de valores concretos; las plantillas de recursos y la selección de roles provienen del manifiesto del SDK.
             values = yaml.load((demo / f"services/{service}/deploy/helm/{service}/values.yaml").read_text(), Loader=UniqueKeys)
             values.setdefault("monitoring", {"prometheusRules": {"enabled": False}})
             (chart / "values.yaml").write_text(yaml.safe_dump(values))

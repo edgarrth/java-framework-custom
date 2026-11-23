@@ -2,5 +2,5 @@ package pe.axiz.spring.audit;
 
 import pe.axiz.core.audit.AsyncAuditEventPublisher;
 
-/** Named native destination contributed by an adapter; it never adapts an imperative publisher. */
+/** Destino nativo con nombre aportado por un adaptador; nunca adapta un publicador imperativo. */
 public record AsyncAuditSink(String name, AsyncAuditEventPublisher publisher) {}

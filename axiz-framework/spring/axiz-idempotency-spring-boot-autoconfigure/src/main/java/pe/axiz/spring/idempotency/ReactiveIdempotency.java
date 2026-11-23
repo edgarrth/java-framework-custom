@@ -20,10 +20,16 @@ import reactor.core.Exceptions;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/** Reactive half of {@link IdempotencyMethodInterceptor}; loaded only when Reactor is present. */
+/**
+ * Mitad reactiva de {@link IdempotencyMethodInterceptor}; solo se carga cuando Reactor está
+ * presente.
+ */
 final class ReactiveIdempotency {
 
-  /** Reactor context key of the request state set by {@link IdempotencyWebFilter}. */
+  /**
+   * Clave en el contexto de Reactor del estado de la solicitud establecido por {@link
+   * IdempotencyWebFilter}.
+   */
   static final String CONTEXT_KEY = "axiz.idempotency.exchange";
 
   private ReactiveIdempotency() {}
@@ -43,7 +49,7 @@ final class ReactiveIdempotency {
             ctx -> {
               IdempotencyExchange exchange = ctx.getOrDefault(CONTEXT_KEY, null);
               if (exchange == null || exchange.execution() != null) {
-                return Mono.<Void>empty(); // safe method, or already decided
+                return Mono.<Void>empty(); // método seguro, o ya decidido
               }
               String key = exchange.key();
               String fingerprint = exchange.fingerprint();
@@ -103,8 +109,8 @@ final class ReactiveIdempotency {
   }
 
   /**
-   * Per-request state shared by the web filter (which fingerprints the request and stores the
-   * response) and the advice (which takes the decision after authorization).
+   * Estado por solicitud compartido por el web filter (que calcula la huella de la solicitud y
+   * almacena la respuesta) y el advice (que toma la decisión después de la autorización).
    */
   static final class IdempotencyExchange {
     private final @Nullable String key;

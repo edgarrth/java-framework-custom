@@ -41,7 +41,7 @@ jobs:
     - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       with:
         persist-credentials: false
-    # Immutable internal release; check_workflow_security verifies the fail-closed release guard.
+    # Release interna inmutable; check_workflow_security verifica la protección de release que falla de forma cerrada.
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
     - uses: edgarrth/java-framework-custom/.github/actions/setup-maven@axiz-workflows-v2.0.0
       with:

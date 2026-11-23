@@ -7,7 +7,7 @@ import pe.axiz.core.audit.StrictAuditPublisher;
 import pe.axiz.core.tokenization.vault.TokenAuditEntry;
 import pe.axiz.core.tokenization.vault.TokenizationAudit;
 
-/** Requires durable confirmation and propagates failure without a log or queue fallback. */
+/** Requiere confirmación durable y propaga el fallo sin respaldo en log ni en cola. */
 public final class StrictTokenizationAudit implements TokenizationAudit {
   private final StrictAuditPublisher publisher;
   private final TokenAuditEvents events;

@@ -1,4 +1,4 @@
-"""One canonical v2 release grammar, independent of the mutable release version."""
+"""Una única gramática canónica de release v2, independiente de la versión de release mutable."""
 import json
 from pathlib import Path
 import re

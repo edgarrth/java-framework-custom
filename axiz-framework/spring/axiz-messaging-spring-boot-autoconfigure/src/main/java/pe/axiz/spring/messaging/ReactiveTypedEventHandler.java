@@ -15,11 +15,12 @@ import pe.axiz.core.messaging.EventHandler;
 import pe.axiz.core.messaging.TypedEventHandler;
 
 /**
- * Base class of non-blocking event handlers for reactive services (R2DBC, WebClient): {@link #on}
- * returns a publisher that completes when the event is handled. The consumer thread waits for it
- * (bounded by {@link #timeout()}) so acknowledgement, retries, DLQ and the inbox work exactly as
- * with blocking handlers; the Spring starter runs the publisher in a reactive transaction with the
- * request context and the trace of the message.
+ * Clase base de los handlers de eventos no bloqueantes para servicios reactivos (R2DBC, WebClient):
+ * {@link #on} devuelve un publicador que completa cuando se ha manejado el evento. El hilo del
+ * consumidor lo espera (acotado por {@link #timeout()}) para que la confirmación, los reintentos,
+ * la DLQ y el inbox funcionen exactamente igual que con handlers bloqueantes; el starter de Spring
+ * ejecuta el publicador en una transacción reactiva con el contexto de la solicitud y la traza del
+ * mensaje.
  *
  * <pre>
  * &#64;HandlesEvent("pe.axiz.payments.payment-order-created.v1")
@@ -30,11 +31,11 @@ import pe.axiz.core.messaging.TypedEventHandler;
  * }
  * </pre>
  *
- * @param <T> payload type
+ * @param <T> tipo del payload
  */
 public abstract class ReactiveTypedEventHandler<T> implements EventHandler<T> {
 
-  /** Default bound of one handling. */
+  /** Límite por defecto de un manejo. */
   public static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(30);
 
   private final String eventType;
@@ -46,15 +47,15 @@ public abstract class ReactiveTypedEventHandler<T> implements EventHandler<T> {
         TypedEventHandler.resolvePayload(getClass(), ReactiveTypedEventHandler.class);
   }
 
-  /** Handles one event; nothing may run before the publisher is subscribed. */
+  /** Maneja un evento; nada puede ejecutarse antes de que se suscriba el publicador. */
   protected abstract Publisher<Void> on(T payload, EventEnvelope envelope);
 
-  /** The publisher of one handling, for wrappers that add a transaction or a context. */
+  /** El publicador de un manejo, para los wrappers que añaden una transacción o un contexto. */
   public final Publisher<Void> react(T payload, EventEnvelope envelope) {
     return on(payload, envelope);
   }
 
-  /** Bound of one handling when it is awaited by {@link #handle}. */
+  /** Límite de un manejo cuando lo espera {@link #handle}. */
   protected Duration timeout() {
     return DEFAULT_TIMEOUT;
   }
@@ -75,8 +76,8 @@ public abstract class ReactiveTypedEventHandler<T> implements EventHandler<T> {
   }
 
   /**
-   * Waits on the calling (consumer) thread for a publisher to complete; its failure is rethrown,
-   * and on timeout the subscription is cancelled.
+   * Espera en el hilo invocante (del consumidor) a que un publicador complete; su fallo se relanza
+   * y, ante un timeout, se cancela la suscripción.
    */
   public static void await(Publisher<?> publisher, Duration timeout) throws Exception {
     CompletableFuture<@Nullable Void> done = new CompletableFuture<>();
@@ -91,7 +92,7 @@ public abstract class ReactiveTypedEventHandler<T> implements EventHandler<T> {
 
           @Override
           public void onNext(Object value) {
-            // values are ignored: completion is the signal
+            // los valores se ignoran: la finalización es la señal
           }
 
           @Override

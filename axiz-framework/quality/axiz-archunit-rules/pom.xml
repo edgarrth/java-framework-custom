@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- ArchUnit rules that services (and the framework) run in their tests. -->
+<!-- Reglas de ArchUnit que los servicios (y el framework) ejecutan en sus pruebas. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
@@ -46,12 +46,12 @@
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-http</artifactId><version>${project.version}</version><scope>test</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-crypto</artifactId><version>${project.version}</version><scope>test</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-secrets</artifactId><version>${project.version}</version><scope>test</scope></dependency>
-    <!-- compile scope on purpose: this artifact is itself only used in test scope by services -->
+    <!-- scope compile a propósito: los servicios usan este artefacto solo en el scope test -->
     <dependency>
       <groupId>com.tngtech.archunit</groupId>
       <artifactId>archunit</artifactId>
     </dependency>
-    <!-- sample code for the reactive rules (blocking calls, global hooks) -->
+    <!-- código de ejemplo para las reglas reactivas (llamadas bloqueantes, hooks globales) -->
     <dependency>
       <groupId>io.projectreactor</groupId>
       <artifactId>reactor-core</artifactId>

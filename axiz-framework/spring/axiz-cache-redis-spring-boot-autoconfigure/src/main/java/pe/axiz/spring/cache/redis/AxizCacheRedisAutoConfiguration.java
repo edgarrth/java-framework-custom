@@ -21,8 +21,9 @@ import pe.axiz.core.cache.ByteCache;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 
 /**
- * L2 cache on ElastiCache using Boot's Redis connection settings ({@code spring.data.redis.*}, TLS
- * with certificate verification). Keys are removed with SCAN, never KEYS.
+ * Caché L2 en ElastiCache con la configuración de conexión Redis de Boot ({@code
+ * spring.data.redis.*}, TLS con verificación de certificados). Las claves se eliminan con SCAN,
+ * nunca con KEYS.
  */
 @AutoConfiguration(
     beforeName = "pe.axiz.spring.cache.AxizCacheAutoConfiguration",
@@ -39,9 +40,9 @@ import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 @EnableConfigurationProperties(AxizCacheRedisProperties.class)
 public class AxizCacheRedisAutoConfiguration {
 
-  // no destroy method: the connection belongs to the factory's RedisClient, which closes it when
-  // the factory stops (a lifecycle phase that runs before beans are destroyed); closing it again
-  // made Lettuce warn "Connection is already closed" at every shutdown
+  // sin método destroy: la conexión pertenece al RedisClient de la fábrica, que la cierra cuando la
+  // fábrica se detiene (una fase del ciclo de vida que se ejecuta antes de destruir los beans);
+  // cerrarla otra vez hace que Lettuce advierta "Connection is already closed" en cada apagado
   @Bean(destroyMethod = "")
   StatefulRedisConnection<String, byte[]> axizCacheRedisConnection(
       LettuceConnectionFactory factory) {

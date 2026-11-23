@@ -4,13 +4,13 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * Catalog entry describing an error.
+ * Entrada del catálogo que describe un error.
  *
- * @param code error code
- * @param category category (and therefore HTTP status)
- * @param type error type
- * @param title short, human readable summary (default language)
- * @param messageKey i18n key for the detail message
+ * @param code código de error
+ * @param category categoría (y por tanto estado HTTP)
+ * @param type tipo de error
+ * @param title resumen breve y legible (idioma por defecto)
+ * @param messageKey clave i18n del mensaje de detalle
  */
 public record ErrorDefinition(
     ErrorCode code, ErrorCategory category, ErrorType type, String title, String messageKey)

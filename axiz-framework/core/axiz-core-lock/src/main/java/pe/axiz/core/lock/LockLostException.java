@@ -5,7 +5,10 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.errors.AxizException;
 
-/** The lease of a lock ended before the work under it finished ({@link LockErrors#LOST}). */
+/**
+ * El lease de un lock terminó antes de que finalizara el trabajo protegido ({@link
+ * LockErrors#LOST}).
+ */
 public class LockLostException extends AxizException {
 
   private static final long serialVersionUID = 1L;

@@ -3,7 +3,10 @@ package pe.axiz.core.tokenization.vault;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/** Restricted maintenance page. Its opaque cursor must never appear in public responses or logs. */
+/**
+ * Página de mantenimiento restringida. Su cursor opaco nunca debe aparecer en respuestas públicas
+ * ni en logs.
+ */
 public record VaultScanPage(List<VaultRecord> records, @Nullable String nextCursor) {
   public VaultScanPage {
     if (records.size() > 100

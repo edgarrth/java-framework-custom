@@ -17,8 +17,8 @@ import pe.axiz.core.security.RateLimitUnavailableException;
 import pe.axiz.core.security.RateLimiter;
 
 /**
- * Per-caller rate limit after authentication. Answers 429 with {@code Retry-After}; exposes {@code
- * RateLimit-Remaining} on allowed requests.
+ * Límite de tasa por invocante después de la autenticación. Responde 429 con {@code Retry-After};
+ * expone {@code RateLimit-Remaining} en las solicitudes permitidas.
  */
 public class RateLimitFilter extends OncePerRequestFilter {
 

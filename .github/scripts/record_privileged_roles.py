@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Refresh reviewed privileged role fingerprints explicitly; never invoked to adopt changes by CI."""
+"""Actualiza de forma explícita las huellas revisadas de los roles privilegiados; CI nunca lo invoca para adoptar cambios."""
 import argparse
 import json
 from pathlib import Path

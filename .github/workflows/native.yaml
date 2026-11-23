@@ -1,4 +1,4 @@
-# Build-only native components; lib-build verifies and binds all platforms to one manifest.
+# Componentes nativos solo de build; lib-build verifica y vincula todas las plataformas a un único manifiesto.
 name: native
 on:
   workflow_call:
@@ -98,7 +98,7 @@ jobs:
           ref: ${{ inputs.source-sha }}
           fetch-depth: 0
           persist-credentials: false
-      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
       # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
       - uses: edgarrth/java-framework-custom/.github/actions/consume-build@axiz-workflows-v2.0.0 # x-release-please-version
         id: candidate
@@ -111,7 +111,7 @@ jobs:
           manifest-sha256: ${{ inputs.candidate-manifest-sha256 }}
           kind: maven-library
           token: ${{ secrets.CANDIDATE_READ_TOKEN || github.token }}
-      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
       # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
       - uses: edgarrth/java-framework-custom/.github/actions/build-inputs@axiz-workflows-v2.0.0 # x-release-please-version
         id: inputs
@@ -129,7 +129,7 @@ jobs:
           native-module: ${{ inputs.module }}
           native-binary: ${{ inputs.binary }}
           native-platforms: '["linux-x64","macos-arm64","windows-x64"]'
-      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
       # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
       - uses: edgarrth/java-framework-custom/.github/actions/setup-maven@axiz-workflows-v2.0.0 # x-release-please-version
         with:

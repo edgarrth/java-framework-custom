@@ -4,12 +4,12 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Who a flag is evaluated for.
+ * Para quién se evalúa un flag.
  *
- * @param targetingKey stable key for percentage rollouts (user or client id)
- * @param channel channel
+ * @param targetingKey clave estable para despliegues por porcentaje (id de usuario o de cliente)
+ * @param channel canal
  * @param tenant tenant
- * @param attributes other attributes for rules
+ * @param attributes otros atributos para las reglas
  */
 public record EvaluationContext(
     @Nullable String targetingKey,

@@ -82,7 +82,7 @@ class CreatePaymentOrderHandlerTest {
 
   @Test
   void registersAndPublishes() {
-    // Friday 2026-10-09 10:00 Lima: before the cut-off, same business day
+    // Viernes 2026-10-09 10:00 en Lima: previo a la hora de corte, mismo día hábil
     PaymentOrder o = handler(Instant.parse("2026-10-09T15:00:00Z")).handle(command("150.75"));
     assertThat(o.status()).isEqualTo(PaymentStatus.RECEIVED);
     assertThat(o.processingDate()).isEqualTo(LocalDate.of(2026, 10, 9));
@@ -92,7 +92,7 @@ class CreatePaymentOrderHandlerTest {
 
   @Test
   void afterTheCutoffMovesToTheNextBusinessDay() {
-    // Friday 19:00 Lima -> Monday
+    // Viernes 19:00 en Lima: pasa al lunes
     PaymentOrder o = handler(Instant.parse("2026-10-10T00:00:00Z")).handle(command("10"));
     assertThat(o.processingDate()).isEqualTo(LocalDate.of(2026, 10, 12));
   }
@@ -121,7 +121,8 @@ class CreatePaymentOrderHandlerTest {
   }
 
   /**
-   * An amount the client did not send is never charged: extra decimals are refused, not rounded.
+   * Nunca se cobra un monto que el cliente no envió: los decimales adicionales se rechazan, no se
+   * redondean.
    */
   @Test
   void anAmountWithMoreDecimalsThanTheCurrencyIsRejectedAndReservesNothing() {
@@ -137,7 +138,7 @@ class CreatePaymentOrderHandlerTest {
     assertThat(h.handle(command("150.50")).amount()).isEqualTo(Money.of("150.50", "PEN"));
   }
 
-  /** Regression: a retried request returns the order it created, never a second one. */
+  /** Regresión: una solicitud reintentada devuelve la orden que creó, nunca una segunda. */
   @Test
   void aRetriedRequestReturnsTheSameOrderAndReservesOnce() {
     CreatePaymentOrderHandler h = handler(Instant.parse("2026-10-09T15:00:00Z"));

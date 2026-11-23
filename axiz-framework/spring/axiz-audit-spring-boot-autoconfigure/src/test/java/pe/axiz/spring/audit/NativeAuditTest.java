@@ -343,8 +343,8 @@ class NativeAuditTest {
         .expectNoEvent(Duration.ofMillis(30))
         .thenCancel()
         .verify(T);
-    // The subscriber's cancellation runs async cleanup; verify the event, not just downstream
-    // cancel.
+    // La cancelación del suscriptor ejecuta una limpieza asíncrona; se verifica el evento, no solo
+    // la cancelación aguas abajo.
     assertTrue(cleanup.await(5, TimeUnit.SECONDS));
     assertEquals(4, events.size());
     assertEquals("CancellationException", events.getLast().errorCode());

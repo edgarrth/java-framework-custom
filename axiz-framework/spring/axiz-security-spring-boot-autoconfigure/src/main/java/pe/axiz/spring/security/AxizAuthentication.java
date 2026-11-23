@@ -8,8 +8,8 @@ import org.springframework.security.oauth2.server.resource.authentication.Abstra
 import pe.axiz.core.security.AxizPrincipal;
 
 /**
- * Authentication backed by a validated JWT whose principal is an {@link AxizPrincipal}, so
- * controllers can declare {@code @AuthenticationPrincipal AxizPrincipal caller}.
+ * Autenticación respaldada por un JWT validado cuyo principal es un {@link AxizPrincipal}, de modo
+ * que los controladores pueden declarar {@code @AuthenticationPrincipal AxizPrincipal caller}.
  */
 public final class AxizAuthentication extends AbstractOAuth2TokenAuthenticationToken<Jwt> {
 

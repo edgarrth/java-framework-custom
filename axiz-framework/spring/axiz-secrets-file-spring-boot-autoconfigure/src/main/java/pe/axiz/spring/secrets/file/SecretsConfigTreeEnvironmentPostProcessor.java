@@ -11,8 +11,9 @@ import org.springframework.core.env.MapPropertySource;
 import org.springframework.util.StringUtils;
 
 /**
- * Imports the mounted secret files as a config tree ({@code optional:configtree:}), so a file named
- * {@code spring.datasource.password} becomes that property. Runs before config data loading.
+ * Importa los archivos de secretos montados como un config tree ({@code optional:configtree:}), de
+ * modo que un archivo llamado {@code spring.datasource.password} se convierte en esa propiedad. Se
+ * ejecuta antes de la carga de config data.
  */
 public class SecretsConfigTreeEnvironmentPostProcessor
     implements EnvironmentPostProcessor, Ordered {
@@ -39,7 +40,8 @@ public class SecretsConfigTreeEnvironmentPostProcessor
 
   @Override
   public int getOrder() {
-    // before the config conventions (which keep existing imports) and Boot's config data loading
+    // antes de las convenciones de configuración (que conservan las importaciones existentes) y de
+    // la carga de config data de Boot
     return Ordered.HIGHEST_PRECEDENCE + 4;
   }
 }

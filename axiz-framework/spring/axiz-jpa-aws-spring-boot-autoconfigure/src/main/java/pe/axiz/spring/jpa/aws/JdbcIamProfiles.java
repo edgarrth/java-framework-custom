@@ -10,7 +10,10 @@ import software.amazon.jdbc.plugin.readwritesplitting.ReadWriteSplittingPluginFa
 import software.amazon.jdbc.profile.ConfigurationProfileBuilder;
 import software.amazon.jdbc.profile.DriverConfigurationProfiles;
 
-/** Two immutable plugin definitions contain no credentials or resources shared across contexts. */
+/**
+ * Dos definiciones inmutables de plugins que no contienen credenciales ni recursos compartidos
+ * entre contextos.
+ */
 final class JdbcIamProfiles {
   private JdbcIamProfiles() {}
 

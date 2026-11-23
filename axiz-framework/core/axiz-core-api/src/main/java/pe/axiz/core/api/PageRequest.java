@@ -3,11 +3,11 @@ package pe.axiz.core.api;
 import pe.axiz.core.lang.Checks;
 
 /**
- * Page request with zero-based page index.
+ * Petición de página con índice de página desde cero.
  *
- * @param page zero-based page index
- * @param size page size, bounded by {@link #MAX_SIZE}
- * @param sort sort specification
+ * @param page índice de página desde cero
+ * @param size tamaño de página, acotado por {@link #MAX_SIZE}
+ * @param sort especificación de ordenamiento
  */
 public record PageRequest(int page, int size, Sort sort) {
 

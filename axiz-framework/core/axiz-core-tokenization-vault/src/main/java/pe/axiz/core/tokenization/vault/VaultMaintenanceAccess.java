@@ -3,7 +3,8 @@ package pe.axiz.core.tokenization.vault;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Server-owned administrative policy, including tenant/type/domain restrictions on every record.
+ * Política administrativa propiedad del servidor, incluidas las restricciones de tenant, tipo y
+ * dominio en cada registro.
  */
 @FunctionalInterface
 public interface VaultMaintenanceAccess {

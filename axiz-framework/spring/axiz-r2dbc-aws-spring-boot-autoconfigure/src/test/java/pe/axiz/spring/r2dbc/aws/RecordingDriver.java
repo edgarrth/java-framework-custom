@@ -8,8 +8,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import pe.axiz.test.support.r2dbc.FakeR2dbc;
 
 /**
- * Test driver for {@code r2dbc:axiztest://...} URLs: records the options it receives, so a test can
- * see what reaches the real driver behind the pool.
+ * Driver de prueba para URLs {@code r2dbc:axiztest://...}: registra las opciones que recibe, de
+ * modo que una prueba puede ver lo que llega al driver real detrás del pool.
  */
 public final class RecordingDriver implements ConnectionFactoryProvider {
 

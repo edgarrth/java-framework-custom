@@ -7,7 +7,10 @@ import java.util.Arrays;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.identifiers.CheckDigits;
 
-/** Bounded PAN candidate detection; Luhn matches are a heuristic, not a data classification. */
+/**
+ * Detección acotada de candidatos a PAN; las coincidencias Luhn son una heurística, no una
+ * clasificación de datos.
+ */
 public final class PanDetector {
 
   public static final int MIN_DIGITS = 12;
@@ -15,7 +18,7 @@ public final class PanDetector {
 
   private PanDetector() {}
 
-  /** True for 12-19 digits that pass Luhn. */
+  /** True para 12 a 19 dígitos que pasan Luhn. */
   public static boolean isPan(String digits) {
     return digits.length() >= MIN_DIGITS
         && digits.length() <= MAX_DIGITS
@@ -24,8 +27,9 @@ public final class PanDetector {
   }
 
   /**
-   * A whole number that is a card number becomes its truncated text; anything else is returned
-   * unchanged. Only exact JDK types are inspected: no toString() of unknown Number classes.
+   * Un número entero que es un número de tarjeta se convierte en su texto truncado; cualquier otra
+   * cosa se devuelve sin cambios. Solo se inspeccionan los tipos exactos del JDK: sin toString() de
+   * clases Number desconocidas.
    */
   public static Object redactNumber(Number value) {
     String digits = null;
@@ -38,7 +42,7 @@ public final class PanDetector {
     } else if (value.getClass() == BigDecimal.class) {
       digits = wholeDigits((BigDecimal) value);
     } else if (value.getClass() == Double.class) {
-      double v = value.doubleValue(); // whole numbers below 2^53 are exact in a double
+      double v = value.doubleValue(); // los enteros menores que 2^53 son exactos en un double
       digits =
           v >= 1e11 && v < 9_007_199_254_740_992d && v == Math.rint(v)
               ? Long.toString((long) v)
@@ -47,9 +51,12 @@ public final class PanDetector {
     return digits != null && isPan(digits) ? truncate(digits) : value;
   }
 
-  /** Digits of a positive decimal that is mathematically whole, whatever its scale; else null. */
+  /**
+   * Dígitos de un decimal positivo que es matemáticamente entero, sea cual sea su escala; en otro
+   * caso null.
+   */
   private static @Nullable String wholeDigits(BigDecimal v) {
-    if (v.signum() <= 0 || v.precision() > 64) { // bound the work before normalizing
+    if (v.signum() <= 0 || v.precision() > 64) { // se acota el trabajo antes de normalizar
       return null;
     }
     long integerDigits = (long) v.precision() - v.scale(); // 4111111111111111.0 -> 17 - 1 = 16
@@ -66,39 +73,40 @@ public final class PanDetector {
         + digits.substring(digits.length() - 4);
   }
 
-  /** Longest run of separator characters accepted between two digit groups. */
+  /** Racha más larga de caracteres separadores aceptada entre dos grupos de dígitos. */
   private static final int MAX_SEPARATOR_RUN = 2;
 
   /**
-   * Replaces every 12-19 digit run that passes Luhn. Digits may be any Unicode decimal digit
-   * (fullwidth, Arabic-Indic...) and groups may be joined by up to two separator characters:
-   * spaces, tabs, no-break spaces, hyphens and dashes, {@code .}, {@code /} or {@code _}. The kept
-   * first six and last four digits are written as ASCII.
+   * Reemplaza cada racha de 12 a 19 dígitos que pasa Luhn. Los dígitos pueden ser cualquier dígito
+   * decimal Unicode (de ancho completo, arábigo-índicos, etc.) y los grupos pueden unirse con hasta
+   * dos caracteres separadores: espacios, tabulaciones, espacios no separables, guiones y rayas,
+   * {@code .}, {@code /} o {@code _}. Los seis primeros y los cuatro últimos dígitos conservados se
+   * escriben en ASCII.
    */
   public static String redact(String text) {
     StringBuilder out = new StringBuilder(text.length());
     return scan(text, out) ? out.toString() : text;
   }
 
-  /** Whether the bounded digit scanner finds any PAN-like candidate. */
+  /** Indica si el escáner acotado de dígitos encuentra algún candidato similar a un PAN. */
   public static boolean containsPan(String text) {
     return scan(text, null);
   }
 
-  /** Detects the same candidates as {@link #redact(String)} without copying the input. */
+  /** Detecta los mismos candidatos que {@link #redact(String)} sin copiar la entrada. */
   public static boolean containsPan(char[] text) {
     return scan(CharBuffer.wrap(text), null);
   }
 
   /**
-   * Scans {@code text}; when {@code out} is not null it receives the redacted text. Returns whether
-   * a candidate was found (with a null {@code out} it stops at the first one).
+   * Recorre {@code text}; cuando {@code out} no es null recibe el texto redactado. Devuelve si se
+   * encontró un candidato (con {@code out} null se detiene en el primero).
    */
   private static boolean scan(CharSequence text, @Nullable StringBuilder out) {
     int n = text.length();
     char[] digits = new char[MAX_DIGITS + 1];
     boolean found = false;
-    int copied = 0; // text[0, copied) is already in out
+    int copied = 0; // text[0, copied) ya está en out
     try {
       int i = 0;
       while (i < n) {
@@ -106,9 +114,10 @@ public final class PanDetector {
           i++;
           continue;
         }
-        // Candidate: this digit group plus the following ones joined by short separator runs.
+        // Candidato: este grupo de dígitos más los siguientes unidos por rachas cortas de
+        // separadores.
         int count = 0;
-        int matchEnd = -1; // exclusive end of the longest valid PAN
+        int matchEnd = -1; // fin exclusivo del PAN válido más largo
         int matchLength = 0;
         int j = i;
         while (j < n && count <= MAX_DIGITS) {
@@ -131,7 +140,7 @@ public final class PanDetector {
           }
         }
         if (matchEnd < 0) {
-          i++; // try again from the next group
+          i++; // se reintenta desde el siguiente grupo
           continue;
         }
         found = true;
@@ -150,7 +159,7 @@ public final class PanDetector {
     }
   }
 
-  /** Separator characters at {@code from}, or 0 when there are none or more than allowed. */
+  /** Caracteres separadores en {@code from}, o 0 cuando no hay o hay más de los permitidos. */
   private static int separatorRun(CharSequence text, int from) {
     int run = 0;
     while (from + run < text.length() && separator(text.charAt(from + run))) {

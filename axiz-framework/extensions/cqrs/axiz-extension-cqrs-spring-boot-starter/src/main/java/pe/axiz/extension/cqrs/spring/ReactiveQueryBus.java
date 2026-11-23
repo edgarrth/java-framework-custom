@@ -3,9 +3,9 @@ package pe.axiz.extension.cqrs.spring;
 import pe.axiz.extension.cqrs.Query;
 import reactor.core.publisher.Mono;
 
-/** Asks queries through the reactive pipeline to their {@code ReactiveQueryHandler}. */
+/** Envía consultas a través del pipeline reactivo hasta su {@code ReactiveQueryHandler}. */
 public interface ReactiveQueryBus {
 
-  /** Nothing runs until the returned {@code Mono} is subscribed. */
+  /** No se ejecuta nada hasta que se suscribe el {@code Mono} devuelto. */
   <R> Mono<R> ask(Query<R> query);
 }

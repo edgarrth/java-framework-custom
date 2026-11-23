@@ -12,12 +12,12 @@ import org.springframework.boot.r2dbc.ConnectionFactoryDecorator;
 import pe.axiz.core.commons.net.DataTransportSecurityPolicy;
 import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
 
-/** Builds the pooled connection factory of the reader endpoint. */
+/** Construye la fábrica de conexiones con pool del endpoint de lectura. */
 final class ReaderConnections {
 
   private ReaderConnections() {}
 
-  /** {@code r2dbc:postgresql://...} becomes {@code r2dbc:pool:postgresql://...}. */
+  /** {@code r2dbc:postgresql://...} se convierte en {@code r2dbc:pool:postgresql://...}. */
   static String pooled(String url) {
     if (url.startsWith("r2dbc:pool:")) {
       return url;
@@ -48,7 +48,7 @@ final class ReaderConnections {
                   o.option(Option.valueOf("maxAcquireTime"), Duration.ofSeconds(5));
                   o.option(Option.valueOf("validationQuery"), "SELECT 1");
                   o.option(Option.valueOf("validationDepth"), ValidationDepth.REMOTE);
-                  // the same driver options as the writer (sslMode, applicationName...)
+                  // las mismas opciones de driver que el de escritura (sslMode, applicationName...)
                   driverProperties.forEach((k, v) -> o.option(Option.valueOf(k), v));
                 })
             .decorators(decorators);

@@ -5,9 +5,9 @@ import pe.axiz.extension.cqrs.Caller;
 import pe.axiz.payments.orders.application.command.CreatePaymentOrderCommand;
 
 /**
- * Only the signed-in customer registers its own orders. Whether the debtor account belongs to that
- * customer is checked by the core banking system when the account is debited (the holder travels
- * with the debit), so an order on another customer's account is rejected before money moves.
+ * Solo el cliente autenticado registra sus propias órdenes. El sistema core bancario verifica que
+ * la cuenta deudora pertenezca a ese cliente al debitarla (el titular viaja con el débito), por lo
+ * que una orden sobre la cuenta de otro cliente se rechaza sin que se mueva dinero.
  */
 public class CreatePaymentOrderAccess implements AccessPolicy<CreatePaymentOrderCommand> {
 

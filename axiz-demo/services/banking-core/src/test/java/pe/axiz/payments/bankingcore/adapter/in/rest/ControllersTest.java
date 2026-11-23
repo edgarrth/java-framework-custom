@@ -25,12 +25,13 @@ import pe.axiz.payments.bankingcore.domain.MovementOrder;
 import pe.axiz.payments.bankingcore.domain.MovementStatus;
 
 /**
- * The REST adapters over the real use cases: the contract request becomes the domain order (with
- * the caller's Idempotency-Key), and the answer is a 201 with the contract model.
+ * Los adaptadores REST sobre los casos de uso reales: la solicitud del contrato se convierte en la
+ * orden de dominio (con el Idempotency-Key del invocador) y la respuesta es un 201 con el modelo
+ * del contrato.
  */
 class ControllersTest {
 
-  /** Core that records the orders it receives. */
+  /** Core que registra las órdenes que recibe. */
   static final class RecordingCore implements CoreAccounts {
     final List<String> calls = new ArrayList<>();
     final List<MovementOrder> orders = new ArrayList<>();

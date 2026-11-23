@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import javax.crypto.SecretKey;
 
-/** Key provider over keys loaded at startup (for example from Secrets Manager). */
+/** Proveedor de claves sobre claves cargadas al arrancar (por ejemplo, desde Secrets Manager). */
 public final class StaticKeyProvider implements KeyProvider, AutoCloseable {
 
   private final String currentKeyId;
@@ -71,7 +71,7 @@ public final class StaticKeyProvider implements KeyProvider, AutoCloseable {
     }
   }
 
-  /** Builds the provider from base64 encoded AES-256 keys. */
+  /** Construye el proveedor a partir de claves AES-256 codificadas en base64. */
   public static StaticKeyProvider fromBase64(String currentKeyId, Map<String, String> base64Keys) {
     validate(currentKeyId, base64Keys);
     Map<String, byte[]> keys = new LinkedHashMap<>();
@@ -92,7 +92,7 @@ public final class StaticKeyProvider implements KeyProvider, AutoCloseable {
     }
   }
 
-  /** Copies the input; callers retain ownership and must clear their buffers. */
+  /** Copia la entrada; quienes llaman conservan la propiedad y deben limpiar sus buffers. */
   public static StaticKeyProvider fromBytes(String currentKeyId, Map<String, byte[]> rawKeys) {
     return new StaticKeyProvider(rawKeys, currentKeyId);
   }
@@ -114,7 +114,10 @@ public final class StaticKeyProvider implements KeyProvider, AutoCloseable {
     }
   }
 
-  /** Startup validation for key separation; compares all read keys without exposing their bytes. */
+  /**
+   * Validación de separación de claves al arrancar; compara todas las claves de lectura sin exponer
+   * sus bytes.
+   */
   public boolean containsKeyMaterial(byte[] candidate) {
     synchronized (lock) {
       Objects.requireNonNull(candidate);
@@ -125,7 +128,10 @@ public final class StaticKeyProvider implements KeyProvider, AutoCloseable {
     }
   }
 
-  /** Erases owned material; copies inside a JCE provider cannot be guaranteed erasable. */
+  /**
+   * Borra el material propio; no puede garantizarse que las copias dentro de un proveedor JCE sean
+   * borrables.
+   */
   @Override
   public void close() {
     synchronized (lock) {

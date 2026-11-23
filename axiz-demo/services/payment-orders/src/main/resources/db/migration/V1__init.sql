@@ -1,6 +1,6 @@
--- Initial schema for the first public Axiz 2.0 distribution.
+-- payment-orders: esquema inicial (Aurora PostgreSQL).
 
--- axiz outbox (Aurora PostgreSQL). Include it in the service Flyway migrations.
+-- Outbox de axiz (Aurora PostgreSQL), incluido en las migraciones Flyway del servicio.
 CREATE TABLE IF NOT EXISTS axiz_outbox (
   id              VARCHAR(64)  PRIMARY KEY,
   destination     VARCHAR(512) NOT NULL,
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS axiz_outbox_aggregate (
 CREATE INDEX IF NOT EXISTS axiz_outbox_open ON axiz_outbox (aggregate_type, aggregate_id, aggregate_seq)
   WHERE status NOT IN ('PUBLISHED', 'SKIPPED');
 
--- axiz sequences (Aurora PostgreSQL)
+-- Secuencias de axiz (Aurora PostgreSQL)
 CREATE TABLE IF NOT EXISTS axiz_sequence (
   seq_name   VARCHAR(64) NOT NULL,
   seq_period VARCHAR(16) NOT NULL,
@@ -39,8 +39,8 @@ CREATE TABLE IF NOT EXISTS axiz_sequence (
   PRIMARY KEY (seq_name, seq_period)
 );
 
--- Payment orders. Account numbers are stored encrypted (axz1:<key>:<data>); the creditor account
--- also has a blind index to find duplicates without decrypting.
+-- Órdenes de pago. Los números de cuenta se guardan cifrados (axz1:<key>:<data>); la cuenta del
+-- acreedor tiene además un índice ciego para encontrar duplicados sin descifrar.
 CREATE TABLE payment_order (
   id                 UUID          PRIMARY KEY,
   version            BIGINT,
@@ -65,9 +65,9 @@ CREATE INDEX payment_order_customer ON payment_order (customer_id, created_at DE
 CREATE INDEX payment_order_day ON payment_order (customer_id, currency, processing_date);
 CREATE INDEX payment_order_duplicates ON payment_order (customer_id, creditor_cci_index, processing_date);
 
--- Daily limit reservations: one row per customer, currency and processing date. Orders reserve
--- with an atomic conditional upsert (the row stays locked until commit), so concurrent orders of
--- the same customer and day are serialized and can never exceed the limit together.
+-- Reservas del límite diario: una fila por cliente, moneda y fecha de proceso. Las órdenes reservan
+-- con un upsert condicional atómico (la fila queda bloqueada hasta el commit), de modo que las
+-- órdenes concurrentes del mismo cliente y día se serializan y nunca superan juntas el límite.
 CREATE TABLE payment_daily_usage (
   customer_id     VARCHAR(20)   NOT NULL,
   currency        VARCHAR(3)    NOT NULL CONSTRAINT payment_daily_usage_currency_iso CHECK (currency ~ '^[A-Z]{3}$'),
@@ -80,7 +80,7 @@ CREATE TABLE payment_daily_usage (
 CREATE UNIQUE INDEX payment_order_request_key ON payment_order (customer_id, request_key)
   WHERE request_key IS NOT NULL;
 
--- Durable audit seal: committed in the same transaction as the order and its outbox records.
+-- Sello de auditoría durable: se confirma en la misma transacción que la orden y sus registros de outbox.
 CREATE TABLE IF NOT EXISTS axiz_audit_chain (
     chain_id VARCHAR(256) PRIMARY KEY,
     last_sequence BIGINT NOT NULL CHECK (last_sequence >= 0),

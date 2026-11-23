@@ -11,7 +11,7 @@ import org.yaml.snakeyaml.Yaml;
 import pe.axiz.codegen.WorkflowRelease;
 import pe.axiz.codegen.render.TemplateSet;
 
-/** Run with the built CLI classpath; never synthesizes expected output with the Python engine. */
+/** Se ejecuta con el classpath de la CLI compilada; nunca sintetiza la salida esperada con el motor de Python. */
 class RefreshDeployFixture {
   @SuppressWarnings("unchecked")
   public static void main(String[] arguments) throws Exception {

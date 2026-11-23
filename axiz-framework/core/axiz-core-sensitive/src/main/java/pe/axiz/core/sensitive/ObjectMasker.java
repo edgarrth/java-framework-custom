@@ -16,9 +16,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Converts objects into masked, JSON-like structures (maps, lists, strings, numbers) for logs and
- * audit. Annotated fields ({@link Sensitive}, {@link Mask}) and well-known key names are masked by
- * the policy. Depth and collection sizes are bounded to protect logs.
+ * Convierte objetos en estructuras enmascaradas de tipo JSON (mapas, listas, cadenas, números) para
+ * logs y auditoría. Los campos anotados ({@link Sensitive}, {@link Mask}) y los nombres de clave
+ * conocidos se enmascaran según la política. La profundidad y el tamaño de las colecciones están
+ * acotados para proteger los logs.
  */
 public final class ObjectMasker {
 
@@ -43,7 +44,10 @@ public final class ObjectMasker {
     return new ObjectMasker(MaskingPolicy.defaults(), SensitiveKeys.defaults(), true);
   }
 
-  /** Representation and number of unreadable or colliding values replaced with safe markers. */
+  /**
+   * Representación y cantidad de valores ilegibles o en colisión reemplazados por marcadores
+   * seguros.
+   */
   public record Description(@Nullable Object value, int sanitized) {}
 
   public @Nullable Object describe(@Nullable Object value, OutputChannel channel) {
@@ -82,12 +86,15 @@ public final class ObjectMasker {
     return masked == null ? null : maskText(masked, channel);
   }
 
-  /** PAN scanning for textual sinks; independent from key classification. */
+  /** Búsqueda de PAN para destinos de texto; independiente de la clasificación por clave. */
   public String maskText(String value, OutputChannel channel) {
     return detectPan && channel != OutputChannel.RESPONSE ? PanDetector.redact(value) : value;
   }
 
-  /** Exact supported number types only; unknown Number implementations are not evaluated. */
+  /**
+   * Solo los tipos numéricos exactos soportados; las implementaciones de Number desconocidas no se
+   * evalúan.
+   */
   public Object maskNumber(Number value, OutputChannel channel) {
     return detectPan && channel != OutputChannel.RESPONSE ? PanDetector.redactNumber(value) : value;
   }

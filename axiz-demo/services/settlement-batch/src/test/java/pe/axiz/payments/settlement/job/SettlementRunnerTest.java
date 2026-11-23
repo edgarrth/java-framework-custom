@@ -38,7 +38,7 @@ class SettlementRunnerTest {
         Clock.fixed(now, LIMA));
   }
 
-  /** Summary step whose bucket either has the summary or lost it; records the rewrites. */
+  /** Paso de resumen cuyo bucket tiene el resumen o lo perdió; registra las reescrituras. */
   static final class Summaries extends SettlementSummaryTasklet {
     final boolean present;
     final List<String> rewritten = new ArrayList<>();
@@ -74,7 +74,8 @@ class SettlementRunnerTest {
 
   @Test
   void loadsThePreviousBusinessDayByDefault() {
-    // Friday 2026-10-09 06:00 Lima: previous business day is Wednesday 7 (Thursday 8 is a holiday)
+    // Viernes 2026-10-09 06:00 en Lima: el día hábil previo es el miércoles 7 (el jueves 8 es
+    // feriado)
     assertThat(runner(null, Instant.parse("2026-10-09T11:00:00Z")).inputKey())
         .isEqualTo("in/settlement/NET-SETTLE-20261007.txt");
   }

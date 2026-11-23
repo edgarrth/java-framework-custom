@@ -82,7 +82,8 @@ class AuditResourcesGenerationTest {
           outbox,
           project
               .text("src/main/resources/application.yaml")
-              .contains("Configure the logical audit destination and the outbox relay transport"));
+              .contains(
+                  "se configuran el destino lógico de auditoría y el transporte del relay del outbox"));
     }
   }
 

@@ -36,7 +36,10 @@ import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.spring.kafka.KafkaConnectionProperties;
 import pe.axiz.spring.kafka.KafkaTransportSecurity;
 
-/** Native producer, consumer and admin handshakes using Boot connection details and SSL bundles. */
+/**
+ * Handshakes nativos de productor, consumidor y administración usando los connection details y los
+ * SSL bundles de Boot.
+ */
 @Timeout(180)
 class KafkaTlsIT {
   @TempDir Path temporary;
@@ -177,8 +180,8 @@ class KafkaTlsIT {
       super("apache/kafka:4.2.2");
       setImage(TestContainerImages.kafkaImage());
       withExposedPorts(9092, 9095);
-      // Named TLS listener uses native PEM options; the image's SSL-named shortcut requires JKS
-      // credential files.
+      // El listener TLS con nombre usa opciones PEM nativas; el atajo con nombre SSL de la imagen
+      // requiere archivos de credenciales JKS.
       withEnv(
           "KAFKA_LISTENERS",
           "PLAINTEXT://0.0.0.0:9092,BROKER://0.0.0.0:9093,CONTROLLER://0.0.0.0:9094,TLS://0.0.0.0:9095");

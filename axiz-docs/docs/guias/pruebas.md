@@ -38,7 +38,7 @@ class PaymentOrdersIT { ... }
 Ninguna prueba puede afirmar un comportamiento defectuoso para subir cobertura: una prueba
 documenta el comportamiento esperado.
 
-## End to end
+## De extremo a extremo
 
 El demo trae una colección de **Bruno** (`bruno/`) con pruebas de cada servicio y un smoke test
 que paga un beneficiario por la API de canal y espera el estado `COMPLETED`

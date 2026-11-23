@@ -15,7 +15,10 @@ import pe.axiz.core.crypto.PayloadProtector;
 import pe.axiz.core.idempotency.StoredResponse;
 import pe.axiz.core.json.JsonWriter;
 
-/** Protect once before atomic storage; the deterministic record codec never performs encryption. */
+/**
+ * Se protege una vez antes del almacenamiento atómico; el códec determinista de registros nunca
+ * cifra.
+ */
 final class IdempotencyPayloads {
   static final String BINDING_ATTRIBUTE = "axiz.idempotency.protectionBinding";
 

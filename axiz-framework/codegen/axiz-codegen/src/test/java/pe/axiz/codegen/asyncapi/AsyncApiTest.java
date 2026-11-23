@@ -130,7 +130,7 @@ class AsyncApiTest {
             "created: {$ref: '#/components/messages/created'}",
             "created: {$ref: '#/components/messages/created'}\n"
                 + "      v2: {$ref: '#/components/messages/createdV2'}");
-    // A second message with the same payload and a new wire identity.
+    // Un segundo mensaje con el mismo payload y una nueva identidad de transporte.
     String extra =
         "    createdV2:\n"
             + "      name: pe.axiz.order.created.v2\n"

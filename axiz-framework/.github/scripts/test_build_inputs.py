@@ -1,4 +1,4 @@
-"""Regression: ignored local files and working-tree chmod must not hide broken checkouts."""
+"""Regresión: los archivos locales ignorados y el chmod del árbol de trabajo no deben ocultar checkouts rotos."""
 import importlib.util
 from pathlib import Path
 import subprocess

@@ -7,7 +7,7 @@ import pe.axiz.kit.dynamodb.DynamoRepository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 
-/** Creates repositories on the single enhanced client, applying the table name prefix. */
+/** Crea repositorios sobre el único cliente mejorado, aplicando el prefijo de nombre de tabla. */
 public final class DynamoRepositories {
 
   private final DynamoDbEnhancedClient client;
@@ -36,7 +36,7 @@ public final class DynamoRepositories {
     return new DynamoRepository<>(client, tableName(table), schema, cursors);
   }
 
-  /** Repository for a bean or immutable class annotated for the enhanced client. */
+  /** Repositorio para un bean o una clase inmutable anotada para el cliente mejorado. */
   public <T> DynamoRepository<T> create(String table, Class<T> type) {
     TableSchema<T> schema =
         type.isRecord() ? TableSchema.fromImmutableClass(type) : TableSchema.fromBean(type);

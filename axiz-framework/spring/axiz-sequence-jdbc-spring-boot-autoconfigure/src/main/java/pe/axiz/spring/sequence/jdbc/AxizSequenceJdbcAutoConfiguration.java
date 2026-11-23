@@ -23,7 +23,7 @@ import pe.axiz.spring.jdbc.SpringConnectionProvider;
 import pe.axiz.spring.jdbc.SpringTransactionRunner;
 import pe.axiz.spring.sequence.AxizSequenceProperties;
 
-/** JDBC sequence resources; common policies remain in the base capability. */
+/** Recursos JDBC de secuencias; las políticas comunes permanecen en la capacidad base. */
 @AutoConfiguration(
     beforeName = "pe.axiz.spring.sequence.AxizSequenceAutoConfiguration",
     afterName = {

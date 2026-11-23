@@ -20,20 +20,20 @@ import pe.axiz.codegen.render.JavaFormatter;
 import pe.axiz.codegen.render.JavaSourceText;
 
 /**
- * {@code axiz generate http-client <name> --contract <openapi>}: a declarative client
- * ({@code @HttpExchange} interface, one method per operation) of a third-party or downstream API,
- * its models as records and its registration in the HTTP service group {@code <name>}, which the
- * http-client capability configures from {@code axiz.http-client.clients.<name>.*} (base URL,
- * timeouts, retries, circuit breaker, OAuth2 client credentials, observations).
+ * {@code axiz generate http-client <name> --contract <openapi>}: un cliente declarativo (interfaz
+ * {@code @HttpExchange}, un método por operación) de una API de terceros o aguas abajo, sus modelos
+ * como records y su registro en el grupo de servicios HTTP {@code <name>}, que la capacidad
+ * http-client configura a partir de {@code axiz.http-client.clients.<name>.*} (URL base, timeouts,
+ * reintentos, circuit breaker, OAuth2 client credentials, observaciones).
  */
 public final class HttpClientGenerator {
 
   /**
-   * Generated client.
+   * Cliente generado.
    *
-   * @param files new source files
-   * @param properties {@code application.yaml} entries to add
-   * @param notes follow-up hints
+   * @param files archivos fuente nuevos
+   * @param properties entradas de {@code application.yaml} por agregar
+   * @param notes indicaciones de seguimiento
    */
   public record Result(
       Map<String, byte[]> files, Map<String, Object> properties, List<String> notes) {
@@ -210,14 +210,18 @@ public final class HttpClientGenerator {
     StringBuilder client = new StringBuilder("package " + pkg + ";\n\n");
     imports.forEach(i -> client.append("import ").append(i).append(";\n"));
     client
-        .append("\n/**\n * Client of the ")
+        .append(
+            contract.title().matches("(?i).*\\bapi$")
+                ? "\n/**\n * Cliente de "
+                : "\n/**\n * Cliente de la API ")
         .append(JavaSourceText.javadoc(contract.title()))
-        .append(contract.title().matches("(?i).*\\bapi$") ? " (" : " API (")
+        .append(" (")
         .append(JavaSourceText.javadoc(contract.version()))
-        .append("), HTTP service group {@code ")
+        .append("), grupo de servicios HTTP {@code ")
         .append(name)
-        .append("}: base URL, timeouts, retries,\n")
-        .append(" * circuit breaker and authentication come from {@code axiz.http-client.clients.")
+        .append("}: la URL base, los timeouts, los reintentos,\n")
+        .append(
+            " * el circuit breaker y la autenticación provienen de {@code axiz.http-client.clients.")
         .append(name)
         .append(".*}.\n */\n")
         .append("@HttpExchange\npublic interface ")
@@ -234,9 +238,9 @@ public final class HttpClientGenerator {
             + "import org.springframework.context.annotation.Configuration;\n"
             + "import org.springframework.web.service.registry.HttpServiceGroup;\n"
             + "import org.springframework.web.service.registry.ImportHttpServices;\n\n"
-            + "/** Registers {@link "
+            + "/** Registra {@link "
             + type
-            + "} in the HTTP service group {@code "
+            + "} en el grupo de servicios HTTP {@code "
             + name
             + "}. */\n"
             + "@Configuration(proxyBeanMethods = false)\n"
@@ -281,7 +285,11 @@ public final class HttpClientGenerator {
       if (renamed) {
         b.append("import com.fasterxml.jackson.annotation.JsonProperty;\n\n");
       }
-      b.append("/** ").append(name).append(" values. */\npublic enum ").append(name).append(" {\n");
+      b.append("/** Valores de ")
+          .append(name)
+          .append(". */\npublic enum ")
+          .append(name)
+          .append(" {\n");
       Set<String> constants = new LinkedHashSet<>();
       for (int i = 0; i < values.size(); i++) {
         String v = String.valueOf(values.get(i));

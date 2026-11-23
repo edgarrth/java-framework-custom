@@ -59,7 +59,7 @@
       <artifactId>reactor-core</artifactId>
       <optional>true</optional>
     </dependency>
-    <!-- Optional repository instrumentation is installed only when Spring Data is present. -->
+    <!-- La instrumentación opcional de repositorios solo se instala cuando Spring Data está presente. -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-data-commons</artifactId>

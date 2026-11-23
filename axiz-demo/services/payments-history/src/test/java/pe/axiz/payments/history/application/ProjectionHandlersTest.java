@@ -54,7 +54,7 @@ class ProjectionHandlersTest {
   @Test
   void eventsBuildTheReadModelIdempotently() {
     register("p-1", "C-1001", T0);
-    register("p-1", "C-1001", T0); // redelivery
+    register("p-1", "C-1001", T0); // reentrega
     changed
         .handle(
             new RecordPaymentStatusChangedCommand(

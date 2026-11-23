@@ -11,11 +11,11 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.outbox.OutboxException;
 import pe.axiz.kit.sql.SqlIdentifiers;
 
-/** Read-only diagnosis of failed events and their successors in the current v2 schema. */
+/** Diagnóstico de solo lectura de los eventos fallidos y sus sucesores en el esquema v2. */
 public final class JdbcOutboxPreflight {
   private JdbcOutboxPreflight() {}
 
-  /** A failure and the successors that require an explicit operational decision. */
+  /** Fallo y sucesores que requieren una decisión operativa explícita. */
   public record Failure(
       String id,
       String aggregateType,
@@ -25,12 +25,15 @@ public final class JdbcOutboxPreflight {
       @Nullable String error,
       boolean publishedSuccessors,
       boolean pendingSuccessors) {
-    /** Named construction; required values and invariants are checked by build. */
+    /** Construcción nominal; build verifica los valores obligatorios y las invariantes. */
     public static Builder builder() {
       return new Builder();
     }
 
-    /** Mutable construction state; use one builder per operation, never as shared state. */
+    /**
+     * Estado mutable de construcción; se usa un builder por operación, nunca como estado
+     * compartido.
+     */
     public static final class Builder {
       private @Nullable String id = null;
       private @Nullable String aggregateType = null;
@@ -97,7 +100,10 @@ public final class JdbcOutboxPreflight {
     }
   }
 
-  /** Streams the canonical SQL report without changing statuses or retaining all rows in memory. */
+  /**
+   * Emite en streaming el reporte SQL canónico sin cambiar estados ni retener todas las filas en
+   * memoria.
+   */
   @SuppressFBWarnings(
       value = "SQL_INJECTION_JDBC",
       justification =

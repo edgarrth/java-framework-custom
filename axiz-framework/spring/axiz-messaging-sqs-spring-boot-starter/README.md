@@ -1,12 +1,12 @@
 # axiz-messaging-sqs-spring-boot-starter
 
-SQS CloudEvents messaging.
+Mensajería CloudEvents sobre SQS.
 
-This module owns the `pe.axiz.spring.messaging.sqs.starter` API.
+Este módulo es dueño de la API `pe.axiz.spring.messaging.sqs.starter`.
 
-## Selection
+## Selección
 
-Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
+Las versiones las gestiona `axiz-bom`; las aplicaciones heredan `axiz-parent-service`.
 
 ```xml
 <dependency>
@@ -15,27 +15,27 @@ Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
 </dependency>
 ```
 
-This artifact composes dependencies; its wiring and operational contract are documented in
+Este artefacto compone dependencias; su configuración y su contrato operativo se documentan en
 [`axiz-messaging-sqs-spring-boot-autoconfigure`](../axiz-messaging-sqs-spring-boot-autoconfigure/README.md).
 
-## Catalog usage
+## Uso desde el catálogo
 
 ```bash
 axiz add messaging-sqs
 ```
 
-Required capabilities: `messaging`.
+Capacidades requeridas: `messaging`.
 
-The catalog supplies the following properties. Environment placeholders must resolve in the
-service configuration; they are not credentials or provisioned infrastructure.
+El catálogo aporta las siguientes propiedades. Los marcadores de entorno deben resolverse en la
+configuración del servicio; no son credenciales ni infraestructura aprovisionada.
 
 ```yaml
 axiz.messaging.sqs.wait-time: 20s
 ```
 
-## Operations
+## Operación
 
-Provide region, workload identity, TLS and least-privilege permissions for the selected AWS
-resources. Provision production tables, queues, topics, keys and buckets through reviewed IaC.
-LocalStack tests exercise behavior but do not attest deployed IAM or service durability.
-Never place long-lived credentials in generated YAML.
+Se proporcionan región, identidad de carga de trabajo, TLS y permisos mínimos para los recursos de
+AWS seleccionados. Las tablas, colas, tópicos, claves y buckets de producción se aprovisionan con IaC
+revisada. Las pruebas con LocalStack ejercitan el comportamiento, pero no certifican el IAM desplegado
+ni la durabilidad del servicio. Nunca se colocan credenciales de larga duración en el YAML generado.

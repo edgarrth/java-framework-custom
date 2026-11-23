@@ -22,8 +22,9 @@ import pe.axiz.core.observability.AxizAttributes;
 import pe.axiz.core.observability.AxizObservations;
 
 /**
- * Native producer observations and logical destinations. Scopes cover only submission/callback,
- * never the asynchronous wait; cancelled sends stop observations and cancel native I/O.
+ * Observaciones nativas del productor y destinos lógicos. Los ámbitos cubren solo el envío y el
+ * callback, nunca la espera asíncrona; los envíos cancelados detienen las observaciones y cancelan
+ * la E/S nativa.
  */
 public final class ObservedAsyncEventPublisher implements AsyncEventPublisher {
   private final AsyncEventPublisher delegate;

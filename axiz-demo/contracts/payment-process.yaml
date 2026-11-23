@@ -35,7 +35,7 @@ paths:
   /v1/payment-processes/{processId}:
     get:
       operationId: getPaymentProcess
-      # payments:process or payments:read; the service checks which.
+      # payments:process o payments:read; el servicio verifica cuál.
       security: [{oauth2: []}]
       tags: [payment-processes]
       summary: State of a payment saga

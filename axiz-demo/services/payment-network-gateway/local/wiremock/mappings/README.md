@@ -1,4 +1,4 @@
-# WireMock stubs
+# Stubs de WireMock
 
-Put stub mappings (JSON) of the downstream services here; `docker compose up` serves them on
-<http://localhost:8089>. Tests use `HttpStubs` from the axiz test starter instead.
+Aquí se colocan los mapeos de stubs (JSON) de los servicios posteriores; `docker compose up` los sirve en
+<http://localhost:8089>. Las pruebas usan en su lugar `HttpStubs` del starter de pruebas de axiz.

@@ -3,7 +3,7 @@ package pe.axiz.spring.idempotency.redis;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
-/** redis settings retain their public configuration keys. */
+/** Configuración de redis que conserva sus claves de configuración públicas. */
 @ConfigurationProperties("axiz.idempotency")
 public record AxizIdempotencyRedisProperties(@DefaultValue("axiz:idem:") String keyPrefix) {
   public AxizIdempotencyRedisProperties {

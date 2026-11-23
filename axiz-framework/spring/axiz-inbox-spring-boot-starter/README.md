@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-inbox-spring-boot-starter
 
-Idempotent consumers: inbox on Aurora PostgreSQL or DynamoDB.
+Consumidores idempotentes: inbox sobre Aurora PostgreSQL o DynamoDB.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,4 +12,4 @@ Idempotent consumers: inbox on Aurora PostgreSQL or DynamoDB.
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).

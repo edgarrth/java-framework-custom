@@ -1,5 +1,5 @@
-# Local hooks (https://pre-commit.com): `pre-commit install` once per clone. CI runs the same
-# secret scan on every pull request.
+# Hooks locales (https://pre-commit.com): `pre-commit install` una vez por clon. CI ejecuta el mismo
+# escaneo de secretos en cada pull request.
 repos:
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.1

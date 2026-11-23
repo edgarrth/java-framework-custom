@@ -24,7 +24,10 @@ import pe.axiz.core.tokenization.TokenErrors;
 import pe.axiz.core.tokenization.TokenType;
 import pe.axiz.core.tokenization.TokenizationResult;
 
-/** Bounded closed protocol decoder. Remote messages, payloads and causes never escape as errors. */
+/**
+ * Decodificador acotado de protocolo cerrado. Los mensajes, payloads y causas remotos nunca escapan
+ * como errores.
+ */
 final class TokenRemoteResponse implements AutoCloseable {
   static final int MAX_BYTES = 65_536;
   private final int status;
@@ -78,7 +81,7 @@ final class TokenRemoteResponse implements AutoCloseable {
 
   private boolean absent() {
     if (status != 404) return false;
-    // A proxy's generic 404 is not evidence that the value/token is absent.
+    // Un 404 genérico de un proxy no es evidencia de que el valor o el token esté ausente.
     if (!TokenErrors.NOT_FOUND.code().value().equals(errorCode())) throw invalid();
     return true;
   }

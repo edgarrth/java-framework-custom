@@ -33,7 +33,8 @@ class RedisByteCacheTest {
               return switch (m.getName()) {
                 case "get" -> data.get((String) a[0]);
                 case "eval" -> {
-                  // GET and PTTL of KEYS[1]; the fake keeps every key 1500 ms, "eternal" forever
+                  // GET y PTTL de KEYS[1]; el fake conserva cada clave 1500 ms y "eternal" para
+                  // siempre
                   String key = (String) ((Object[]) a[2])[0];
                   byte[] value = data.get(key);
                   List<Object> reply = new ArrayList<>();

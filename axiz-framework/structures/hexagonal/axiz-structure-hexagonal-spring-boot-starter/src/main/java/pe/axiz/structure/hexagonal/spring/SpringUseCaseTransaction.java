@@ -6,7 +6,10 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import pe.axiz.structure.hexagonal.UseCaseTransaction;
 
-/** Use case transactions with Spring's transaction manager (joins an existing transaction). */
+/**
+ * Transacciones de casos de uso con el gestor de transacciones de Spring (se une a una transacción
+ * existente).
+ */
 public final class SpringUseCaseTransaction implements UseCaseTransaction {
 
   private final TransactionTemplate readWrite;

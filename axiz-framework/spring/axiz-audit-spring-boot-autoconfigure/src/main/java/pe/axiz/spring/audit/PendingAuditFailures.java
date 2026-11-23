@@ -4,7 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/** Nested boundaries defer failure persistence until the outer business transaction has exited. */
+/**
+ * Los límites anidados difieren la persistencia de fallos hasta que la transacción de negocio
+ * externa haya terminado.
+ */
 final class PendingAuditFailures {
   private static final ThreadLocal<@Nullable State> CURRENT = new ThreadLocal<>();
 

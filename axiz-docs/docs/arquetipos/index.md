@@ -34,7 +34,7 @@ la matriz de llamadas. Una integración técnica se identifica como `internal-sy
 
 ## Elección
 
-Usa `business` para reglas y datos de un dominio, incluido CRUD o una saga. Elige `core` o `gateway`
-según si el sistema integrado pertenece a la empresa. Usa `ux` para un canal, `support` para
+Se usa `business` para reglas y datos de un dominio, incluido CRUD o una saga. Se elige `core` o `gateway`
+según si el sistema integrado pertenece a la empresa. Se usa `ux` para un canal, `support` para
 una capacidad reutilizable, `event-processor` cuando la entrada es un evento y `batch` para un job.
 Los nombres describen la capacidad; no añaden sufijos como `-business`, `-crud` o `-integration`.

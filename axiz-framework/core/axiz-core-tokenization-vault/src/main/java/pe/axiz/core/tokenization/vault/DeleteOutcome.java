@@ -1,6 +1,6 @@
 package pe.axiz.core.tokenization.vault;
 
-/** Confirmed results of a revision-and-reference-checked deletion. */
+/** Resultados confirmados de un borrado verificado por revisión y por referencias. */
 public enum DeleteOutcome {
   DELETED,
   NOT_FOUND,

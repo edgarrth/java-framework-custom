@@ -6,32 +6,32 @@ import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Port used by the dispatcher to process each message once per consumer (implemented by the inbox).
- * A claim tells three different situations apart, because only one of them allows acknowledging the
- * message without running the handler:
+ * Puerto que usa el despachador para procesar cada mensaje una vez por consumidor (lo implementa el
+ * inbox). Un claim distingue tres situaciones distintas, porque solo una de ellas permite confirmar
+ * el mensaje sin ejecutar el handler:
  *
  * <ul>
- *   <li>{@link Claim.Status#ACQUIRED}: this delivery owns the processing until its lease ends; it
- *       must finish with {@link #completed} or {@link #failed} passing the claim's token.
- *   <li>{@link Claim.Status#ALREADY_PROCESSED}: acknowledge, the effects already happened.
- *   <li>{@link Claim.Status#BUSY}: another delivery holds a valid lease and may still fail (or may
- *       have died): the message must be redelivered later, never acknowledged.
+ *   <li>{@link Claim.Status#ACQUIRED}: esta entrega es dueña del procesamiento hasta que termina su
+ *       lease; debe finalizar con {@link #completed} o {@link #failed} pasando el token del claim.
+ *   <li>{@link Claim.Status#ALREADY_PROCESSED}: se confirma, los efectos ya ocurrieron.
+ *   <li>{@link Claim.Status#BUSY}: otra entrega tiene un lease válido y aún puede fallar (o puede
+ *       haber muerto): el mensaje debe reentregarse más tarde, nunca confirmarse.
  * </ul>
  */
 public interface Deduplicator {
 
   /**
-   * Result of claiming a message.
+   * Resultado de reclamar un mensaje.
    *
-   * @param status what the dispatcher must do
-   * @param token owner token of an acquired claim (empty otherwise); later updates of the
-   *     registration only succeed with it, so a delivery whose lease was taken over cannot change
-   *     the registration of the new owner
-   * @param retryAfter for {@link Status#BUSY}, how long until the current lease ends
+   * @param status lo que debe hacer el despachador
+   * @param token token de propietario de un claim adquirido (vacío en otro caso); las
+   *     actualizaciones posteriores del registro solo tienen éxito con él, de modo que una entrega
+   *     cuyo lease fue tomado por otra no puede cambiar el registro del nuevo propietario
+   * @param retryAfter para {@link Status#BUSY}, cuánto falta para que termine el lease actual
    */
   record Claim(Status status, String token, Duration retryAfter) {
 
-    /** Claim outcome. */
+    /** Resultado del claim. */
     public enum Status {
       ACQUIRED,
       ALREADY_PROCESSED,
@@ -62,26 +62,26 @@ public interface Deduplicator {
           retryAfter == null || retryAfter.isNegative() ? Duration.ZERO : retryAfter);
     }
 
-    /** A random owner token. */
+    /** Token de propietario aleatorio. */
     public static String newToken() {
       return UUID.randomUUID().toString();
     }
   }
 
-  /** Claims the message for this delivery. */
+  /** Reclama el mensaje para esta entrega. */
   Claim claim(String consumer, String messageKey);
 
   /**
-   * Marks the message processed.
+   * Marca el mensaje como procesado.
    *
-   * @return false when the claim was no longer owned by this token (its lease was taken over)
+   * @return false cuando el claim no pertenece a este token (otro tomó su lease)
    */
   boolean completed(String consumer, String messageKey, String token);
 
   /**
-   * Releases the claim after a failure so a redelivery can process it.
+   * Libera el claim tras un fallo para que una reentrega pueda procesarlo.
    *
-   * @return false when the claim was no longer owned by this token
+   * @return false cuando el claim no pertenece a este token
    */
   boolean failed(String consumer, String messageKey, String token);
 

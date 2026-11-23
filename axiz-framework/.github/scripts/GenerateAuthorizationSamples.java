@@ -9,7 +9,7 @@ import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.openapi.SafeYaml;
 
-/** Generates real services whose authorization tests must reject an incomplete set of scopes. */
+/** Genera servicios reales cuyas pruebas de autorización deben rechazar un conjunto incompleto de scopes. */
 class GenerateAuthorizationSamples {
   public static void main(String[] args) throws Exception {
     Map<String, Object> document =

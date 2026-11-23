@@ -35,7 +35,8 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 
 /**
- * Native asynchronous vault providers. Only the test thread waits; no provider wraps a sync call.
+ * Proveedores nativos asíncronos de la bóveda. Solo espera el hilo de la prueba; ningún proveedor
+ * envuelve una llamada síncrona.
  */
 final class ReactiveVaultRecipe {
   private ReactiveVaultRecipe() {}
@@ -153,8 +154,8 @@ final class ReactiveVaultRecipe {
                         .isEmpty();
                     assertThat(await(vault.describe(caller, type, created.token(), domain)))
                         .isPresent();
-                    // The completion callback closes the sensitive result, including a late
-                    // completion.
+                    // El callback de finalización cierra el resultado sensible, incluso ante una
+                    // finalización tardía.
                     await(
                         vault
                             .detokenize(caller, type, created.token(), domain, "support")

@@ -11,7 +11,9 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import pe.axiz.adapter.aws.transport.AwsClientSettings;
 
-/** Opt-in AWS wrapper conventions, including TLS and bounded IAM credential scopes. */
+/**
+ * Convenciones opcionales del wrapper de AWS, incluidos TLS y ámbitos de credenciales IAM acotados.
+ */
 public final class AxizJpaAwsEnvironmentPostProcessor implements EnvironmentPostProcessor, Ordered {
   private static final String SOURCE = "axizJpaAwsDefaults";
 

@@ -46,7 +46,8 @@ import pe.axiz.core.tokenization.vault.VaultTokenizer;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 
 /**
- * Explicit server composition. Missing required collaborators fail startup instead of disabling it.
+ * Composición explícita del servidor. Los colaboradores obligatorios ausentes hacen fallar el
+ * arranque en lugar de desactivarlo.
  */
 @AutoConfiguration(
     afterName = {
@@ -130,7 +131,7 @@ public class AxizTokenizationVaultAutoConfiguration {
         clocks.getIfAvailable(Clock::systemUTC));
   }
 
-  /** Imperative composition has no asynchronous provider fallback. */
+  /** La composición imperativa no tiene respaldo de proveedor asíncrono. */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnImperativeApplication
   static class Imperative {
@@ -197,7 +198,7 @@ public class AxizTokenizationVaultAutoConfiguration {
     }
   }
 
-  /** The reactive stack requires native collaborators; it cannot wrap the imperative engine. */
+  /** La pila reactiva requiere colaboradores nativos; no puede envolver el motor imperativo. */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
   static class Native {

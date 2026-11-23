@@ -15,8 +15,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.resilience.annotation.EnableResilientMethods;
 
 /**
- * Resilience4j registries with the {@code axiz.resilience} policies, their Micrometer metrics, and
- * Spring's {@code @Retryable} / {@code @ConcurrencyLimit} for application methods.
+ * Registros de Resilience4j con las políticas de {@code axiz.resilience}, sus métricas de
+ * Micrometer y {@code @Retryable} / {@code @ConcurrencyLimit} de Spring para los métodos de la
+ * aplicación.
  */
 @AutoConfiguration
 @ConditionalOnBooleanProperty(name = "axiz.resilience.enabled", matchIfMissing = true)
@@ -44,7 +45,7 @@ public class AxizResilienceAutoConfiguration {
     return new ResiliencePolicies(properties, circuitBreakers, bulkheads);
   }
 
-  /** Circuit breaker state, calls and bulkhead usage as metrics. */
+  /** Estado del circuit breaker, llamadas y uso del bulkhead como métricas. */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnClass(
       name = {
@@ -64,7 +65,7 @@ public class AxizResilienceAutoConfiguration {
     }
   }
 
-  /** Spring Framework 7 resilient methods. */
+  /** Métodos resilientes de Spring Framework 7. */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnBooleanProperty(name = "axiz.resilience.methods.enabled", matchIfMissing = true)
   @EnableResilientMethods

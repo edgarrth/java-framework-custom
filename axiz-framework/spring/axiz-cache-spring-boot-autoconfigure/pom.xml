@@ -42,7 +42,7 @@
       <artifactId>spring-security-core</artifactId>
       <optional>true</optional>
     </dependency>
-    <!-- caller identity of token authentications (issuer, subject, client) -->
+    <!-- identidad del invocador de las autenticaciones por token (issuer, subject, client) -->
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-core-security</artifactId>
@@ -73,7 +73,7 @@
       <artifactId>jackson-databind</artifactId>
     </dependency>
 
-    <!-- the cache is tested together with real method security (servlet and reactive) -->
+    <!-- la caché se prueba junto con la seguridad de métodos real (servlet y reactiva) -->
     <dependency>
       <groupId>org.springframework.security</groupId>
       <artifactId>spring-security-config</artifactId>
@@ -84,7 +84,7 @@
       <artifactId>spring-security-oauth2-resource-server</artifactId>
       <scope>test</scope>
     </dependency>
-    <!-- the tests build Jwt tokens (org.springframework.security.oauth2.jwt) -->
+    <!-- las pruebas construyen tokens Jwt (org.springframework.security.oauth2.jwt) -->
     <dependency>
       <groupId>org.springframework.security</groupId>
       <artifactId>spring-security-oauth2-jose</artifactId>

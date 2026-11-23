@@ -3,7 +3,10 @@ package pe.axiz.spring.idempotency;
 import java.util.Arrays;
 import java.util.Objects;
 
-/** Bounded owned response copy; retired buffers are erased on growth, overflow and completion. */
+/**
+ * Copia propia y acotada de la respuesta; los búferes descartados se borran al crecer, al
+ * desbordarse y al completar.
+ */
 final class BoundedCapture implements AutoCloseable {
   private final int limit;
   private byte[] bytes;

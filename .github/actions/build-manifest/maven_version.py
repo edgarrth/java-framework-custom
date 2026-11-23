@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Set final reactor coordinates while preserving external parents and dependency versions."""
+"""Asigna las coordenadas finales del reactor conservando los parents externos y las versiones de las dependencias."""
 import argparse
 import re
 from pathlib import Path
@@ -97,7 +97,7 @@ def update(root, version):
 
         for coordinate in coordinates:
             planned_version(coordinate, set())
-        # Plan every edit before changing a file. External Axiz parents and BOMs stay pinned.
+                # Se planifica cada edición antes de modificar un archivo. Los parents y BOM externos de Axiz permanecen fijados.
         for document in documents.values():
             project = document.documentElement
             parent = child(project, "parent")

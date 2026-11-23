@@ -22,8 +22,8 @@ import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 
 /**
- * Native asynchronous leases with identical keys, expiry and owner fencing as the synchronous
- * store.
+ * Leases asíncronos nativos con claves, expiración y fencing por propietario idénticos al almacén
+ * síncrono.
  */
 public final class DynamoDbAsyncDistributedLock implements AsyncDistributedLock {
   @SuppressFBWarnings(

@@ -13,10 +13,14 @@ import java.util.TreeMap;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Verifies received evidence independently of whether a trusted checkpoint establishes coverage.
+ * Verifica la evidencia recibida con independencia de que un checkpoint confiable establezca la
+ * cobertura.
  */
 public final class AuditChainVerifier {
-  /** Most severe defect found in the received evidence, independent of delivery coverage. */
+  /**
+   * Defecto más grave encontrado en la evidencia recibida, independiente de la cobertura de
+   * entrega.
+   */
   public enum IntegrityStatus {
     INTACT,
     GAP,
@@ -24,17 +28,19 @@ public final class AuditChainVerifier {
     CONFLICT
   }
 
-  /** Coverage established only by comparison with a trusted checkpoint. */
+  /** Cobertura establecida solo por comparación con un checkpoint confiable. */
   public enum Completeness {
     NOT_ASSESSED,
     COMPLETE_UP_TO,
     TAIL_MISSING
   }
 
-  /** Inclusive affected interval; for a hash error or conflict, from equals to. */
+  /** Intervalo afectado inclusivo; para un error de hash o un conflicto, from es igual a to. */
   public record Finding(IntegrityStatus status, long from, long to) {}
 
-  /** upTo is the last continuously verified sequence, not necessarily the last received one. */
+  /**
+   * upTo es la última secuencia verificada de forma continua, no necesariamente la última recibida.
+   */
   public record Result(
       IntegrityStatus integrity,
       long upTo,
@@ -49,7 +55,7 @@ public final class AuditChainVerifier {
 
   private AuditChainVerifier() {}
 
-  /** The key is copied and never modified; a null checkpoint always gives NOT_ASSESSED. */
+  /** La clave se copia y nunca se modifica; un checkpoint null siempre da NOT_ASSESSED. */
   public static Result verify(
       Iterable<AuditEvent> eventsOfOneChain,
       byte @Nullable [] key,
@@ -80,8 +86,8 @@ public final class AuditChainVerifier {
       if (duplicate != null
           && !Objects.requireNonNull(duplicate.integrity()).hash().equals(seal.hash()))
         add(findings, IntegrityStatus.CONFLICT, seal.sequence(), seal.sequence());
-      // Verify even same-hash duplicates: altering their content without changing the hash is an
-      // attack.
+      // Se verifican incluso los duplicados con el mismo hash: alterar su contenido sin cambiar el
+      // hash es un ataque.
       if (!matches(event, seal, key))
         add(findings, IntegrityStatus.INVALID_HASH, seal.sequence(), seal.sequence());
     }

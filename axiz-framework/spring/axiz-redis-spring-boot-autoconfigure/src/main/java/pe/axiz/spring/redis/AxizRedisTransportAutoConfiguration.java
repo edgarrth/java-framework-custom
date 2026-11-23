@@ -10,8 +10,10 @@ import org.springframework.core.env.Environment;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import pe.axiz.core.commons.net.DataTransportSecurityPolicy;
 
-/** Validates final Lettuce configuration before its factory initializes native clients. */
-// Spring instantiates the configuration; infrastructure BeanPostProcessors must be static.
+/**
+ * Valida la configuración final de Lettuce antes de que su fábrica inicialice los clientes nativos.
+ */
+// Spring instancia la configuración; los BeanPostProcessor de infraestructura deben ser estáticos.
 @SuppressWarnings("checkstyle:HideUtilityClassConstructor")
 @AutoConfiguration(
     beforeName = "org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration")

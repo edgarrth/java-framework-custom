@@ -43,7 +43,7 @@
       <artifactId>spring-boot-jackson</artifactId>
       <optional>true</optional>
     </dependency>
-    <!-- masking of server responses: JSON converter (servlet) or encoder (reactive) -->
+    <!-- enmascaramiento de las respuestas del servidor: conversor JSON (servlet) o encoder (reactivo) -->
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-web</artifactId>
@@ -59,8 +59,8 @@
       <artifactId>spring-webflux</artifactId>
       <optional>true</optional>
     </dependency>
-    <!-- the servlet test context (WebApplicationContextRunner) needs the Servlet API; the module
-         itself never requires it, which is what the reactive test checks -->
+    <!-- el contexto de pruebas servlet (WebApplicationContextRunner) necesita la API de Servlet; el módulo
+         en sí nunca la requiere, que es lo que verifica la prueba reactiva -->
     <dependency>
       <groupId>jakarta.servlet</groupId>
       <artifactId>jakarta.servlet-api</artifactId>

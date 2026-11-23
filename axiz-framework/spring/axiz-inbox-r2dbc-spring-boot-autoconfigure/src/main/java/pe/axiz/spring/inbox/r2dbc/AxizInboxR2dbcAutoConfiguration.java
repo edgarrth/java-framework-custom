@@ -23,9 +23,9 @@ import pe.axiz.spring.messaging.ReactiveInboxCompletion;
 import reactor.core.publisher.Mono;
 
 /**
- * Aurora inbox over R2DBC ({@code axiz.inbox.store=r2dbc}) for reactive services. The dispatcher
- * calls the inbox on the consumer thread, never on an event loop; the table comes from the
- * service's Flyway migrations.
+ * Inbox en Aurora sobre R2DBC ({@code axiz.inbox.store=r2dbc}) para servicios reactivos. El
+ * dispatcher invoca el inbox en el hilo del consumidor, nunca en un event loop; la tabla proviene
+ * de las migraciones Flyway del servicio.
  */
 @AutoConfiguration(afterName = "pe.axiz.spring.r2dbc.AxizR2dbcAutoConfiguration")
 @ConditionalOnClass(name = "pe.axiz.adapter.inbox.r2dbc.R2dbcInboxStore")

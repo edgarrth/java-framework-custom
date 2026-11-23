@@ -88,7 +88,7 @@ class KafkaMessagingTest {
 
   @Test
   void theKafkaSchemeOfADestinationIsNotPartOfTheTopic() {
-    // axiz.messaging.destinations documents kafka:<topic>; "kafka:payments" is not a valid topic
+    // axiz.messaging.destinations documenta kafka:<topic>; "kafka:payments" no es un tópico válido
     MockProducer<String, byte[]> producer =
         new MockProducer<>(true, null, new StringSerializer(), new ByteArraySerializer());
     KafkaEventPublisher publisher = new KafkaEventPublisher(producer, Duration.ofSeconds(1));

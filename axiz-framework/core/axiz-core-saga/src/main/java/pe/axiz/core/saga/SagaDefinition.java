@@ -4,11 +4,11 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Ordered steps of a saga.
+ * Pasos ordenados de una saga.
  *
- * @param name saga name, e.g. {@code payment}
- * @param steps steps in execution order
- * @param <C> context type
+ * @param name nombre de la saga, por ejemplo {@code payment}
+ * @param steps pasos en orden de ejecución
+ * @param <C> tipo del contexto
  */
 public record SagaDefinition<C>(String name, List<SagaStep<C>> steps) {
 

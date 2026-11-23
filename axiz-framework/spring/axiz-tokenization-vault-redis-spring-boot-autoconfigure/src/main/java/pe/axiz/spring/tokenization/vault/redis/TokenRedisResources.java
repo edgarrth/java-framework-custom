@@ -20,7 +20,10 @@ import pe.axiz.core.commons.net.DataTransportSecurityPolicy;
 import pe.axiz.core.secrets.SecretResolver;
 import pe.axiz.spring.tokenization.vault.redis.AxizTokenizationRedisProperties.Redis;
 
-/** Owns one connection used only by one budget instance; no raw connection bean is exported. */
+/**
+ * Posee una conexión usada solo por una instancia de presupuesto; no se exporta ningún bean de
+ * conexión sin procesar.
+ */
 final class TokenRedisResources implements AutoCloseable {
   private final TokenRedisCredentials credentials;
   private final ClientResources resources;
@@ -63,7 +66,7 @@ final class TokenRedisResources implements AutoCloseable {
               .requestQueueSize(settings.queueCapacity())
               .disconnectedBehavior(DisconnectedBehavior.REJECT_COMMANDS)
               .build());
-      var connection = client.connect(); // Bootstrap only, native SDK work after publication.
+      var connection = client.connect(); // Solo bootstrap; trabajo nativo del SDK tras publicar.
       connection.setTimeout(settings.timeout());
       if (!"PONG".equals(connection.sync().ping())) throw unavailable();
       return new TokenRedisResources(credentials, resources, client, connection);
@@ -99,7 +102,7 @@ final class TokenRedisResources implements AutoCloseable {
     boolean failed = false;
     try {
       if (client != null)
-        client.shutdown(Duration.ZERO, Duration.ofSeconds(3)); // Includes the owned connection.
+        client.shutdown(Duration.ZERO, Duration.ofSeconds(3)); // Incluye la conexión propia.
     } catch (RuntimeException failure) {
       failed = true;
     }

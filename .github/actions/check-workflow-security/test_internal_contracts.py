@@ -132,7 +132,7 @@ class InternalContractTest(unittest.TestCase):
         nested = self.root / 'downloaded-action'
         shutil.copytree(self.root / '.github', nested / '.github')
         self.assertTrue(any('history unavailable' in e for e in validate_call(self.call, nested)))
-        # A branch with the requested tag's name is not a published tag.
+                # Una rama con el nombre del tag solicitado no es un tag publicado.
         subprocess.run(['git', '-C', str(self.root), 'branch', 'axiz-workflows-v2.0.1'], check=True)
         self.assertTrue(any('revision unavailable: refs/tags/' in e for e in validate_call(self.call, self.root)))
 
@@ -152,7 +152,7 @@ class InternalContractTest(unittest.TestCase):
         shutil.copy(caller, source / 'deploy.yaml')
         self.assertEqual([], check_tree(source.parent.parent, ROOT)[0])
         self.assertTrue(any('candidate-only' in e for e in check_tree(source.parent.parent, copy_root)[0]))
-        # Forged consumer metadata cannot change the default trusted contract source.
+                # Los metadatos falsificados de un consumidor no pueden cambiar la fuente de contrato de confianza por defecto.
         shutil.copytree(copy_root / '.github/actions', source.parent / 'actions')
         (source.parent / 'version.txt').write_text(adopted + '\n')
         self.assertEqual([], check_tree(source.parent.parent)[0])

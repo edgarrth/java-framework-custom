@@ -36,8 +36,8 @@ import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
 /**
- * Inbox contract on PostgreSQL (Aurora) through JDBC and R2DBC: row locks, conditional updates,
- * timestamps and the shipped DDL.
+ * Contrato de inbox sobre PostgreSQL (Aurora) mediante JDBC y R2DBC: locks de fila, actualizaciones
+ * condicionales, marcas de tiempo y el DDL incluido.
  */
 @ExtendWith(BlockHoundExtension.class)
 class PostgresInboxStoresIT {

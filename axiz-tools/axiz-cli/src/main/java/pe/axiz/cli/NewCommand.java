@@ -31,8 +31,8 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 /**
- * {@code axiz new}: creates a service (or a library or starter) from an archetype and its contract,
- * offline with the embedded templates or online through the initializr.
+ * {@code axiz new}: crea un servicio (o una biblioteca o un starter) a partir de un arquetipo y su
+ * contrato, sin conexión con las plantillas incluidas o en línea mediante el initializr.
  */
 @Command(
     mixinStandardHelpOptions = true,
@@ -279,7 +279,10 @@ class NewCommand extends BaseCommand implements Callable<Integer> {
     return m;
   }
 
-  /** Reads answers in interactive mode; otherwise uses the given value or the default. */
+  /**
+   * Lee las respuestas en modo interactivo; en otro caso usa el valor indicado o el valor por
+   * defecto.
+   */
   static final class Prompter {
     private final BufferedReader in;
     private final PrintWriter out;

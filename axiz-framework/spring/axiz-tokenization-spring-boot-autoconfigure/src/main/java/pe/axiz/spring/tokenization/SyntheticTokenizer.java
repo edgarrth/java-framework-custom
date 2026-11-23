@@ -17,7 +17,8 @@ import pe.axiz.core.tokenization.Tokenizer;
 import pe.axiz.core.tokenization.TokenizerCapabilities;
 
 /**
- * Bounded in-memory test double accepting only explicit synthetic labels, never real field values.
+ * Doble de prueba acotado en memoria que solo acepta etiquetas sintéticas explícitas, nunca valores
+ * reales de campos.
  */
 final class SyntheticTokenizer implements Tokenizer, AutoCloseable {
   private final Map<Key, Token> entries = new HashMap<>();
@@ -56,7 +57,7 @@ final class SyntheticTokenizer implements Tokenizer, AutoCloseable {
     var existing = entries.get(key);
     if (existing != null) return new TokenizationResult(existing, type, false, Map.of());
     if (entries.size() >= 1024) throw TokenErrors.limited(Duration.ofSeconds(1));
-    // Deliberately predictable: this double does not claim cryptographic security or persistence.
+    // Deliberadamente predecible: este doble no pretende seguridad criptográfica ni persistencia.
     var token = Token.fromEntropy(ByteBuffer.allocate(16).putLong(0).putLong(++sequence).array());
     entries.put(key, token);
     return new TokenizationResult(token, type, true, Map.of());

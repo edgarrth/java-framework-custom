@@ -11,15 +11,16 @@ import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Sensitivity by property or JSON key name, for data without annotations (maps, raw HTTP bodies,
- * headers). Matching is case-insensitive and ignores {@code _} and {@code -}.
+ * Sensibilidad por nombre de propiedad o de clave JSON, para datos sin anotaciones (mapas, cuerpos
+ * HTTP en bruto, cabeceras). La coincidencia no distingue mayúsculas e ignora {@code _} y {@code
+ * -}.
  *
- * <p>A name is split into words (camelCase, separators) and a sensitive term may appear in any
- * position: {@code cvvCode}, {@code pinCode}, {@code passwordConfirmation} and {@code
- * privateKeyPem} are sensitive like {@code cvv} or {@code newPassword}. A term followed by a word
- * that describes metadata about it ({@code tokenCount}, {@code pinAttempts}, {@code
- * passwordPolicy}, {@code tokenUrl}) is not. When several terms match, the most sensitive one
- * decides.
+ * <p>Un nombre se divide en palabras (camelCase, separadores) y un término sensible puede aparecer
+ * en cualquier posición: {@code cvvCode}, {@code pinCode}, {@code passwordConfirmation} y {@code
+ * privateKeyPem} son sensibles como {@code cvv} o {@code newPassword}. Un término seguido de una
+ * palabra que describe metadatos sobre él ({@code tokenCount}, {@code pinAttempts}, {@code
+ * passwordPolicy}, {@code tokenUrl}) no lo es. Cuando coinciden varios términos, decide el más
+ * sensible.
  */
 public final class SensitiveKeys {
 
@@ -88,9 +89,9 @@ public final class SensitiveKeys {
           entry("telefono", SensitivityLevel.MEDIUM, MaskType.PHONE));
 
   /**
-   * Words that, right after a sensitive term, describe metadata about it or a derived, protected
-   * form rather than the value itself ({@code tokenCount}, {@code passwordPolicy}, {@code
-   * secretArn}, the blind index {@code creditorCciIndex}, {@code panMasked}).
+   * Palabras que, justo después de un término sensible, describen metadatos sobre él o una forma
+   * derivada y protegida en lugar del valor en sí ({@code tokenCount}, {@code passwordPolicy},
+   * {@code secretArn}, el índice ciego {@code creditorCciIndex}, {@code panMasked}).
    */
   private static final Set<String> METADATA =
       Set.of(
@@ -170,7 +171,7 @@ public final class SensitiveKeys {
           "mask",
           "truncated");
 
-  /** Longest default term, in words; windows beyond it cannot match. */
+  /** Término por defecto más largo, en palabras; las ventanas más largas no pueden coincidir. */
   private static final int MAX_WINDOW = 4;
 
   private static final Pattern SEPARATORS = Pattern.compile("[_\\-.\\s]+");
@@ -188,7 +189,7 @@ public final class SensitiveKeys {
     return new SensitiveKeys(DEFAULTS);
   }
 
-  /** Defaults plus service-specific keys (configuration). */
+  /** Valores por defecto más las claves específicas del servicio (configuración). */
   public static SensitiveKeys withExtra(Map<String, SensitiveField> extra) {
     var merged = new HashMap<>(DEFAULTS);
     extra.forEach((k, v) -> merged.put(normalize(k), v));
@@ -207,7 +208,7 @@ public final class SensitiveKeys {
     SensitiveField whole = lookup(String.join("", words));
     if (whole != null) return Optional.of(whole);
     SensitiveField best = null;
-    List<int[]> described = new ArrayList<>(); // terms followed by a metadata word, and their parts
+    List<int[]> described = new ArrayList<>(); // términos con palabra de metadatos y sus partes
     for (int length = Math.min(size, MAX_WINDOW); length >= 1; length--) {
       for (int start = 0; start + length <= size; start++) {
         int end = start + length;

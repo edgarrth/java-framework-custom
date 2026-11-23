@@ -1,4 +1,4 @@
-"""Fail closed before the scanner: Maven success is not evidence that an SBOM was produced."""
+"""Falla de forma cerrada antes del escáner: el éxito de Maven no es evidencia de que se haya producido un SBOM."""
 import json
 from pathlib import Path
 import sys
@@ -12,12 +12,12 @@ def validate(path, pom):
     if document.get('bomFormat') != 'CycloneDX' or not document.get('components'):
         raise ValueError('A nonempty CycloneDX components inventory is required')
     names = {c.get('name') for c in document['components']}
-    # Trusted build POM/report, after executing the same checkout; no request XML is parsed.
+        # POM o reporte de build de confianza, tras ejecutar el mismo checkout; no se analiza XML de la petición.
     # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse
     root = ET.parse(pom).getroot()
     expected = set()
     for module in root.findall('m:modules/m:module', NS):
-        # Trusted build POM/report, after executing the same checkout; no request XML is parsed.
+                # POM o reporte de build de confianza, tras ejecutar el mismo checkout; no se analiza XML de la petición.
         # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse
         child = ET.parse(Path(pom).parent / module.text / 'pom.xml').getroot()
         if child.findtext('m:packaging', 'jar', NS) == 'jar':

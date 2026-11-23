@@ -1,5 +1,8 @@
 package pe.axiz.structure.layered;
 
-/** Maintenance-resource API. Business money movements use explicit domain commands instead. */
+/**
+ * API de recursos de mantenimiento. Los movimientos de dinero de negocio usan en cambio comandos de
+ * dominio explícitos.
+ */
 public interface CrudService<RequestT, ResponseT, I>
     extends QueryService<ResponseT, I>, CommandService<RequestT, ResponseT, I> {}

@@ -12,8 +12,8 @@ import org.slf4j.LoggerFactory;
 import pe.axiz.core.concurrent.Stages;
 
 /**
- * Native asynchronous L2 with CPU-only L1. Local copies discount the complete read duration in both
- * clocks.
+ * L2 asíncrono nativo con L1 solo de CPU. Las copias locales descuentan la duración completa de la
+ * lectura en ambos relojes.
  */
 public final class AsyncTwoLevelCache implements AsyncByteCache {
   private final LocalByteCache l1;
@@ -33,7 +33,10 @@ public final class AsyncTwoLevelCache implements AsyncByteCache {
     this(l1, l2, maxTtl, System::nanoTime);
   }
 
-  /** Controlled monotonic clock for contract tests; expiration also respects the L1 clock. */
+  /**
+   * Reloj monotónico controlado para pruebas de contrato; la expiración también respeta el reloj de
+   * L1.
+   */
   public AsyncTwoLevelCache(
       LocalByteCache l1, @Nullable AsyncByteCache l2, Duration maxTtl, LongSupplier nanoTime) {
     this.nanoTime = Objects.requireNonNull(nanoTime);

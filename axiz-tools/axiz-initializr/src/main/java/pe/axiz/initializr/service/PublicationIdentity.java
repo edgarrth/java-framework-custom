@@ -17,7 +17,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import pe.axiz.codegen.output.GeneratedProject;
 
-/** Authenticated operation marker; the same protected deployment key is used by every replica. */
+/**
+ * Marcador de operación autenticado; todas las réplicas usan la misma clave de despliegue
+ * protegida.
+ */
 @Component
 public final class PublicationIdentity {
   private final byte[] key;

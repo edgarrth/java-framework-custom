@@ -5,28 +5,28 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Registry of consumed messages per consumer (idempotent consumer pattern). Each in-progress
- * registration has an owner token: completing or releasing it only works for the delivery that
- * holds it, so a delivery whose lease expired and was taken over cannot change the registration of
- * the new owner.
+ * Registro de mensajes consumidos por consumidor (patrón de consumidor idempotente). Cada registro
+ * en curso tiene un token de propietario: completarlo o liberarlo solo funciona para la entrega que
+ * lo tiene, de modo que una entrega cuyo lease expiró y fue tomado por otra no puede cambiar el
+ * registro del nuevo propietario.
  */
 public interface InboxStore {
 
   /**
-   * Result of an acquisition attempt.
+   * Resultado de un intento de adquisición.
    *
-   * @param status what happened
-   * @param leaseUntil end of the current lease when {@link Status#BUSY}
+   * @param status lo que ocurrió
+   * @param leaseUntil fin del lease actual cuando {@link Status#BUSY}
    */
   record Acquisition(Status status, @Nullable Instant leaseUntil) {
 
-    /** Acquisition outcome. */
+    /** Resultado de la adquisición. */
     public enum Status {
-      /** This caller owns the processing. */
+      /** Este llamador es dueño del procesamiento. */
       ACQUIRED,
-      /** Already processed by an earlier delivery. */
+      /** Ya procesado por una entrega previa. */
       PROCESSED,
-      /** Another delivery holds a valid lease. */
+      /** Otra entrega tiene un lease válido. */
       BUSY
     }
 
@@ -48,8 +48,8 @@ public interface InboxStore {
   }
 
   /**
-   * Registers the message as in progress for {@code owner} until {@code leaseUntil}, or takes over
-   * a registration whose lease ended (its delivery died).
+   * Registra el mensaje como en curso para {@code owner} hasta {@code leaseUntil}, o toma un
+   * registro cuyo lease terminó (su entrega murió).
    */
   Acquisition tryAcquire(
       String consumer,
@@ -60,35 +60,40 @@ public interface InboxStore {
       Instant expiresAt);
 
   /**
-   * Marks the message processed only while its owner lease and retention remain live.
+   * Marca el mensaje como procesado solo mientras el lease de su propietario y la retención sigan
+   * vivos.
    *
-   * @return false when {@code owner} no longer holds a live registration at {@code at}
+   * @return false cuando {@code owner} no tiene un registro vivo en {@code at}
    */
   boolean markProcessed(String consumer, String messageId, String owner, Instant at);
 
   /**
-   * Removes the in-progress registration of {@code owner} after a failure so a redelivery can
-   * process it.
+   * Elimina el registro en curso de {@code owner} tras un fallo para que una reentrega pueda
+   * procesarlo.
    *
-   * @return false when {@code owner} no longer holds the registration
+   * @return false cuando {@code owner} no tiene el registro
    */
   boolean release(String consumer, String messageId, String owner);
 
-  /** Validates the persistence window before any I/O, including direct store consumers. */
+  /**
+   * Valida la ventana de persistencia antes de cualquier E/S, incluidos los consumidores directos
+   * del almacén.
+   */
   static void validateWindow(Instant now, Instant leaseUntil, Instant expiresAt) {
     if (!leaseUntil.isAfter(now) || !expiresAt.isAfter(leaseUntil))
       throw new IllegalArgumentException(
           "Inbox retention must outlive a positive processing lease");
   }
 
-  /** Deletes completed entries past their retention; never deletes an in-progress registration. */
+  /** Borra las entradas completadas pasada su retención; nunca borra un registro en curso. */
   int purgeExpired(Instant now);
 
   /**
-   * Checks at startup that the storage has the layout this version needs (for example the {@code
-   * owner} column), so an upgrade that skipped a migration fails before consuming messages.
+   * Verifica al arrancar que el almacenamiento tenga la disposición requerida (por ejemplo la
+   * columna {@code owner}), de modo que una actualización que omitió una migración falle antes de
+   * consumir mensajes.
    *
-   * @throws InboxException with the upgrade to apply
+   * @throws InboxException con la actualización a aplicar
    */
   default void verifySchema() {}
 }

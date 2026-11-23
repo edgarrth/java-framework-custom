@@ -68,14 +68,14 @@ son distintas. Una candidata ausente o expirada falla y nunca provoca una recomp
   acceso o de una release inmutable bloquea la ejecución. Las condiciones personalizadas también
   exigen que esta comprobación termine correctamente. `check-workflow-security` valida esta
   excepción concreta y los mapas de secretos, incluidas las plantillas del generador.
-- Si el repositorio de workflows es privado, configura `AXIZ_WORKFLOWS_READ_TOKEN` con permiso
-  **Contents: read** exclusivamente sobre él. Sin ese secreto se usa `github.token`. Activa las
+- Si el repositorio de workflows es privado, se configura `AXIZ_WORKFLOWS_READ_TOKEN` con permiso
+  **Contents: read** exclusivamente sobre él. Sin ese secreto se usa `github.token`. Se activan las
   [releases inmutables de GitHub](https://docs.github.com/en/code-security/concepts/supply-chain-security/immutable-releases)
   y publica una nueva release con los controles antes de actualizar consumidores: una release
   inmutable existente no puede sobrescribirse. El código local no configura ni acredita las
   protecciones remotas. Renovate mantiene las referencias y la versión del verificador alineadas;
   se prefiere fijarlas por SHA cuando la release publicada sea accesible.
-- `check-encapsulation`, después del build de calidad, rechaza hallazgos de `EI_EXPOSE_REP`,
+- `check-encapsulation`, después del build de calidad, rechaza advertencias de `EI_EXPOSE_REP`,
   `EI_EXPOSE_REP2` y `CT_CONSTRUCTOR_THROW` también cuando su prioridad es media. Sus excepciones
   se justifican con `@SuppressFBWarnings` en el miembro exacto; no se admiten exclusiones globales.
 - Toda herramienta que un workflow descarga (actionlint, kubeconform, kube-linter) tiene versión y
@@ -133,7 +133,7 @@ plantilla (`.github/scripts/release-version`).
 | Secreto (opcional) | `ARGOCD_AUTH_TOKEN` | token de solo lectura del proyecto de Argo CD |
 | Secreto | `BUILD_DESTINATION` | configuración compartida de build, resolución y despliegue |
 | Variable | `ARGOCD_SERVER` | despliegue; GitOps deriva su repositorio del JSON y usa `main` |
-| Variable (repositorio) | `AXIZ_API_BASELINE` | versión v2 publicada para comparación; la primera 2.0.0 usa inventario de firmas aprobado y verifica que aún no exista en el repositorio final |
+| Variable (repositorio) | `AXIZ_API_BASELINE` | versión publicada para comparación; la primera 2.0.0 usa inventario de firmas aprobado y verifica que aún no exista en el repositorio final |
 
 ## Componentes del monorepo
 

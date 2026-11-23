@@ -1,4 +1,4 @@
-/** Event handlers, one per event type. */
+/** Handlers de eventos, uno por tipo de evento. */
 @NullMarked
 package pe.axiz.payments.notifications.handler;
 

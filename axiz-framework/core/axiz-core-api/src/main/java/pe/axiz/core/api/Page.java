@@ -6,12 +6,12 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.lang.Checks;
 
 /**
- * A page of results.
+ * Página de resultados.
  *
- * @param content elements of this page
- * @param metadata pagination metadata
- * @param nextCursor opaque cursor for key-based pagination (DynamoDB), or null
- * @param <T> element type
+ * @param content elementos de esta página
+ * @param metadata metadatos de paginación
+ * @param nextCursor cursor opaco para paginación por clave (DynamoDB), o null
+ * @param <T> tipo de elemento
  */
 public record Page<T>(List<T> content, PageMetadata metadata, @Nullable String nextCursor) {
 

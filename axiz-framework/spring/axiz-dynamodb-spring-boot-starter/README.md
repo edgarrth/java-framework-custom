@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-dynamodb-spring-boot-starter
 
-DynamoDB Enhanced Client, table naming per environment and generic repositories.
+DynamoDB Enhanced Client, nombres de tabla por ambiente y repositorios genéricos.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,4 +12,4 @@ DynamoDB Enhanced Client, table naming per environment and generic repositories.
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).

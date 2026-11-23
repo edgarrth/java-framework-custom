@@ -33,14 +33,14 @@ import pe.axiz.core.observability.AttributeSanitizer;
 import pe.axiz.core.observability.AxizAttributes;
 import pe.axiz.core.observability.StructuredEventEmitter;
 
-/** Defaults for export and probes, and what every observation carries or skips. */
+/** Valores por defecto de exportación y sondas, y lo que cada observación lleva u omite. */
 class ObservabilityConventionsTest {
 
   private final ApplicationContextRunner runner =
       new ApplicationContextRunner()
           .withConfiguration(AutoConfigurations.of(AxizObservabilityAutoConfiguration.class));
 
-  /** Records the observations that actually start. */
+  /** Registra las observaciones que realmente se inician. */
   static final class Recorder implements ObservationHandler<Observation.Context> {
     final List<Observation.Context> started = new ArrayList<>();
 

@@ -6,7 +6,7 @@ metadata:
   labels:
     {{- include "service.labels" . | nindent 4 }}
 spec:
-  # maxUnavailable (not minAvailable) so a single replica never blocks node drains
+  # maxUnavailable (no minAvailable) para que una sola réplica nunca bloquee el drenado de nodos
   maxUnavailable: {{ .Values.pdb.maxUnavailable }}
   unhealthyPodEvictionPolicy: AlwaysAllow
   selector:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Offline complete inventory of third-party actions, reviewed published tags, and readable pins."""
+"""Inventario completo y sin conexión de las acciones de terceros, los tags publicados revisados y los pins legibles."""
 import argparse
 import json
 from pathlib import Path

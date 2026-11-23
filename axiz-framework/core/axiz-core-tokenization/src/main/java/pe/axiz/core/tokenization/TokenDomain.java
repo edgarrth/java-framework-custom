@@ -1,6 +1,6 @@
 package pe.axiz.core.tokenization;
 
-/** Explicit business namespace within the verified tenant. */
+/** Namespace de negocio explícito dentro del tenant verificado. */
 public record TokenDomain(String value) {
   public TokenDomain {
     if (value == null || !value.matches("[A-Za-z0-9][A-Za-z0-9_.-]{0,63}"))

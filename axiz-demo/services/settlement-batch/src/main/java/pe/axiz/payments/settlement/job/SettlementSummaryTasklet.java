@@ -24,14 +24,14 @@ import pe.axiz.core.storage.ObjectMetadata;
 import pe.axiz.core.storage.ObjectStorage;
 
 /**
- * Last step: totals per currency and status of the loaded file, as business metrics ({@code
- * settlement.file}, with amounts) and as a JSON summary next to the file ({@code
- * out/settlement/<file>.summary.json}) for operations and reconciliation. A rerun of a file that
- * was already loaded writes the summary again when it is missing ({@link #rewrite}).
+ * Último paso: totales por moneda y estado del archivo cargado, como métricas de negocio ({@code
+ * settlement.file}, con montos) y como resumen JSON junto al archivo ({@code
+ * out/settlement/<file>.summary.json}) para operaciones y conciliación. Una nueva ejecución sobre
+ * un archivo ya cargado escribe de nuevo el resumen cuando falta ({@link #rewrite}).
  */
 public class SettlementSummaryTasklet implements Tasklet {
 
-  /** Totals of one currency and status. */
+  /** Totales de una moneda y un estado. */
   record Total(String currency, String status, long count, BigDecimal amount) {}
 
   private final JdbcClient jdbc;
@@ -58,14 +58,15 @@ public class SettlementSummaryTasklet implements Tasklet {
     return RepeatStatus.FINISHED;
   }
 
-  /** Whether the summary of a loaded file is in the bucket. */
+  /** Indica si el resumen de un archivo cargado está en el bucket. */
   public boolean exists(String fileKey) {
     return storage.head(summaryKey(fileKey)).isPresent();
   }
 
   /**
-   * Writes the summary of a file that was loaded before again, from its rows (for example after the
-   * bucket lost it). Metrics are not recorded twice: they were recorded when the file was loaded.
+   * Vuelve a escribir, a partir de sus filas, el resumen de un archivo cargado previamente (por
+   * ejemplo, cuando el bucket lo perdió). Las métricas no se registran dos veces: se registraron
+   * cuando se cargó el archivo.
    */
   public void rewrite(String fileKey) {
     write(fileKey, totals(fileKey));

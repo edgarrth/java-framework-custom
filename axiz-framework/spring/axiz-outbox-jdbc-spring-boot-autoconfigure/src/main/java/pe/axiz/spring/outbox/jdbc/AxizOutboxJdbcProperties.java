@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 import pe.axiz.spring.jdbc.SchemaInitializer;
 
-/** JDBC schema and statement settings. */
+/** Configuración del esquema y de las sentencias JDBC. */
 @ConfigurationProperties("axiz.outbox")
 public record AxizOutboxJdbcProperties(
     @DefaultValue("axiz_outbox") String table,

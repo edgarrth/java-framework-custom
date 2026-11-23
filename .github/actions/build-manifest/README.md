@@ -1,28 +1,31 @@
-# Build identity
+# Identidad del build
 
-`build-manifest.json` describes one verified build. Maven libraries and services have separate
-strict schemas. `parameters_sha256` uses RFC 8785; the manifest hash describes its exact bytes.
-Deploy receives the expected hash through the trusted build output or approval, independently
-of the downloaded bundle. A checksum inside the archive does not establish trust.
+`build-manifest.json` describe un build verificado. Las librerías Maven y los servicios tienen esquemas
+estrictos separados. `parameters_sha256` usa RFC 8785; el hash del manifiesto describe sus bytes
+exactos. El despliegue recibe el hash esperado mediante la salida confiable del build o la aprobación,
+con independencia del bundle descargado. Un checksum dentro del archivo no establece confianza.
 
-A bundle contains the canonical manifest, its cosign keyless signature bundle, gate evidence,
-SBOM and provenance. Libraries also include `maven/` with every staged file and `SHA256SUMS`.
-GitHub Packages generates repository metadata; promotion must not overwrite its existing version index.
+Un bundle contiene el manifiesto canónico, su bundle de firma keyless de cosign, los resultados de los
+controles, el SBOM y la procedencia. Las librerías también incluyen `maven/` con cada archivo del
+staging y `SHA256SUMS`. GitHub Packages genera los metadatos del repositorio; la promoción no debe
+sobrescribir su índice de versiones existente.
 
-Service workers only read packages. They transfer OCI archives and a packaged chart to an
-isolated publisher, which verifies Actions authority, file hashes and platform descriptors before
-uploading the original bytes to GHCR. It never executes project code. The signed product retains
-`compile-authority` evidence; pull requests compile and scan without publishing or signing.
+Los workers de servicios solo leen paquetes. Transfieren los archivos OCI y un chart empaquetado a un
+publicador aislado, que verifica la autoridad de Actions, los hashes de los archivos y los descriptores
+de plataforma antes de subir los bytes originales a GHCR. Nunca ejecuta código del proyecto. El
+producto firmado conserva el registro `compile-authority`; los pull requests compilan y escanean sin
+publicar ni firmar.
 
-`consume-build` verifies the explicit producer run and attempt, the allowed immutable workflow
-release, the signature identity, the source repository and commit, every required gate and all
-staged bytes. Missing or expired artifacts fail. The verified bundle is read-only.
+`consume-build` verifica la ejecución y el intento explícitos del productor, la release inmutable de
+workflows permitida, la identidad de la firma, el repositorio y el commit de origen, cada control
+obligatorio y todos los bytes del staging. Los artefactos ausentes o expirados fallan. El bundle
+verificado es de solo lectura.
 
-The signature policy uses the reusable workflow identity documented by
-[Fulcio](https://github.com/sigstore/fulcio/blob/main/docs/oidc.md) and
-[cosign blob verification](https://docs.sigstore.dev/cosign/verifying/verify/).
+La política de firmas usa la identidad de workflow reutilizable documentada por
+[Fulcio](https://github.com/sigstore/fulcio/blob/main/docs/oidc.md) y la
+[verificación de blobs de cosign](https://docs.sigstore.dev/cosign/verifying/verify/).
 
-Run the regression suite in an isolated Python environment:
+La suite de regresión se ejecuta en un entorno Python aislado:
 
 ```sh
 python3 -m venv /tmp/axiz-manifest-tests

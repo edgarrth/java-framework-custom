@@ -20,10 +20,10 @@ import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
 /**
- * Idempotency store on DynamoDB: conditional put to start (new key or expired record), strongly
- * consistent reads, TTL attribute {@code ttl} for retention. Completion and release are conditioned
- * on {@code status = IN_PROGRESS AND owner = :owner}, so an execution whose lock expired cannot
- * touch the record of the next owner.
+ * Almacén de idempotencia sobre DynamoDB: put condicional para iniciar (clave nueva o registro
+ * expirado), lecturas fuertemente consistentes y atributo TTL {@code ttl} para la retención. La
+ * finalización y la liberación se condicionan a {@code status = IN_PROGRESS AND owner = :owner}, de
+ * modo que una ejecución cuyo lock expiró no puede tocar el registro del siguiente propietario.
  */
 public final class DynamoDbIdempotencyStore implements IdempotencyStore {
 
@@ -148,7 +148,8 @@ public final class DynamoDbIdempotencyStore implements IdempotencyStore {
               .build());
       return true;
     } catch (ConditionalCheckFailedException e) {
-      // completed records are kept for replay; records of other owners are not ours
+      // los registros completados se conservan para replay; los registros de otros propietarios no
+      // son propios
       return false;
     }
   }

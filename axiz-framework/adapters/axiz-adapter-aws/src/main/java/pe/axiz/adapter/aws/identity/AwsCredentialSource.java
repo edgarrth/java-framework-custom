@@ -6,7 +6,9 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.utils.SdkAutoCloseable;
 
-/** A credential resource with uniform, idempotent release and a non-closing SDK view. */
+/**
+ * Recurso de credenciales con liberación uniforme e idempotente y una vista del SDK que no cierra.
+ */
 public final class AwsCredentialSource implements SdkAutoCloseable {
   private final AtomicBoolean closed = new AtomicBoolean();
   private final Runnable release;
@@ -22,12 +24,12 @@ public final class AwsCredentialSource implements SdkAutoCloseable {
         };
   }
 
-  /** Transfers the supplied cleanup responsibility to this resource. */
+  /** Transfiere a este recurso la responsabilidad de limpieza suministrada. */
   public static AwsCredentialSource owned(AwsCredentialsProvider provider, Runnable release) {
     return new AwsCredentialSource(provider, release);
   }
 
-  /** Closing this resource invalidates its view without closing the provider's owner. */
+  /** Cerrar este recurso invalida su vista sin cerrar al propietario del proveedor. */
   public static AwsCredentialSource borrowed(AwsCredentialsProvider provider) {
     return new AwsCredentialSource(provider, () -> {});
   }

@@ -43,7 +43,7 @@ import pe.axiz.core.errors.ValidationException;
 import reactor.core.publisher.Mono;
 import tools.jackson.databind.json.JsonMapper;
 
-/** Paging rules, CORS, API versions, JSON and the reactive request context. */
+/** Reglas de paginación, CORS, versiones de la API, JSON y el contexto de solicitud reactivo. */
 class WebConventionsTest {
 
   private static AxizWebProperties properties(String... pairs) {
@@ -100,7 +100,7 @@ class WebConventionsTest {
             .size());
   }
 
-  /** Exposes the configured mappings (protected in Spring). */
+  /** Expone los mapeos configurados (protegidos en Spring). */
   static final class InspectableCors extends CorsRegistry {
     Map<String, CorsConfiguration> configurations() {
       return getCorsConfigurations();
@@ -172,7 +172,7 @@ class WebConventionsTest {
     assertEquals(90L, effective.getMaxAge());
   }
 
-  /** Exposes the resulting strategy (protected in Spring). */
+  /** Expone la estrategia resultante (protegida en Spring). */
   static final class InspectableVersions extends ApiVersionConfigurer {
     org.springframework.web.accept.ApiVersionStrategy strategy() {
       return getApiVersionStrategy();

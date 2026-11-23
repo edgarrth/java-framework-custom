@@ -5,7 +5,7 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.inbox.InboxStore.Acquisition;
 import reactor.core.publisher.Mono;
 
-/** Native R2DBC inbox contract; Reactor preserves the subscription and transaction context. */
+/** Contrato nativo de inbox R2DBC; Reactor preserva la suscripción y el contexto transaccional. */
 public interface ReactiveInboxStore {
   default @Nullable Object transactionResource() {
     return null;

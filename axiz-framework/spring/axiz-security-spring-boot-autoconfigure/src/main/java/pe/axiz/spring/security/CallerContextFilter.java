@@ -14,8 +14,9 @@ import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.security.AxizPrincipal;
 
 /**
- * Adds the authenticated caller (client, subject, tenant) to the request context after token
- * validation, so logs, audit, metrics and outbound calls see it.
+ * Añade el invocante autenticado (cliente, subject, tenant) al contexto de la solicitud después de
+ * validar el token, de modo que los logs, la auditoría, las métricas y las llamadas salientes lo
+ * vean.
  */
 public class CallerContextFilter extends OncePerRequestFilter {
 

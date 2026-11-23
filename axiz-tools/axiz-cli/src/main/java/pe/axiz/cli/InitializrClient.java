@@ -11,8 +11,9 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.codegen.openapi.Json;
 
 /**
- * Online mode: asks the axiz initializr to generate the project. Authentication uses the user's own
- * token from {@code AXIZ_TOKEN} (obtained through the corporate SSO); the CLI never stores it.
+ * Modo en línea: solicita al initializr de axiz que genere el proyecto. La autenticación usa el
+ * token propio del usuario de {@code AXIZ_TOKEN} (obtenido mediante el SSO corporativo); la CLI
+ * nunca lo almacena.
  */
 final class InitializrClient {
 
@@ -34,7 +35,7 @@ final class InitializrClient {
     this.token = token;
   }
 
-  /** Generates a project and returns the ZIP. */
+  /** Genera un proyecto y devuelve el ZIP. */
   byte[] generate(Map<String, Object> request) throws IOException {
     HttpRequest.Builder b =
         HttpRequest.newBuilder(server.resolve("/v1/projects"))
@@ -52,7 +53,8 @@ final class InitializrClient {
               HttpResponse.BodyHandlers.limiting(
                   HttpResponse.BodyHandlers.ofByteArray(), ZipExtractor.MAX_TOTAL));
       if (response.statusCode() != 200) {
-        // A remote diagnostic can echo credentials, contract values or terminal control codes.
+        // Un diagnóstico remoto puede reproducir credenciales, valores del contrato o códigos de
+        // control de terminal.
         throw new IOException("initializr answered " + response.statusCode());
       }
       return response.body();

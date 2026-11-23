@@ -9,7 +9,10 @@ import com.tngtech.archunit.lang.SimpleConditionEvent;
 import java.util.Collection;
 import java.util.Map;
 
-/** Review evidence for mutable declared types, not a static proof of thread safety. */
+/**
+ * Evidencia de revisión para los tipos declarados mutables, no una prueba estática de seguridad
+ * entre hilos.
+ */
 final class ReviewedFields extends ArchCondition<JavaField> {
   static final DescribedPredicate<JavaClass> MUTABLE =
       DescribedPredicate.describe(

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Development-only stack. Backend ports stay inside this container; Compose binds public ports to loopback.
+# Stack solo para desarrollo. Los puertos del backend permanecen dentro de este contenedor; Compose enlaza los puertos públicos a loopback.
 set -euo pipefail
 pids=()
 cleanup() {
@@ -26,6 +26,6 @@ pids+=("$!")
 otelcol --config=/otel-lgtm/collector.yaml &
 pids+=("$!")
 
-# A partial stack is unhealthy: terminate the remaining processes if any component exits.
+# Un stack parcial no está sano: se terminan los procesos restantes si cualquier componente termina.
 wait -n "${pids[@]}"
 exit 1

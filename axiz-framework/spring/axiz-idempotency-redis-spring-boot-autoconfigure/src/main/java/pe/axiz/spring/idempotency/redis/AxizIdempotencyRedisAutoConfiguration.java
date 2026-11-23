@@ -21,7 +21,10 @@ import pe.axiz.core.idempotency.AsyncIdempotencyStore;
 import pe.axiz.core.idempotency.IdempotencyStore;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 
-/** ElastiCache (Redis/Valkey) idempotency store on Boot's Lettuce connection settings. */
+/**
+ * Almacén de idempotencia en ElastiCache (Redis/Valkey) sobre la configuración de conexión Lettuce
+ * de Boot.
+ */
 @AutoConfiguration(
     beforeName = "pe.axiz.spring.idempotency.AxizIdempotencyAutoConfiguration",
     afterName = "org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration")
@@ -36,9 +39,9 @@ import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 @ConditionalOnBooleanProperty(name = "axiz.idempotency.enabled", matchIfMissing = true)
 public class AxizIdempotencyRedisAutoConfiguration {
 
-  // no destroy method: the connection belongs to the factory's RedisClient, which closes it when
-  // the factory stops (a lifecycle phase that runs before beans are destroyed); closing it again
-  // made Lettuce warn "Connection is already closed" at every shutdown
+  // sin método destroy: la conexión pertenece al RedisClient de la fábrica, que la cierra cuando la
+  // fábrica se detiene (una fase del ciclo de vida que se ejecuta antes de destruir los beans);
+  // cerrarla otra vez hace que Lettuce advierta "Connection is already closed" en cada apagado
   @Bean(destroyMethod = "")
   StatefulRedisConnection<String, String> axizIdempotencyRedisConnection(
       LettuceConnectionFactory factory) {

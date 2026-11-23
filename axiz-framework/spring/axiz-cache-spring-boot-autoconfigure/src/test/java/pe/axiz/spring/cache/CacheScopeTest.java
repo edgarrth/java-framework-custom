@@ -30,14 +30,17 @@ import pe.axiz.core.tenancy.TenantContext;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/** Who shares an entry: the tenant by default, the caller on request, everyone only on purpose. */
+/**
+ * Quién comparte una entrada: el tenant por defecto, el invocante bajo demanda y todos solo de
+ * forma deliberada.
+ */
 class CacheScopeTest {
 
   private static final Duration T = Duration.ofSeconds(5);
   private static final String ISSUER_A = "https://issuer-a.example";
   private static final String ISSUER_B = "https://issuer-b.example";
 
-  /** Reads the tenant from the context and takes a tenant-local id, like a real repository. */
+  /** Lee el tenant del contexto y toma un id local al tenant, como un repositorio real. */
   public static class Profiles {
     final AtomicInteger calls = new AtomicInteger();
 
@@ -261,15 +264,15 @@ class CacheScopeTest {
           assertEquals("ana:summary", profiles.mine("summary"), "same issuer, subject and client");
           assertEquals(1, target.calls.get());
 
-          // another trust domain reuses the subject: never the same entry
+          // otro dominio de confianza reutiliza el subject: nunca la misma entrada
           SecurityContextHolder.getContext().setAuthentication(token(ISSUER_B, "ana", "app"));
           profiles.mine("summary");
           assertEquals(2, target.calls.get());
-          // the same user through another application
+          // el mismo usuario a través de otra aplicación
           SecurityContextHolder.getContext().setAuthentication(token(ISSUER_A, "ana", "web"));
           profiles.mine("summary");
           assertEquals(3, target.calls.get());
-          // a machine token (no subject) of that application
+          // un token de máquina (sin subject) de esa aplicación
           SecurityContextHolder.getContext().setAuthentication(token(ISSUER_A, null, "app"));
           profiles.mine("summary");
           profiles.mine("summary");

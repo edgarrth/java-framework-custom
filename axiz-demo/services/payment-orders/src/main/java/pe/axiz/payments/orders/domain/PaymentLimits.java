@@ -6,9 +6,9 @@ import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.money.Money;
 
 /**
- * Daily limit per currency of the payments of a customer.
+ * Límite diario por moneda de los pagos de un cliente.
  *
- * @param daily maximum amount per day and currency code
+ * @param daily monto máximo por día y código de moneda
  */
 public record PaymentLimits(
     @ReviewedState(
@@ -21,9 +21,9 @@ public record PaymentLimits(
   }
 
   /**
-   * Checks that {@code amount} fits in the limit given what was already paid today.
+   * Verifica que {@code amount} quepa en el límite considerando lo ya pagado hoy.
    *
-   * @throws BusinessException {@link PaymentErrors#DAILY_LIMIT_EXCEEDED} or {@link
+   * @throws BusinessException {@link PaymentErrors#DAILY_LIMIT_EXCEEDED} o {@link
    *     PaymentErrors#UNSUPPORTED_CURRENCY}
    */
   public void check(Money alreadyPaid, Money amount) {
@@ -34,7 +34,7 @@ public record PaymentLimits(
   }
 
   /**
-   * Limit of the currency of {@code amount}.
+   * Límite de la moneda de {@code amount}.
    *
    * @throws BusinessException {@link PaymentErrors#UNSUPPORTED_CURRENCY}
    */
@@ -49,7 +49,7 @@ public record PaymentLimits(
     return limit;
   }
 
-  /** The error for an amount that does not fit, with what is still available. */
+  /** El error para un monto que no cabe, con lo que aún está disponible. */
   public BusinessException exceeded(Money limit, Money alreadyReserved) {
     Money available = limit.minus(alreadyReserved);
     return new BusinessException(

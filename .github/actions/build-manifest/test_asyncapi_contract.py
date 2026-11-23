@@ -97,7 +97,7 @@ class AsyncApiTest(unittest.TestCase):
             before = git("rev-parse", "HEAD")
             snapshot = root / ".axiz/asyncapi.snapshot.yaml"
             snapshot.parent.mkdir()
-            # Both current documents agree, but the wire schema breaks the published v1.
+                        # Los dos documentos actuales coinciden, pero el esquema de transmisión rompe la v1 publicada.
             path.write_text(text.replace("type: string", "type: integer"))
             snapshot.write_text(path.read_text())
             found = contracts.contracts(root, ".")

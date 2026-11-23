@@ -1,27 +1,28 @@
 # axiz-initializr
 
-Web generator and REST API of the axiz platform, behind the corporate SSO. The UI and the API
+Generador web y API REST de la plataforma axiz, detrás del SSO corporativo. La interfaz y la API
 (`/v1/metadata`, `/v1/projects`, `/v1/projects/validate`, `/v1/contracts/lint`,
-`/v1/projects/github`) generate services with the same engine as the CLI (`pe.axiz:axiz-codegen`).
+`/v1/projects/github`) generan servicios con el mismo motor que la CLI (`pe.axiz:axiz-codegen`).
 
-- Contract: `docs/openapi.yaml`.
-- Security: OIDC login for the UI (registration `sso`, the only one that signs in), bearer JWT for
-  the CLI and automations; GitHub repositories are created with the user's own OAuth authorization
-  (registration `github`, callback `/authorized/github`). A GitHub token is held only in the
-  authenticated HTTP session for at most five minutes, removed after local validation and before each remote publication attempt
-  (success or remote error), and lost on logout/session expiry. SSO access/refresh clients are not retained. Without that
-  authorization `POST /v1/projects/github` answers 403 with the `authorize` URL; the API never
-  redirects. Bearer tokens must come from the SSO issuer and carry the audience
-  `axiz.initializr.audience` (`axiz-initializr` by default, `AXIZ_INITIALIZR_AUDIENCE`): a token of
-  the same identity provider issued for another API gets 401. In the identity provider, the client
-  that the CLI uses needs an audience mapper with that value.
-- Generation happens in memory with size limits; every generation is audited and counted
+- Contrato: `docs/openapi.yaml`.
+- Seguridad: login OIDC para la interfaz (registro `sso`, el único que inicia sesión) y JWT bearer
+  para la CLI y las automatizaciones; los repositorios de GitHub se crean con la autorización OAuth del
+  propio usuario (registro `github`, callback `/authorized/github`). Un token de GitHub se mantiene solo
+  en la sesión HTTP autenticada durante un máximo de cinco minutos, se elimina tras la validación local
+  y antes de cada intento de publicación remota (éxito o error remoto) y se pierde al cerrar sesión o al
+  expirar la sesión. Los clientes de acceso y refresco del SSO no se conservan. Sin esa autorización,
+  `POST /v1/projects/github` responde 403 con la URL `authorize`; la API nunca redirige. Los tokens
+  bearer deben provenir del emisor del SSO y llevar la audiencia `axiz.initializr.audience`
+  (`axiz-initializr` por defecto, `AXIZ_INITIALIZR_AUDIENCE`): un token del mismo proveedor de identidad
+  emitido para otra API recibe 401. En el proveedor de identidad, el cliente que usa la CLI necesita un
+  mapper de audiencia con ese valor.
+- La generación ocurre en memoria con límites de tamaño; cada generación se audita y se contabiliza
   (`axiz.initializr.generations`).
-- Deployment: chart in `deploy/helm`, configuration in ConfigMaps, client secrets from the
+- Despliegue: chart en `deploy/helm`, configuración en ConfigMaps y secretos de cliente desde el
   ExternalSecret.
 
-Local run against the Keycloak of the demo (`axiz-demo`: `scripts/demo.sh up`; realm `axiz`,
-client `axiz-initializr`), on port 8090:
+Ejecución local contra el Keycloak de la demo (`axiz-demo`: `scripts/demo.sh up`; realm `axiz`,
+cliente `axiz-initializr`), en el puerto 8090:
 
 ```bash
 ./mvnw -pl axiz-initializr -am clean package -DskipTests
@@ -29,96 +30,109 @@ java -jar axiz-initializr/target/axiz-initializr-2.0.0.jar --spring.profiles.act
 # http://localhost:8090, user ana / local-only-ana
 ```
 
-Creating GitHub repositories also needs a GitHub OAuth App with the callback
-`http://localhost:8090/authorized/github` (`AXIZ_GITHUB_CLIENT_ID`, `AXIZ_GITHUB_CLIENT_SECRET`,
-optionally `AXIZ_GITHUB_ORGANIZATION`). The project is pushed as one commit, `feat: generate <name> with axiz
-initializr`, a Conventional Commit that opens the changelog; the first release is `0.1.0`, the
-`initial-version` of the generated `release-please-config.json`.
+Crear repositorios de GitHub también requiere una GitHub OAuth App con el callback
+`http://localhost:8090/authorized/github` (`AXIZ_GITHUB_CLIENT_ID`, `AXIZ_GITHUB_CLIENT_SECRET` y,
+de forma opcional, `AXIZ_GITHUB_ORGANIZATION`). El proyecto se sube como un único commit, `feat: generate <name> with axiz
+initializr`, un Conventional Commit que abre el changelog; la primera release es `0.1.0`, el
+`initial-version` del `release-please-config.json` generado.
 
-## Publication and recovery
+## Publicación y recuperación
 
-Send an `Idempotency-Key` UUID with `POST /v1/projects/github`. The same authenticated subject,
-operation, repository and exact generated project can resume a partial publication. Keep the same
-request and framework version across retries; changed output fails closed with 409. The UI keeps
-that operation and request in tab session storage until success. It contains project/contract text,
-never OAuth tokens: do not put production data or secrets into generation requests.
+Con `POST /v1/projects/github` se envía un UUID en `Idempotency-Key`. El mismo sujeto autenticado,
+operación, repositorio y proyecto generado exacto pueden reanudar una publicación parcial. Se mantienen
+la misma petición y la misma versión del framework entre reintentos; una salida distinta falla en modo
+cerrado con 409. La interfaz conserva esa operación y la petición en el almacenamiento de sesión de la
+pestaña hasta el éxito. Contiene el texto del proyecto y del contrato, nunca tokens OAuth: no se ponen
+datos de producción ni secretos en las peticiones de generación.
 
-GitHub authorization requires both `repo` and `workflow`; the publisher verifies granted scopes
-before any write because generated projects include workflows. Authorize again after a failed
-attempt or a consumed/expired grant. This removes local credentials; it does not revoke the
-provider-side OAuth grant, which the user can revoke in GitHub settings.
+La autorización de GitHub requiere `repo` y `workflow`; el publicador verifica los scopes concedidos
+antes de cualquier escritura, porque los proyectos generados incluyen workflows. Se vuelve a autorizar
+después de un intento fallido o de una concesión consumida o expirada. Esto elimina las credenciales
+locales; no revoca la concesión OAuth en el proveedor, que el usuario puede revocar en la configuración
+de GitHub.
 
-A shared deployment secret `axiz.initializr.publication-key` (or
-`AXIZ_INITIALIZR_PUBLICATION_KEY`) is required at startup: Base64-encoded random key of at least
-32 bytes, mounted through the secret store, never a ConfigMap. Every replica needs the same key.
-An HMAC marker in the private repository description binds the operation, subject, repository and
-project digest. Do not remove it while recovery is needed; rotating the key requires draining or
-reconciling pending operations. It is not a GitHub credential. GitHub descriptions are limited to
-160 characters here to leave room for the marker (ZIP generation still accepts 300 characters).
+Al arrancar se requiere un secreto de despliegue compartido `axiz.initializr.publication-key` (o
+`AXIZ_INITIALIZR_PUBLICATION_KEY`): una clave aleatoria codificada en Base64 de al menos 32 bytes,
+montada mediante el almacén de secretos, nunca en un ConfigMap. Todas las réplicas necesitan la misma
+clave. Un marcador HMAC en la descripción del repositorio privado liga la operación, el sujeto, el
+repositorio y el digest del proyecto. No se elimina mientras se necesite recuperación; rotar la clave
+requiere drenar o conciliar las operaciones pendientes. No es una credencial de GitHub. Aquí las
+descripciones de GitHub se limitan a 160 caracteres para dejar espacio al marcador (la generación de
+ZIP acepta 300 caracteres).
 
-201 confirms the branch. A 503 includes `operationId`, `phase` and `repository` for retry with the
-same operation after authorization. A 409 means identity/content conflict and needs inspection.
-Recovery verifies the marker and ancestry, never force-pushes, overwrites another user's commit
-or deletes a repository. Lost acknowledgements are covered at creation, tree, commit and ref stages.
-The generated project is deterministic only for the same generator version and inputs.
+201 confirma la rama. Un 503 incluye `operationId`, `phase` y `repository` para reintentar con la misma
+operación después de autorizar. Un 409 indica un conflicto de identidad o de contenido y requiere
+inspección. La recuperación verifica el marcador y la ascendencia, y nunca hace force-push, ni
+sobrescribe el commit de otro usuario, ni elimina un repositorio. Los acuses perdidos están cubiertos
+en las etapas de creación, árbol, commit y ref. El proyecto generado es determinista solo para la misma
+versión del generador y las mismas entradas.
 
-## Sessions and quotas
+## Sesiones y cuotas
 
-The application uses process-local servlet sessions. Configure browser affinity at the ingress
-when it targets pods directly; the chart uses ClientIP affinity for traffic through its Service.
-A pod restart intentionally requires SSO/GitHub authorization again. Do not enable a replicated
-session store without implementing atomic one-time consumption across replicas as well.
-The bearer API is stateless; GitHub publication specifically requires the browser session grant.
+La aplicación usa sesiones servlet locales al proceso. Se configura afinidad de navegador en el ingress
+cuando apunta directamente a los pods; el chart usa afinidad ClientIP para el tráfico que pasa por su
+Service. Un reinicio del pod exige a propósito volver a autorizar SSO y GitHub. No se activa un almacén
+de sesiones replicado sin implementar también un consumo atómico de un solo uso entre réplicas.
+La API bearer no tiene estado; la publicación en GitHub requiere en concreto la concesión de la sesión
+del navegador.
 
-Redis quotas use `axiz-security-redis-spring-boot-starter`, shared by every replica, with the fixed
-namespace `axiz:initializr:quota:v1:`. Set `spring.data.redis.host/port/username/password` through the
-normal config/secret boundary. TLS and hostname verification are required outside local/test/CI.
-Connect/command timeouts default to one second. Local execution also needs Redis/Valkey (the demo
-provides it); local plaintext is governed by the framework's local environment policy.
+Las cuotas en Redis usan `axiz-security-redis-spring-boot-starter`, compartido por todas las réplicas,
+con el namespace fijo `axiz:initializr:quota:v1:`. `spring.data.redis.host/port/username/password` se
+configuran mediante el límite normal de configuración y secretos. Fuera de local/test/CI se exigen TLS
+y la verificación del nombre de host. Los timeouts de conexión y de comando son de un segundo por
+defecto. La ejecución local también necesita Redis/Valkey (la demo lo aporta); el texto plano en local
+se rige por la política de ambiente local del framework.
 
-`axiz.initializr.limits` defaults to a one-minute window, 10 generations, 2 publication attempts,
-20 validations per authenticated subject, and 4 concurrent expensive requests per replica.
-Client identity headers cannot change that subject. 429 includes `Retry-After`; Redis errors deny
-work instead of allowing it. An outage may be reported as a denied quota by the shared limiter.
-No process-local fallback is configured in production. Tune budgets for the deployed resources.
+`axiz.initializr.limits` usa por defecto una ventana de un minuto, 10 generaciones, 2 intentos de
+publicación y 20 validaciones por sujeto autenticado, y 4 peticiones costosas concurrentes por réplica.
+Las cabeceras de identidad del cliente no pueden cambiar ese sujeto. Un 429 incluye `Retry-After`; los
+errores de Redis niegan el trabajo en lugar de permitirlo. El limitador compartido puede informar una
+caída como una cuota denegada. En producción no se configura ninguna alternativa local al proceso. Los
+presupuestos se ajustan a los recursos desplegados.
 
-## Verification
+## Verificación
 
-Run `mvn -Pquality -pl axiz-initializr -am test` in `axiz-tools` after installing the framework.
-Tests cover scope preflight, phase-by-phase lost responses, conflict/replay rejection, session
-expiry/consumption/logout, masked errors, per-subject quotas and bounded generation concurrency.
-The GitHub tests use a stateful HTTP fake and create no real repositories.
+Se ejecuta `mvn -Pquality -pl axiz-initializr -am test` en `axiz-tools` después de instalar el framework.
+Las pruebas cubren la comprobación previa de scopes, las respuestas perdidas fase por fase, el rechazo
+de conflictos y repeticiones, la expiración, el consumo y el cierre de sesión, los errores enmascarados,
+las cuotas por sujeto y la concurrencia acotada de generación. Las pruebas de GitHub usan un fake HTTP
+con estado y no crean repositorios reales.
 
-## Transport and publication audit
+## Transporte y auditoría de la publicación
 
-Use a classic GitHub OAuth App with `repo` and `workflow` grants. Tokens without the OAuth scope
-header (including GitHub App installation tokens) are not supported by this browser flow.
-The trusted deployment configuration selects the HTTPS API origin (`github-api` for Enterprise);
-request input cannot override it. Credentials, query and fragment are rejected in that URL.
-The dedicated client never follows redirects, connects within 3 seconds and bounds each request
-at 10 seconds. Initial branch creation gets at most three read attempts on 404/409, with 200/400ms
-backoff; remote writes are not retried blindly. A 401/403 in scope preflight requests reauthorization.
+Se usa una GitHub OAuth App clásica con las concesiones `repo` y `workflow`. Este flujo de navegador no
+admite tokens sin la cabecera de scopes de OAuth (incluidos los tokens de instalación de una GitHub
+App). La configuración confiable del despliegue selecciona el origen HTTPS de la API (`github-api` para
+Enterprise); la entrada de la petición no puede sobrescribirlo. En esa URL se rechazan credenciales,
+query y fragmento. El cliente dedicado nunca sigue redirecciones, se conecta en un máximo de 3 segundos
+y limita cada petición a 10 segundos. La creación inicial de la rama tiene como máximo tres intentos de
+lectura ante 404/409, con backoff de 200/400 ms; las escrituras remotas no se reintentan a ciegas. Un
+401/403 en la comprobación previa de scopes solicita una nueva autorización.
 
-Publication emits `project.publish` audit events with a SHA-256 pseudonym of the authenticated
-subject, repository, operation ID, phase and outcome. It never audits the OAuth token or generated
-content. `project.publish.requested` records accepted intent with unknown operation outcome;
-only `CONFIRMED` records a committed remote outcome. Initializr uses the framework's SYNC delivery,
-without an in-memory async queue. This is synchronous handoff, not a durable journal or an atomic
-transaction with GitHub. The framework's confirmed publisher reports unacknowledged sink delivery
-through its fallback and metrics; a returned `publish()` does not prove durable storage. A publisher
-exception before the remote work aborts it, while one after a remote write cannot replace that
-business outcome. Configure and monitor a persistent collector/sink and its delivery metrics.
-Logging-only defaults do not provide crash-proof storage or PCI compliance certification.
+La publicación emite eventos de auditoría `project.publish` con un seudónimo SHA-256 del sujeto
+autenticado, el repositorio, el ID de operación, la fase y el resultado. Nunca audita el token OAuth ni
+el contenido generado. `project.publish.requested` registra la intención aceptada con un resultado de
+operación desconocido; solo `CONFIRMED` registra un resultado remoto confirmado. El Initializr usa la
+entrega SYNC del framework, sin una cola asíncrona en memoria. Es una entrega síncrona, no un journal
+durable ni una transacción atómica con GitHub. El publicador confirmado del framework informa la
+entrega no confirmada al destino mediante su alternativa y sus métricas; un `publish()` que retorna no
+demuestra almacenamiento durable. Una excepción del publicador antes del trabajo remoto lo aborta,
+mientras que una posterior a una escritura remota no puede reemplazar ese resultado de negocio. Se
+configura y monitorea un colector o destino persistente y sus métricas de entrega. Los valores por
+defecto basados solo en logging no aportan almacenamiento resistente a caídas ni una certificación de
+cumplimiento PCI.
 
-Outside the local profile `AXIZ_SSO_ISSUER` is mandatory. Local execution also needs a private
-random `AXIZ_INITIALIZR_PUBLICATION_KEY` of at least 32 bytes encoded in Base64; the service refuses
-to start without it. Use your local secret manager or `openssl rand -base64 32`, never a checked-in
-key. Do not regenerate the key while partial publications need recovery.
+Fuera del perfil local, `AXIZ_SSO_ISSUER` es obligatorio. La ejecución local también necesita un
+`AXIZ_INITIALIZR_PUBLICATION_KEY` privado y aleatorio de al menos 32 bytes codificado en Base64; el
+servicio no arranca sin él. Se obtiene del gestor de secretos local o con `openssl rand -base64 32`,
+nunca de una clave versionada. La clave no se regenera mientras haya publicaciones parciales que
+necesiten recuperación.
 
-Quotas match decoded MVC segments and use canonical operation keys, so percent-encoded equivalent
-paths share the same quota. OAuth consumption uses the servlet session mutex across request
-facades. If tab storage cannot retain a large generated-project request, the UI reports it before
-publication and asks to reduce the contract size or free tab storage.
+Las cuotas comparan los segmentos MVC decodificados y usan claves de operación canónicas, de modo que
+las rutas equivalentes codificadas con porcentaje comparten la misma cuota. El consumo de OAuth usa el
+mutex de la sesión servlet entre las fachadas de la petición. Si el almacenamiento de la pestaña no
+puede conservar una petición grande de proyecto generado, la interfaz lo informa antes de publicar y
+pide reducir el tamaño del contrato o liberar el almacenamiento de la pestaña.
 
 ### Rechazos de GitHub y lectura de auditoría
 
@@ -134,9 +148,10 @@ El sujeto SHA-256 es un seudónimo estable, no anonimización ni una protección
 El operador debe conservar un directorio de identidades autorizado y acceso restringido para
 correlacionar ese seudónimo con el principal autenticado cuando investigue eventos de auditoría.
 
-### Request quotas and concurrency
+### Cuotas de peticiones y concurrencia
 
-The per-subject/per-operation quota counts authenticated attempts, including attempts rejected
-because all generation workers are busy. It is an abuse-control budget, not a billing counter for
-accepted jobs. The separate semaphore bounds active work in each replica. A caller receiving 429
-must respect Retry-After instead of retrying freely while the service is saturated.
+La cuota por sujeto y por operación cuenta los intentos autenticados, incluidos los rechazados porque
+todos los workers de generación están ocupados. Es un presupuesto de control de abuso, no un contador
+de facturación de trabajos aceptados. El semáforo separado acota el trabajo activo en cada réplica. Un
+llamador que recibe 429 debe respetar Retry-After en lugar de reintentar libremente mientras el
+servicio está saturado.

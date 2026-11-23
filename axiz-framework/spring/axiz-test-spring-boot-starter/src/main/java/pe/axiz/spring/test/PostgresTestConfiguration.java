@@ -7,8 +7,8 @@ import org.springframework.test.context.DynamicPropertyRegistrar;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
- * PostgreSQL for {@code @SpringBootTest}: {@code @Import(PostgresTestConfiguration.class)}. The
- * service connection serves JDBC/JPA, R2DBC and Flyway alike.
+ * PostgreSQL para {@code @SpringBootTest}: {@code @Import(PostgresTestConfiguration.class)}. La
+ * conexión de servicio atiende por igual a JDBC/JPA, R2DBC y Flyway.
  */
 @TestConfiguration(proxyBeanMethods = false)
 public class PostgresTestConfiguration {

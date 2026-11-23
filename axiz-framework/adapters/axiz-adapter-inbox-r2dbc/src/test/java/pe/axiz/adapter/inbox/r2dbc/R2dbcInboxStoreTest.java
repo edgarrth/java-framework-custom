@@ -86,7 +86,7 @@ class R2dbcInboxStoreTest {
 
   @Test
   void driverFailuresBecomeInboxExceptions() {
-    FakeR2dbc db = new FakeR2dbc(); // no rule: every statement fails
+    FakeR2dbc db = new FakeR2dbc(); // sin regla: toda sentencia falla
     assertThrows(InboxException.class, () -> acquire(store(db), "o"));
   }
 }

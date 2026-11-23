@@ -103,7 +103,7 @@ class JdbcAuditChainStateTest {
 
           @Override
           public void release(Connection connection) {
-            /* Owned by the surrounding transaction. */
+            /* Propiedad de la transacción circundante. */
           }
         },
         source,

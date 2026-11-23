@@ -18,7 +18,7 @@
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
     <axiz.module.name>pe.axiz.test.contracts</axiz.module.name>
-    <!-- test fixtures: their value is measured by the stores they check -->
+    <!-- fixtures de prueba: su valor se mide por los almacenes que verifican -->
     <skipPitest>true</skipPitest>
   </properties>
 

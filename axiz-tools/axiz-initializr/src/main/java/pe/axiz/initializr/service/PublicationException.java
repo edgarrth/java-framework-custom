@@ -2,9 +2,14 @@ package pe.axiz.initializr.service;
 
 import java.util.UUID;
 
-/** Safe publication status. A caller can retry the same operation and identical project. */
+/**
+ * Estado de publicación seguro. Un invocador puede reintentar la misma operación con el mismo
+ * proyecto.
+ */
 public final class PublicationException extends IllegalStateException {
-  /** Last confirmed boundary; an unknown write must be reconciled before retrying it. */
+  /**
+   * Última frontera confirmada; una escritura desconocida debe conciliarse previo a reintentarla.
+   */
   public enum Phase {
     PREFLIGHT,
     REPOSITORY_CREATE_UNKNOWN,

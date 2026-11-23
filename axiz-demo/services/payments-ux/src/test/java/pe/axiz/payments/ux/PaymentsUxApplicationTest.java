@@ -15,8 +15,8 @@ import pe.axiz.spring.test.BlockHoundExtension;
 import pe.axiz.spring.test.RedisTestConfiguration;
 
 /**
- * Starts the whole service against real dependencies in containers (Testcontainers): wiring,
- * configuration, migrations and health. Needs Docker.
+ * Arranca el servicio completo contra dependencias reales en contenedores (Testcontainers):
+ * cableado, configuración, migraciones y salud. Requiere Docker.
  */
 @SpringBootTest(
     properties = {

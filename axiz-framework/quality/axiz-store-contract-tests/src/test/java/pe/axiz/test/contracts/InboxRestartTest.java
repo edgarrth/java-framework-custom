@@ -45,7 +45,8 @@ class InboxRestartTest {
             .tryAcquire(
                 "payments", "pending", "old", now, now.plusSeconds(10), now.plusSeconds(100))
             .status());
-    // All connections closed: H2 closes its persisted database; a fresh client reopens it.
+    // Todas las conexiones cerradas: H2 cierra su base de datos persistida; un cliente nuevo la
+    // reabre.
     var reopenedDataSource = new JdbcDataSource();
     reopenedDataSource.setURL(url);
     var restarted = new JdbcInboxStore(new JdbcTransactions(reopenedDataSource), "axiz_inbox");

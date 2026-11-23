@@ -19,9 +19,9 @@ import pe.axiz.payments.beneficiaries.model.NewBeneficiary;
 import pe.axiz.payments.beneficiaries.repository.BeneficiaryRepository;
 
 /**
- * Business operations on beneficiaries: CCI validation, one active beneficiary per account and
- * customer, a maximum per customer and logical removal. Payment validation always reads the
- * authoritative directory; local caches cannot enforce revocation across replicas.
+ * Operaciones de negocio sobre beneficiarios: validación del CCI, un beneficiario activo por cuenta
+ * y cliente, un máximo por cliente y eliminación lógica. La validación de pagos siempre lee el
+ * directorio de referencia; las cachés locales no pueden garantizar la revocación entre réplicas.
  */
 @Service
 public class BeneficiariesService {
@@ -50,12 +50,12 @@ public class BeneficiariesService {
     this.maxPerCustomer = policy.maxPerCustomer();
   }
 
-  /** One page of active beneficiaries (cursor pagination). */
+  /** Una página de beneficiarios activos (paginación por cursor). */
   public Page<Beneficiary> list(String customerId, int size, @Nullable String cursor) {
     return repository.listActive(customerId, size, cursor);
   }
 
-  /** Registers a beneficiary after validating the account and the per-customer rules. */
+  /** Registra un beneficiario tras validar la cuenta y las reglas por cliente. */
   public Beneficiary create(String customerId, NewBeneficiary data) {
     if (!identifiers.isValid("cci-strict", data.cci())) {
       reject("invalid-account");
@@ -75,12 +75,15 @@ public class BeneficiariesService {
     return created;
   }
 
-  /** Authoritative active beneficiary; changes on another replica are visible immediately. */
+  /**
+   * Beneficiario activo según el directorio de referencia; los cambios en otra réplica son visibles
+   * de inmediato.
+   */
   public Beneficiary get(String customerId, String beneficiaryId) {
     return active(customerId, beneficiaryId);
   }
 
-  /** Changes the alias. */
+  /** Cambia el alias. */
   public Beneficiary rename(String customerId, String beneficiaryId, String alias) {
     Beneficiary current = active(customerId, beneficiaryId);
     current.rename(alias, clock.instant());
@@ -88,7 +91,7 @@ public class BeneficiariesService {
     return saved;
   }
 
-  /** Logical removal; the item is kept for audit. */
+  /** Eliminación lógica; el elemento se conserva para auditoría. */
   public void remove(String customerId, String beneficiaryId) {
     Beneficiary current = active(customerId, beneficiaryId);
     current.remove(clock.instant());

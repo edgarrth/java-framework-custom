@@ -51,7 +51,7 @@ class MessagingTest {
     assertEquals(DeliveryDecision.DEAD_LETTER, policy.onFailure(first, 1));
   }
 
-  /** Test codec: payloads are strings. */
+  /** Codec de prueba: los payloads son cadenas. */
   static final class StringCodec implements PayloadCodec {
     @Override
     public String contentType() {
@@ -238,13 +238,13 @@ class MessagingTest {
             ConsumerRetryPolicy.defaults(),
             false);
     EventEnvelope e = event("held");
-    // delivery A claimed the message and died before finishing
+    // la entrega A reclamó el mensaje y murió antes de terminar
     dedup.inProgress.put(MessageKeys.of(e), "token-of-a");
     EventDispatcher.Outcome outcome = dispatcher.dispatchWithDelay(e, 1);
     assertEquals(DeliveryDecision.DEFER, outcome.decision());
     assertEquals(Duration.ofSeconds(30), outcome.retryAfter());
     assertTrue(handler.handled.isEmpty(), "the handler did not run");
-    // once A's lease is over the redelivery processes it
+    // cuando termina el lease de A, la reentrega lo procesa
     dedup.inProgress.clear();
     assertEquals(DeliveryDecision.ACK, dispatcher.dispatch(e, 2));
     assertEquals(List.of("held"), handler.handled);
@@ -268,8 +268,8 @@ class MessagingTest {
   }
 
   /**
-   * Regression: two producers may use the same id; only source + id identifies an event, so both
-   * are processed, while a redelivery of the same one is not.
+   * Regresión: dos productores pueden usar el mismo id; solo source + id identifica un evento, así
+   * que ambos se procesan, mientras que una reentrega del mismo no.
    */
   @Test
   void deduplicationUsesSourceAndId() {
@@ -327,7 +327,7 @@ class MessagingTest {
   void aLateCompletionCannotOverwriteTheNewOwner() {
     MemoryDedup dedup = new MemoryDedup();
     Deduplicator.Claim a = dedup.claim("c", "e-1");
-    dedup.inProgress.put("e-1", "token-of-b"); // A's lease expired and B took it over
+    dedup.inProgress.put("e-1", "token-of-b"); // el lease de A expiró y B lo tomó
     assertEquals(false, dedup.completed("c", "e-1", a.token()));
     assertEquals(false, dedup.failed("c", "e-1", a.token()));
     assertEquals("token-of-b", dedup.inProgress.get("e-1"));

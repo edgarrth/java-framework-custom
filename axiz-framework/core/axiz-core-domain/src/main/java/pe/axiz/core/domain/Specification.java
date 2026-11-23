@@ -3,9 +3,9 @@ package pe.axiz.core.domain;
 import java.util.Objects;
 
 /**
- * Business rule over a candidate, composable with {@code and}, {@code or} and {@code not}.
+ * Regla de negocio sobre un candidato, componible con {@code and}, {@code or} y {@code not}.
  *
- * @param <T> candidate type
+ * @param <T> tipo del candidato
  */
 @FunctionalInterface
 public interface Specification<T> {

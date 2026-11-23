@@ -109,9 +109,9 @@ import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 /**
- * Signed JWT through real Spring HTTP/security/engine composition, local DynamoDB/KMS/SQS and
- * authenticated Valkey. Local HTTP fixtures do not attest production TLS, AWS IAM or PCI
- * compliance.
+ * JWT firmado a través de la composición real de HTTP, seguridad y motor de Spring, DynamoDB, KMS y
+ * SQS locales y Valkey autenticado. Los fixtures HTTP locales no acreditan TLS de producción, IAM
+ * de AWS ni cumplimiento PCI.
  */
 @ExtendWith(BlockHoundExtension.class)
 class VaultAcceptanceIT {
@@ -636,8 +636,8 @@ class VaultAcceptanceIT {
     assertTrue(auditCount >= 20, "Operations must be durably acknowledged and sealed");
     sqs.deleteQueue(b -> b.queueUrl(f.queue));
     var denied = http.send("/v1/tokens", allowed, valueBody("DNI", "00883344", false));
-    // Persistence committed, but durable audit acknowledgement failed: the overall operation
-    // is uncertain. Preserve the association and require reconciliation, never a fresh replay.
+    // La persistencia se confirmó, pero falló el acuse durable de auditoría: la operación global es
+    // incierta. Se preserva la asociación y se exige conciliación, nunca una repetición nueva.
     expect(denied, 504);
     assertThat(denied.body()).contains("AXZ-TOKEN-0504");
     assertThat(denied.body()).doesNotContain("00883344", "QueueDoesNotExist", "aws");
@@ -655,8 +655,9 @@ class VaultAcceptanceIT {
                 scope, List.of(f.indexes.index("00883344", scope.indexScope(), "index")))
             .orElseThrow();
     int rowsBeforeRetry = db.scan(b -> b.tableName(f.table).consistentRead(true)).count();
-    // A later request finds the existing association without writing. Its failed read audit is
-    // unavailability, not a new uncertain mutation; it still cannot return the token.
+    // Una solicitud posterior encuentra la asociación existente sin escribir. Su auditoría de
+    // lectura fallida es una indisponibilidad, no una nueva mutación incierta; igualmente no puede
+    // devolver el token.
     var retry = http.send("/v1/tokens", allowed, valueBody("DNI", "00883344", false));
     expect(retry, 503);
     assertThat(retry.body()).contains("AXZ-TOKEN-0503").doesNotContain(committed.token().reveal());

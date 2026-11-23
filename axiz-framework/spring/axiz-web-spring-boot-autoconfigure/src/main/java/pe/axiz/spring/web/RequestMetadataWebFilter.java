@@ -21,9 +21,9 @@ import pe.axiz.core.errors.ProblemFactory;
 import reactor.core.publisher.Mono;
 
 /**
- * Reactive counterpart of {@link RequestMetadataFilter}. The metadata travels in the Reactor
- * context under {@link RequestContext#KEY}; context-propagation restores it as a thread-local where
- * needed, without global Reactor hooks of our own.
+ * Contraparte reactiva de {@link RequestMetadataFilter}. Los metadatos viajan en el contexto de
+ * Reactor bajo {@link RequestContext#KEY}; context-propagation los restaura como thread-local donde
+ * se necesita, sin hooks globales propios de Reactor.
  */
 public final class RequestMetadataWebFilter implements WebFilter, Ordered {
 

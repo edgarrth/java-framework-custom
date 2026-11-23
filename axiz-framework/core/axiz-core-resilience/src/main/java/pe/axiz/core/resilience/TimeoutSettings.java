@@ -4,11 +4,11 @@ import java.time.Duration;
 import java.util.Objects;
 
 /**
- * Timeouts that every outbound client must define (there is no "infinite" default).
+ * Timeouts que todo cliente saliente debe definir (no hay valor por defecto "infinito").
  *
- * @param connect connection establishment
- * @param read waiting for response data
- * @param total whole call including retries
+ * @param connect establecimiento de la conexión
+ * @param read espera de datos de la respuesta
+ * @param total llamada completa, incluidos los reintentos
  */
 public record TimeoutSettings(Duration connect, Duration read, Duration total) {
 

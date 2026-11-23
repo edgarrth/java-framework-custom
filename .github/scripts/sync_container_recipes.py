@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep demo and generated Docker recipes identical to the test infrastructure artifact."""
+"""Mantiene las recetas Docker de la demo y las generadas idénticas al artefacto de infraestructura de pruebas."""
 import argparse
 from pathlib import Path
 

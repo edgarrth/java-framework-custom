@@ -4,11 +4,17 @@ import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import pe.axiz.core.tokenization.TokenOperation;
 
-/** Native asynchronous distributed admission; no blocking adapter is permitted on event loops. */
+/**
+ * Admisión distribuida asíncrona nativa; no se permite ningún adaptador bloqueante en los event
+ * loops.
+ */
 public interface AsyncTokenBudget {
   CompletionStage<Permit> acquire(TokenCaller caller, TokenOperation operation, VaultScope scope);
 
-  /** Associates admission with the audit operation; providers can retain this recovery identity. */
+  /**
+   * Asocia la admisión con la operación de auditoría; los proveedores pueden conservar esta
+   * identidad de recuperación.
+   */
   default CompletionStage<Permit> acquire(
       TokenCaller caller, TokenOperation operation, VaultScope scope, UUID operationId) {
     return acquire(caller, operation, scope);
@@ -18,7 +24,7 @@ public interface AsyncTokenBudget {
 
   boolean distributed();
 
-  /** Owned concurrency lease; release acknowledges the shared store. */
+  /** Lease de concurrencia propio; la liberación confirma el almacén compartido. */
   interface Permit {
     CompletionStage<Void> release();
   }

@@ -103,7 +103,10 @@ class JavaSourceSafetyTest {
     }
   }
 
-  /** Parse actual generated units with javac without requiring the consumer's Spring classpath. */
+  /**
+   * Se analizan unidades generadas reales con javac sin requerir el classpath de Spring del
+   * consumidor.
+   */
   static void assertJavaSyntax(Map<String, byte[]> files) throws IOException {
     var diagnostics = new DiagnosticCollector<JavaFileObject>();
     var compiler = ToolProvider.getSystemJavaCompiler();

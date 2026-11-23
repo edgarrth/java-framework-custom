@@ -1,8 +1,8 @@
 /**
- * Non-blocking access to Aurora PostgreSQL over R2DBC for layer 1 stores (outbox, inbox) and
- * services: {@link pe.axiz.kit.r2dbc.ReactiveSql} with named parameters, connection scoped
- * transactions and IAM authentication tokens. Types are non-null unless annotated
- * {@code @Nullable}.
+ * Acceso no bloqueante a Aurora PostgreSQL mediante R2DBC para los almacenes de la capa 1 (outbox,
+ * inbox) y los servicios: {@link pe.axiz.kit.r2dbc.ReactiveSql} con parámetros con nombre,
+ * transacciones con alcance de conexión y tokens de autenticación IAM. Los tipos no admiten null
+ * salvo que se anoten con {@code @Nullable}.
  */
 @NullMarked
 package pe.axiz.kit.r2dbc;

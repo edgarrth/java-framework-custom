@@ -1,7 +1,7 @@
-# Layer contracts: closed service roles; the first entry is the default.
+# Contratos de capa: roles de servicio cerrados; la primera entrada es la de por defecto.
 archetypes:
 - name: business
-  role: Owner of domain business rules
+  role: Dueño de las reglas de negocio del dominio
   kind: service
   structures:
   - hexagonal
@@ -31,7 +31,7 @@ archetypes:
   rest: true
   properties: {}
 - name: core
-  role: Facade to internal systems of record
+  role: Fachada hacia los sistemas internos de registro
   kind: service
   structures:
   - hexagonal
@@ -60,7 +60,7 @@ archetypes:
   rest: true
   properties: {}
 - name: gateway
-  role: Facade and security for external systems
+  role: Fachada y seguridad para sistemas externos
   kind: service
   structures:
   - hexagonal
@@ -89,7 +89,7 @@ archetypes:
   rest: true
   properties: {}
 - name: ux
-  role: Channel experience without domain persistence
+  role: Experiencia de canal sin persistencia de dominio
   kind: service
   structures:
   - bff
@@ -122,7 +122,7 @@ archetypes:
     axiz.web.api-version.default-version: '1'
     axiz.bff.timeout: 3s
 - name: support
-  role: Reusable cross-domain support service
+  role: Servicio de soporte reutilizable entre dominios
   kind: service
   structures:
   - hexagonal
@@ -150,7 +150,7 @@ archetypes:
   rest: true
   properties: {}
 - name: event-processor
-  role: Consumes domain events without a public REST API
+  role: Consume eventos de dominio sin API REST pública
   kind: service
   structures:
   - eda
@@ -183,7 +183,7 @@ archetypes:
     axiz.messaging.kafka.topics:
     - example-events
 - name: batch
-  role: Scheduled file processing and reconciliation
+  role: Procesamiento programado de archivos y conciliación
   kind: service
   structures:
   - batch
@@ -212,7 +212,7 @@ archetypes:
     spring.batch.jdbc.initialize-schema: never
     job.input-key: ${JOB_INPUT_KEY:in/input.csv}
 - name: library
-  role: Plain Java library for the ecosystem (layer 1 rules apply)
+  role: Librería Java plana para el ecosistema (aplican las reglas de la capa 1)
   kind: platform
   structures:
   - none
@@ -225,7 +225,7 @@ archetypes:
   properties: {}
   extensions: []
 - name: starter
-  role: New axiz capability (layer 1 library + layer 3 Spring Boot starter)
+  role: Nueva capacidad de axiz (librería de capa 1 más starter Spring Boot de capa 3)
   kind: platform
   structures:
   - none

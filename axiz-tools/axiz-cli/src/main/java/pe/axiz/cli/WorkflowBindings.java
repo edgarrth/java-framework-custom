@@ -18,7 +18,9 @@ import pe.axiz.codegen.project.ProjectLayout;
 import pe.axiz.codegen.project.ProjectManifest;
 import pe.axiz.core.json.JsonWriter;
 
-/** Safely updates current workflow bindings when a service is renamed. */
+/**
+ * Actualiza de forma segura los bindings vigentes de los workflows cuando se renombra un servicio.
+ */
 final class WorkflowBindings {
   private WorkflowBindings() {}
 
@@ -78,8 +80,9 @@ final class WorkflowBindings {
           proposed =
               binding.matcher(proposed).replaceAll("$1$2" + values.get(value.getKey()) + "$2");
         }
-        // Preserve comments and the custom graph. A flow-style or unrelated same-name field
-        // requires manual review rather than an unverified textual replacement.
+        // Se preservan los comentarios y el grafo personalizado. Un campo en estilo flow o un campo
+        // no relacionado con el mismo nombre requiere revisión manual en lugar de un reemplazo
+        // textual sin verificar.
         if (!yaml(proposed).equals(expected)) return false;
         edits.put(relative, proposed.getBytes(StandardCharsets.UTF_8));
       }

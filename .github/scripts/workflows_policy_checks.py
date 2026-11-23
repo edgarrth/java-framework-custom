@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One offline command inventory for CI and each isolated release/adoption state."""
+"""Un único inventario de comandos sin conexión para CI y para cada estado aislado de release o adopción."""
 import argparse
 from collections import deque
 import json
@@ -11,7 +11,7 @@ import sys
 
 from prepare_workflow_schemas import verify as verify_schemas
 
-# Lifecycle entrypoints are deliberately outside this list: they call this base executor.
+# Los entrypoints del ciclo de vida quedan fuera de esta lista de forma deliberada: invocan este ejecutor base.
 COMMANDS = [
     ('npm-audit-report', ['{python}', '.github/scripts/npm_audit_summary.py', 'report', '--input', '{npm_audit_input}', '--output', '{output}/npm-audit-summary.json']),
     ('action-pins', ['{python}', '.github/scripts/check_action_pins.py']),

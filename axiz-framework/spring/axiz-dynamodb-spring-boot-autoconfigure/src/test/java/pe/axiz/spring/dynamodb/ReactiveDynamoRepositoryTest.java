@@ -78,7 +78,8 @@ class ReactiveDynamoRepositoryTest {
             })
         .verifyComplete();
     assertEquals(6, raw.calls.get());
-    // Invalid keys/indexes and cursor limits must fail only upon subscription and submit no I/O.
+    // Las claves o índices inválidos y los límites de cursor deben fallar solo al suscribirse y no
+    // deben enviar E/S.
     StepVerifier.create(repository.findById("C-1", "S-1"))
         .expectError(IllegalArgumentException.class)
         .verify();

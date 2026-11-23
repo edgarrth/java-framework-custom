@@ -1,9 +1,9 @@
 package pe.axiz.extension.cqrs;
 
 /**
- * Cross-cutting step around handlers. Behaviors run by ascending {@link #order()}: the standard
- * ones are validation (100), authorization (200), idempotency (300), transaction (400), audit (500)
- * and metrics (600).
+ * Paso transversal alrededor de los handlers. Los behaviors se ejecutan por {@link #order()}
+ * ascendente: los estándar son validación (100), autorización (200), idempotencia (300),
+ * transacción (400), auditoría (500) y métricas (600).
  */
 public interface PipelineBehavior {
 
@@ -19,9 +19,9 @@ public interface PipelineBehavior {
   <R> R handle(Invocation<R> invocation, Next<R> next);
 
   /**
-   * Continues the pipeline.
+   * Continúa el pipeline.
    *
-   * @param <R> result type
+   * @param <R> tipo del resultado
    */
   @FunctionalInterface
   interface Next<R> {

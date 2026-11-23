@@ -11,10 +11,10 @@ import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Catalog of business headers a service accepts, validates and propagates.
+ * Catálogo de cabeceras de negocio que un servicio acepta, valida y propaga.
  *
- * <p>No header name is hard-coded in the framework: services declare their own (for example a
- * channel or client application header) in configuration.
+ * <p>Ningún nombre de cabecera está fijo en el framework: los servicios declaran los suyos (por
+ * ejemplo, una cabecera de canal o de aplicación cliente) en la configuración.
  */
 public final class HeaderCatalog {
 
@@ -47,10 +47,11 @@ public final class HeaderCatalog {
   }
 
   /**
-   * Validates all declared headers using a lookup function over the inbound message.
+   * Valida todas las cabeceras declaradas mediante una función de búsqueda sobre el mensaje
+   * entrante.
    *
-   * @param lookup returns the header value or null
-   * @return validation errors; empty when valid
+   * @param lookup devuelve el valor de la cabecera o null
+   * @return errores de validación; vacío cuando es válido
    */
   public List<String> validate(Function<String, @Nullable String> lookup) {
     List<String> errors = new ArrayList<>();
@@ -64,10 +65,11 @@ public final class HeaderCatalog {
   }
 
   /**
-   * Extracts the headers that must be propagated (allow-list), skipping absent values.
+   * Extrae las cabeceras que deben propagarse (lista de permitidas), omitiendo los valores
+   * ausentes.
    *
-   * @param lookup returns the header value or null
-   * @return header name to value, in declaration order
+   * @param lookup devuelve el valor de la cabecera o null
+   * @return nombre de cabecera a valor, en orden de declaración
    */
   public Map<String, String> propagated(Function<String, @Nullable String> lookup) {
     Map<String, String> out = new LinkedHashMap<>();

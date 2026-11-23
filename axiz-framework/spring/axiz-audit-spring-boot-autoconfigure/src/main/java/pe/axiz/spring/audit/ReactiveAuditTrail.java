@@ -12,7 +12,10 @@ import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.sensitive.ObjectMasker;
 import reactor.core.publisher.Mono;
 
-/** Sanitized audit snapshots delivered inside the subscriber's reactive context and transaction. */
+/**
+ * Instantáneas de auditoría saneadas entregadas dentro del contexto reactivo y la transacción del
+ * suscriptor.
+ */
 public final class ReactiveAuditTrail {
   private final String service;
   private final ReactiveAuditPublisher publisher;
@@ -37,7 +40,10 @@ public final class ReactiveAuditTrail {
     return new Builder(action, resourceType);
   }
 
-  /** Builder for a single subscriber; publish operations are deferred until subscription. */
+  /**
+   * Builder para un único suscriptor; las operaciones de publicación se difieren hasta la
+   * suscripción.
+   */
   public final class Builder {
     private final AuditRecord record;
 
@@ -73,7 +79,10 @@ public final class ReactiveAuditTrail {
       return publish(AuditEvent.Outcome.FAILURE, code);
     }
 
-    /** Awaits success delivery, preserves business errors and records cancellation once. */
+    /**
+     * Espera la entrega del éxito, conserva los errores de negocio y registra la cancelación una
+     * sola vez.
+     */
     public <T> Mono<T> around(Mono<T> work) {
       return ReactiveAudit.around(
           work,

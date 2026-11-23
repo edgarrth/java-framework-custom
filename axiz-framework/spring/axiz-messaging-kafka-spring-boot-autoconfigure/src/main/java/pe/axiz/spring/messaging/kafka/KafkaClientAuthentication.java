@@ -2,7 +2,10 @@ package pe.axiz.spring.messaging.kafka;
 
 import java.util.Map;
 
-/** Authentication integration applied before any Kafka producer, consumer or admin is created. */
+/**
+ * Integración de autenticación aplicada antes de crear cualquier productor, consumidor o admin de
+ * Kafka.
+ */
 public interface KafkaClientAuthentication {
   String name();
 

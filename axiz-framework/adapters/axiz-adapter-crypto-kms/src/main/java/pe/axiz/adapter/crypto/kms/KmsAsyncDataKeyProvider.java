@@ -11,7 +11,9 @@ import pe.axiz.core.crypto.DataKeyProvider.DataKey;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.kms.KmsAsyncClient;
 
-/** Native asynchronous KMS data keys, with preserved context and exact SDK cancellation. */
+/**
+ * Claves de datos de KMS asíncronas nativas, con contexto preservado y cancelación exacta del SDK.
+ */
 public final class KmsAsyncDataKeyProvider implements AsyncDataKeyProvider {
   @SuppressFBWarnings(
       value = "EI_EXPOSE_REP2",

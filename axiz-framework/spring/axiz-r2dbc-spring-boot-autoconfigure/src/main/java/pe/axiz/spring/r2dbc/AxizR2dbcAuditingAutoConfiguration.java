@@ -15,9 +15,9 @@ import org.springframework.data.r2dbc.config.EnableR2dbcAuditing;
 import org.springframework.data.r2dbc.mapping.R2dbcMappingContext;
 
 /**
- * Auditing of {@link AuditableRow} (and any entity with {@code @CreatedBy}/{@code @CreatedDate}
- * fields): the caller of the request and the application clock, in UTC. Skipped when the service
- * enables R2DBC auditing itself.
+ * Auditoría de {@link AuditableRow} (y de cualquier entidad con campos
+ * {@code @CreatedBy}/{@code @CreatedDate}): el invocante de la solicitud y el reloj de la
+ * aplicación, en UTC. Se omite cuando el propio servicio habilita la auditoría de R2DBC.
  */
 @AutoConfiguration(
     afterName = "org.springframework.boot.data.r2dbc.autoconfigure.DataR2dbcAutoConfiguration")

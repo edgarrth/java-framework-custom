@@ -8,7 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-/** Client applications cannot acquire the engine, storage SPI or database/budget integrations. */
+/**
+ * Las aplicaciones cliente no pueden adquirir el motor, la SPI de almacenamiento ni las
+ * integraciones de base de datos o de presupuesto.
+ */
 public final class TokenizationRules {
   private TokenizationRules() {}
 

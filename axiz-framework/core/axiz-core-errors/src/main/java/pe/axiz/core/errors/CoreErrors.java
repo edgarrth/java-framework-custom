@@ -2,7 +2,7 @@ package pe.axiz.core.errors;
 
 import java.util.List;
 
-/** Error definitions owned by the framework itself (prefix {@code AXZ}). */
+/** Definiciones de error propias del framework (prefijo {@code AXZ}). */
 public final class CoreErrors {
 
   public static final ErrorDefinition VALIDATION_FAILED =
@@ -18,7 +18,7 @@ public final class CoreErrors {
   public static final ErrorDefinition CONFLICT =
       ErrorDefinition.of("AXZ-CORE-0409", ErrorCategory.CONFLICT, "Conflict with current state");
 
-  /** The business change committed; repeating it would duplicate its effects. */
+  /** El cambio de negocio hizo commit; repetirlo duplicaría sus efectos. */
   public static final ErrorDefinition POST_COMMIT_PUBLICATION =
       ErrorDefinition.of(
           "AXZ-CORE-0410",
@@ -56,7 +56,7 @@ public final class CoreErrors {
 
   private CoreErrors() {}
 
-  /** All framework definitions, registered by default in every catalog. */
+  /** Todas las definiciones del framework, registradas por defecto en todo catálogo. */
   public static List<ErrorDefinition> all() {
     return List.of(
         VALIDATION_FAILED,
@@ -80,7 +80,7 @@ public final class CoreErrors {
         OUTCOME_UNKNOWN);
   }
 
-  /** Default framework definition for a category. */
+  /** Definición por defecto del framework para una categoría. */
   public static ErrorDefinition forCategory(ErrorCategory category) {
     return switch (category) {
       case BAD_REQUEST -> VALIDATION_FAILED;

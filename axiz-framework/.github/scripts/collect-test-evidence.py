@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Collect TEST XML from declared Maven reactor modules, excluding copied/nested fixtures."""
+"""Recolecta el XML de TEST de los módulos declarados del reactor de Maven, excluyendo fixtures copiados o anidados."""
 import argparse
 import hashlib
 import json
@@ -33,12 +33,12 @@ def reports(project, relative_to=None, allow_empty=False):
         for tool in ("surefire-reports", "failsafe-reports"):
             for report in sorted((module / "target" / tool).glob("TEST-*.xml")):
                 suite = ET.parse(report).getroot()
-                # Maven writes testsuite; accept a testsuites envelope without counting it twice.
+                                # Maven escribe testsuite; se acepta un envoltorio testsuites sin contarlo dos veces.
                 suites = [suite] if suite.tag == "testsuite" else list(suite.iter("testsuite"))
                 for entry in suites:
                     for key in counts:
                         counts[key] += int(entry.get(key, "0"))
-                    # Surefire includes injected parameter types in JUnit method names.
+                                        # Surefire incluye los tipos de los parámetros inyectados en los nombres de los métodos de JUnit.
                     harness += sum(test.get("name", "").partition("(")[0] == "verifiesFrameworkOwnedAuditTransport"
                                    for test in entry.findall("testcase"))
                 hashes[str(report.relative_to(root))] = hashlib.sha256(report.read_bytes()).hexdigest()

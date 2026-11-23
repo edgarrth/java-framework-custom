@@ -5,9 +5,9 @@ import pe.axiz.extension.cqrs.PipelineBehavior;
 import reactor.core.publisher.Mono;
 
 /**
- * Cross-cutting step around reactive handlers, with the same order constants as {@link
- * PipelineBehavior}. A behavior never blocks: blocking collaborators (idempotency store, audit
- * publisher) run on the bounded elastic scheduler.
+ * Paso transversal alrededor de los handlers reactivos, con las mismas constantes de orden que
+ * {@link PipelineBehavior}. Un behavior nunca bloquea: los colaboradores bloqueantes (almacén de
+ * idempotencia, publicador de auditoría) corren en el scheduler bounded elastic.
  */
 public interface ReactivePipelineBehavior {
 
@@ -16,9 +16,9 @@ public interface ReactivePipelineBehavior {
   <R> Mono<R> handle(Invocation<R> invocation, Next<R> next);
 
   /**
-   * Continues the pipeline.
+   * Continúa el pipeline.
    *
-   * @param <R> result type
+   * @param <R> tipo del resultado
    */
   @FunctionalInterface
   interface Next<R> {

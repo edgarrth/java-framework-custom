@@ -28,7 +28,8 @@ class InboxR2dbcTest {
     Set<String> rows = ConcurrentHashMap.newKeySet();
     FakeR2dbc db =
         new FakeR2dbc()
-            // startup schema check: the table has every column of this version (owner included)
+            // comprobación del esquema en el arranque: la tabla tiene todas las columnas de esta
+            // versión (incluida la del propietario)
             .onQuery(
                 "SELECT consumer, message_id, status, owner, lease_until, expires_at",
                 b -> List.of())
@@ -60,7 +61,7 @@ class InboxR2dbcTest {
 
   @Test
   void anInboxTableOfAnOlderVersionStopsTheStartup() {
-    // the schema query fails as it does on a table without the owner column
+    // la consulta del esquema falla igual que en una tabla sin la columna del propietario
     FakeR2dbc db = new FakeR2dbc();
     new ApplicationContextRunner()
         .withConfiguration(

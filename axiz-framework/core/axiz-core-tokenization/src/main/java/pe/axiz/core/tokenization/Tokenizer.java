@@ -2,7 +2,9 @@ package pe.axiz.core.tokenization;
 
 import java.util.Optional;
 
-/** Consumer boundary: credentials are supplied by transport, never a caller DTO. */
+/**
+ * Frontera del consumidor: el transporte suministra las credenciales, nunca un DTO de quien llama.
+ */
 public interface Tokenizer {
   TokenizerCapabilities capabilities();
 

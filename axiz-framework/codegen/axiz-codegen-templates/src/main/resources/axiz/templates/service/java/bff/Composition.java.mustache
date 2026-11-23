@@ -20,14 +20,15 @@ import {{item.modelPackage}}.{{name}};
 {{/item.models}}
 
 /**
- * Compositions of the {@code {{item.name}}} channel operations: each one calls downstream services
+ * Composiciones de las operaciones de canal {@code {{item.name}}}: cada una invoca servicios aguas
+ * abajo
 {{#stack.servlet}}
- * in parallel with {@code Compositions#compose()} (virtual threads, one deadline, required and
- * optional parts) and adapts the result to the channel contract.
+ * en paralelo con {@code Compositions#compose()} (hilos virtuales, un único plazo, partes
+ * obligatorias y opcionales) y adapta el resultado al contrato del canal.
 {{/stack.servlet}}
 {{#stack.reactive}}
- * with {@code ReactiveComposer} (one deadline, required and optional parts) and adapts the result
- * to the channel contract.
+ * con {@code ReactiveComposer} (un único plazo, partes obligatorias y opcionales) y adapta el
+ * resultado al contrato del canal.
 {{/stack.reactive}}
  */
 @Component

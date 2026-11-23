@@ -30,7 +30,10 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
-/** Native SDK asynchronous storage with bounded page demand and streamed object bodies. */
+/**
+ * Almacenamiento asíncrono nativo del SDK con demanda de páginas acotada y cuerpos de objeto en
+ * streaming.
+ */
 public final class S3AsyncObjectStorage implements AsyncObjectStorage {
   @SuppressFBWarnings(
       value = "EI_EXPOSE_REP2",
@@ -41,7 +44,10 @@ public final class S3AsyncObjectStorage implements AsyncObjectStorage {
 
   private final S3Requests requests;
 
-  /** Clients and presigner are borrowed; construct and warm their credentials during startup. */
+  /**
+   * Los clientes y el presigner son prestados; se construyen y se precalientan sus credenciales
+   * durante el arranque.
+   */
   public S3AsyncObjectStorage(
       S3AsyncClient s3,
       S3Presigner presigner,
@@ -169,7 +175,9 @@ public final class S3AsyncObjectStorage implements AsyncObjectStorage {
         });
   }
 
-  /** Trampolines already-completed pages and owns the exact cancellable SDK future. */
+  /**
+   * Hace trampolín de las páginas ya completadas y es dueño del future exacto y cancelable del SDK.
+   */
   private final class Listing extends CompletableFuture<List<String>> {
     private final String prefix;
     private final int maximum;

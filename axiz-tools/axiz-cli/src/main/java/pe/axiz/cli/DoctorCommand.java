@@ -46,8 +46,8 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
 /**
- * {@code axiz doctor}: versions, project coherence, contract, configuration and anti-patterns. Exit
- * code 1 when an error is found (usable in CI).
+ * {@code axiz doctor}: versiones, coherencia del proyecto, contrato, configuración y antipatrones.
+ * Código de salida 1 cuando se encuentra un error (utilizable en CI).
  */
 @Command(
     mixinStandardHelpOptions = true,
@@ -67,7 +67,7 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
       description = "Outbox table for the optional diagnostic report.")
   String outboxTable = "axiz_outbox";
 
-  /** Result of one check. */
+  /** Resultado de una verificación. */
   enum Level {
     OK,
     WARN,
@@ -75,10 +75,10 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
   }
 
   /**
-   * One finding.
+   * Un hallazgo.
    *
-   * @param level severity
-   * @param message what was found
+   * @param level severidad
+   * @param message lo que se encontró
    */
   record Check(Level level, String message) {}
 

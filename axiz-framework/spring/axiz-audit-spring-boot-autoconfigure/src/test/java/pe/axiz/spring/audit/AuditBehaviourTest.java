@@ -55,7 +55,7 @@ import pe.axiz.core.outbox.OutboxWriter;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/** Which events {@code @Auditable} and the HTTP audit record, and how they are delivered. */
+/** Qué eventos registran {@code @Auditable} y la auditoría HTTP, y cómo se entregan. */
 class AuditBehaviourTest {
 
   private final List<AuditEvent> events = new CopyOnWriteArrayList<>();
@@ -422,7 +422,7 @@ class AuditBehaviourTest {
                   .filter(
                       ok,
                       ex -> {
-                        // the reactive attribute: its name differs from the servlet one
+                        // el atributo reactivo: su nombre difiere del de servlet
                         ex.getAttributes()
                             .put(
                                 org.springframework.web.reactive.HandlerMapping

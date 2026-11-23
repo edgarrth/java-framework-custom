@@ -11,10 +11,11 @@ import pe.axiz.spring.outbox.ReactiveTransactionalEvents;
 import pe.axiz.spring.outbox.TransactionalEvents;
 
 /**
- * Event-driven style: transactional handlers (business writes, inbox and outbox commit together)
- * and choreography through {@link Reactions}, or for reactive services non-blocking handlers in a
- * reactive transaction with {@link ReactiveReactions}. Consumption, retries and DLQ come from the
- * messaging starter; de-duplication from the inbox starter.
+ * Estilo orientado a eventos: handlers transaccionales (las escrituras de negocio, el inbox y el
+ * outbox hacen commit juntos) y coreografía mediante {@link Reactions} o, para servicios reactivos,
+ * handlers no bloqueantes en una transacción reactiva con {@link ReactiveReactions}. El consumo,
+ * los reintentos y la DLQ provienen del starter de mensajería; la deduplicación, del starter de
+ * inbox.
  */
 @AutoConfiguration(
     afterName = {
@@ -23,7 +24,7 @@ import pe.axiz.spring.outbox.TransactionalEvents;
     })
 public class AxizEdaAutoConfiguration {
 
-  /** Choreography over the R2DBC outbox. */
+  /** Coreografía sobre el outbox R2DBC. */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnClass(name = "pe.axiz.spring.outbox.ReactiveTransactionalEvents")
   static class ReactiveReactionsConfiguration {

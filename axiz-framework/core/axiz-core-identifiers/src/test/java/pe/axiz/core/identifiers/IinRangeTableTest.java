@@ -11,7 +11,10 @@ import pe.axiz.core.identifiers.banking.BankingIdentifiers.CardBrand;
 import pe.axiz.core.identifiers.banking.CardSchemeResolver;
 import pe.axiz.core.identifiers.banking.IinRangeTable;
 
-/** The scheme of a card comes from a governed table: most specific range first, data not code. */
+/**
+ * La marca de una tarjeta proviene de una tabla gobernada: primero el rango más específico, datos y
+ * no código.
+ */
 class IinRangeTableTest {
 
   private static final String TABLE =
@@ -77,7 +80,8 @@ class IinRangeTableTest {
 
   @Test
   void theHeuristicIsOnlyAGuess() {
-    // the same PAN the table assigns to a co-branded range is just "VISA" for the heuristic
+    // el mismo PAN que la tabla asigna a un rango co-branded es simplemente "VISA" para la
+    // heurística
     assertEquals(CardBrand.VISA, CardBrand.guess("4555001299999999"));
     assertEquals(Optional.of(CardBrand.JCB), table.resolve("4555001299999999"));
   }

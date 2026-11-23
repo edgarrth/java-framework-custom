@@ -1,9 +1,9 @@
 #!/bin/bash
-# Every test of the running demo in one command, from any directory:
-#   axiz-demo/scripts/test-all.sh           endpoint checks, smoke test and functional scenarios
-#   axiz-demo/scripts/test-all.sh --dast    also the authenticated OWASP ZAP scan of every contract
-# The functional scenarios read the service logs of scripts/demo.sh (services on the host); with
-# scripts/compose.sh only the endpoint checks and the smoke test run.
+# Todas las pruebas de la demo en ejecución con un solo comando, desde cualquier directorio:
+#   axiz-demo/scripts/test-all.sh           verificaciones de endpoints, prueba smoke y escenarios funcionales
+#   axiz-demo/scripts/test-all.sh --dast    además, el escaneo autenticado de OWASP ZAP de cada contrato
+# Los escenarios funcionales leen los logs de los servicios de scripts/demo.sh (servicios en el host); con
+# scripts/compose.sh solo se ejecutan las verificaciones de endpoints y la prueba smoke.
 set -Eeuo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
 results=()

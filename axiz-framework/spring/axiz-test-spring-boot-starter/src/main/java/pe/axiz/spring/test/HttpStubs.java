@@ -5,8 +5,8 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import org.springframework.test.context.DynamicPropertyRegistry;
 
 /**
- * WireMock stub for a logical HTTP client: starts on a random port and points {@code
- * axiz.http-client.clients.<name>.base-url} at it.
+ * Stub de WireMock para un cliente HTTP lógico: arranca en un puerto aleatorio y apunta {@code
+ * axiz.http-client.clients.<name>.base-url} hacia él.
  */
 public final class HttpStubs {
 

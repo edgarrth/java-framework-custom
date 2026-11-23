@@ -6,7 +6,9 @@ import org.springframework.boot.context.config.ConfigDataEnvironmentPostProcesso
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 
-/** Validates the effective configuration after imports have been loaded, before bean creation. */
+/**
+ * Valida la configuración efectiva después de cargar las importaciones, antes de crear los beans.
+ */
 public final class AxizConfigValidationEnvironmentPostProcessor
     implements EnvironmentPostProcessor, Ordered {
   @Override

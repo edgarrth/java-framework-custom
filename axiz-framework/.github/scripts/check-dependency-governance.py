@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-"""Every third-party library has one version, defined in one place.
+"""Cada biblioteca de terceros tiene una sola versión, definida en un solo lugar.
 
-Fails when:
-- a module declares a version for a third-party dependency (it must come from axiz-dependencies,
-  the BOMs it imports, or a property of the root POM for plugin dependencies);
-- a module declares the same dependency twice;
-- a version property is defined in more than one POM with different values (the root POM needs a
-  few versions for its plugins that axiz-dependencies also manages: they must stay equal);
-- a structure/extension starter (structures/*, extensions/*) brings a connection pool on its own. Persistence is the service's
-  choice: a pool on the classpath makes Spring Boot require a database, so a service on DynamoDB, or
-  without persistence, would not start. The batch style is exempt (Spring Batch keeps its job
-  repository in Aurora, which the batch archetype always has).
+Falla cuando:
+- un módulo declara una versión para una dependencia de terceros (debe provenir de axiz-dependencies,
+  de los BOM que importa o de una propiedad del POM raíz para las dependencias de plugins);
+- un módulo declara la misma dependencia dos veces;
+- una propiedad de versión se define en más de un POM con valores distintos (el POM raíz necesita
+  algunas versiones para sus plugins que axiz-dependencies también gestiona: deben mantenerse iguales);
+- un starter de estructura o extensión (structures/*, extensions/*) incorpora por sí mismo un pool de conexiones. La persistencia es
+  elección del servicio: un pool en el classpath hace que Spring Boot exija una base de datos, así que un servicio sobre DynamoDB, o
+  sin persistencia, no arrancaría. El estilo batch está exento (Spring Batch guarda su job
+  repository en Aurora, que el arquetipo batch siempre tiene).
 
-Usage: check-dependency-governance.py [repository root ...]   (default: current directory)
+Uso: check-dependency-governance.py [repository root ...]   (por defecto: directorio actual)
 """
 import glob
 import os
@@ -21,9 +21,9 @@ from defusedxml import ElementTree as ET
 from collections import defaultdict
 
 NS = {"m": "http://maven.apache.org/POM/4.0.0"}
-# POMs that own versions: the dependency catalogue and the root build POM (plugin dependencies)
+# POM que definen versiones: el catálogo de dependencias y el POM de build raíz (dependencias de plugins)
 OWNERS = ("platform/axiz-dependencies/pom.xml", "pom.xml")
-# artifacts that make Spring Boot create a DataSource or a ConnectionFactory
+# artefactos que hacen que Spring Boot cree un DataSource o un ConnectionFactory
 POOLS = {"spring-boot-starter-jdbc", "spring-boot-starter-data-jpa", "spring-boot-starter-data-r2dbc",
          "HikariCP", "r2dbc-pool"}
 STYLES_WITH_DATABASE = {"axiz-structure-batch-spring-boot-starter"}
@@ -35,7 +35,7 @@ def text(element, tag):
 
 
 def runtime_dependencies(project):
-    """(groupId, artifactId) of the dependencies a consumer inherits: not optional, not test/provided."""
+    """(groupId, artifactId) de las dependencias que hereda un consumidor: no opcionales, no test/provided."""
     result = []
     for dep in project.findall("m:dependencies/m:dependency", NS):
         if text(dep, "optional") == "true" or text(dep, "scope") in ("test", "provided"):
@@ -75,7 +75,7 @@ def main(roots):
             relative = os.path.relpath(path, root)
             if "/target/" in path or "/src/" in path:
                 continue
-            # Trusted build POM/report, after executing the same checkout; no request XML is parsed.
+                        # POM o reporte de build de confianza, tras ejecutar el mismo checkout; no se analiza XML de la petición.
             # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse
             project = ET.parse(path).getroot()
             modules[text(project, "artifactId")] = (path, runtime_dependencies(project))

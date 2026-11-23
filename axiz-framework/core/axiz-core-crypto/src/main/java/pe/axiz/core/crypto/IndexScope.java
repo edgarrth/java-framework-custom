@@ -1,6 +1,9 @@
 package pe.axiz.core.crypto;
 
-/** Search scope excludes row identity and nonce so it can be constructed before finding a row. */
+/**
+ * El alcance de búsqueda excluye la identidad de la fila y el nonce para poder construirse antes de
+ * encontrar una fila.
+ */
 public record IndexScope(
     String purpose,
     String fieldType,

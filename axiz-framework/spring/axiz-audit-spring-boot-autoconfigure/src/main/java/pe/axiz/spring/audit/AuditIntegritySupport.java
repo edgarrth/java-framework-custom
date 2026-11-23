@@ -17,7 +17,10 @@ import pe.axiz.core.audit.ChainCheckpoint;
 import pe.axiz.core.audit.InMemoryAuditChainState;
 import pe.axiz.core.secrets.SecretResolver;
 
-/** Owns the instance identity and a bounded HMAC snapshot, resolved only during startup. */
+/**
+ * Posee la identidad de la instancia y una instantánea HMAC acotada, resueltas solo durante el
+ * arranque.
+ */
 final class AuditIntegritySupport implements AutoCloseable {
   private final AxizAuditProperties.Integrity properties;
   private final String service;
@@ -34,8 +37,8 @@ final class AuditIntegritySupport implements AutoCloseable {
       Clock clock) {
     this.properties = properties;
     if (properties.mode() != AuditSealer.Mode.HMAC && !AuditModeSelection.development(environment))
-      // an unkeyed hash chain can be recomputed by anyone who can write the audit store, so it
-      // does not show tampering (PCI DSS 10.3.2); NONE seals nothing at all
+      // cualquiera que pueda escribir en el almacén de auditoría puede recalcular una cadena de
+      // hash sin clave, por lo que no evidencia manipulaciones (PCI DSS 10.3.2); NONE no sella nada
       throw new IllegalStateException(
           "Audit integrity "
               + properties.mode()
@@ -78,7 +81,10 @@ final class AuditIntegritySupport implements AutoCloseable {
     return !memoryChains.isEmpty();
   }
 
-  /** Unconfirmed snapshots: only strict delivery can turn these into trusted checkpoints. */
+  /**
+   * Instantáneas sin confirmar: solo la entrega estricta puede convertirlas en checkpoints de
+   * confianza.
+   */
   List<ChainCheckpoint> memoryCheckpoints() {
     List<String> ids;
     synchronized (this) {

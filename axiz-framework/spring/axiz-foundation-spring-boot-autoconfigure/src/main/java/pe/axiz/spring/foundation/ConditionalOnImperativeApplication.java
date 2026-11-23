@@ -7,8 +7,8 @@ import java.lang.annotation.Target;
 import org.springframework.context.annotation.Conditional;
 
 /**
- * Registers imperative wiring for servlet and non-web applications, never for reactive web
- * applications.
+ * Registra el cableado imperativo para aplicaciones servlet y no web, nunca para aplicaciones web
+ * reactivas.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})

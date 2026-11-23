@@ -6,15 +6,15 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
- * Initializr settings ({@code axiz.initializr.*}).
+ * Configuración del initializr ({@code axiz.initializr.*}).
  *
- * @param frameworkVersion axiz version of the generated projects
- * @param githubApi GitHub API base URL (GitHub Enterprise uses its own)
- * @param githubOrganization organization where repositories are created; the user's account when
- *     empty
- * @param maxFiles maximum number of files pushed to a new repository
- * @param audience audience that bearer tokens must carry to call the API (tokens of the same
- *     identity provider issued for other APIs are rejected)
+ * @param frameworkVersion versión de axiz de los proyectos generados
+ * @param githubApi URL base de la API de GitHub (GitHub Enterprise usa la suya)
+ * @param githubOrganization organización donde se crean los repositorios; la cuenta del usuario
+ *     cuando está vacía
+ * @param maxFiles cantidad máxima de archivos que se suben a un repositorio nuevo
+ * @param audience audiencia que deben llevar los tokens bearer para invocar la API (se rechazan los
+ *     tokens del mismo proveedor de identidad emitidos para otras API)
  */
 @ConfigurationProperties("axiz.initializr")
 public record InitializrProperties(

@@ -1,11 +1,16 @@
-# Exceptions name exact non-production fixtures; no vulnerability/CVE is excluded.
+# Las excepciones nombran fixtures exactos que no son de producción; no se excluye ninguna vulnerabilidad ni CVE.
 ignorefile: .trivyignore.yaml
-# Regression engines are private development tools; their vulnerabilities remain scanned.
+# El escaneo es de fuentes: las salidas de Maven (target/) copian recetas y recursos ya escaneados
+# en su ubicación original, donde se declaran sus excepciones.
+scan:
+  skip-dirs:
+    - "**/target"
+# Los motores de regresión son herramientas privadas de desarrollo; sus vulnerabilidades siguen escaneándose.
 pkg:
   include-dev-deps: true
 
-# Registry scanning follows the selected publication backend; admission also enforces namespace,
-# digest and signature. Scanner registry recognition is not a substitute for admission.
+# El escaneo del registry sigue el backend de publicación seleccionado; la admisión exige además namespace,
+# digest y firma. El reconocimiento del registry por parte del escáner no sustituye a la admisión.
 rego:
   data:
     - .github/security/trivy-data

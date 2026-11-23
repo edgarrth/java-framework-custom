@@ -7,7 +7,8 @@ import java.util.Objects;
 import java.util.function.UnaryOperator;
 
 /**
- * Process-local chain heads. A snapshot of this state does not attest delivery to a destination.
+ * Cabezas de cadena locales al proceso. Una instantánea de este estado no certifica la entrega a un
+ * destino.
  */
 public final class InMemoryAuditChainState implements AuditChainState {
   private final Clock clock;

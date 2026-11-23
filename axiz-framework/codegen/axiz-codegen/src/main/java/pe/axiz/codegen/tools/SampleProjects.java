@@ -22,9 +22,10 @@ import pe.axiz.codegen.project.ProjectLayout;
 import pe.axiz.codegen.project.ProjectManifest;
 
 /**
- * Generates sample projects so CI can build them as a team would: {@code defaults} creates one
- * project per archetype with its default style, stack and persistence; {@code all} creates every
- * valid combination. Writes {@code modules.json} (the project directories, for a CI matrix).
+ * Genera proyectos de muestra para que la CI los construya como lo haría un equipo: {@code
+ * defaults} crea un proyecto por arquetipo con su estilo, stack y persistencia por defecto; {@code
+ * all} crea todas las combinaciones válidas. Escribe {@code modules.json} (los directorios de los
+ * proyectos, para una matriz de CI).
  *
  * <pre>
  * java -cp axiz-codegen.jar pe.axiz.codegen.tools.SampleProjects target/samples contract.yaml 2.0.0 defaults
@@ -34,7 +35,7 @@ public final class SampleProjects {
 
   private SampleProjects() {}
 
-  /** Entry point: {@code <output> <openapi> <framework-version> [defaults|all|audit]}. */
+  /** Punto de entrada: {@code <output> <openapi> <framework-version> [defaults|all|audit]}. */
   public static void main(String[] args) throws IOException {
     if (args.length < 3) {
       throw new IllegalArgumentException(
@@ -101,9 +102,9 @@ public final class SampleProjects {
   }
 
   /**
-   * Generates the samples into {@code output} and returns their directory names.
+   * Genera las muestras en {@code output} y devuelve los nombres de sus directorios.
    *
-   * @param all every valid combination instead of one project per archetype
+   * @param all todas las combinaciones válidas en lugar de un proyecto por arquetipo
    */
   public static List<String> generate(
       Path output, String openApi, boolean all, String frameworkVersion, PrintStream log)
@@ -136,7 +137,7 @@ public final class SampleProjects {
     return names;
   }
 
-  /** Exercise persistence generation as well as the empty skeleton in the CI matrix. */
+  /** Se ejercita la generación de persistencia además del esqueleto vacío en la matriz de CI. */
   private static void persistenceArtifacts(Path directory) throws IOException {
     var manifest = ProjectManifest.read(directory);
     var layout = ProjectLayout.read(directory, manifest);
@@ -216,8 +217,9 @@ public final class SampleProjects {
           case BATCH -> "bt";
           case NONE -> "na";
         };
-    // Technical layer names are reserved service nouns. Stable sample codes keep names valid
-    // without relying on enum declaration order; the manifest retains the full architecture.
+    // Los nombres de capas técnicas son sustantivos de servicio reservados. Los códigos de muestra
+    // estables mantienen los nombres válidos sin depender del orden de declaración del enum; el
+    // manifiesto conserva la arquitectura completa.
     String variant =
         all
             ? "-"

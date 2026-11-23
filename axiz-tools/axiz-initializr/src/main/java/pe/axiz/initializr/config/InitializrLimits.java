@@ -4,7 +4,7 @@ import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
-/** Per-authenticated-subject budgets, shared across replicas through Redis. */
+/** Presupuestos por sujeto autenticado, compartidos entre réplicas mediante Redis. */
 @ConfigurationProperties("axiz.initializr.limits")
 public record InitializrLimits(
     @DefaultValue("1m") Duration window,

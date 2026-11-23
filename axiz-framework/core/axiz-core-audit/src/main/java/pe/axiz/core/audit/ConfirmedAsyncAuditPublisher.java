@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import pe.axiz.core.concurrent.Stages;
 
 /**
- * Native asynchronous acknowledgement; audit delivery failure cannot revert a confirmed business.
+ * Acuse asíncrono nativo; un fallo de entrega de auditoría no puede revertir un negocio confirmado.
  */
 public final class ConfirmedAsyncAuditPublisher
     implements AsyncAuditEventPublisher, AsyncAuditPublisherDecorator, AutoCloseable {

@@ -17,11 +17,13 @@ import pe.axiz.core.http.ClientSettings;
 import pe.axiz.core.resilience.TimeoutSettings;
 
 /**
- * Logical HTTP clients ({@code axiz.http-client.clients.<name>}). The name matches the HTTP service
- * group of the {@code @HttpExchange} interfaces and labels metrics, traces, logs and errors.
+ * Clientes HTTP lógicos ({@code axiz.http-client.clients.<name>}). El nombre coincide con el grupo
+ * de servicios HTTP de las interfaces {@code @HttpExchange} y etiqueta métricas, trazas, logs y
+ * errores.
  *
- * @param clients clients by name
- * @param tokenRenewBefore client-credentials tokens are renewed when less than this remains
+ * @param clients clientes por nombre
+ * @param tokenRenewBefore los tokens de client-credentials se renuevan cuando les queda menos que
+ *     esto
  */
 @ConfigurationProperties("axiz.http-client")
 public record AxizHttpClientProperties(
@@ -31,21 +33,22 @@ public record AxizHttpClientProperties(
   }
 
   /**
-   * One client.
+   * Un cliente.
    *
-   * @param baseUrl base URL (required)
-   * @param connectTimeout connection timeout
-   * @param readTimeout response timeout
-   * @param totalTimeout budget including retries
-   * @param auth outbound authentication
-   * @param retry {@code IDEMPOTENT_ONLY} or {@code NONE}
-   * @param maxAttempts attempts for idempotent calls (or calls with an Idempotency-Key)
-   * @param circuitBreaker circuit breaker configuration name; empty disables it
-   * @param maxConcurrentCalls bulkhead limit; 0 disables it
-   * @param propagateHeaders catalog headers forwarded to this dependency
-   * @param maxConnections connection pool size
-   * @param sslBundle SSL bundle for custom trust or mutual TLS
-   * @param revealCardData reveal card values only in this explicitly selected outbound client
+   * @param baseUrl URL base (obligatoria)
+   * @param connectTimeout timeout de conexión
+   * @param readTimeout timeout de respuesta
+   * @param totalTimeout presupuesto que incluye los reintentos
+   * @param auth autenticación saliente
+   * @param retry {@code IDEMPOTENT_ONLY} o {@code NONE}
+   * @param maxAttempts intentos para llamadas idempotentes (o llamadas con un Idempotency-Key)
+   * @param circuitBreaker nombre de la configuración del circuit breaker; vacío lo desactiva
+   * @param maxConcurrentCalls límite del bulkhead; 0 lo desactiva
+   * @param propagateHeaders cabeceras del catálogo reenviadas a esta dependencia
+   * @param maxConnections tamaño del pool de conexiones
+   * @param sslBundle bundle SSL para confianza personalizada o TLS mutuo
+   * @param revealCardData revela los valores de tarjeta solo en este cliente saliente seleccionado
+   *     explícitamente
    */
   public record Client(
       URI baseUrl,
@@ -81,12 +84,15 @@ public record AxizHttpClientProperties(
           .build();
     }
 
-    /** Named construction; required values and invariants are checked by build. */
+    /** Construcción con nombre; build comprueba los valores obligatorios y las invariantes. */
     public static Builder builder() {
       return new Builder();
     }
 
-    /** Mutable construction state; use one builder per operation, never as shared state. */
+    /**
+     * Estado mutable de construcción; se usa un builder por operación, nunca como estado
+     * compartido.
+     */
     public static final class Builder {
       private @Nullable URI baseUrl = null;
       private @Nullable Duration connectTimeout = null;
@@ -189,17 +195,17 @@ public record AxizHttpClientProperties(
   }
 
   /**
-   * Outbound authentication; secrets are referenced by name.
+   * Autenticación saliente; los secretos se referencian por nombre.
    *
-   * @param type {@code NONE}, {@code CLIENT_CREDENTIALS}, {@code TOKEN_RELAY}, {@code API_KEY} or
+   * @param type {@code NONE}, {@code CLIENT_CREDENTIALS}, {@code TOKEN_RELAY}, {@code API_KEY} o
    *     {@code MTLS}
-   * @param tokenUri token endpoint
-   * @param clientId OAuth2 client id
-   * @param clientSecretRef secret name of the client secret
+   * @param tokenUri endpoint de tokens
+   * @param clientId id de cliente OAuth2
+   * @param clientSecretRef nombre del secreto del client secret
    * @param scopes scopes
-   * @param audience audience
-   * @param apiKeyHeader API key header
-   * @param apiKeyRef secret name of the API key
+   * @param audience audiencia
+   * @param apiKeyHeader cabecera de la API key
+   * @param apiKeyRef nombre del secreto de la API key
    */
   public record Auth(
       @DefaultValue("NONE") AuthType type,
@@ -227,12 +233,15 @@ public record AxizHttpClientProperties(
           .build();
     }
 
-    /** Named construction; required values and invariants are checked by build. */
+    /** Construcción con nombre; build comprueba los valores obligatorios y las invariantes. */
     public static Builder builder() {
       return new Builder();
     }
 
-    /** Mutable construction state; use one builder per operation, never as shared state. */
+    /**
+     * Estado mutable de construcción; se usa un builder por operación, nunca como estado
+     * compartido.
+     */
     public static final class Builder {
       private @Nullable AuthType type = null;
       private @Nullable URI tokenUri = null;

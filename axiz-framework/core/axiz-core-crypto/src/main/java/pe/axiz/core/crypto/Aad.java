@@ -2,7 +2,10 @@ package pe.axiz.core.crypto;
 
 import java.nio.ByteBuffer;
 
-/** Versioned, domain-separated, length-framed authenticated data shared by all encryptors. */
+/**
+ * Datos autenticados versionados, con separación de dominio y delimitados por longitud, compartidos
+ * por todos los cifradores.
+ */
 final class Aad {
   static final byte FORMAT = 1;
   static final byte FIELD = 1;

@@ -3,8 +3,8 @@ package pe.axiz.core.crypto;
 import java.util.Arrays;
 
 /**
- * Technical storage protection. Context selects keys; binding is independently supplied row
- * identity.
+ * Protección técnica del almacenamiento. El contexto selecciona las claves; el enlace es la
+ * identidad de la fila suministrada de forma independiente.
  */
 public interface PayloadProtector {
   byte[] protect(byte[] plaintext, String context, String binding);
@@ -30,7 +30,8 @@ public interface PayloadProtector {
   }
 
   /**
-   * Identity mode rejects the reserved protected marker instead of replaying ciphertext as data.
+   * El modo identidad rechaza el marcador reservado de protección en lugar de reproducir texto
+   * cifrado como datos.
    */
   PayloadProtector NONE =
       new PayloadProtector() {

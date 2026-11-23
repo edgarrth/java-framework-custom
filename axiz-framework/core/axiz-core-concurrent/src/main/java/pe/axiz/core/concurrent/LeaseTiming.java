@@ -3,7 +3,10 @@ package pe.axiz.core.concurrent;
 import java.time.Duration;
 import java.util.Objects;
 
-/** Conservative lease deadlines measured with a monotonic clock, independent of wall-clock skew. */
+/**
+ * Plazos de lease conservadores medidos con un reloj monotónico, independientes del desfase del
+ * reloj de pared.
+ */
 public final class LeaseTiming {
   private LeaseTiming() {}
 
@@ -13,7 +16,9 @@ public final class LeaseTiming {
     return Duration.ofNanos(lease.toNanos() / 100).plusMillis(2);
   }
 
-  /** Use subtraction to compare the resulting deadline, including across nanoTime wraparound. */
+  /**
+   * El plazo resultante se compara mediante resta, incluso a través del desbordamiento de nanoTime.
+   */
   public static long validUntil(long sent, Duration lease) {
     return sent + lease.toNanos() - margin(lease).toNanos();
   }

@@ -22,12 +22,12 @@ import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Bounded, coalesced native asynchronous loads with TTL, maximum uses and caller-owned
- * cancellation. Loader I/O runs outside the short bookkeeping lock; no executor or blocking wait is
- * introduced. Cancelling the last pending caller cancels the native future. Missing values can opt
- * out of caching.
+ * Cargas asíncronas nativas acotadas y coalescidas, con TTL, usos máximos y cancelación propiedad
+ * de quien llama. La E/S del cargador corre fuera del lock corto de contabilidad; no se introduce
+ * executor ni espera bloqueante. Cancelar al último llamador pendiente cancela el future nativo.
+ * Los valores ausentes pueden excluirse de la caché.
  *
- * @param <V> immutable cached value
+ * @param <V> valor inmutable en caché
  */
 public final class AsyncLoadingCache<V> implements AutoCloseable {
   private final Map<String, Slot> entries = new LinkedHashMap<>(16, 0.75f, true);
@@ -52,10 +52,11 @@ public final class AsyncLoadingCache<V> implements AutoCloseable {
   }
 
   /**
-   * Owned-value variant. Snapshot must return an independent caller-owned value; release erases
-   * retired values and snapshots whose caller cancelled. Both callbacks must be short, CPU-only and
-   * non-reentrant; release must not throw. They run under the bookkeeping lock to prevent eviction
-   * from invalidating a value while a snapshot is being taken.
+   * Variante de valor propio. El snapshot debe devolver un valor independiente propiedad de quien
+   * llama; release borra los valores retirados y los snapshots cuyo llamador canceló. Ambos
+   * callbacks deben ser cortos, solo de CPU y no reentrantes; release no debe lanzar excepciones.
+   * Corren bajo el lock de contabilidad para evitar que un desalojo invalide un valor mientras se
+   * toma un snapshot.
    */
   public AsyncLoadingCache(
       Duration maxAge,
@@ -77,12 +78,18 @@ public final class AsyncLoadingCache<V> implements AutoCloseable {
     this.release = Objects.requireNonNull(release);
   }
 
-  /** Values must be immutable. Rejected submissions and load failures complete exceptionally. */
+  /**
+   * Los valores deben ser inmutables. Los envíos rechazados y los fallos de carga terminan de forma
+   * excepcional.
+   */
   public CompletionStage<V> get(String id, Supplier<CompletionStage<V>> loader) {
     return get(id, loader, hit -> {});
   }
 
-  /** Observes each lookup outside the bookkeeping lock; observer failures cannot change results. */
+  /**
+   * Observa cada consulta fuera del lock de contabilidad; los fallos del observador no pueden
+   * cambiar los resultados.
+   */
   public CompletionStage<V> get(
       String id, Supplier<CompletionStage<V>> loader, Consumer<Boolean> lookup) {
     boolean[] hit = {false};
@@ -94,14 +101,15 @@ public final class AsyncLoadingCache<V> implements AutoCloseable {
             try {
               lookup.accept(hit[0]);
             } catch (RuntimeException ignored) {
-              // Diagnostics must not change cache correctness or cancellation.
+              // Los diagnósticos no deben alterar la corrección de la caché ni la cancelación.
             }
           }
         });
   }
 
   /**
-   * Removes the cached value without cancelling existing callers or retaining their later result.
+   * Elimina el valor en caché sin cancelar a los llamadores existentes ni retener su resultado
+   * posterior.
    */
   public void evict(String id) {
     synchronized (entries) {
@@ -111,7 +119,8 @@ public final class AsyncLoadingCache<V> implements AutoCloseable {
   }
 
   /**
-   * Stops new reads, cancels pending loads and releases owned entries; delivered snapshots survive.
+   * Detiene las lecturas nuevas, cancela las cargas pendientes y libera las entradas propias; los
+   * snapshots entregados sobreviven.
    */
   @Override
   public void close() {
@@ -166,7 +175,8 @@ public final class AsyncLoadingCache<V> implements AutoCloseable {
         start = true;
       }
     }
-    // Each caller was retained before publication. A cancellation cannot steal another caller.
+    // Cada llamador se retuvo antes de la publicación. Una cancelación no puede robar otro
+    // llamador.
     CompletableFuture<V> listener = selected.listener();
     if (start) selected.start(loader);
     return listener;
@@ -189,7 +199,8 @@ public final class AsyncLoadingCache<V> implements AutoCloseable {
       this.id = id;
     }
 
-    // All ownership transitions run under entries' lock, including the snapshot callback.
+    // Todas las transiciones de propiedad corren bajo el lock de las entradas, incluido el callback
+    // de snapshot.
     private void retire() {
       retired = true;
       disposeIfUnused();

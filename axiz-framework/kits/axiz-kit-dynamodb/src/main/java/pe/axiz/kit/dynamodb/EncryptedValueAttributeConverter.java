@@ -7,10 +7,10 @@ import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
- * Storage codec for values encrypted before persistence, including row-bound field protection. This
- * codec preserves the envelope; it neither encrypts nor authenticates it. The consumer decrypts
- * with the expected context and record binding. Plaintext and non-string attributes are rejected
- * instead of being accepted as legacy values.
+ * Codec de almacenamiento para valores cifrados antes de la persistencia, incluida la protección de
+ * campos ligada a la fila. Este codec preserva el envelope; no lo cifra ni lo autentica. El
+ * consumidor descifra con el contexto y el enlace de registro esperados. Los atributos en texto
+ * plano y los que no son cadenas se rechazan en lugar de aceptarse como valores sin cifrar.
  */
 public final class EncryptedValueAttributeConverter implements AttributeConverter<EncryptedValue> {
   @Override

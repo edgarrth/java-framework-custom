@@ -6,7 +6,9 @@ import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/** Spring Data R2DBC repository of {@link PaymentHistoryRow} (queries derived from the names). */
+/**
+ * Repositorio Spring Data R2DBC de {@link PaymentHistoryRow} (consultas derivadas de los nombres).
+ */
 interface PaymentHistoryRepository extends ReactiveCrudRepository<PaymentHistoryRow, UUID> {
 
   Mono<PaymentHistoryRow> findByPaymentId(String paymentId);

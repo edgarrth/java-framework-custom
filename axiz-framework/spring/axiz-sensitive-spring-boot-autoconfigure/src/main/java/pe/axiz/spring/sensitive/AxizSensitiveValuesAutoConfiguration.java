@@ -6,7 +6,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/** Intrinsic value safety is independent of optional response annotation masking. */
+/**
+ * La seguridad intrínseca de los valores es independiente del enmascaramiento opcional por
+ * anotaciones en las respuestas.
+ */
 @AutoConfiguration(
     beforeName = "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration")
 @ConditionalOnClass(name = "tools.jackson.databind.json.JsonMapper")

@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
-/** Argument preconditions that fail fast with {@link IllegalArgumentException}. */
+/** Precondiciones de argumentos que fallan rápido con {@link IllegalArgumentException}. */
 public final class Checks {
 
   private Checks() {}

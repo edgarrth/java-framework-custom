@@ -151,7 +151,7 @@ class CapabilityAdderTest {
     Path dir = project(tmp, "business", Structure.HEXAGONAL, Stack.SERVLET, "aurora");
     adder.add(dir, "messaging-kafka");
     CapabilityAdder.Result r = adder.add(dir, "outbox");
-    // continues the project numbering after V1__init.sql
+    // continúa la numeración del proyecto después de V1__init.sql
     Path migration = dir.resolve("src/main/resources/db/migration/V2__axiz_outbox.sql");
     assertTrue(Files.exists(migration), r.changed().toString());
     assertTrue(Files.readString(migration).contains("CREATE TABLE IF NOT EXISTS axiz_outbox"));

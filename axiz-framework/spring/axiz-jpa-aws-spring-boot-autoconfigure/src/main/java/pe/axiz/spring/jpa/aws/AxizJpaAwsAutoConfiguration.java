@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Role;
 import pe.axiz.spring.aws.AwsIdentity;
 
-/** Owns the JDBC wrapper's per-pool IAM credential scopes. */
+/** Posee los ámbitos de credenciales IAM por pool del wrapper JDBC. */
 @AutoConfiguration(
     beforeName = "org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration")
 @ConditionalOnClass(

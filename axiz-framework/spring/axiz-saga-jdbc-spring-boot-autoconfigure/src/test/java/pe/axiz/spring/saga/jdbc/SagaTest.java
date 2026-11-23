@@ -72,7 +72,8 @@ class SagaTest {
   }
 
   /**
-   * How a step ends: it applies, the participant rejects it for sure, or its outcome is unknown.
+   * Cómo termina un paso: se aplica, el participante lo rechaza con certeza o su resultado es
+   * desconocido.
    */
   enum Outcome {
     APPLIED,
@@ -87,7 +88,7 @@ class SagaTest {
         throw new SagaStepRejectedException("rejected by " + name, null);
       }
       if (outcome == Outcome.UNKNOWN) {
-        // e.g. a timeout: the effect may exist, so nothing may be compensated
+        // p. ej. un timeout: el efecto puede existir, por lo que no se puede compensar nada
         throw new IllegalStateException("no answer from " + name);
       }
       log.add("do:" + name);
@@ -125,9 +126,9 @@ class SagaTest {
   }
 
   /**
-   * Use cases and transactional event handlers call the orchestrator inside an application
-   * transaction: the store must commit its state on its own connection, so another worker sees it
-   * at once and a later rollback of the caller does not erase it.
+   * Los casos de uso y los handlers de eventos transaccionales invocan al orquestador dentro de una
+   * transacción de la aplicación: el almacén debe confirmar su estado en su propia conexión, de
+   * modo que otro worker lo vea de inmediato y un rollback posterior del invocante no lo borre.
    */
   @Test
   void runsInsideAnApplicationTransactionAndCommitsIndependently() {

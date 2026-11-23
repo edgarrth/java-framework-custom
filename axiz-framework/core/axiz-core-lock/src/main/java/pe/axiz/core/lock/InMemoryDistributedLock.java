@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Lock for a single process (tests, local runs). */
+/** Lock para un único proceso (pruebas, ejecuciones locales). */
 public final class InMemoryDistributedLock implements DistributedLock {
 
   private final Map<String, Owner> owners = new ConcurrentHashMap<>();

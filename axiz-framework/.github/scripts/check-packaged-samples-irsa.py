@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Select actual generated service JARs and run the packaged IRSA acceptance in CI."""
+"""Selecciona los JAR reales de los servicios generados y ejecuta en CI la aceptación de IRSA empaquetada."""
 import json
 import subprocess
 import sys
@@ -15,7 +15,7 @@ for manifest in ("target/samples/modules.json", "target/audit-samples/modules.js
         project.relative_to(root)
         pom = ET.parse(project / "pom.xml").getroot()
         if pom.findtext("{*}parent/{*}artifactId") != "axiz-parent-service":
-            continue  # Library and starter reactors are not executable service consumers.
+            continue  # Los reactores de bibliotecas y starters no son consumidores de servicio ejecutables.
         candidates = []
         for jar in (project / "target").glob("*.jar"):
             with zipfile.ZipFile(jar) as archive:

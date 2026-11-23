@@ -33,7 +33,10 @@ import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 import software.amazon.awssdk.services.dynamodb.model.TransactionCanceledException;
 import software.amazon.awssdk.services.dynamodb.model.TransactionInProgressException;
 
-/** Shared bounded request planning and outcome classification; no transport or retries. */
+/**
+ * Planificación de peticiones acotadas y clasificación de resultados compartidas; sin transporte ni
+ * reintentos.
+ */
 final class VaultRequests {
   static final int ATTEMPTS = 3;
   final String table;
@@ -101,7 +104,8 @@ final class VaultRequests {
     VaultRecord record = VaultItems.record(items.getLast().item());
     if (!record.scope().equals(scope) || !record.token().equals(token))
       throw new VaultIntegrityException();
-    // Every live index in this serializable snapshot must belong to the same record revision.
+    // Cada índice vivo de esta instantánea serializable debe pertenecer a la misma revisión del
+    // registro.
     for (int i = 0; i < candidates.size(); i++)
       if (!items.get(i).item().isEmpty()
           && (!record.fingerprints().contains(candidates.get(i))
@@ -261,9 +265,9 @@ final class VaultRequests {
   }
 
   TransactWriteItemsRequest transaction(List<TransactWriteItem> items) {
-    // This token only makes transport retries of this exact AWS request idempotent for AWS's
-    // window.
-    // It is not the public operationId and does not implement application-level UUID idempotency.
+    // Este token solo hace idempotentes, dentro de la ventana de AWS, los reintentos de transporte
+    // de esta petición AWS exacta. No es el operationId público y no implementa idempotencia UUID a
+    // nivel de aplicación.
     return TransactWriteItemsRequest.builder()
         .clientRequestToken(ids.operationId().toString())
         .transactItems(items)
@@ -300,12 +304,12 @@ final class VaultRequests {
   static RuntimeException writeFailure(Throwable failure) {
     Objects.requireNonNull(failure);
     if (failure instanceof TransactionCanceledException)
-      return unavailable(); // Confirmed rollback, but no recognized conditional outcome.
+      return unavailable(); // Rollback confirmado, sin resultado condicional reconocido.
     if (failure instanceof DynamoDbException service
         && service.statusCode() >= 400
         && service.statusCode() < 500
         && !(failure instanceof TransactionInProgressException)) return unavailable();
-    return new VaultUncertainException(); // Timeout, transport loss or 5xx: commit has not been
-    // disproved.
+    return new VaultUncertainException(); // Timeout, pérdida de transporte o 5xx: no se ha
+    // descartado el commit.
   }
 }

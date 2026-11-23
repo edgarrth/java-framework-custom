@@ -10,8 +10,9 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Business-day calendar: weekend days, recurring holidays (same day every year) and one-off
- * holidays. Built from configuration (ConfigMap); nothing is hard-coded.
+ * Calendario de días hábiles: días de fin de semana, feriados recurrentes (el mismo día cada año) y
+ * feriados puntuales. Se construye a partir de la configuración (ConfigMap); no hay nada fijo en el
+ * código.
  */
 public final class BusinessCalendar {
 
@@ -48,7 +49,7 @@ public final class BusinessCalendar {
     return !weekend.contains(date.getDayOfWeek()) && !isHoliday(date);
   }
 
-  /** The same date if it is a business day, otherwise the next one. */
+  /** La misma fecha si es día hábil; en otro caso, la siguiente. */
   public LocalDate onOrAfter(LocalDate date) {
     LocalDate d = date;
     for (int i = 0; i < MAX_SEARCH_DAYS; i++) {
@@ -60,7 +61,7 @@ public final class BusinessCalendar {
     throw new IllegalStateException("No business day found after " + date);
   }
 
-  /** The same date if it is a business day, otherwise the previous one. */
+  /** La misma fecha si es día hábil; en otro caso, la anterior. */
   public LocalDate onOrBefore(LocalDate date) {
     LocalDate d = date;
     for (int i = 0; i < MAX_SEARCH_DAYS; i++) {
@@ -81,11 +82,11 @@ public final class BusinessCalendar {
   }
 
   /**
-   * Adds (or subtracts, when negative) business days; the start date itself is not counted.
+   * Suma (o resta, cuando es negativo) días hábiles; la fecha de inicio no se cuenta.
    *
-   * @param date start date
-   * @param days business days to add
-   * @return resulting business day
+   * @param date fecha de inicio
+   * @param days días hábiles a sumar
+   * @return día hábil resultante
    */
   public LocalDate addBusinessDays(LocalDate date, int days) {
     LocalDate d = date;
@@ -97,7 +98,7 @@ public final class BusinessCalendar {
     return d;
   }
 
-  /** Business days in {@code [from, to)}. */
+  /** Días hábiles en {@code [from, to)}. */
   public long businessDaysBetween(LocalDate from, LocalDate to) {
     if (to.isBefore(from)) {
       return -businessDaysBetween(to, from);

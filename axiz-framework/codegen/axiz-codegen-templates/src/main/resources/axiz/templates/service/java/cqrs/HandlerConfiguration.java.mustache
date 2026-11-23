@@ -10,7 +10,7 @@ import pe.axiz.extension.cqrs.ReactiveQueryHandler;
 import pe.axiz.extension.cqrs.AccessPolicy;
 import pe.axiz.extension.cqrs.ReactiveAccessPolicy;
 
-/** Registers plain application handlers and policies from the composition root. */
+/** Registra los handlers y las políticas de aplicación planos desde la raíz de composición. */
 @Configuration(proxyBeanMethods = false)
 @ComponentScan(basePackages = "{{project.basePackage}}.application", useDefaultFilters = false,
     includeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE,

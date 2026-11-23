@@ -4,7 +4,7 @@ import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
-/** Shared cache policy; source selection belongs to integrations. */
+/** Política de caché compartida; la selección de fuentes corresponde a las integraciones. */
 @ConfigurationProperties("axiz.secrets")
 public record AxizSecretsProperties(@DefaultValue("5m") Duration cacheTtl) {
   public AxizSecretsProperties {

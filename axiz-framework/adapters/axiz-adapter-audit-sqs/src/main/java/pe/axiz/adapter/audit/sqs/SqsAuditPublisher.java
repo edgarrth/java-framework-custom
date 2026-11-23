@@ -19,8 +19,8 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 
 /**
- * Publishes audit events to an Amazon SQS queue. For FIFO queues the group is the resource and the
- * deduplication id identifies the sealed attempt (stable for retransmission).
+ * Publica eventos de auditoría en una cola de Amazon SQS. En colas FIFO el grupo es el recurso y el
+ * id de deduplicación identifica el intento sellado (estable para la retransmisión).
  */
 public final class SqsAuditPublisher implements AuditPublisher {
 
@@ -75,7 +75,10 @@ public final class SqsAuditPublisher implements AuditPublisher {
     return request.build();
   }
 
-  /** Structured-mode CloudEvent: consumers of the axiz messaging starter read it as any event. */
+  /**
+   * CloudEvent en modo estructurado: los consumidores del starter de mensajería de axiz lo leen
+   * como cualquier evento.
+   */
   static String cloudEvent(AuditEvent event) {
     Map<String, @Nullable Object> m = new LinkedHashMap<>(event.cloudEventAttributes());
     m.put("datacontenttype", "application/json");

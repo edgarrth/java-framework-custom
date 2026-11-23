@@ -9,7 +9,7 @@ import org.springframework.web.servlet.config.annotation.ApiVersionConfigurer;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/** Spring MVC wiring: paging parameters, CORS and native API versioning. */
+/** Cableado de Spring MVC: parámetros de paginación, CORS y versionado nativo de la API. */
 public class AxizWebMvcConfigurer implements WebMvcConfigurer {
 
   private final AxizWebProperties properties;

@@ -1,4 +1,4 @@
-"""Download current-run producer artifacts as bounded data, never as scripts or executables."""
+"""Descarga los artefactos del productor de la ejecución actual como datos acotados, nunca como scripts o ejecutables."""
 import hashlib
 import re
 import stat
@@ -63,7 +63,7 @@ def extract(archive, destination):
                     if written > FILE_LIMIT:
                         raise ValueError("Artifact entry exceeds its streaming budget")
                     outgoing.write(block)
-            path.chmod(0o600)  # Even uploaded scripts and native bytes remain non-executable data.
+            path.chmod(0o600)  # Incluso los scripts subidos y los bytes nativos siguen siendo datos no ejecutables.
 
 
 def download(receipt, artifact_name, job, destination):

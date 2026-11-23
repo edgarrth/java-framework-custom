@@ -1,4 +1,4 @@
-/** Channel API generated from the OpenAPI contract. */
+/** API de canales generada a partir del contrato OpenAPI. */
 @NullMarked
 package pe.axiz.payments.ux.controller;
 

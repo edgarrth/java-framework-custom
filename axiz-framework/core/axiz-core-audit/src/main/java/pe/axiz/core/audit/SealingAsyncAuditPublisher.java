@@ -7,7 +7,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.LongAdder;
 import pe.axiz.core.concurrent.Stages;
 
-/** CPU-only sealing before native submission; cancellation still reaches the delegate's stage. */
+/**
+ * Sellado solo de CPU antes del envío nativo; la cancelación sigue llegando a la etapa del
+ * delegado.
+ */
 public final class SealingAsyncAuditPublisher
     implements AsyncAuditEventPublisher,
         AsyncAuditPublisherDecorator,

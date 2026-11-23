@@ -32,7 +32,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import pe.axiz.spring.security.AxizSecurityAutoConfiguration;
 import pe.axiz.spring.web.AxizWebAutoConfiguration;
 
-/** Denial must happen before a controller can invoke any application operation. */
+/**
+ * La denegación debe ocurrir sin que un controlador pueda invocar ninguna operación de aplicación.
+ */
 {{#stack.servlet}}@WebMvcTest{{/stack.servlet}}{{#stack.reactive}}@WebFluxTest{{/stack.reactive}}(controllers = {{item.className}}Controller.class, properties = {
   "axiz.config.environment=test",
   "axiz.security.issuers[0].issuer=https://issuer.test",

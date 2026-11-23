@@ -1,6 +1,9 @@
 package pe.axiz.quality.archunit;
 
-/** Operational tokenization boundary. Token value objects alone do not grant vault access. */
+/**
+ * Frontera operativa de la tokenización. Los objetos de valor de token por sí solos no otorgan
+ * acceso a la bóveda.
+ */
 public enum TokenizationScope {
   NONE,
   CLIENT,

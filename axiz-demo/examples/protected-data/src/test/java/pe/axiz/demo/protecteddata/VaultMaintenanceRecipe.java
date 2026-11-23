@@ -34,7 +34,10 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.kms.KmsClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
-/** Separate administrative worker: its scan/control-write identity must never serve HTTP users. */
+/**
+ * Worker administrativo separado: su identidad de escaneo y escritura de control nunca debe atender
+ * a usuarios HTTP.
+ */
 final class VaultMaintenanceRecipe {
   private static final TokenDomain DOMAIN = new TokenDomain("payments");
   private static final TokenType DNI = new TokenType("DNI");
@@ -101,8 +104,10 @@ final class VaultMaintenanceRecipe {
       assertThat(rotator.retire(ADMIN, dualFingerprint, "index")).isTrue();
       assertThat(before.lookup(user, DNI, value, DOMAIN, "support")).contains(created.token());
 
-      // Reader preparation precedes this point: both immutable routes were already configured.
-      // Stop admission and drain writers before activation; do not retry a fenced old writer.
+      // La preparación de los lectores ocurre con anterioridad a este punto: ambas rutas inmutables
+      // quedaron configuradas.
+      // Se detiene la admisión y se drenan los escritores previo a la activación; no se reintenta
+      // un escritor antiguo cercado (fenced).
       var targetKeys =
           new KeyringDataKeyProvider(
               Map.of(
@@ -119,7 +124,8 @@ final class VaultMaintenanceRecipe {
             RuntimeException.class,
             () -> before.tokenize(user, DNI, different, DOMAIN, UUID.randomUUID().toString()));
       }
-      // Deployment replaces immutable writer instances with key B, then resumes admission.
+      // El despliegue reemplaza las instancias inmutables de escritura por otras con la clave B y
+      // luego reanuda la admisión.
       runner
           .withPropertyValues(
               "axiz.crypto.kms.key-id=" + nextArn, "axiz.crypto.fields.index-current-key-id=index2")
@@ -151,7 +157,8 @@ final class VaultMaintenanceRecipe {
                 }
                 assertThat(operations.describe(user, DNI, created.token(), DOMAIN)).isPresent();
 
-                // Only the test clock advances: a production retention worker uses trusted UTC.
+                // Solo avanza el reloj de la prueba: un worker de retención en producción usa UTC
+                // confiable.
                 var retention =
                     VaultRetention.builder()
                         .vault(maintenance)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Select technical fields from Gitleaks JSON findings; never rewrite SARIF."""
+"""Selecciona campos técnicos de los hallazgos JSON de Gitleaks; nunca reescribe SARIF."""
 import argparse
 import json
 from pathlib import Path

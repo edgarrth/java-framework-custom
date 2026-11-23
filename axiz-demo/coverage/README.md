@@ -1,51 +1,56 @@
-# Coverage of framework capabilities
+# Cobertura de las capacidades del framework
 
-The [consumer matrix](CAPABILITIES.md) maps every catalog capability and required provider/stack
-variant to a runnable example. The demo remains a consumer: no demo business logic belongs to the framework.
+La [matriz de consumidores](CAPABILITIES.md) asocia cada capacidad del catálogo y cada variante
+obligatoria de proveedor o de stack con un ejemplo ejecutable. La demo sigue siendo un consumidor:
+ninguna lógica de negocio de la demo pertenece al framework.
 
-`CapabilityCoverageTest` requires a declared capability, a source file and an exact JUnit
-`fully.qualified.Class#method`. The corresponding Surefire or Failsafe XML must contain a successful,
-non-skipped test case and be newer than the consumer's sources, resources and POM. Missing,
-failed, skipped or stale execution fails the build. `ExecutionEvidenceTest` verifies those
-rejection paths, including unsafe XML. Each successful operation publishes its capability and
-actual variants with JUnit `TestReporter`; standard Open Test Reporting binds those entries to
-the same successful class/method. Catalog starters and provider dependencies must exist on that
-test's recorded runtime classpath. Service stack labels must match the consumer manifest.
-Each plugin writes its event report in its own directory, so integration tests cannot overwrite
-unit-test evidence. Missing or ambiguous reports fail the gate. Variant evidence is published
-after each provider/stack operation has checked its result.
+`CapabilityCoverageTest` exige una capacidad declarada, un archivo fuente y un JUnit exacto
+`fully.qualified.Class#method`. El XML de Surefire o Failsafe correspondiente debe contener un caso de
+prueba exitoso y no omitido, y ser más reciente que las fuentes, los recursos y el POM del consumidor.
+Una ejecución ausente, fallida, omitida o desactualizada hace fallar el build. `ExecutionEvidenceTest`
+verifica esos caminos de rechazo, incluido el XML inseguro. Cada operación exitosa publica su capacidad
+y sus variantes reales con `TestReporter` de JUnit; el Open Test Reporting estándar liga esas entradas a
+la misma clase y método exitosos. Los starters del catálogo y las dependencias de proveedores deben
+existir en el classpath de runtime registrado de esa prueba. Las etiquetas de stack de los servicios
+deben coincidir con el manifiesto del consumidor. Cada plugin escribe su reporte de eventos en su
+propio directorio, de modo que las pruebas de integración no pueden sobrescribir los resultados de las
+pruebas unitarias. Los reportes ausentes o ambiguos hacen fallar el control. Las variantes se publican
+después de que cada operación de proveedor o de stack comprobó su resultado.
 
-The gate also checks the resolved framework JARs against the reports and, when an adjacent
-framework checkout exists, its source/resources/POM against those JARs. Install changed framework
-modules and rerun the demo: old reports or an older installed framework cannot prove a new change.
-These are reproducibility checks for local/CI builds, not signed tamper-proof attestations.
-A comment, dependency or configuration property alone cannot satisfy this gate.
+El control también comprueba los JAR resueltos del framework contra los reportes y, cuando existe un
+checkout adyacente del framework, sus fuentes, recursos y POM contra esos JAR. Los módulos modificados
+del framework se instalan y la demo se vuelve a ejecutar: los reportes anteriores o un framework
+instalado más antiguo no pueden demostrar un cambio nuevo. Son comprobaciones de reproducibilidad para
+builds locales y de CI, no atestaciones firmadas a prueba de manipulación. Un comentario, una
+dependencia o una propiedad de configuración por sí solos no pueden satisfacer este control.
 
-The coverage module depends on each consumer's POM for reactor ordering, with all transitive
-dependencies excluded. It runs after the services and examples even in a parallel Maven build.
-Run the complete reactor from `axiz-demo`:
+El módulo de cobertura depende del POM de cada consumidor para el orden del reactor, con todas las
+dependencias transitivas excluidas. Se ejecuta después de los servicios y de los ejemplos incluso en
+un build paralelo de Maven. El reactor completo se ejecuta desde `axiz-demo`:
 
 ```bash
 ./mvnw clean verify -Pquality -Daxiz.it.requireDocker=true
 ```
 
-`coverage.yaml` names the evidence and its scope:
+`coverage.yaml` nombra la comprobación y su alcance:
 
-- `integration`: actual infrastructure or transport and checked effects/results.
-- `consumer-contract`: executable consumer behavior with a controlled collaborator or protocol fixture.
-- `local-identity-contract`: local IAM signing/configuration checks; these do not prove AWS authorization.
+- `integration`: infraestructura o transporte reales y efectos o resultados comprobados.
+- `consumer-contract`: comportamiento ejecutable del consumidor con un colaborador controlado o un fixture de protocolo.
+- `local-identity-contract`: comprobaciones locales de firma y configuración IAM; no demuestran la autorización en AWS.
 
-`variants.yaml` adds required provider operations. Both stack and persistence alternatives are read
-directly from the framework catalog, so adding a new catalog option cannot bypass the gate by
-omitting it from the demo's variant file. These checks prove the named examples, not every possible
-combination of all framework options or PCI DSS certification.
+`variants.yaml` añade las operaciones de proveedor obligatorias. Las alternativas de stack y de
+persistencia se leen directamente del catálogo del framework, de modo que agregar una opción nueva al
+catálogo no puede eludir el control omitiéndola del archivo de variantes de la demo. Estas
+comprobaciones demuestran los ejemplos nombrados, no todas las combinaciones posibles de las opciones
+del framework ni una certificación PCI DSS.
 
-`provider-recipes` demonstrates alternate providers and cross-cutting capabilities through the
-public starters. `protected-data` demonstrates both native asynchronous and imperative vaults,
-independent encryption/index operations, administrative rotation and retention. Services retain
-the payment business flows and their concurrency/integrity tests. All examples use local
-containers; IAM recipes never contact remote AWS.
+`provider-recipes` muestra proveedores alternativos y capacidades transversales mediante los starters
+públicos. `protected-data` muestra las bóvedas nativas asíncronas e imperativas, operaciones
+independientes de cifrado e índice, rotación administrativa y retención. Los servicios conservan los
+flujos de negocio de pagos y sus pruebas de concurrencia e integridad. Todos los ejemplos usan
+contenedores locales; las recetas IAM nunca contactan AWS remoto.
 
-`sqs-consumer` supplies an independent, minimal starter classpath. Its automatic discovery test
-executes standard and FIFO queues, retries, explicit DLQ and broker redrive on both stacks. These
-operations are mandatory entries in `variants.yaml`; publisher-only evidence cannot replace them.
+`sqs-consumer` aporta un classpath de starters independiente y mínimo. Su prueba de descubrimiento
+automático ejecuta colas estándar y FIFO, reintentos, DLQ explícita y redrive del broker en ambos
+stacks. Estas operaciones son entradas obligatorias de `variants.yaml`; los resultados solo del
+publicador no pueden reemplazarlas.

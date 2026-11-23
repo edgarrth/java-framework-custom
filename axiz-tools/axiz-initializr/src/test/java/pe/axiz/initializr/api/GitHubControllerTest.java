@@ -34,7 +34,10 @@ import pe.axiz.initializr.config.SecurityConfiguration;
 import pe.axiz.initializr.service.GenerationService;
 import pe.axiz.initializr.service.GitHubPublisher;
 
-/** Sign-in only through the SSO, and the GitHub authorization as an API answer, not a redirect. */
+/**
+ * Inicio de sesión solo mediante el SSO y la autorización de GitHub como respuesta de la API, no
+ * como redirección.
+ */
 @WebMvcTest(
     controllers = GitHubController.class,
     properties = {"axiz.config.environment=test", "AXIZ_SSO_ISSUER=https://sso.example.test"})
@@ -91,7 +94,7 @@ class GitHubControllerTest {
             .andReturn()
             .getResponse()
             .getHeader("Location");
-    // relative (same site) or absolute on this same host: both are valid, another host is not
+    // relativa (mismo sitio) o absoluta en este mismo host: ambas son válidas; otro host no
     URI target = URI.create(String.valueOf(location));
     assertThat(target.getPath()).isEqualTo("/oauth2/authorization/sso");
     assertThat(target.getHost()).isIn(null, "localhost");

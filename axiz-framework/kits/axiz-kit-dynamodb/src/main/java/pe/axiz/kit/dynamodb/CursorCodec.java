@@ -21,8 +21,9 @@ import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
- * Authenticated query-bound pagination, with optional encryption and shared rotating keys. The
- * caller still builds the query from its authenticated tenant and permissions.
+ * Paginación autenticada y ligada a la consulta, con cifrado opcional y claves rotativas
+ * compartidas. Quien llama igualmente construye la consulta a partir de su tenant y permisos
+ * autenticados.
  */
 public final class CursorCodec {
   private static final int MAX_CURSOR_LENGTH = 16384;

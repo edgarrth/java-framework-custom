@@ -249,7 +249,7 @@ class ArtifactGeneratorTest {
     assertTrue(
         text(hexHandler, "adapter/in/messaging/PaymentApprovedHandler.java")
             .contains("implements EventHandler<PaymentApproved>"));
-    // without a messaging capability the handler would not compile: generation is refused
+    // sin una capacidad de mensajería el handler no compilaría: se rechaza la generación
     ProjectManifest noMessaging = project(Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of());
     IllegalArgumentException refused =
         assertThrows(
@@ -259,7 +259,7 @@ class ArtifactGeneratorTest {
                     noMessaging, "handler", "x", ArtifactGenerator.Options.none(), null));
     assertTrue(refused.getMessage().contains("axiz add messaging-kafka"));
 
-    // reactive services on Aurora get Spring Data R2DBC types, never JPA
+    // los servicios reactivos sobre Aurora reciben tipos de Spring Data R2DBC, nunca JPA
     ArtifactGenerator.Result reactiveEntity =
         generator.generate(
             project(Structure.EDA, Stack.REACTIVE, "aurora", List.of("messaging-kafka")),

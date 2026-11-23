@@ -13,15 +13,18 @@ import pe.axiz.core.sensitive.Sensitive;
 import pe.axiz.core.sensitive.SensitivityLevel;
 
 /**
- * Bounded native HTTP exchange. Implementations must resolve DNS, connect and consume the body
- * without blocking, enforce the byte limit and request timeout, propagate cancellation and never
- * follow redirects. The application owns transport startup and shutdown.
+ * Intercambio HTTP nativo acotado. Las implementaciones deben resolver DNS, conectar y consumir el
+ * cuerpo sin bloquear, aplicar el límite de bytes y el timeout de la petición, propagar la
+ * cancelación y nunca seguir redirecciones. La aplicación es dueña del arranque y el apagado del
+ * transporte.
  */
 @FunctionalInterface
 public interface AsyncHttpExchange {
   CompletionStage<Response> exchange(Request request, long maxResponseBytes);
 
-  /** Immutable wire data; diagnostics never expose the URI, credentials or body. */
+  /**
+   * Datos de red inmutables; los diagnósticos nunca exponen la URI, las credenciales ni el cuerpo.
+   */
   record Request(
       URI uri,
       String method,
@@ -47,7 +50,10 @@ public interface AsyncHttpExchange {
     }
   }
 
-  /** Token payloads remain accessible explicitly and are never included in diagnostics. */
+  /**
+   * Los payloads de token siguen siendo accesibles de forma explícita y nunca se incluyen en los
+   * diagnósticos.
+   */
   record Response(
       int status,
       @Nullable String contentType,

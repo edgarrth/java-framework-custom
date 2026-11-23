@@ -7,10 +7,10 @@ import java.time.Duration;
 import java.util.Optional;
 import pe.axiz.core.cache.LocalByteCache;
 
-/** L1 on Caffeine with a TTL per entry and size-based eviction. */
+/** L1 sobre Caffeine con un TTL por entrada y desalojo por tamaño. */
 public final class CaffeineByteCache implements LocalByteCache {
 
-  /** Internal holder; a class rather than a record because it holds an array. */
+  /** Contenedor interno; es una clase y no un record porque guarda un arreglo. */
   private static final class Entry {
     private final byte[] value;
     private final long ttlNanos;

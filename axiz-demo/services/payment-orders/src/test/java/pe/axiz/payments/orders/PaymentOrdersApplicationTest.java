@@ -26,9 +26,9 @@ import pe.axiz.spring.test.LocalStackTestConfiguration;
 import pe.axiz.spring.test.PostgresTestConfiguration;
 
 /**
- * Starts the whole service against real dependencies in containers (Testcontainers): wiring,
- * configuration, migrations, a real command/query transaction and encrypted persistence. Needs
- * Docker.
+ * Arranca el servicio completo contra dependencias reales en contenedores (Testcontainers):
+ * cableado, configuración, migraciones, una transacción real de comando y consulta y persistencia
+ * cifrada. Requiere Docker.
  */
 @SpringBootTest(
     properties = {
@@ -46,7 +46,9 @@ import pe.axiz.spring.test.PostgresTestConfiguration;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class PaymentOrdersApplicationTest {
 
-  /** Field encryption and blind index keys: random for every run, never committed. */
+  /**
+   * Claves de cifrado de campos y de índice ciego: aleatorias en cada ejecución, nunca versionadas.
+   */
   @DynamicPropertySource
   static void secrets(DynamicPropertyRegistry registry) {
     EphemeralSecrets.register(registry, "field-key-v1", "blind-index-key");
@@ -67,7 +69,7 @@ class PaymentOrdersApplicationTest {
     String customer = "C-RECIPE";
     String cci = "00219100123456789053";
     String debtor = "1910012345678";
-    // MockMvc supplies a validated token fixture; the service's real mapper creates its identity.
+    // MockMvc aporta un fixture de token validado; el mapper real del servicio crea su identidad.
     var identity =
         authentication(
             converter.convert(

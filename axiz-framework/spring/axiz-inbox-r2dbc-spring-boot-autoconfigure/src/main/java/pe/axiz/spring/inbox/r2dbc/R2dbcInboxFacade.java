@@ -7,7 +7,9 @@ import pe.axiz.core.inbox.InboxStore.Acquisition;
 import pe.axiz.spring.inbox.ReactiveInbox;
 import reactor.core.publisher.Mono;
 
-/** Keeps R2DBC's subscription context rather than crossing a CompletableFuture boundary. */
+/**
+ * Conserva el contexto de suscripción de R2DBC en lugar de cruzar un límite de CompletableFuture.
+ */
 final class R2dbcInboxFacade implements ReactiveInbox {
   private final ReactiveInboxStore store;
 

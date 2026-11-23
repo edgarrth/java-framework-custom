@@ -4,7 +4,7 @@ import java.math.BigInteger;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.sensitive.SelfMasking;
 
-/** Canonical opaque 128-bit identifier. Not an authentication credential. */
+/** Identificador opaco canónico de 128 bits. No es una credencial de autenticación. */
 public final class Token implements SelfMasking {
   private static final String ALPHABET =
       "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -25,7 +25,7 @@ public final class Token implements SelfMasking {
     return new Token(value);
   }
 
-  /** Encodes exactly 16 random bytes supplied by a cryptographic generator. */
+  /** Codifica exactamente 16 bytes aleatorios suministrados por un generador criptográfico. */
   public static Token fromEntropy(byte[] random) {
     if (random.length != 16) throw TokenErrors.failure(TokenErrors.INVALID);
     BigInteger remaining = new BigInteger(1, random);
@@ -38,7 +38,10 @@ public final class Token implements SelfMasking {
     return new Token("tok_" + new String(encoded));
   }
 
-  /** Explicit transport/storage access; generic serializers must use masked(). */
+  /**
+   * Acceso explícito para transporte o almacenamiento; los serializadores genéricos deben usar
+   * masked().
+   */
   public String reveal() {
     return value;
   }

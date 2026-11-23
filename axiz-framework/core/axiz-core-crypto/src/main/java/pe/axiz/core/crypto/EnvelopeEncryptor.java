@@ -8,7 +8,10 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.crypto.DataKeyProvider.DataKey;
 
-/** AES-256-GCM envelopes with versioned authenticated framing and bounded, coalesced key loads. */
+/**
+ * Envelopes AES-256-GCM con delimitación autenticada versionada y cargas de claves acotadas y
+ * coalescidas.
+ */
 public final class EnvelopeEncryptor implements AutoCloseable {
   public static final int MAX_CACHED_KEYS = 1000;
   private final DataKeyProvider provider;

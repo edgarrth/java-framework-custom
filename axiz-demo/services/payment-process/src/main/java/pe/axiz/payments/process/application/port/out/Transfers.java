@@ -2,9 +2,9 @@ package pe.axiz.payments.process.application.port.out;
 
 import pe.axiz.payments.process.domain.PaymentInstruction;
 
-/** Inter-bank transfers (payment-network-gateway in front of the payment network). */
+/** Transferencias interbancarias (payment-network-gateway delante de la red de pagos). */
 public interface Transfers {
 
-  /** Sends the transfer and returns the network id. */
+  /** Envía la transferencia y devuelve el id en la red. */
   String send(PaymentInstruction instruction, String idempotencyKey);
 }

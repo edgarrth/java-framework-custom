@@ -1,12 +1,12 @@
 package pe.axiz.core.api;
 
 /**
- * Pagination metadata returned with a page.
+ * Metadatos de paginación devueltos con una página.
  *
- * @param page zero-based page index
- * @param size requested size
- * @param totalElements total elements, or -1 when unknown (cursor based stores)
- * @param totalPages total pages, or -1 when unknown
+ * @param page índice de página desde cero
+ * @param size tamaño solicitado
+ * @param totalElements total de elementos, o -1 cuando se desconoce (almacenes basados en cursor)
+ * @param totalPages total de páginas, o -1 cuando se desconoce
  */
 public record PageMetadata(int page, int size, long totalElements, int totalPages) {
 

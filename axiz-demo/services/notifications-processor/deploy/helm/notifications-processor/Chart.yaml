@@ -2,6 +2,6 @@ apiVersion: v2
 name: notifications-processor
 description: Customer notifications and audit archive
 type: application
-# chart version follows the chart; appVersion is replaced by the image tag in the pipeline
+# la versión del chart sigue al chart; el pipeline reemplaza appVersion por el tag de la imagen
 version: 1.0.0
 appVersion: "1.0.0"

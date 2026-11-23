@@ -39,7 +39,9 @@ import pe.axiz.kit.r2dbc.EncryptedText;
 import pe.axiz.test.support.r2dbc.FakeR2dbc;
 import reactor.core.publisher.Mono;
 
-/** The read replica connection, IAM tokens, Flyway over IAM and the auditing of rows. */
+/**
+ * La conexión a la réplica de lectura, los tokens IAM, Flyway sobre IAM y la auditoría de filas.
+ */
 class ReaderAndAuditingTest {
 
   private static final Duration T = Duration.ofSeconds(5);
@@ -48,7 +50,8 @@ class ReaderAndAuditingTest {
   @BeforeEach
   void localCredentials() {
     RecordingDriver.CREATED.clear();
-    // placeholders for the SDK default chain: an IAM token is signed locally, no call is made
+    // valores de relleno para la cadena por defecto del SDK: el token IAM se firma localmente y no
+    // se hace ninguna llamada
     System.setProperty("aws.accessKeyId", "local-only-access-key");
     System.setProperty("aws.secretAccessKey", "local-only-secret-key");
   }
@@ -159,7 +162,7 @@ class ReaderAndAuditingTest {
             });
   }
 
-  /** A row with the audit columns. */
+  /** Fila con las columnas de auditoría. */
   static final class Payment extends AuditableRow {
     void assign(UUID id) {
       setId(id);
@@ -167,8 +170,8 @@ class ReaderAndAuditingTest {
   }
 
   /**
-   * The mapping context as Spring Boot builds it: the simple types come from the dialect, so a
-   * {@code UUID} id is a column and not a nested entity.
+   * El contexto de mapeo tal como lo construye Spring Boot: los tipos simples provienen del
+   * dialecto, de modo que un id {@code UUID} es una columna y no una entidad anidada.
    */
   private static R2dbcMappingContext mappingContext() {
     R2dbcMappingContext context = new R2dbcMappingContext();

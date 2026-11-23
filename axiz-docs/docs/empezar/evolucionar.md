@@ -56,7 +56,7 @@ axiz contract diff old.yaml new.yaml
 
 `sync` compara el contrato con la última versión sincronizada (`.axiz/openapi.snapshot.yaml`):
 genera controladores y casos de uso para las operaciones nuevas, propone los cambios de las
-existentes sin tocar tu código y falla ante cambios incompatibles salvo con `--allow-breaking`.
+existentes sin tocar el código propio y falla ante cambios incompatibles salvo con `--allow-breaking`.
 Ver [Contrato primero](../herramientas/contratos.md).
 
 ## Diagnóstico y actualización

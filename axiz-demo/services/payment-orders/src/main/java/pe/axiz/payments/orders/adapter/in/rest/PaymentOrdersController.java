@@ -27,8 +27,9 @@ import pe.axiz.payments.orders.domain.PaymentStatus;
 import pe.axiz.spring.web.Paging;
 
 /**
- * REST adapter of the {@code payment-orders} operations (src/main/openapi/openapi.yaml): API models
- * in, commands and queries to the buses, domain out through {@link PaymentOrderApiMapper}.
+ * Adaptador REST de las operaciones {@code payment-orders} (src/main/openapi/openapi.yaml): entran
+ * modelos de la API, se envían comandos y consultas a los buses y el dominio sale mediante {@link
+ * PaymentOrderApiMapper}.
  */
 @RestController
 @PreAuthorize(
@@ -43,7 +44,7 @@ public class PaymentOrdersController {
     this.queryBus = queryBus;
   }
 
-  /** Registers a payment order (POST /v1/payment-orders). */
+  /** Registra una orden de pago (POST /v1/payment-orders). */
   @PostMapping("/v1/payment-orders")
   public ResponseEntity<PaymentOrder> createPaymentOrder(
       @RequestHeader(name = "Idempotency-Key", required = false) @Nullable String idempotencyKey,
@@ -62,7 +63,7 @@ public class PaymentOrdersController {
         .body(PaymentOrderApiMapper.toApi(order));
   }
 
-  /** Payment orders of a customer (GET /v1/payment-orders). */
+  /** Órdenes de pago de un cliente (GET /v1/payment-orders). */
   @GetMapping("/v1/payment-orders")
   public ResponseEntity<PaymentOrderPage> listPaymentOrders(
       @RequestParam(name = "customerId", required = true) String customerId,
@@ -71,14 +72,14 @@ public class PaymentOrdersController {
         PaymentOrderApiMapper.toApi(queryBus.ask(new ListPaymentOrdersQuery(customerId, page))));
   }
 
-  /** Gets a payment order (GET /v1/payment-orders/{orderId}). */
+  /** Obtiene una orden de pago (GET /v1/payment-orders/{orderId}). */
   @GetMapping("/v1/payment-orders/{orderId}")
   public ResponseEntity<PaymentOrder> getPaymentOrder(@PathVariable("orderId") String orderId) {
     return ResponseEntity.ok(
         PaymentOrderApiMapper.toApi(queryBus.ask(new GetPaymentOrderQuery(orderId))));
   }
 
-  /** Moves the order to its next status (POST /v1/payment-orders/{orderId}/status). */
+  /** Mueve la orden a su siguiente estado (POST /v1/payment-orders/{orderId}/status). */
   @PostMapping("/v1/payment-orders/{orderId}/status")
   public ResponseEntity<PaymentOrder> changePaymentOrderStatus(
       @PathVariable("orderId") String orderId, @Valid @RequestBody StatusChange body) {

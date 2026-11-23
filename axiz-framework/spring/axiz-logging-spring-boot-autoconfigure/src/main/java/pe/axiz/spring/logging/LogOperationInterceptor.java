@@ -29,8 +29,8 @@ import pe.axiz.core.sensitive.Sensitive;
 import pe.axiz.core.sensitive.SensitiveField;
 
 /**
- * Applies {@link LogOperation}: entry and exit lines with duration and outcome. Reactive return
- * types are logged when they complete, not when the method returns.
+ * Aplica {@link LogOperation}: líneas de entrada y salida con duración y resultado. Los tipos de
+ * retorno reactivos se registran cuando completan, no cuando el método retorna.
  */
 public final class LogOperationInterceptor implements MethodInterceptor {
 
@@ -121,7 +121,7 @@ public final class LogOperationInterceptor implements MethodInterceptor {
             descriptor.operation(),
             error.getClass().getSimpleName());
       } catch (RuntimeException ignored) {
-        // A broken logging provider must not replace the business outcome.
+        // Un proveedor de logging defectuoso no debe reemplazar el resultado de negocio.
       }
     }
   }
@@ -162,7 +162,7 @@ public final class LogOperationInterceptor implements MethodInterceptor {
     return new Descriptor(operation, annotation, argNames, excluded, declared);
   }
 
-  /** Internal holder; a class rather than a record because it holds an array. */
+  /** Contenedor interno; es una clase y no un record porque guarda un arreglo. */
   private static final class Descriptor {
     private final String operation;
     private final LogOperation annotation;

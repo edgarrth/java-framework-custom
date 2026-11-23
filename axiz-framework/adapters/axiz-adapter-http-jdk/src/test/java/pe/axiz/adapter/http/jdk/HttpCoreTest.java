@@ -76,7 +76,7 @@ class HttpCoreTest {
     assertTrue(lastBody.get().contains("scope=payments.read+payments.write"));
     assertTrue(lastBody.get().contains("audience=core"));
     assertSame(first, provider.token());
-    clock.now = clock.now.plusSeconds(250); // 50 s left < 60 s renew-before
+    clock.now = clock.now.plusSeconds(250); // quedan 50 s < 60 s de renew-before
     assertEquals("t2", provider.token().value());
     assertEquals(2, tokenCalls.get());
     assertFalse(first.toString().contains("t1"));

@@ -1,4 +1,7 @@
 package pe.axiz.core.cache;
 
-/** A CPU-only, in-process cache tier. Implementations must perform no remote or file I/O. */
+/**
+ * Nivel de caché en proceso, solo de CPU. Las implementaciones no deben hacer E/S remota ni de
+ * archivos.
+ */
 public interface LocalByteCache extends ByteCache {}

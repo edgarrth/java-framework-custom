@@ -1,6 +1,9 @@
 package pe.axiz.quality.archunit;
 
-/** Permitted handling of typed card data; independent from generic token-vault access. */
+/**
+ * Manejo permitido de datos de tarjeta tipados; independiente del acceso genérico a la bóveda de
+ * tokens.
+ */
 public enum CardDataScope {
   NONE,
   EDGE,

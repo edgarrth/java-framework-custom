@@ -1,6 +1,6 @@
 #!/bin/bash
-# Creates the AWS resources payments-history uses locally (runs when LocalStack is ready).
-# In real environments these resources are created by Terraform, never by the service.
+# Crea los recursos de AWS que payments-history usa en local (se ejecuta cuando LocalStack está listo).
+# En los entornos reales estos recursos los crea Terraform, nunca el servicio.
 set -euo pipefail
 awslocal kms create-alias --alias-name alias/local \
   --target-key-id "$(awslocal kms create-key --query KeyMetadata.KeyId --output text)" || true

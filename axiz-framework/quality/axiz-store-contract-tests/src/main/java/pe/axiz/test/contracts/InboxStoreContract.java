@@ -11,29 +11,32 @@ import pe.axiz.core.inbox.InboxStore.Acquisition;
 import pe.axiz.core.messaging.MessageKeys;
 
 /**
- * Properties of every {@link InboxStore}: one delivery processes a message at a time, completion
- * and release are fenced by the owner token, an expired lease is taken over without interference
- * from the previous owner, and processed messages are recognized.
+ * Propiedades de todo {@link InboxStore}: una entrega procesa un mensaje a la vez, la finalización
+ * y la liberación están cercadas por el token del propietario, un lease expirado se toma sin
+ * interferencia del propietario previo y los mensajes procesados se reconocen.
  */
 public final class InboxStoreContract {
 
   static final Duration LEASE = Duration.ofSeconds(30);
   static final Duration RETENTION = Duration.ofDays(7);
 
-  /** Backend under test. */
+  /** Backend bajo prueba. */
   public interface Backend {
 
-    /** An empty store (or one whose existing rows do not collide with random message ids). */
+    /**
+     * Un almacén vacío (o uno cuyas filas existentes no coinciden con ids de mensaje aleatorios).
+     */
     InboxStore create();
 
-    /** {@code false} for stores whose retention is enforced by the server (DynamoDB TTL). */
+    /** {@code false} para los almacenes cuya retención aplica el servidor (TTL de DynamoDB). */
     default boolean purgesOnDemand() {
       return true;
     }
 
     /**
-     * Instant the checks start at. Stores compare against the instants they receive, so a fixed
-     * value works; DynamoDB TTL needs future expiry times, hence the current time by default.
+     * Instante en el que comienzan las verificaciones. Los almacenes comparan contra los instantes
+     * que reciben, por lo que un valor fijo funciona; el TTL de DynamoDB necesita tiempos de
+     * expiración futuros, de ahí que por defecto se use la hora actual.
      */
     default Instant start() {
       return Instant.now().truncatedTo(ChronoUnit.MILLIS);

@@ -114,7 +114,7 @@ class LockTest {
             Duration.ofSeconds(1),
             Duration.ofSeconds(1),
             () -> {
-              Thread.sleep(1500); // longer than the lease: the renewer keeps it
+              Thread.sleep(1500); // más largo que el lease: el renovador lo mantiene
               assertTrue(lock.tryAcquire("r", Duration.ofSeconds(1)).isEmpty());
               return "done";
             });

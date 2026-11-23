@@ -11,7 +11,9 @@ import software.amazon.awssdk.services.kms.model.DecryptRequest;
 import software.amazon.awssdk.services.kms.model.GenerateDataKeyRequest;
 import software.amazon.awssdk.services.kms.model.GenerateDataKeyResponse;
 
-/** Same key id, AES strength and encryption context for both SDK client variants. */
+/**
+ * Mismo id de clave, fortaleza AES y contexto de cifrado para ambas variantes de cliente del SDK.
+ */
 final class KmsRequests {
   private final String keyId;
 

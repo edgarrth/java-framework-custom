@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-adapter-idempotency-dynamodb
 
-Idempotency store on DynamoDB with TTL.
+Almacén de idempotencia en DynamoDB con TTL.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,14 +12,14 @@ Idempotency store on DynamoDB with TTL.
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `DynamoDbIdempotencyStore` | Idempotency store on DynamoDB: conditional put to start (new key or expired record), strongly consistent reads, TTL attribute `ttl` for retention. |
+| `DynamoDbIdempotencyStore` | Almacén de idempotencia en DynamoDB: escritura condicional para iniciar (clave nueva o registro vencido), lecturas fuertemente consistentes y atributo TTL `ttl` para la retención. |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl adapters/axiz-adapter-idempotency-dynamodb verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl adapters/axiz-adapter-idempotency-dynamodb verify`.

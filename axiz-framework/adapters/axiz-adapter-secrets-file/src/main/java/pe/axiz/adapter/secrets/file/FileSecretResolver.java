@@ -11,8 +11,8 @@ import pe.axiz.core.secrets.SecretResolver;
 import pe.axiz.core.secrets.SecretValue;
 
 /**
- * Resolves secrets mounted as files (Kubernetes Secret volume): {@code <dir>/<name>}. Names are
- * restricted to safe characters so they can never escape the directory.
+ * Resuelve secretos montados como archivos (volumen Secret de Kubernetes): {@code <dir>/<name>}.
+ * Los nombres se restringen a caracteres seguros para que nunca puedan escapar del directorio.
  */
 public final class FileSecretResolver implements SecretResolver {
 

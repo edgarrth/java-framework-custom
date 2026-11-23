@@ -65,7 +65,10 @@ import software.amazon.awssdk.services.ssm.SsmAsyncClient;
 import software.amazon.awssdk.services.ssm.model.ParameterType;
 import software.amazon.awssdk.utils.SdkAutoCloseable;
 
-/** Cancellation and real SDK deadlines through public ports, retaining the framework transport. */
+/**
+ * Cancelación y plazos reales del SDK mediante puertos públicos, conservando el transporte del
+ * framework.
+ */
 @ExtendWith(BlockHoundExtension.class)
 class LocalStackAsyncResilienceIT {
   private static final Duration T = Duration.ofSeconds(80);
@@ -271,8 +274,9 @@ class LocalStackAsyncResilienceIT {
 
   @TestFactory
   List<DynamicTest> cancellationAndDeadline() {
-    // Freeze one real backend, send all operations concurrently and wait for their configured
-    // 60s API deadlines together. The test keeps the actual production timeout configuration.
+    // Se congela un backend real, se envían todas las operaciones de forma concurrente y se esperan
+    // juntos sus plazos de API configurados de 60s. La prueba conserva la configuración real de
+    // timeouts de producción.
     return List.of(
         DynamicTest.dynamicTest(
             "every port cancels and reaches its SDK deadline",

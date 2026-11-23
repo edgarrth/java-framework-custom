@@ -44,7 +44,10 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
-/** Real authenticated dedicated transports, Spring stack selection and multi-context ownership. */
+/**
+ * Transportes dedicados autenticados reales, selección del stack de Spring y propiedad entre varios
+ * contextos.
+ */
 @ExtendWith(BlockHoundExtension.class)
 class ValkeyTokenBudgetSpringIT {
   private static final String PASSWORD = java.util.UUID.randomUUID().toString();

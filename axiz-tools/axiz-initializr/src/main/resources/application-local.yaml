@@ -1,7 +1,7 @@
-# Local profile (--spring.profiles.active=local) against the Keycloak of the demo
-# (axiz-demo: scripts/demo.sh up, realm axiz, client axiz-initializr). Port 8090: 8080-8086 are the
-# demo services. The client secret is a local-only placeholder that matches
-# axiz-demo/local/keycloak/axiz-realm.json; real environments mount it (AXIZ_SSO_CLIENT_SECRET).
+# Perfil local (--spring.profiles.active=local) contra el Keycloak de la demo
+# (axiz-demo: scripts/demo.sh up, realm axiz, cliente axiz-initializr). Puerto 8090: 8080-8086 son los
+# servicios de la demo. El client secret es un marcador de posición solo local que coincide con
+# axiz-demo/local/keycloak/axiz-realm.json; los entornos reales lo montan (AXIZ_SSO_CLIENT_SECRET).
 server:
   port: 8090
   servlet:
@@ -21,7 +21,7 @@ spring:
         registration:
           sso:
             client-secret: ${AXIZ_SSO_CLIENT_SECRET:local-only-initializr}
-            # the demo realm defines no "email" client scope; Keycloak rejects unknown scopes
+            # el realm de la demo no define el client scope "email"; Keycloak rechaza los scopes desconocidos
             scope: [openid, profile]
 axiz:
   config:

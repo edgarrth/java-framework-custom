@@ -5,7 +5,7 @@ cases:
   context:
     project: {name: banking-core, moduleYaml: '''.'''}
   rendered: |
-    # Promotion and rollback consume signed build bytes; never rebuild or accept a loose image tag.
+    # La promoción y el rollback consumen bytes de build firmados; nunca se reconstruye ni se acepta un tag de imagen suelto.
     name: deploy
     on:
       workflow_run:
@@ -55,7 +55,7 @@ cases:
           values-revision: ${{ steps.build.outputs.values-revision }}
           previous-manifest-sha256: ${{ steps.build.outputs.previous-manifest-sha256 }}
         steps:
-          # Immutable internal release: axiz-workflows-trust must succeed first.
+          # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
           # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
           - uses: edgarrth/java-framework-custom/.github/actions/resolve-service-build@@AXIZ_WORKFLOWS_RELEASE@
             id: build
@@ -76,7 +76,7 @@ cases:
           id-token: write
         needs: [axiz-workflows-trust, automatic]
         if: ${{ needs.axiz-workflows-trust.result == 'success' && (!cancelled() && (github.event_name == 'workflow_dispatch' || (needs.automatic.result == 'success' && needs.automatic.outputs.eligible == 'true'))) }}
-        # Immutable internal release: axiz-workflows-trust must succeed first.
+        # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
         # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
         uses: edgarrth/java-framework-custom/.github/workflows/service-deploy.yaml@@AXIZ_WORKFLOWS_RELEASE@
         with:
@@ -97,7 +97,7 @@ cases:
   context:
     project: {name: beneficiaries, moduleYaml: '''.'''}
   rendered: |
-    # Promotion and rollback consume signed build bytes; never rebuild or accept a loose image tag.
+    # La promoción y el rollback consumen bytes de build firmados; nunca se reconstruye ni se acepta un tag de imagen suelto.
     name: deploy
     on:
       workflow_run:
@@ -147,7 +147,7 @@ cases:
           values-revision: ${{ steps.build.outputs.values-revision }}
           previous-manifest-sha256: ${{ steps.build.outputs.previous-manifest-sha256 }}
         steps:
-          # Immutable internal release: axiz-workflows-trust must succeed first.
+          # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
           # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
           - uses: edgarrth/java-framework-custom/.github/actions/resolve-service-build@@AXIZ_WORKFLOWS_RELEASE@
             id: build
@@ -168,7 +168,7 @@ cases:
           id-token: write
         needs: [axiz-workflows-trust, automatic]
         if: ${{ needs.axiz-workflows-trust.result == 'success' && (!cancelled() && (github.event_name == 'workflow_dispatch' || (needs.automatic.result == 'success' && needs.automatic.outputs.eligible == 'true'))) }}
-        # Immutable internal release: axiz-workflows-trust must succeed first.
+        # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
         # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
         uses: edgarrth/java-framework-custom/.github/workflows/service-deploy.yaml@@AXIZ_WORKFLOWS_RELEASE@
         with:
@@ -189,7 +189,7 @@ cases:
   context:
     project: {name: notifications-processor, moduleYaml: '''.'''}
   rendered: |
-    # Promotion and rollback consume signed build bytes; never rebuild or accept a loose image tag.
+    # La promoción y el rollback consumen bytes de build firmados; nunca se reconstruye ni se acepta un tag de imagen suelto.
     name: deploy
     on:
       workflow_run:
@@ -239,7 +239,7 @@ cases:
           values-revision: ${{ steps.build.outputs.values-revision }}
           previous-manifest-sha256: ${{ steps.build.outputs.previous-manifest-sha256 }}
         steps:
-          # Immutable internal release: axiz-workflows-trust must succeed first.
+          # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
           # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
           - uses: edgarrth/java-framework-custom/.github/actions/resolve-service-build@@AXIZ_WORKFLOWS_RELEASE@
             id: build
@@ -260,7 +260,7 @@ cases:
           id-token: write
         needs: [axiz-workflows-trust, automatic]
         if: ${{ needs.axiz-workflows-trust.result == 'success' && (!cancelled() && (github.event_name == 'workflow_dispatch' || (needs.automatic.result == 'success' && needs.automatic.outputs.eligible == 'true'))) }}
-        # Immutable internal release: axiz-workflows-trust must succeed first.
+        # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
         # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
         uses: edgarrth/java-framework-custom/.github/workflows/service-deploy.yaml@@AXIZ_WORKFLOWS_RELEASE@
         with:
@@ -281,7 +281,7 @@ cases:
   context:
     project: {name: payment-network-gateway, moduleYaml: '''.'''}
   rendered: |
-    # Promotion and rollback consume signed build bytes; never rebuild or accept a loose image tag.
+    # La promoción y el rollback consumen bytes de build firmados; nunca se reconstruye ni se acepta un tag de imagen suelto.
     name: deploy
     on:
       workflow_run:
@@ -331,7 +331,7 @@ cases:
           values-revision: ${{ steps.build.outputs.values-revision }}
           previous-manifest-sha256: ${{ steps.build.outputs.previous-manifest-sha256 }}
         steps:
-          # Immutable internal release: axiz-workflows-trust must succeed first.
+          # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
           # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
           - uses: edgarrth/java-framework-custom/.github/actions/resolve-service-build@@AXIZ_WORKFLOWS_RELEASE@
             id: build
@@ -352,7 +352,7 @@ cases:
           id-token: write
         needs: [axiz-workflows-trust, automatic]
         if: ${{ needs.axiz-workflows-trust.result == 'success' && (!cancelled() && (github.event_name == 'workflow_dispatch' || (needs.automatic.result == 'success' && needs.automatic.outputs.eligible == 'true'))) }}
-        # Immutable internal release: axiz-workflows-trust must succeed first.
+        # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
         # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
         uses: edgarrth/java-framework-custom/.github/workflows/service-deploy.yaml@@AXIZ_WORKFLOWS_RELEASE@
         with:
@@ -373,7 +373,7 @@ cases:
   context:
     project: {name: payment-orders, moduleYaml: '''.'''}
   rendered: |
-    # Promotion and rollback consume signed build bytes; never rebuild or accept a loose image tag.
+    # La promoción y el rollback consumen bytes de build firmados; nunca se reconstruye ni se acepta un tag de imagen suelto.
     name: deploy
     on:
       workflow_run:
@@ -423,7 +423,7 @@ cases:
           values-revision: ${{ steps.build.outputs.values-revision }}
           previous-manifest-sha256: ${{ steps.build.outputs.previous-manifest-sha256 }}
         steps:
-          # Immutable internal release: axiz-workflows-trust must succeed first.
+          # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
           # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
           - uses: edgarrth/java-framework-custom/.github/actions/resolve-service-build@@AXIZ_WORKFLOWS_RELEASE@
             id: build
@@ -444,7 +444,7 @@ cases:
           id-token: write
         needs: [axiz-workflows-trust, automatic]
         if: ${{ needs.axiz-workflows-trust.result == 'success' && (!cancelled() && (github.event_name == 'workflow_dispatch' || (needs.automatic.result == 'success' && needs.automatic.outputs.eligible == 'true'))) }}
-        # Immutable internal release: axiz-workflows-trust must succeed first.
+        # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
         # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
         uses: edgarrth/java-framework-custom/.github/workflows/service-deploy.yaml@@AXIZ_WORKFLOWS_RELEASE@
         with:
@@ -465,7 +465,7 @@ cases:
   context:
     project: {name: payment-process, moduleYaml: '''.'''}
   rendered: |
-    # Promotion and rollback consume signed build bytes; never rebuild or accept a loose image tag.
+    # La promoción y el rollback consumen bytes de build firmados; nunca se reconstruye ni se acepta un tag de imagen suelto.
     name: deploy
     on:
       workflow_run:
@@ -515,7 +515,7 @@ cases:
           values-revision: ${{ steps.build.outputs.values-revision }}
           previous-manifest-sha256: ${{ steps.build.outputs.previous-manifest-sha256 }}
         steps:
-          # Immutable internal release: axiz-workflows-trust must succeed first.
+          # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
           # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
           - uses: edgarrth/java-framework-custom/.github/actions/resolve-service-build@@AXIZ_WORKFLOWS_RELEASE@
             id: build
@@ -536,7 +536,7 @@ cases:
           id-token: write
         needs: [axiz-workflows-trust, automatic]
         if: ${{ needs.axiz-workflows-trust.result == 'success' && (!cancelled() && (github.event_name == 'workflow_dispatch' || (needs.automatic.result == 'success' && needs.automatic.outputs.eligible == 'true'))) }}
-        # Immutable internal release: axiz-workflows-trust must succeed first.
+        # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
         # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
         uses: edgarrth/java-framework-custom/.github/workflows/service-deploy.yaml@@AXIZ_WORKFLOWS_RELEASE@
         with:
@@ -557,7 +557,7 @@ cases:
   context:
     project: {name: payments-history, moduleYaml: '''.'''}
   rendered: |
-    # Promotion and rollback consume signed build bytes; never rebuild or accept a loose image tag.
+    # La promoción y el rollback consumen bytes de build firmados; nunca se reconstruye ni se acepta un tag de imagen suelto.
     name: deploy
     on:
       workflow_run:
@@ -607,7 +607,7 @@ cases:
           values-revision: ${{ steps.build.outputs.values-revision }}
           previous-manifest-sha256: ${{ steps.build.outputs.previous-manifest-sha256 }}
         steps:
-          # Immutable internal release: axiz-workflows-trust must succeed first.
+          # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
           # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
           - uses: edgarrth/java-framework-custom/.github/actions/resolve-service-build@@AXIZ_WORKFLOWS_RELEASE@
             id: build
@@ -628,7 +628,7 @@ cases:
           id-token: write
         needs: [axiz-workflows-trust, automatic]
         if: ${{ needs.axiz-workflows-trust.result == 'success' && (!cancelled() && (github.event_name == 'workflow_dispatch' || (needs.automatic.result == 'success' && needs.automatic.outputs.eligible == 'true'))) }}
-        # Immutable internal release: axiz-workflows-trust must succeed first.
+        # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
         # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
         uses: edgarrth/java-framework-custom/.github/workflows/service-deploy.yaml@@AXIZ_WORKFLOWS_RELEASE@
         with:
@@ -649,7 +649,7 @@ cases:
   context:
     project: {name: payments-ux, moduleYaml: '''.'''}
   rendered: |
-    # Promotion and rollback consume signed build bytes; never rebuild or accept a loose image tag.
+    # La promoción y el rollback consumen bytes de build firmados; nunca se reconstruye ni se acepta un tag de imagen suelto.
     name: deploy
     on:
       workflow_run:
@@ -699,7 +699,7 @@ cases:
           values-revision: ${{ steps.build.outputs.values-revision }}
           previous-manifest-sha256: ${{ steps.build.outputs.previous-manifest-sha256 }}
         steps:
-          # Immutable internal release: axiz-workflows-trust must succeed first.
+          # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
           # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
           - uses: edgarrth/java-framework-custom/.github/actions/resolve-service-build@@AXIZ_WORKFLOWS_RELEASE@
             id: build
@@ -720,7 +720,7 @@ cases:
           id-token: write
         needs: [axiz-workflows-trust, automatic]
         if: ${{ needs.axiz-workflows-trust.result == 'success' && (!cancelled() && (github.event_name == 'workflow_dispatch' || (needs.automatic.result == 'success' && needs.automatic.outputs.eligible == 'true'))) }}
-        # Immutable internal release: axiz-workflows-trust must succeed first.
+        # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
         # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
         uses: edgarrth/java-framework-custom/.github/workflows/service-deploy.yaml@@AXIZ_WORKFLOWS_RELEASE@
         with:
@@ -741,7 +741,7 @@ cases:
   context:
     project: {name: settlement-batch, moduleYaml: '''.'''}
   rendered: |
-    # Promotion and rollback consume signed build bytes; never rebuild or accept a loose image tag.
+    # La promoción y el rollback consumen bytes de build firmados; nunca se reconstruye ni se acepta un tag de imagen suelto.
     name: deploy
     on:
       workflow_run:
@@ -791,7 +791,7 @@ cases:
           values-revision: ${{ steps.build.outputs.values-revision }}
           previous-manifest-sha256: ${{ steps.build.outputs.previous-manifest-sha256 }}
         steps:
-          # Immutable internal release: axiz-workflows-trust must succeed first.
+          # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
           # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
           - uses: edgarrth/java-framework-custom/.github/actions/resolve-service-build@@AXIZ_WORKFLOWS_RELEASE@
             id: build
@@ -812,7 +812,7 @@ cases:
           id-token: write
         needs: [axiz-workflows-trust, automatic]
         if: ${{ needs.axiz-workflows-trust.result == 'success' && (!cancelled() && (github.event_name == 'workflow_dispatch' || (needs.automatic.result == 'success' && needs.automatic.outputs.eligible == 'true'))) }}
-        # Immutable internal release: axiz-workflows-trust must succeed first.
+        # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
         # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
         uses: edgarrth/java-framework-custom/.github/workflows/service-deploy.yaml@@AXIZ_WORKFLOWS_RELEASE@
         with:
@@ -833,7 +833,7 @@ cases:
   context:
     project: {name: fixture-service}
   rendered: |
-    # Promotion and rollback consume signed build bytes; never rebuild or accept a loose image tag.
+    # La promoción y el rollback consumen bytes de build firmados; nunca se reconstruye ni se acepta un tag de imagen suelto.
     name: deploy
     on:
       workflow_run:
@@ -883,7 +883,7 @@ cases:
           values-revision: ${{ steps.build.outputs.values-revision }}
           previous-manifest-sha256: ${{ steps.build.outputs.previous-manifest-sha256 }}
         steps:
-          # Immutable internal release: axiz-workflows-trust must succeed first.
+          # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
           # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
           - uses: edgarrth/java-framework-custom/.github/actions/resolve-service-build@@AXIZ_WORKFLOWS_RELEASE@
             id: build
@@ -904,7 +904,7 @@ cases:
           id-token: write
         needs: [axiz-workflows-trust, automatic]
         if: ${{ needs.axiz-workflows-trust.result == 'success' && (!cancelled() && (github.event_name == 'workflow_dispatch' || (needs.automatic.result == 'success' && needs.automatic.outputs.eligible == 'true'))) }}
-        # Immutable internal release: axiz-workflows-trust must succeed first.
+        # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
         # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
         uses: edgarrth/java-framework-custom/.github/workflows/service-deploy.yaml@@AXIZ_WORKFLOWS_RELEASE@
         with:
@@ -925,7 +925,7 @@ cases:
   context:
     project: {name: fixture-service, moduleYaml: '''service & <module> ''''quote'''''''}
   rendered: |
-    # Promotion and rollback consume signed build bytes; never rebuild or accept a loose image tag.
+    # La promoción y el rollback consumen bytes de build firmados; nunca se reconstruye ni se acepta un tag de imagen suelto.
     name: deploy
     on:
       workflow_run:
@@ -975,7 +975,7 @@ cases:
           values-revision: ${{ steps.build.outputs.values-revision }}
           previous-manifest-sha256: ${{ steps.build.outputs.previous-manifest-sha256 }}
         steps:
-          # Immutable internal release: axiz-workflows-trust must succeed first.
+          # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
           # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
           - uses: edgarrth/java-framework-custom/.github/actions/resolve-service-build@@AXIZ_WORKFLOWS_RELEASE@
             id: build
@@ -996,7 +996,7 @@ cases:
           id-token: write
         needs: [axiz-workflows-trust, automatic]
         if: ${{ needs.axiz-workflows-trust.result == 'success' && (!cancelled() && (github.event_name == 'workflow_dispatch' || (needs.automatic.result == 'success' && needs.automatic.outputs.eligible == 'true'))) }}
-        # Immutable internal release: axiz-workflows-trust must succeed first.
+        # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
         # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
         uses: edgarrth/java-framework-custom/.github/workflows/service-deploy.yaml@@AXIZ_WORKFLOWS_RELEASE@
         with:
@@ -1014,4 +1014,4 @@ cases:
           GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
 normalization: {token: '@AXIZ_WORKFLOWS_RELEASE@', pattern: '(?<![A-Za-z0-9_.-])axiz-workflows-v2\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)(?![A-Za-z0-9_.-])'}
-normalizedTemplateSha256: 35b828022f1c9396f26396058fd5c506056b2248d8989fb314beeddd0e489035
+normalizedTemplateSha256: 2daaedd273880d4b723435aa40f7df456c0b898850811fc9d59fdb1c34171e8e

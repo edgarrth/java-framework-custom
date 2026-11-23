@@ -2,7 +2,9 @@ package pe.axiz.core.tokenization.vault;
 
 import org.jspecify.annotations.Nullable;
 
-/** Job progress; conflicts require another traversal and do not imply successful migration. */
+/**
+ * Progreso del job; los conflictos requieren otro recorrido y no implican una migración exitosa.
+ */
 public record VaultMaintenanceBatch(
     int inspected, int migrated, int changed, @Nullable String nextCursor) {
   public VaultMaintenanceBatch {

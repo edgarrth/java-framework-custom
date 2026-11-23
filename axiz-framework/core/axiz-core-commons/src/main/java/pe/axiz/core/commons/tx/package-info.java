@@ -1,4 +1,4 @@
-/** Framework-neutral transaction boundary. */
+/** Frontera transaccional neutral respecto del framework. */
 @NullMarked
 package pe.axiz.core.commons.tx;
 

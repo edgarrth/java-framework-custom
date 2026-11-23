@@ -25,7 +25,8 @@ import pe.axiz.core.tokenization.TokenizerCapabilities;
 import reactor.core.publisher.Mono;
 
 /**
- * Native remote API; relay identity is read at subscription from that subscriber's Reactor context.
+ * API remota nativa; la identidad de relay se lee al suscribirse desde el contexto de Reactor de
+ * ese suscriptor.
  */
 public final class ReactiveRemoteTokenizer implements ReactiveTokenizer {
   @SuppressFBWarnings(

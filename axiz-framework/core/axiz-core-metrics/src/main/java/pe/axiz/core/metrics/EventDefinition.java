@@ -6,15 +6,16 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Optional catalog entry for an event: fixes its category, the unit of its value and the histogram
- * buckets (SLOs) of its distributions. Events work without a definition.
+ * Entrada opcional del catálogo para un evento: fija su categoría, la unidad de su valor y los
+ * buckets del histograma (SLO) de sus distribuciones. Los eventos funcionan sin una definición.
  *
- * @param name event name
- * @param category category
- * @param valueUnit unit of {@code axiz.events.value} for this event (records, items, points...)
- * @param durationSlos duration buckets
- * @param amountSlos amount buckets
- * @param valueSlos value buckets
+ * @param name nombre del evento
+ * @param category categoría
+ * @param valueUnit unidad de {@code axiz.events.value} para este evento (registros, ítems, puntos,
+ *     etc.)
+ * @param durationSlos buckets de duración
+ * @param amountSlos buckets de monto
+ * @param valueSlos buckets de valor
  */
 public record EventDefinition(
     String name,

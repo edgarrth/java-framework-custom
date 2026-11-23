@@ -15,9 +15,10 @@ import pe.axiz.spring.aws.AwsIdentity;
 import pe.axiz.spring.r2dbc.DatabasePasswordProviderFactory;
 
 /**
- * IAM database authentication for Aurora ({@code axiz.r2dbc.iam.enabled=true}): every new
- * connection of the pool, and the Flyway migration at startup, authenticate with a short-lived
- * token signed with the pod's credentials. No database password exists in the secret store.
+ * Autenticación de base de datos IAM para Aurora ({@code axiz.r2dbc.iam.enabled=true}): cada
+ * conexión nueva del pool, y la migración Flyway en el arranque, se autentican con un token de vida
+ * corta firmado con las credenciales del pod. No existe ninguna contraseña de base de datos en el
+ * almacén de secretos.
  */
 @AutoConfiguration(
     beforeName = "org.springframework.boot.r2dbc.autoconfigure.R2dbcAutoConfiguration")

@@ -67,9 +67,7 @@ import pe.axiz.structure.layered.CrudAction;
 import pe.axiz.structure.layered.spring.CrudController;
 import pe.axiz.structure.layered.spring.JpaCrudService;
 
-/**
- * Real HTTP, signed JWT and PostgreSQL regression of the original H-07 mass-assignment/IDOR cases.
- */
+/** Regresión con HTTP real, JWT firmado y PostgreSQL de los casos de asignación masiva e IDOR. */
 class CrudAcceptanceIT {
   private static final PostgreSQLContainer POSTGRES = TestContainerImages.postgres();
   private static AnnotationConfigServletWebServerApplicationContext context;

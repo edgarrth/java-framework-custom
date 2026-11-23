@@ -91,37 +91,39 @@ Estos tests comprueban claims, configuración, selección de stack, dependencias
 protocolo de publicación con dobles controlados. No acreditan por sí solos JWT remoto, red HTTP,
 proveedores reales, políticas IAM, sellado persistente integrado ni cumplimiento PCI DSS.
 
-## HTTP and in-process clients
+## Clientes HTTP y en proceso
 
-The server registers five fixed POST routes: `/v1/tokens`, `/v1/tokens/lookup`,
-`/v1/tokens/describe`, `/v1/tokens/reveal`, `/v1/tokens/delete`. Requests contain type/domain and
-value or token; caller, tenant and authorities are obtained only from an authenticated JWT.
-The resolver accepts the framework's `AxizAuthentication`. It does not verify signatures itself:
-the resource-server security chain must validate issuer, audience, signature and token lifetime.
-The engine then checks operation scopes, registered profile/domain and purpose.
+El servidor registra cinco rutas POST fijas: `/v1/tokens`, `/v1/tokens/lookup`,
+`/v1/tokens/describe`, `/v1/tokens/reveal`, `/v1/tokens/delete`. Las peticiones contienen tipo y dominio
+y un valor o token; el llamador, el tenant y las autoridades se obtienen solo de un JWT autenticado.
+El resolvedor acepta el `AxizAuthentication` del framework. No verifica firmas por sí mismo: la cadena de
+seguridad del resource server debe validar emisor, audiencia, firma y vigencia del token. Luego el motor
+comprueba los scopes de la operación, el perfil y dominio registrados y el propósito.
 
-Transport must be HTTPS. `axiz.tokenization.vault.http.allow-insecure=true` is permitted only with
-`axiz.config.environment=local|test|ci`; a forwarded header is not accepted directly as proof of TLS.
-At a TLS-terminating ingress, configure Spring's trusted proxy handling and restrict network access
-to that ingress. Requests are UTF-8 JSON, bounded to 64 KiB, with duplicate keys and unknown fields
-rejected. Value contents are limited separately to 8192 UTF-8 bytes. Query parameters,
-`Content-Encoding` and generic `Idempotency-Key` requests are rejected.
+El transporte debe ser HTTPS. `axiz.tokenization.vault.http.allow-insecure=true` se permite solo con
+`axiz.config.environment=local|test|ci`; una cabecera reenviada no se acepta directamente como prueba de
+TLS. En un ingress que termina TLS se configura el manejo de proxies confiables de Spring y se restringe
+el acceso de red a ese ingress. Las peticiones son JSON UTF-8, limitadas a 64 KiB, y se rechazan las
+claves duplicadas y los campos desconocidos. El contenido de los valores se limita por separado a 8192
+bytes UTF-8. Se rechazan los parámetros de consulta, `Content-Encoding` y las peticiones con
+`Idempotency-Key` genérico.
 
-Successful tokenization returns 201 for creation or 200 for an existing association. Lookup and
-describe return a permitted result or `AXZ-TOKEN-0404`. Reveal writes the authorized canonical value
-through a private codec after strict audit confirmation. Delete returns 204 with no body and
-`X-Axiz-Token-Deleted: true|false`, preserving the Java boolean result without putting a token in a URL.
-All protected routes enforce `Cache-Control: no-store`, including security errors. Rate limiting
-returns a bounded `Retry-After`; `AXZ-TOKEN-0504` remains nonretryable uncertainty.
+Una tokenización exitosa devuelve 201 al crear o 200 para una asociación existente. Lookup y describe
+devuelven un resultado permitido o `AXZ-TOKEN-0404`. Reveal escribe el valor canónico autorizado mediante
+un codec privado después de la confirmación estricta de la auditoría. Delete devuelve 204 sin cuerpo y
+`X-Axiz-Token-Deleted: true|false`, conservando el resultado booleano de Java sin poner un token en una URL.
+Todas las rutas protegidas imponen `Cache-Control: no-store`, incluidos los errores de seguridad. El límite
+de tasa devuelve un `Retry-After` acotado; `AXZ-TOKEN-0504` sigue siendo una incertidumbre no reintentable.
 
-The shared `HttpPayloadPolicy` veto prevents built-in logging and idempotency filters from capturing
-these route bodies, including encoded/matrix path variants. Detailed Spring request logging is
-rejected at startup. Application-provided interceptors, proxies and APM agents must likewise avoid
-payload capture. This policy cannot control instrumentation installed outside the framework.
-Owned buffers and late values are closed on termination/cancellation; immutable strings and copies
-retained by the HTTP/TLS implementation have only best-effort memory erasure.
+El veto compartido `HttpPayloadPolicy` impide que los filtros incorporados de logging e idempotencia
+capturen los cuerpos de estas rutas, incluidas las variantes de ruta codificadas o con matrix. El logging
+detallado de peticiones de Spring se rechaza al arranque. Los interceptores, proxies y agentes APM
+provistos por la aplicación también deben evitar capturar payloads. Esta política no puede controlar la
+instrumentación instalada fuera del framework. Los buffers propios y los valores tardíos se cierran al
+terminar o cancelar; los strings inmutables y las copias que retenga la implementación HTTP/TLS solo tienen
+un borrado de memoria de mejor esfuerzo.
 
-`CallerBoundTokenizer` resolves imperative security context at each invocation and delegates to
-`VaultOperations`. `ReactiveCallerBoundTokenizer` resolves identity within each subscription and
-calls `AsyncVaultOperations`; it does not wrap synchronous storage or infer identity in a future
-from thread-local state. For a separate service, use the consumer starter instead.
+`CallerBoundTokenizer` resuelve el contexto de seguridad imperativo en cada invocación y delega en
+`VaultOperations`. `ReactiveCallerBoundTokenizer` resuelve la identidad dentro de cada suscripción y llama
+a `AsyncVaultOperations`; no envuelve almacenamiento síncrono ni deduce la identidad en un future a partir
+del estado ligado al hilo. Para un servicio separado se usa el starter del consumidor.

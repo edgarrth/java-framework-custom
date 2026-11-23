@@ -20,11 +20,11 @@ import pe.axiz.core.errors.ValidationException;
 import pe.axiz.structure.layered.CrudService;
 
 /**
- * Map-backed {@link CrudService} for tests only. Does not provide production authorization or
- * persistence.
+ * {@link CrudService} respaldado por un mapa, exclusivo para pruebas. No aporta autorización ni
+ * persistencia de producción.
  *
- * @param <T> resource type
- * @param <I> id type (comparable, for a stable order)
+ * @param <T> tipo de recurso
+ * @param <I> tipo de id (comparable, para un orden estable)
  */
 public class InMemoryCrudService<T, I extends Comparable<I>> implements CrudService<T, T, I> {
 
@@ -35,12 +35,14 @@ public class InMemoryCrudService<T, I extends Comparable<I>> implements CrudServ
   private final Map<I, T> items = new ConcurrentHashMap<>();
 
   /**
-   * Creates the service.
+   * Crea el servicio.
    *
-   * @param resourceName name used in errors
-   * @param idOf extracts the id of a resource
-   * @param withId returns the resource with the given id and advanced version (for updates)
-   * @param versionOf extracts the version used for update and delete preconditions
+   * @param resourceName nombre que se usa en los errores
+   * @param idOf extrae el id de un recurso
+   * @param withId devuelve el recurso con el id indicado y la versión avanzada (para
+   *     actualizaciones)
+   * @param versionOf extrae la versión que se usa en las precondiciones de actualización y
+   *     eliminación
    */
   @SuppressFBWarnings(
       value = "CT_CONSTRUCTOR_THROW",

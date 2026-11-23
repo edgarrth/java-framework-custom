@@ -16,7 +16,7 @@ import pe.axiz.kit.dynamodb.EncryptedAttributeConverter;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbConvertedBy;
 
-/** Mapping canaries; not executable persistence entities. */
+/** Canarios de mapeo; no son entidades de persistencia ejecutables. */
 public class MappingShapes {
   public abstract static class DynamoEncryption extends EncryptedAttributeConverter {
     protected DynamoEncryption(FieldEncryptor encryptor) {

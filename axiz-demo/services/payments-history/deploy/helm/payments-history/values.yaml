@@ -14,7 +14,7 @@ serviceAccount:
 sharedConfigMap: axiz-common-2-0-0
 javaOpts: -XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/./urandom
 env: []
-# Select imports before application.yaml and mounted ConfigMaps are loaded.
+# Las importaciones se seleccionan antes de cargar application.yaml y los ConfigMaps montados.
 configBootstrap:
   parameterStore:
     enabled: false

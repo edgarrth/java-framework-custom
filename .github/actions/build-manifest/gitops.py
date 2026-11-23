@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write a verified deployment and signed audit into GitOps with an optimistic concurrency check."""
+"""Escribe un despliegue verificado y una auditoría firmada en GitOps con un control de concurrencia optimista."""
 import argparse
 import base64
 import hashlib
@@ -21,7 +21,7 @@ def git(root, *args, env=None):
 
 
 def regular_target(root, relative):
-    """Existing parents are never followed through a symlink, including a missing target."""
+    """Los directorios padre existentes nunca se siguen a través de un enlace simbólico, incluido uno con destino inexistente."""
     target = Path(root) / relative
     for parent in [target, *target.parents]:
         if parent == Path(root):
@@ -85,7 +85,7 @@ def publish(remote, branch, prepared, manifest_hash, environment, previous, reco
                GIT_CONFIG_COUNT="2", GIT_CONFIG_KEY_0="http.https://github.com/.extraheader",
                GIT_CONFIG_VALUE_0="AUTHORIZATION: basic " + base64.b64encode(("x-access-token:" + token).encode()).decode(),
                GIT_CONFIG_KEY_1="core.hooksPath", GIT_CONFIG_VALUE_1=os.devnull)
-    # Authentication is process-local: neither the clone URL nor .git/config stores the token.
+        # La autenticación es local al proceso: ni la URL de clonado ni .git/config guardan el token.
     with tempfile.TemporaryDirectory(prefix="axiz-gitops-") as temporary:
         root = Path(temporary) / "repository"
         subprocess.run(["git", "clone", "--quiet", "--depth", "1", "--branch", branch,

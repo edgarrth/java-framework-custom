@@ -38,7 +38,8 @@ import pe.axiz.test.support.MutableClock;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * At-least-once redelivery after a lost ack preserves one business effect across recreated workers.
+ * La reentrega al menos una vez tras un ack perdido preserva un único efecto de negocio entre
+ * workers recreados.
  */
 class PostgresReplayIT {
   private static final PostgreSQLContainer POSTGRES = TestContainerImages.postgres();
@@ -104,8 +105,9 @@ class PostgresReplayIT {
     assertEquals(1, before.relayOnce().retried());
     assertEquals(1, store.countPending());
     assertEquals(1, effects());
-    // New datasource identities ensure the receiver commits independently from the sender.
-    // No worker object or inbox object from the first delivery is retained.
+    // Las identidades nuevas de datasource garantizan que el receptor confirma de forma
+    // independiente del emisor.
+    // No se conserva ningún objeto worker ni inbox de la primera entrega.
     var restartedTx = new JdbcTransactions(source());
     var restartedStore =
         new JdbcOutboxStore(restartedTx, restartedTx, "axiz_outbox", Dialect.POSTGRESQL);
@@ -122,7 +124,8 @@ class PostgresReplayIT {
         0,
         restarted.relayOnce().published(),
         "Advancing the application clock cannot make a database retry eligible");
-    // Establish database eligibility explicitly; do not wait for wall time in this regression.
+    // Se establece la elegibilidad en la base de datos de forma explícita; esta regresión no espera
+    // tiempo de reloj real.
     try (var connection = source().getConnection();
         var statement = connection.createStatement()) {
       assertEquals(

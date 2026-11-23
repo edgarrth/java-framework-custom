@@ -3,14 +3,14 @@ package pe.axiz.codegen.model;
 import java.util.Locale;
 import java.util.Set;
 
-/** Application structure and the execution stacks it supports. */
+/** Estructura de la aplicación y los stacks de ejecución que soporta. */
 public enum Structure {
   LAYERED(true),
   HEXAGONAL(true),
   EDA(true),
   BFF(true),
   BATCH(false),
-  /** Platform archetypes (library, starter) have no style. */
+  /** Los arquetipos de plataforma (library, starter) no tienen estilo. */
   NONE(false);
 
   private final boolean reactive;
@@ -19,7 +19,7 @@ public enum Structure {
     this.reactive = reactive;
   }
 
-  /** The stacks the style supports; an unmodifiable set, servlet always included. */
+  /** Los stacks que soporta el estilo; un conjunto no modificable que siempre incluye servlet. */
   public Set<Stack> stacks() {
     return reactive ? Set.of(Stack.SERVLET, Stack.REACTIVE) : Set.of(Stack.SERVLET);
   }
@@ -28,7 +28,7 @@ public enum Structure {
     return name().toLowerCase(Locale.ROOT);
   }
 
-  /** Maven artifact of the style starter, or null for {@link #NONE}. */
+  /** Artefacto Maven del starter del estilo, o null para {@link #NONE}. */
   public String starter() {
     return this == NONE ? "" : "axiz-structure-" + id() + "-spring-boot-starter";
   }

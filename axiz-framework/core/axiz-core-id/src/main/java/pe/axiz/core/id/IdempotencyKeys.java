@@ -7,7 +7,10 @@ import java.util.Base64;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
-/** Idempotency keys: validation of client keys and deterministic derivation from parts. */
+/**
+ * Claves de idempotencia: validación de las claves del cliente y derivación determinista a partir
+ * de partes.
+ */
 public final class IdempotencyKeys {
 
   private static final Pattern SAFE = Pattern.compile("^[A-Za-z0-9._:-]{16,128}$");
@@ -23,11 +26,11 @@ public final class IdempotencyKeys {
   }
 
   /**
-   * Deterministic key from business parts, e.g. {@code derive("payout", batchId, line)}. The same
-   * parts always give the same key (base64url SHA-256, 43 characters).
+   * Clave determinista a partir de partes de negocio, por ejemplo {@code derive("payout", batchId,
+   * line)}. Las mismas partes siempre dan la misma clave (SHA-256 en base64url, 43 caracteres).
    *
-   * @param parts business identifiers
-   * @return the derived key
+   * @param parts identificadores de negocio
+   * @return la clave derivada
    */
   public static String derive(String... parts) {
     if (parts.length == 0) {

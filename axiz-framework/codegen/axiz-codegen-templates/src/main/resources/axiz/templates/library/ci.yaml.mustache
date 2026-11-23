@@ -1,5 +1,5 @@
 {{=<% %>=}}
-# Build only. deploy.yaml independently consumes a completed successful run and manifest hash.
+# Solo build. deploy.yaml consume de forma independiente una ejecución completada con éxito y el hash del manifiesto.
 name: ci
 on:
   pull_request:
@@ -79,7 +79,7 @@ jobs:
       actions: read
     needs: axiz-workflows-trust
     if: ${{ needs.axiz-workflows-trust.result == 'success' && (github.event_name == 'pull_request') }}
-    # Immutable internal release: axiz-workflows-trust must succeed first.
+    # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
     uses: edgarrth/java-framework-custom/.github/workflows/pr.yaml@axiz-workflows-v2.0.0
     secrets:
@@ -95,7 +95,7 @@ jobs:
       actions: read
       id-token: write
     needs: [axiz-workflows-trust, parameters]
-    # Immutable internal release: axiz-workflows-trust must succeed first.
+    # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
     uses: edgarrth/java-framework-custom/.github/workflows/lib-build.yaml@axiz-workflows-v2.0.0
     with:

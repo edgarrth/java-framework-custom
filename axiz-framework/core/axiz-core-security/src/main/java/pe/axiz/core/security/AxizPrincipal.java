@@ -8,18 +8,18 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Authenticated caller, built from the access token claims. It is serializable because Spring
- * Security keeps the authentication in the HTTP session when the service uses one; the claims it
- * copies are serializable values, as in the token itself.
+ * Llamador autenticado, construido a partir de los claims del token de acceso. Es serializable
+ * porque Spring Security conserva la autenticación en la sesión HTTP cuando el servicio usa una;
+ * los claims que copia son valores serializables, como en el propio token.
  *
- * @param subject end user id ({@code sub}); null for machine-to-machine tokens
- * @param clientId calling application ({@code azp} or {@code client_id})
- * @param issuer token issuer
- * @param audience token audiences
- * @param scopes granted scopes
- * @param roles granted roles
- * @param tenantId tenant, for multi-tenant services
- * @param attributes other mapped claims
+ * @param subject id del usuario final ({@code sub}); null para tokens máquina a máquina
+ * @param clientId aplicación que llama ({@code azp} o {@code client_id})
+ * @param issuer emisor del token
+ * @param audience audiencias del token
+ * @param scopes scopes concedidos
+ * @param roles roles concedidos
+ * @param tenantId tenant, para servicios multi-tenant
+ * @param attributes otros claims mapeados
  */
 public record AxizPrincipal(
     @Nullable String subject,
@@ -49,22 +49,24 @@ public record AxizPrincipal(
     return roles.contains(role);
   }
 
-  /** Whether the token represents an application acting on its own (no end user). */
+  /** Indica si el token representa a una aplicación que actúa por sí misma (sin usuario final). */
   public boolean isMachine() {
     return subject == null || subject.equals(clientId);
   }
 
-  /** Name used in logs and audit: the subject, or the client for machine tokens. */
+  /** Nombre usado en logs y auditoría: el subject o, para tokens de máquina, el cliente. */
   public String name() {
     return subject != null ? subject : clientId;
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción nominal; build verifica los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable String subject = null;
     private @Nullable String clientId = null;

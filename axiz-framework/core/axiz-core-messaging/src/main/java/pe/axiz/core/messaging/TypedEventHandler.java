@@ -5,11 +5,12 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
 /**
- * Base class of event handlers: the event type comes from {@link HandlesEvent} and the payload type
- * from the generic argument, so subclasses only implement {@link #on}. Handlers must be idempotent;
- * the inbox removes duplicates and they run in one transaction with the outbox.
+ * Clase base de los handlers de eventos: el tipo de evento proviene de {@link HandlesEvent} y el
+ * tipo del payload del argumento genérico, de modo que las subclases solo implementan {@link #on}.
+ * Los handlers deben ser idempotentes; el inbox elimina duplicados y corren en una transacción
+ * junto con el outbox.
  *
- * @param <T> payload type
+ * @param <T> tipo del payload
  */
 public abstract class TypedEventHandler<T> implements EventHandler<T> {
 
@@ -26,7 +27,7 @@ public abstract class TypedEventHandler<T> implements EventHandler<T> {
     this.payloadType = resolvePayload(getClass(), TypedEventHandler.class);
   }
 
-  /** Handles one event. */
+  /** Maneja un evento. */
   protected abstract void on(T payload, EventEnvelope envelope) throws Exception;
 
   @Override
@@ -44,7 +45,7 @@ public abstract class TypedEventHandler<T> implements EventHandler<T> {
     return payloadType;
   }
 
-  /** Resolves the inherited event annotation for handler implementations. */
+  /** Resuelve la anotación de evento heredada para las implementaciones de handlers. */
   public static String eventTypeOf(Class<?> type) {
     HandlesEvent annotation = type.getAnnotation(HandlesEvent.class);
     if (annotation == null) {
@@ -53,7 +54,7 @@ public abstract class TypedEventHandler<T> implements EventHandler<T> {
     return annotation.value();
   }
 
-  /** Resolves the concrete payload of a typed handler base class. */
+  /** Resuelve el payload concreto de una clase base de handler tipado. */
   @SuppressWarnings("unchecked")
   public static <T> Class<T> resolvePayload(Class<?> type, Class<?> base) {
     for (Class<?> c = type; c != null && c != Object.class; c = c.getSuperclass()) {

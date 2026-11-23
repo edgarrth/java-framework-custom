@@ -155,7 +155,7 @@ class NativeReactiveCqrsTest {
         .verify(T);
     assertTrue(store.pending.isCancelled());
     assertTrue(store.released.await(5, TimeUnit.SECONDS));
-    // Cancellation cannot prove absence of an effect; the same command remains reserved.
+    // La cancelación no puede probar la ausencia de un efecto; el mismo comando sigue reservado.
     store.holdCompletion = false;
     StepVerifier.create(
             behavior

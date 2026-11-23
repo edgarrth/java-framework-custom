@@ -51,7 +51,10 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 
-/** Business effects and inbox completion must share the actual Spring R2DBC resource. */
+/**
+ * Los efectos de negocio y la finalización del inbox deben compartir el recurso R2DBC real de
+ * Spring.
+ */
 @ExtendWith(BlockHoundExtension.class)
 @Timeout(60)
 class PostgresInboxAtomicityIT {
@@ -98,7 +101,8 @@ class PostgresInboxAtomicityIT {
           new String(input.readAllBytes(), StandardCharsets.UTF_8)
               .replaceAll("(?m)--.*", "")
               .split(";")) if (!sql.isBlank()) statement.execute(sql);
-      // No unique business key: duplicate suppression is proven by the framework, not the fixture.
+      // Sin clave de negocio única: la supresión de duplicados la prueba el framework, no el
+      // fixture.
       statement.execute("CREATE TABLE inbox_effects(id VARCHAR(100))");
     }
     handler = new Handler(DatabaseClient.create(factory));

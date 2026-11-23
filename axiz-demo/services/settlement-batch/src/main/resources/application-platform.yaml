@@ -1,4 +1,4 @@
-# Profile "platform": the whole demo on one machine (../../local/compose.yaml), with "local".
-# Loads the sample file the LocalStack init uploads.
+# Perfil "platform": toda la demo en una máquina (../../local/compose.yaml), junto con "local".
+# Carga el archivo de ejemplo que sube el init de LocalStack.
 settlement:
   input-key: in/settlement/NET-SETTLE-SAMPLE.txt

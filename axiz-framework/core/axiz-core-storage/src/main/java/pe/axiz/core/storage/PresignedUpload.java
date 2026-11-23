@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-/** Upload URL and headers to send in addition to the host derived from the URL. */
+/** URL de subida y cabeceras a enviar además del host derivado de la URL. */
 public record PresignedUpload(URI url, Map<String, List<String>> headers) {
   public PresignedUpload {
     Objects.requireNonNull(url);
@@ -27,7 +27,10 @@ public record PresignedUpload(URI url, Map<String, List<String>> headers) {
     return headers;
   }
 
-  /** Signed URLs and header values are credentials and must not appear in diagnostic strings. */
+  /**
+   * Las URL firmadas y los valores de cabecera son credenciales y no deben aparecer en cadenas de
+   * diagnóstico.
+   */
   @Override
   public String toString() {
     return "PresignedUpload[url=<redacted>, headers=" + headers.keySet() + "]";

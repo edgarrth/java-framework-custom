@@ -11,8 +11,9 @@ import pe.axiz.payments.orders.domain.PaymentStatus;
 import pe.axiz.spring.outbox.TransactionalEvents;
 
 /**
- * {@link PaymentEvents} through the transactional outbox: the event row commits with the order and
- * the relay publishes it to MSK (destination {@code payments}). Payloads carry no account numbers.
+ * {@link PaymentEvents} mediante el outbox transaccional: la fila del evento se confirma junto con
+ * la orden y el relay la publica en MSK (destino {@code payments}). Los payloads no llevan números
+ * de cuenta.
  */
 @Component
 public class PaymentEventsOutboxAdapter implements PaymentEvents {
@@ -21,18 +22,19 @@ public class PaymentEventsOutboxAdapter implements PaymentEvents {
   static final String AGGREGATE = "payment-order";
 
   /**
-   * Payload of {@code payment-order.created.v1}. It carries the accounts the payment process needs:
-   * the {@code payments} topic is internal (MSK with TLS and IAM authorization per consumer) and
-   * the account fields are sensitive, so they are masked in every log and audit record.
+   * Payload de {@code payment-order.created.v1}. Lleva las cuentas que necesita el proceso de
+   * pagos: el tópico {@code payments} es interno (MSK con TLS y autorización IAM por consumidor) y
+   * los campos de cuenta son sensibles, por lo que se enmascaran en cada log y registro de
+   * auditoría.
    *
-   * @param orderId order
-   * @param operationNumber operation number
-   * @param customerId customer
-   * @param debtorAccount account to debit
-   * @param creditorCci destination account
-   * @param amount amount
-   * @param currency currency
-   * @param processingDate processing date (ISO)
+   * @param orderId orden
+   * @param operationNumber número de operación
+   * @param customerId cliente
+   * @param debtorAccount cuenta que se debita
+   * @param creditorCci cuenta de destino
+   * @param amount monto
+   * @param currency moneda
+   * @param processingDate fecha de procesamiento (ISO)
    */
   public record PaymentOrderCreated(
       String orderId,
@@ -45,13 +47,13 @@ public class PaymentEventsOutboxAdapter implements PaymentEvents {
       String processingDate) {}
 
   /**
-   * Payload of {@code payment-order.status-changed.v1}.
+   * Payload de {@code payment-order.status-changed.v1}.
    *
-   * @param orderId order
-   * @param customerId customer
-   * @param previous previous status
-   * @param status new status
-   * @param reason reason of the change
+   * @param orderId orden
+   * @param customerId cliente
+   * @param previous estado previo
+   * @param status estado nuevo
+   * @param reason motivo del cambio
    */
   public record PaymentOrderStatusChanged(
       String orderId, String customerId, String previous, String status, String reason) {}

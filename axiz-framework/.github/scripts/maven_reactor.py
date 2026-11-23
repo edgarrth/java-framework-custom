@@ -1,4 +1,4 @@
-"""Inventory the actual Maven reactor, excluding stale target folders and unrelated POM files."""
+"""Inventaría el reactor real de Maven, excluyendo carpetas target obsoletas y archivos POM no relacionados."""
 from defusedxml import ElementTree as ET
 
 NS = {"m": "http://maven.apache.org/POM/4.0.0"}
@@ -8,7 +8,7 @@ def text(node, path, default=""):
 
 
 def modules(root):
-    """Follow the actual reactor, never accidentally approve samples or stale target POMs."""
+    """Sigue el reactor real; nunca aprueba por accidente samples ni POM obsoletos de target."""
     found = {}
     def visit(pom):
         project = ET.parse(pom).getroot()

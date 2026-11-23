@@ -15,7 +15,7 @@ class ReleaseActionParityTest(unittest.TestCase):
         self.spec=json.loads((ROOT/action.POLICY).read_text())
         for relative in [action.POLICY,*action.WORKFLOWS,*[p/name for p in action.PACKAGES for name in ('package.json','package-lock.json')]]:
             target=self.root/relative;target.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(ROOT/relative,target)
-        # Tests synthesize the exact registered bytes from the prepared immutable tool input.
+                # Las pruebas sintetizan los bytes registrados exactos a partir de la entrada inmutable preparada de la herramienta.
         import os
         cache=os.environ.get('AXIZ_RELEASE_ACTION_CACHE')
         if not cache:raise RuntimeError('Prepare AXIZ_RELEASE_ACTION_CACHE before offline policy tests')

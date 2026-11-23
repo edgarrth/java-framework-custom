@@ -10,8 +10,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 import pe.axiz.core.messaging.EventHandler;
 
 /**
- * Wraps every blocking {@link EventHandler} bean in a transaction when a transaction manager
- * exists; reactive handlers are wrapped by {@link ReactiveEventHandlerPostProcessor}.
+ * Envuelve cada bean {@link EventHandler} bloqueante en una transacción cuando existe un gestor de
+ * transacciones; los handlers reactivos los envuelve {@link ReactiveEventHandlerPostProcessor}.
  */
 public final class TransactionalEventHandlerPostProcessor implements BeanPostProcessor {
 

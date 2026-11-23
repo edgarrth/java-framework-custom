@@ -3,11 +3,11 @@ package pe.axiz.payments.networkgateway.domain;
 import java.util.Objects;
 
 /**
- * A transfer accepted by the payment network.
+ * Transferencia aceptada por la red de pagos.
  *
- * @param id network id
- * @param status settled or pending
- * @param reference end-to-end reference
+ * @param id id en la red
+ * @param status liquidada o pendiente
+ * @param reference referencia de extremo a extremo
  */
 public record Transfer(String id, TransferStatus status, String reference) {
 

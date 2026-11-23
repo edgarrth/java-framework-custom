@@ -11,7 +11,10 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import pe.axiz.core.commons.Environments;
 
-/** JPA and pool defaults; production schema changes require explicit migrations. */
+/**
+ * Valores por defecto de JPA y del pool; los cambios de esquema en producción requieren migraciones
+ * explícitas.
+ */
 public class AxizJpaEnvironmentPostProcessor implements EnvironmentPostProcessor, Ordered {
 
   static final String SOURCE = "axizJpaDefaults";

@@ -28,7 +28,10 @@ import pe.axiz.spring.httpclient.AxizHttpClientAutoConfiguration;
 import pe.axiz.spring.tokenization.AxizTokenizationRemoteAutoConfiguration;
 import pe.axiz.spring.tokenization.ReactiveTokenizer;
 
-/** Consumer wire contract. The loopback peer is a protocol fixture, not a deployable vault. */
+/**
+ * Contrato de transporte del consumidor. El par de loopback es un fixture del protocolo, no una
+ * bóveda desplegable.
+ */
 class RemoteTokenClientRecipeTest {
   @Test
   void remoteConsumersSendIdentityAndReceiveOnlyOpaqueTokensOnBothStacks(TestReporter evidence)

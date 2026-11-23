@@ -8,8 +8,8 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /**
- * RFC 4180 CSV writer. With {@code protectFormulas} values starting with {@code = + - @} are
- * prefixed with a quote so spreadsheets do not execute them (CSV injection).
+ * Escritor CSV RFC 4180. Con {@code protectFormulas}, a los valores que empiezan con {@code = +
+ * - @} se les antepone una comilla para que las hojas de cálculo no los ejecuten (inyección CSV).
  */
 public final class CsvWriter implements AutoCloseable {
 

@@ -8,7 +8,10 @@ import java.security.MessageDigest;
 import java.util.Arrays;
 import pe.axiz.core.tokenization.SensitiveValue;
 
-/** Owned UTF-8 boundary buffers; malformed authenticated data still cannot become a value. */
+/**
+ * Buffers propios de frontera UTF-8; los datos autenticados mal formados igualmente no pueden
+ * convertirse en un valor.
+ */
 final class VaultText {
   private VaultText() {}
 

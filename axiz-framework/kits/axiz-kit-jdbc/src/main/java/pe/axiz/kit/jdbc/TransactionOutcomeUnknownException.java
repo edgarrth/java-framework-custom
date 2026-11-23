@@ -4,8 +4,8 @@ import java.sql.SQLException;
 import pe.axiz.core.commons.tx.UnknownTransactionOutcome;
 
 /**
- * The database did not confirm commit. The caller must reconcile the outcome before retrying: the
- * transaction may already have committed.
+ * La base de datos no confirmó el commit. Quien llama debe reconciliar el resultado antes de
+ * reintentar: la transacción puede haber hecho commit.
  */
 public final class TransactionOutcomeUnknownException extends SQLException
     implements UnknownTransactionOutcome {

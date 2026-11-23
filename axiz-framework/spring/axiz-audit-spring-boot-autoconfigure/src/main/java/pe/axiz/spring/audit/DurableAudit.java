@@ -7,7 +7,10 @@ import pe.axiz.core.audit.AuditChainState;
 import pe.axiz.core.audit.AuditPublisher;
 import pe.axiz.core.outbox.OutboxWriter;
 
-/** Wires {@link TransactionalAuditPublisher}; loaded only when durable audit is enabled. */
+/**
+ * Cablea {@link TransactionalAuditPublisher}; solo se carga cuando la auditoría durable está
+ * habilitada.
+ */
 final class DurableAudit {
 
   private DurableAudit() {}

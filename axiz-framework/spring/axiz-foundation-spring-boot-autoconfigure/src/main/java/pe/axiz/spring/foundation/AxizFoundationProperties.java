@@ -10,11 +10,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
- * Foundation settings ({@code axiz.foundation.*}), normally in the {@code axiz-common} ConfigMap.
+ * Configuración base ({@code axiz.foundation.*}), normalmente en el ConfigMap {@code axiz-common}.
  *
- * @param zone business time zone
- * @param calendar business calendar
- * @param cutoff daily cut-off time, if the service uses one
+ * @param zone zona horaria del negocio
+ * @param calendar calendario de negocio
+ * @param cutoff hora de corte diaria, si el servicio usa una
  */
 @ConfigurationProperties("axiz.foundation")
 public record AxizFoundationProperties(
@@ -23,11 +23,11 @@ public record AxizFoundationProperties(
     @Nullable LocalTime cutoff) {
 
   /**
-   * Business calendar definition.
+   * Definición del calendario de negocio.
    *
-   * @param weekend non-working days of the week
-   * @param recurringHolidays holidays repeated every year, as {@code MM-dd}
-   * @param holidays one-off holidays
+   * @param weekend días no laborables de la semana
+   * @param recurringHolidays feriados que se repiten cada año, como {@code MM-dd}
+   * @param holidays feriados puntuales
    */
   public record Calendar(
       @DefaultValue({"SATURDAY", "SUNDAY"}) List<DayOfWeek> weekend,

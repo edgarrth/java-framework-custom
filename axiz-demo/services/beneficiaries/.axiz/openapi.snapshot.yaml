@@ -5,7 +5,7 @@ info:
   description: Frequent beneficiaries of each customer (DynamoDB, soft delete).
 tags:
   - name: beneficiaries
-# Customers manage only their own beneficiaries; the service checks the customer of the path.
+# Los clientes gestionan solo sus propios beneficiarios; el servicio verifica el cliente de la ruta.
 security: [{oauth2: []}]
 paths:
   /v1/customers/{customerId}/beneficiaries:

@@ -8,8 +8,9 @@ import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.json.JsonWriter;
 
 /**
- * Hands JSON audit events to a non-blocking logging transport. Requires a non-blocking appender;
- * completion acknowledges log hand-off, not durable storage. Use an outbox for financial evidence.
+ * Entrega eventos de auditoría JSON a un transporte de logging no bloqueante. Requiere un appender
+ * no bloqueante; la finalización confirma la entrega al log, no el almacenamiento durable. Para
+ * evidencia financiera se usa un outbox.
  */
 public final class LoggingAsyncAuditPublisher implements AsyncAuditEventPublisher {
   private static final Logger LOG = LoggerFactory.getLogger("axiz.audit");

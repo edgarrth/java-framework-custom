@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify JPMS identities in final reactor JARs, never in source properties alone."""
+"""Verifica las identidades JPMS en los JAR finales del reactor, nunca solo en las propiedades del código fuente."""
 import argparse
 import hashlib
 import json

@@ -14,7 +14,9 @@ import pe.axiz.core.audit.AsyncStrictAuditPublisher;
 import pe.axiz.core.audit.StrictAuditPublisher;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 
-/** Explicit confirmed path, separate from the ordinary publisher's tolerant delivery policy. */
+/**
+ * Ruta confirmada explícita, separada de la política de entrega tolerante del publicador ordinario.
+ */
 @AutoConfiguration(
     after = {AxizAuditAutoConfiguration.class, AxizNativeAuditAutoConfiguration.class})
 @ConditionalOnBooleanProperty(name = "axiz.audit.enabled", matchIfMissing = true)

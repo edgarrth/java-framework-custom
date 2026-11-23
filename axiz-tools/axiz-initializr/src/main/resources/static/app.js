@@ -1,4 +1,4 @@
-// axiz initializr web UI: no structure, no inline code (strict CSP), CSRF via the XSRF-TOKEN cookie.
+// Interfaz web de axiz initializr: sin estructura, sin código en línea (CSP estricta), CSRF mediante la cookie XSRF-TOKEN.
 (() => {
   'use strict';
   const form = document.getElementById('project');
@@ -37,7 +37,7 @@
     document.getElementById('openapi-required').hidden = !a.rest;
     document.getElementById('included').textContent = a.starters.join(', ') || 'nada';
     const service = a.kind === 'service';
-    // Aurora from the reactive stack is reached over R2DBC: capabilities declare that store apart
+    // Aurora desde el stack reactivo se alcanza mediante R2DBC: las capacidades declaran ese almacén por separado
     const store = form.persistence.value === 'aurora' && form.stack.value === 'reactive'
       ? 'r2dbc' : form.persistence.value;
     document.querySelectorAll('#capabilities label').forEach((label) => {
@@ -152,8 +152,8 @@
       return;
     }
     const response = await post('/v1/projects/github', body, { 'Idempotency-Key': operationId });
-    // GitHub not authorized yet: 403 with the URL that starts the authorization; the browser comes
-    // back to /?github=authorized and the user creates the repository again
+    // GitHub aún no autorizado: 403 con la URL que inicia la autorización; el navegador vuelve
+    // a /?github=authorized y el usuario crea el repositorio de nuevo
     if (response.status === 403) {
       const body = await response.clone().json().catch(() => ({}));
       if (body.authorize) { window.location.assign(body.authorize); return; }

@@ -1,37 +1,39 @@
 # axiz-jpa-spring-boot-autoconfigure
 
-Provider-neutral JPA conventions. Consumers select `axiz-jpa-spring-boot-starter`;
-`axiz-bom` manages its version.
+Convenciones JPA neutrales respecto del proveedor. Los consumidores seleccionan `axiz-jpa-spring-boot-starter`;
+`axiz-bom` gestiona su versión.
 
-## Responsibilities
+## Responsabilidades
 
-- `AxizJpaAutoConfiguration`: context-owned entity listener, request auditor and clock;
-  validates explicitly declared encryption contexts.
-- `RequestAuditorProvider`: authenticated subject or client ID; empty when absent; `AuditListener` marks the row `unattributed`.
-- `AxizJpaEnvironmentPostProcessor`: no open-session-in-view, UTC, batching, schema validation,
-  Flyway locations and bounded Hikari pool defaults. PostgreSQL TLS uses `verify-full`.
-- Schema creation/update is restricted to explicit `local`, `test` or `ci` environments.
-  Deployed applications apply reviewed Flyway migrations and validate the schema.
+- `AxizJpaAutoConfiguration`: entity listener, auditor de peticiones y reloj propios del contexto;
+  valida los contextos de cifrado declarados explícitamente.
+- `RequestAuditorProvider`: sujeto autenticado o ID de cliente; vacío cuando no existe; `AuditListener` marca la fila como `unattributed`.
+- `AxizJpaEnvironmentPostProcessor`: sin open-session-in-view, UTC, batching, validación del esquema,
+  ubicaciones de Flyway y valores por defecto acotados del pool Hikari. TLS de PostgreSQL usa `verify-full`.
+- La creación y actualización del esquema se limitan a los entornos explícitos `local`, `test` o `ci`.
+  Las aplicaciones desplegadas aplican migraciones de Flyway revisadas y validan el esquema.
 
-## Sensitive diagnostics
+## Diagnósticos sensibles
 
-SQL stdout and Hibernate SQL/JDBC loggers (including bind/extract values, batches and constraint
-errors) default to OFF. Outside `local`, `test` and `ci`, enabling them fails startup: database
-error details can contain full rejected values. Use sanitized problem codes and Axiz operation
-logs. Custom logging configurations and programmatic SessionFactory properties remain the
-application's responsibility; exercise the generated sensitive-data canary with them.
+La salida SQL por stdout y los loggers SQL/JDBC de Hibernate (incluidos los valores de bind/extract, los
+batches y los errores de restricciones) están en OFF por defecto. Fuera de `local`, `test` y `ci`,
+habilitarlos hace fallar el arranque: el detalle de los errores de base de datos puede contener los valores
+rechazados completos. Se usan códigos de problema saneados y logs de operación de Axiz. Las
+configuraciones de logging personalizadas y las propiedades programáticas de SessionFactory son
+responsabilidad de la aplicación; con ellas se ejecuta el canario de datos sensibles generado.
 
-## Optional providers
+## Proveedores opcionales
 
-AWS failover, IAM authentication and workload identity belong to the separate
+El failover de AWS, la autenticación IAM y la identidad del workload pertenecen al módulo separado
 [`axiz-jpa-aws-spring-boot-autoconfigure`](../axiz-jpa-aws-spring-boot-autoconfigure/README.md).
-This neutral module does not pull the AWS SDK or JDBC wrapper.
+Este módulo neutral no incorpora el AWS SDK ni el wrapper JDBC.
 
-## Tests
+## Pruebas
 
-From `axiz-framework`, run `./mvnw -pl spring/axiz-jpa-spring-boot-autoconfigure -am test`.
-Generated JPA services also verify a real PostgreSQL constraint failure with
-`./mvnw -Dtest=SensitiveDataCanaryTest test` (Docker required).
+Desde `axiz-framework` se ejecuta `./mvnw -pl spring/axiz-jpa-spring-boot-autoconfigure -am test`.
+Los servicios JPA generados también verifican un fallo real de restricción de PostgreSQL con
+`./mvnw -Dtest=SensitiveDataCanaryTest test` (requiere Docker).
 
-Background jobs should supply an explicit workload identity through their auditor provider;
-missing or blank identity is marked `unattributed`, never silently attributed to a trusted system.
+Los procesos en segundo plano proporcionan una identidad de carga de trabajo explícita mediante su
+proveedor de auditor; una identidad ausente o vacía se marca `unattributed` y nunca se atribuye en silencio a
+un sistema confiable.

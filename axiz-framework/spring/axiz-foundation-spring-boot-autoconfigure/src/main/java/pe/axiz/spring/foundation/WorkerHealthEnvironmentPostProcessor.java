@@ -9,7 +9,8 @@ import org.springframework.core.env.MapPropertySource;
 import org.springframework.util.ClassUtils;
 
 /**
- * Adds worker health to the default readiness group; explicit application settings take precedence.
+ * Añade la salud de los workers al grupo de readiness por defecto; la configuración explícita de la
+ * aplicación tiene precedencia.
  */
 public final class WorkerHealthEnvironmentPostProcessor
     implements EnvironmentPostProcessor, Ordered {

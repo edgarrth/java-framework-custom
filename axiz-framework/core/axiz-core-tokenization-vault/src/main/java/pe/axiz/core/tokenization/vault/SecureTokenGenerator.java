@@ -7,11 +7,13 @@ import java.util.UUID;
 import pe.axiz.core.crypto.SecureRandoms;
 import pe.axiz.core.tokenization.Token;
 
-/** Startup-seeded DRBG randomness, isolated from input values and ciphertext. */
+/**
+ * Aleatoriedad DRBG con semilla al arrancar, aislada de los valores de entrada y del texto cifrado.
+ */
 public final class SecureTokenGenerator implements TokenGenerator {
   private final SecureRandom random = SecureRandoms.drbg("token-vault");
 
-  /** Independent random UUIDv4 correlation; this does not create an idempotency record. */
+  /** Correlación UUIDv4 aleatoria independiente; no crea un registro de idempotencia. */
   public UUID operationId() {
     byte[] entropy = new byte[16];
     try {

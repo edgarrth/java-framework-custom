@@ -22,7 +22,7 @@ import pe.axiz.core.crypto.StaticKeyProvider;
 import java.util.Map;
 {{/persistence.dynamodb}}
 
-/** Exercises the generated persistence recipe against the actual local provider. */
+/** Ejercita la receta de persistencia generada contra el proveedor local real. */
 {{#persistence.dynamodb}}
 @Import({{artifact.className}}PersistenceTest.CursorTestConfiguration.class)
 {{/persistence.dynamodb}}

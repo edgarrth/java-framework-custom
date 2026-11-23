@@ -1,22 +1,23 @@
 package pe.axiz.core.messaging;
 
 /**
- * Publishes events and waits for the broker confirmation. Implementations are stateless and
- * thread-safe (no state shared between sends).
+ * Publica eventos y espera la confirmación del broker. Las implementaciones son sin estado y
+ * thread-safe (sin estado compartido entre envíos).
  */
 public interface EventPublisher {
 
   /**
-   * Publishes the event.
+   * Publica el evento.
    *
-   * @param destination logical destination resolved by the adapter (topic, queue URL, topic ARN)
-   * @param event the event
-   * @return the confirmation
-   * @throws PublishException when the broker does not confirm
+   * @param destination destino lógico resuelto por el adaptador (tópico, URL de cola, ARN de
+   *     tópico)
+   * @param event el evento
+   * @return la confirmación
+   * @throws PublishException cuando el broker no confirma
    */
   PublishResult publish(String destination, EventEnvelope event);
 
-  /** Whether this publisher handles the destination (used to route among MSK, SQS and SNS). */
+  /** Indica si este publicador maneja el destino (se usa para encaminar entre MSK, SQS y SNS). */
   default boolean supports(String destination) {
     return true;
   }

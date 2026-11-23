@@ -9,11 +9,11 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 import pe.axiz.core.audit.AuditSealer;
 
 /**
- * Audit settings ({@code axiz.audit.*}).
+ * Configuración de auditoría ({@code axiz.audit.*}).
  *
- * @param async asynchronous publication with a bounded queue on a virtual thread
- * @param http audit of inbound HTTP requests
- * @param durable audit of business changes written to the outbox in their transaction
+ * @param async publicación asíncrona con una cola acotada en un hilo virtual
+ * @param http auditoría de las solicitudes HTTP entrantes
+ * @param durable auditoría de los cambios de negocio escritos en el outbox dentro de su transacción
  */
 @ConfigurationProperties("axiz.audit")
 public record AxizAuditProperties(
@@ -24,8 +24,9 @@ public record AxizAuditProperties(
     @DefaultValue Strict strict,
     @Nullable Mode mode) {
   /**
-   * Hash chains by default in local/test/ci; every other environment must use HMAC, with an
-   * independent Base64 secret and an explicit rotation id (an unkeyed chain can be recomputed).
+   * Cadenas de hash por defecto en local/test/ci; cualquier otro entorno debe usar HMAC, con un
+   * secreto Base64 independiente y un id de rotación explícito (una cadena sin clave puede
+   * recalcularse).
    */
   public record Integrity(
       @DefaultValue("HASH") AuditSealer.Mode mode,
@@ -46,7 +47,10 @@ public record AxizAuditProperties(
     }
   }
 
-  /** Independent confirmed path; it never reuses a queue or tolerant publication fallback. */
+  /**
+   * Ruta confirmada independiente; nunca reutiliza una cola ni el respaldo tolerante de
+   * publicación.
+   */
   public record Strict(
       @DefaultValue("false") boolean enabled,
       @DefaultValue("DIRECT") StrictMode mode,
@@ -65,13 +69,13 @@ public record AxizAuditProperties(
     }
   }
 
-  /** DIRECT requires an attested destination; DURABLE requires an independent outbox commit. */
+  /** DIRECT exige un destino atestiguado; DURABLE exige un commit independiente en el outbox. */
   public enum StrictMode {
     DIRECT,
     DURABLE
   }
 
-  /** Delivery and persistence guarantee for audit events. */
+  /** Garantía de entrega y persistencia de los eventos de auditoría. */
   public enum Mode {
     ASYNC,
     DURABLE,
@@ -83,10 +87,11 @@ public record AxizAuditProperties(
   }
 
   /**
-   * Asynchronous publication.
+   * Publicación asíncrona.
    *
-   * @param capacity queue capacity; when full, events go to the log publisher instead of being lost
-   * @param offerTimeout how long a caller waits for queue space
+   * @param capacity capacidad de la cola; cuando está llena, los eventos van al publicador de log
+   *     en lugar de perderse
+   * @param offerTimeout tiempo que un invocante espera a que haya espacio en la cola
    */
   public record Async(
       @DefaultValue("10000") int capacity,
@@ -100,14 +105,14 @@ public record AxizAuditProperties(
   }
 
   /**
-   * Durable audit for financial evidence: successful actions recorded inside a transaction are
-   * written to the outbox with the business change (needs the outbox capability) and published by
-   * its relay; nothing is lost if the process dies after the commit.
+   * Auditoría durable para evidencia financiera: las acciones exitosas registradas dentro de una
+   * transacción se escriben en el outbox junto con el cambio de negocio (requiere la capacidad de
+   * outbox) y las publica su relay; no se pierde nada si el proceso muere después del commit.
    *
-   * @param destination logical outbox destination of audit events (see {@code
+   * @param destination destino lógico en el outbox de los eventos de auditoría (ver {@code
    *     axiz.messaging.destinations})
-   * @param outsideTransaction {@code async}: successes recorded outside a transaction use the
-   *     asynchronous publisher; {@code fail}: they are refused
+   * @param outsideTransaction {@code async}: los éxitos registrados fuera de una transacción usan
+   *     el publicador asíncrono; {@code fail}: se rechazan
    */
   public record Durable(
       @DefaultValue("audit") String destination,
@@ -124,12 +129,12 @@ public record AxizAuditProperties(
   }
 
   /**
-   * HTTP audit.
+   * Auditoría HTTP.
    *
-   * @param enabled whether requests are audited
-   * @param methods audited methods
-   * @param includedPaths path patterns audited
-   * @param excludedPaths path patterns never audited
+   * @param enabled indica si se auditan las solicitudes
+   * @param methods métodos auditados
+   * @param includedPaths patrones de ruta auditados
+   * @param excludedPaths patrones de ruta que nunca se auditan
    */
   public record Http(
       @DefaultValue("false") boolean enabled,

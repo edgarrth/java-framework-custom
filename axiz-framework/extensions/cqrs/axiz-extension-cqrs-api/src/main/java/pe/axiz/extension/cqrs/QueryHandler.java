@@ -1,10 +1,10 @@
 package pe.axiz.extension.cqrs;
 
 /**
- * Handles one query type; never changes state.
+ * Maneja un tipo de consulta; nunca cambia el estado.
  *
- * @param <Q> query type
- * @param <R> result type
+ * @param <Q> tipo de la consulta
+ * @param <R> tipo del resultado
  */
 public interface QueryHandler<Q extends Query<R>, R> {
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Lint source contracts with the exact Axiz standards version and reject stale generated snapshots."""
+"""Valida los contratos fuente con la versión exacta de los estándares de Axiz y rechaza snapshots generados obsoletos."""
 import argparse
 import os
 import re
@@ -42,7 +42,7 @@ def contracts(root, module):
 
 
 def git_text(root, revision, path):
-    # A missing path is legitimate; missing history, corrupt objects or invalid revisions are not.
+        # Una ruta ausente es legítima; el historial ausente, los objetos corruptos o las revisiones inválidas no lo son.
     subprocess.run(["git", "-C", str(root), "cat-file", "-e", revision + "^{commit}"], check=True,
                    stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
     entry = subprocess.check_output(["git", "-C", str(root), "ls-tree", revision, "--", path], text=True)
@@ -80,8 +80,8 @@ def compatibility(root, module, found, baseline):
 def baseline(root, explicit):
     if explicit:
         return explicit
-    # A tag/manual build still compares the previous published version. For repositories with
-    # no release yet, use the source parent; a root commit is the only no-history exception.
+        # Un build por tag o manual compara igualmente la versión publicada previa. En repositorios sin
+    # ninguna release se usa el padre del código fuente; un commit raíz es la única excepción sin historial.
     tags = subprocess.check_output(["git", "-C", str(root), "tag", "--merged", "HEAD", "--sort=-version:refname"], text=True)
     head = subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip()
     for tag in tags.splitlines():

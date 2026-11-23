@@ -29,7 +29,10 @@ import pe.axiz.spring.lock.redis.AxizLockRedisAutoConfiguration;
 import pe.axiz.spring.security.redis.AxizSecurityRedisAutoConfiguration;
 import pe.axiz.spring.test.AxizContainers;
 
-/** Public contracts backed by Valkey; no mocks, and no silent in-memory provider fallback. */
+/**
+ * Contratos públicos respaldados por Valkey; sin mocks y sin recurrir en silencio a un proveedor en
+ * memoria.
+ */
 class RedisRecipesTest {
   @Test
   void distributedProvidersWorkOnBothStacksAndCannotBeReplacedByDeclarations(
@@ -173,7 +176,7 @@ class RedisRecipesTest {
                 evidence.publishEntry("axiz.capability.lock-redis", "reactive,redis");
                 evidence.publishEntry("axiz.capability.security-redis", "reactive,redis");
               });
-      // Negative witnesses: a YAML declaration cannot count as an executed capability.
+      // Testigos negativos: una declaración YAML no puede contar como capacidad ejecutada.
       imperative
           .withClassLoader(new FilteredClassLoader("pe.axiz.adapter.cache.redis"))
           .run(context -> assertThat(context).doesNotHaveBean(ByteCache.class));

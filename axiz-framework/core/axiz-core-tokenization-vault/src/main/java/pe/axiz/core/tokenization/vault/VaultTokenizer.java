@@ -23,7 +23,10 @@ import pe.axiz.core.tokenization.vault.TokenAuditEntry.Result;
 import pe.axiz.core.tokenization.vault.VaultPolicy.Fingerprints;
 import pe.axiz.core.tokenization.vault.VaultPolicy.Request;
 
-/** Synchronous vault protocol. No value or token result escapes before confirmed audit. */
+/**
+ * Protocolo síncrono de la bóveda. Ningún valor ni resultado de token escapa antes de la auditoría
+ * confirmada.
+ */
 public final class VaultTokenizer implements VaultOperations {
   private final VaultPolicy policy;
   private final TokenVault vault;
@@ -82,8 +85,8 @@ public final class VaultTokenizer implements VaultOperations {
                 VaultRecord existing = policy.checked(request, found.get(), fingerprints.all());
                 authenticate(request, existing, canonical);
                 if (!policy.expired(existing)) return result(request, existing, false);
-                // TTL alone cannot delete unique references. A conditional, coordinated removal is
-                // required.
+                // El TTL por sí solo no puede borrar referencias únicas. Se requiere una
+                // eliminación condicional y coordinada.
                 budget.beforeWrite(caller, request.scope());
                 deleteRecord(request, existing);
                 continue;
@@ -129,10 +132,10 @@ public final class VaultTokenizer implements VaultOperations {
                   }
                 }
                 case PutOutcome.TokenCollision ignored -> {
-                  /* Generate again within the fixed budget. */
+                  /* Se genera de nuevo dentro del presupuesto fijo. */
                 }
                 case PutOutcome.StaleKeyState ignored -> {
-                  /* Reload the durable barrier before replanning. */
+                  /* Se recarga la barrera durable antes de volver a planificar. */
                 }
               }
             }
@@ -242,7 +245,8 @@ public final class VaultTokenizer implements VaultOperations {
         null,
         null,
         request -> {
-          // Explicit deletion also removes logically expired rows and their index references.
+          // El borrado explícito también elimina las filas expiradas lógicamente y sus referencias
+          // de índice.
           Optional<VaultRecord> found =
               vault
                   .find(request.scope(), token)
@@ -351,7 +355,7 @@ public final class VaultTokenizer implements VaultOperations {
       try {
         alarm.failed(operation);
       } catch (RuntimeException alertFailure) {
-        /* Preserve the uncertain outcome even when alerting fails. */
+        /* Se preserva el resultado incierto incluso cuando falla la alerta. */
       }
     }
     return TokenErrors.failure(TokenErrors.UNCERTAIN);
@@ -379,7 +383,8 @@ public final class VaultTokenizer implements VaultOperations {
       try {
         held.close();
       } catch (RuntimeException cleanupFailure) {
-        // The business result and audit are already confirmed. The budget retains uncertain leases.
+        // El resultado de negocio y la auditoría ya están confirmados. El presupuesto conserva los
+        // leases inciertos.
         LoggerFactory.getLogger(VaultTokenizer.class)
             .warn(
                 "Token budget cleanup failed after confirmed outcome; operationId={}, failureType={}",
@@ -415,7 +420,7 @@ public final class VaultTokenizer implements VaultOperations {
         try {
           permit.close();
         } catch (RuntimeException releaseFailure) {
-          /* The operation is already failing; do not overwrite its outcome. */
+          /* La operación ya está fallando; no se sobrescribe su resultado. */
           LoggerFactory.getLogger(VaultTokenizer.class)
               .warn(
                   "Token budget cleanup failed; operationId={}, failureType={}",
@@ -426,12 +431,14 @@ public final class VaultTokenizer implements VaultOperations {
     }
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción nominal; build verifica los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable VaultPolicy policy = null;
     private @Nullable TokenVault vault = null;

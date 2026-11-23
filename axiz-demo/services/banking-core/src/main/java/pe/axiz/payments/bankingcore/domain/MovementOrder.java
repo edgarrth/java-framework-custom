@@ -8,11 +8,11 @@ import pe.axiz.core.sensitive.Sensitive;
 import pe.axiz.core.sensitive.SensitivityLevel;
 
 /**
- * An order to debit or credit an account.
+ * Orden de débito o abono sobre una cuenta.
  *
- * @param accountId account number in the core
- * @param amount positive amount
- * @param reference business reference, unique per movement (the core de-duplicates by it)
+ * @param accountId número de cuenta en el core
+ * @param amount monto positivo
+ * @param reference referencia de negocio, única por movimiento (el core deduplica por ella)
  */
 public record MovementOrder(
     @Sensitive(level = SensitivityLevel.MEDIUM, mask = MaskType.DOCUMENT) String accountId,
@@ -20,7 +20,7 @@ public record MovementOrder(
     String reference,
     @Nullable String holderId) {
 
-  /** A movement without holder check (credits, reversals). */
+  /** Movimiento sin verificación del titular (abonos, reversiones). */
   public MovementOrder(String accountId, Money amount, String reference) {
     this(accountId, amount, reference, null);
   }
@@ -34,7 +34,7 @@ public record MovementOrder(
     }
   }
 
-  /** Lock resource that serializes movements of the same account. */
+  /** Recurso de lock que serializa los movimientos de una misma cuenta. */
   public String lockKey() {
     return "account:" + accountId;
   }

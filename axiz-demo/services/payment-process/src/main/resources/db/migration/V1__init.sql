@@ -1,8 +1,8 @@
--- payment-process: initial schema (Aurora PostgreSQL). Flyway owns the schema in every
--- environment; Hibernate only validates it (spring.jpa.hibernate.ddl-auto=validate).
--- Add domain tables in new migrations (V2__..., never edit an applied one).
+-- payment-process: esquema inicial (Aurora PostgreSQL). Flyway es dueño del esquema en todos los
+-- ambientes; Hibernate solo lo valida (spring.jpa.hibernate.ddl-auto=validate).
+-- Las tablas de dominio se agregan en migraciones nuevas (V2__...); una migración aplicada nunca se edita.
 
--- axiz saga state (Aurora PostgreSQL)
+-- Estado de sagas de axiz (Aurora PostgreSQL)
 CREATE TABLE IF NOT EXISTS axiz_saga (
   saga_id    VARCHAR(64)  PRIMARY KEY,
   saga_name  VARCHAR(100) NOT NULL,
@@ -17,9 +17,9 @@ CREATE TABLE IF NOT EXISTS axiz_saga (
 );
 CREATE INDEX IF NOT EXISTS axiz_saga_stale ON axiz_saga (status, updated_at);
 
--- Tables of the scheduling capability (added by axiz add)
+-- Tablas de la capacidad scheduling (agregadas por axiz add)
 
--- ShedLock table (one row per scheduled task); the lock time comes from the database clock.
+-- Tabla de ShedLock (una fila por tarea programada); la hora del lock proviene del reloj de la base.
 CREATE TABLE IF NOT EXISTS shedlock (
   name       VARCHAR(64)  NOT NULL PRIMARY KEY,
   lock_until TIMESTAMPTZ  NOT NULL,

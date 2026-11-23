@@ -31,9 +31,9 @@ import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.foundation.ReactiveStages;
 
 /**
- * Adds the outbound credentials of a client: OAuth2 client credentials (cached, renewed early),
- * token relay of the inbound bearer token, or an API key from the secret store. Mutual TLS is
- * configured on the transport through an SSL bundle.
+ * Añade las credenciales salientes de un cliente: client credentials de OAuth2 (cacheadas y
+ * renovadas con antelación), token relay del token bearer entrante o una API key del almacén de
+ * secretos. El TLS mutuo se configura en el transporte mediante un bundle SSL.
  */
 public final class OutboundAuth implements AutoCloseable {
 
@@ -111,13 +111,16 @@ public final class OutboundAuth implements AutoCloseable {
       }
       case API_KEY -> requireSecrets(client, secrets);
       default -> {
-        // NONE, TOKEN_RELAY and MTLS need no state
+        // NONE, TOKEN_RELAY y MTLS no necesitan estado
       }
     }
     return new OutboundAuth(a, tokens, secrets, null, null, ownedHttp, null);
   }
 
-  /** Builds native credentials at startup; close this owner with its application context. */
+  /**
+   * Construye las credenciales nativas en el arranque; este propietario se cierra con su contexto
+   * de aplicación.
+   */
   public static OutboundAuth createAsync(
       ClientSettings client,
       @Nullable AsyncSecretResolver secrets,
@@ -193,7 +196,7 @@ public final class OutboundAuth implements AutoCloseable {
     return new OutboundAuth(a, null, null, tokens, secrets, null, nativeHttp);
   }
 
-  /** Native headers; never falls back to the synchronous resolver or token provider. */
+  /** Cabeceras nativas; nunca recurre al resolvedor síncrono ni al proveedor de tokens. */
   public CompletionStage<Map<String, SecretValue>> headers() {
     return Stages.call(
         () -> {
@@ -244,7 +247,10 @@ public final class OutboundAuth implements AutoCloseable {
     headers.values().forEach(SecretValue::close);
   }
 
-  /** The secret resolver an authenticated client needs, or an error naming the client. */
+  /**
+   * El resolvedor de secretos que necesita un cliente autenticado, o un error que nombra al
+   * cliente.
+   */
   private static SecretResolver requireSecrets(
       ClientSettings client, @Nullable SecretResolver secrets) {
     if (secrets == null) {
@@ -259,7 +265,9 @@ public final class OutboundAuth implements AutoCloseable {
     return secrets;
   }
 
-  /** Synchronous credentials for servlet clients; reactive clients use {@link #headers()}. */
+  /**
+   * Credenciales síncronas para clientes servlet; los clientes reactivos usan {@link #headers()}.
+   */
   public void apply(BiConsumer<String, String> header) {
     if (closed.get()) throw new IllegalStateException("Outbound authentication is closed");
     switch (settings.type()) {
@@ -284,7 +292,7 @@ public final class OutboundAuth implements AutoCloseable {
         }
       }
       default -> {
-        // nothing to add
+        // nada que añadir
       }
     }
   }
@@ -293,7 +301,7 @@ public final class OutboundAuth implements AutoCloseable {
     return settings.type() == AuthType.TOKEN_RELAY;
   }
 
-  /** Spring Security access, isolated so the dependency stays optional. */
+  /** Acceso a Spring Security, aislado para que la dependencia siga siendo opcional. */
   static final class Relay {
     private Relay() {}
 

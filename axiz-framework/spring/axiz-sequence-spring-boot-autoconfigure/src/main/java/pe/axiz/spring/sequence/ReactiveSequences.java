@@ -10,7 +10,7 @@ import pe.axiz.core.sequence.SequenceFormat;
 import pe.axiz.spring.foundation.ReactiveStages;
 import reactor.core.publisher.Mono;
 
-/** Deferred Reactor facade over native asynchronous sequence allocation. */
+/** Fachada diferida de Reactor sobre la asignación asíncrona nativa de secuencias. */
 public final class ReactiveSequences {
   private final Map<String, AsyncSequenceGenerator> generators = new ConcurrentHashMap<>();
 

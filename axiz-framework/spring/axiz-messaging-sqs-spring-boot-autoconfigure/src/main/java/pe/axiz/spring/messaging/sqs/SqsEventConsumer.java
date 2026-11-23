@@ -32,31 +32,34 @@ import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
 /**
- * Long-polling SQS consumer, one virtual thread per queue. ACK deletes the message, RETRY extends
- * its visibility with exponential backoff, DEFER (another delivery holds it in the inbox) extends
- * it until that lease may have ended, DEAD_LETTER sends it to the configured dead-letter queue (or
- * leaves it to the queue's redrive policy).
+ * Consumidor SQS con long polling, un hilo virtual por cola. ACK elimina el mensaje, RETRY extiende
+ * su visibilidad con backoff exponencial, DEFER (otra entrega lo tiene en el inbox) la extiende
+ * hasta que ese lease pueda haber terminado y DEAD_LETTER lo envía a la cola de dead-letter
+ * configurada (o lo deja a la política de redrive de la cola).
  *
- * <p>Only a message that cannot be decoded goes to the dead-letter path immediately; a failure of
- * the infrastructure around a valid message (inbox, tracing) is retried. While a batch is being
- * processed, the visibility of every message received and not yet settled is renewed, so messages
- * waiting for their turn (or a slow handler) are not redelivered to another replica. Stopping lets
- * the currently executing handler finish (up to 15 seconds) before interrupting the pollers.
+ * <p>Solo un mensaje que no puede decodificarse va de inmediato a la ruta de dead-letter; un fallo
+ * de la infraestructura alrededor de un mensaje válido (inbox, tracing) se reintenta. Mientras se
+ * procesa un lote, se renueva la visibilidad de cada mensaje recibido y aún no resuelto, de modo
+ * que los mensajes que esperan su turno (o un handler lento) no se reentregan a otra réplica. La
+ * detención deja que el handler en ejecución termine (hasta 15 segundos) antes de interrumpir a los
+ * sondeadores.
  */
 public final class SqsEventConsumer implements SmartLifecycle, WorkerStatus {
 
   private static final Logger LOG = LoggerFactory.getLogger(SqsEventConsumer.class);
 
-  /** SQS accepts at most ten message attributes; the failure is added when there is room. */
+  /** SQS acepta como máximo diez atributos de mensaje; el fallo se añade cuando hay espacio. */
   private static final int MAX_MESSAGE_ATTRIBUTES = 10;
 
-  /** Attribute that records why the message was dead-lettered ({@code Failures.describe}). */
+  /**
+   * Atributo que registra por qué el mensaje se envió a dead-letter ({@code Failures.describe}).
+   */
   static final String FAILURE_ATTRIBUTE = "axiz-failure";
 
   private static final int MAX_VISIBILITY_SECONDS = 43_200;
   private static final Duration SHUTDOWN_TIMEOUT = Duration.ofSeconds(15);
 
-  /** A received message not yet settled. */
+  /** Mensaje recibido y aún no resuelto. */
   private static final class InFlight {
     final String queue;
     final String receiptHandle;
@@ -181,11 +184,13 @@ public final class SqsEventConsumer implements SmartLifecycle, WorkerStatus {
     ReceiveMessageRequest request =
         ReceiveMessageRequest.builder()
             .queueUrl(queue)
-            // A FIFO head must be settled before another message from its group is delivered.
-            // One receipt avoids acknowledging later group members while the head backs off.
+            // La cabeza de un grupo FIFO debe resolverse antes de entregar otro mensaje de su
+            // grupo. Un único recibo evita confirmar miembros posteriores del grupo mientras la
+            // cabeza espera su backoff.
             .maxNumberOfMessages(queue.endsWith(".fifo") ? 1 : Math.min(10, settings.batchSize()))
             .waitTimeSeconds((int) Math.min(20, settings.waitTime().toSeconds()))
-            // Receive long-polling has a different bound from short publisher API calls.
+            // El long polling de recepción tiene un límite distinto al de las llamadas cortas a la
+            // API del publicador.
             .overrideConfiguration(c -> c.apiCallTimeout(settings.waitTime().plusSeconds(10)))
             .visibilityTimeout((int) settings.visibilityTimeout().toSeconds())
             .messageSystemAttributeNames(
@@ -207,7 +212,7 @@ public final class SqsEventConsumer implements SmartLifecycle, WorkerStatus {
       batch.forEach(m -> inFlight.put(m.messageId(), new InFlight(queue, m.receiptHandle())));
       for (Message m : batch) {
         if (!lifecycle.accepting()) {
-          // shutting down: leave the rest of the batch to SQS (visible again soon)
+          // en apagado: el resto del lote se deja a SQS (vuelve a ser visible pronto)
           batch.forEach(left -> inFlight.remove(left.messageId()));
           return;
         }
@@ -224,8 +229,8 @@ public final class SqsEventConsumer implements SmartLifecycle, WorkerStatus {
   }
 
   /**
-   * Heartbeat body: an exception escaping a periodic task would silently cancel every later run, so
-   * nothing is let through.
+   * Cuerpo del heartbeat: una excepción que escapa de una tarea periódica cancelaría en silencio
+   * todas las ejecuciones posteriores, por lo que no se deja pasar nada.
    */
   private void renewVisibilitySafely() {
     try {
@@ -237,7 +242,7 @@ public final class SqsEventConsumer implements SmartLifecycle, WorkerStatus {
     }
   }
 
-  /** Extends the visibility of every message received and not yet settled. */
+  /** Extiende la visibilidad de cada mensaje recibido y aún no resuelto. */
   void renewVisibility() {
     int seconds = (int) Math.min(MAX_VISIBILITY_SECONDS, settings.visibilityTimeout().toSeconds());
     for (InFlight f : List.copyOf(inFlight.values())) {
@@ -247,7 +252,7 @@ public final class SqsEventConsumer implements SmartLifecycle, WorkerStatus {
           sqs.changeMessageVisibility(
               b -> b.queueUrl(f.queue).receiptHandle(f.receiptHandle).visibilityTimeout(seconds));
         } catch (RuntimeException e) {
-          // The inbox absorbs duplicates when visibility cannot be extended.
+          // El inbox absorbe los duplicados cuando no puede extenderse la visibilidad.
           LOG.warn("Could not extend visibility on {}: {}", f.queue, e.getClass().getSimpleName());
         }
       }
@@ -264,7 +269,7 @@ public final class SqsEventConsumer implements SmartLifecycle, WorkerStatus {
     try {
       envelope = SqsEnvelopes.from(m);
     } catch (RuntimeException e) {
-      // a message that cannot be read never will be: permanent
+      // un mensaje que no puede leerse nunca podrá leerse: permanente
       String failure = "unreadable message: " + Failures.describe(e);
       LOG.warn("Unreadable message {} on {}: {}", m.messageId(), queue, failure);
       settle(m, () -> deadLetter(queue, m, null, failure));
@@ -274,13 +279,13 @@ public final class SqsEventConsumer implements SmartLifecycle, WorkerStatus {
     try {
       outcome = dispatcher.dispatch(queue, envelope, attempt);
     } catch (RuntimeException e) {
-      // infrastructure around a valid message (tracing, context): transient
+      // infraestructura alrededor de un mensaje válido (tracing, contexto): transitorio
       LOG.warn(
           "Dispatch of {} on {} failed: {}", envelope.id(), queue, e.getClass().getSimpleName());
       outcome = new EventDispatcher.Outcome(DeliveryDecision.RETRY, Duration.ZERO);
     }
     EventDispatcher.Outcome decided = outcome;
-    // exhaustive: a new decision must say what happens to the message
+    // exhaustivo: una decisión nueva debe indicar qué ocurre con el mensaje
     Runnable action =
         switch (decided.decision()) {
           case ACK -> () -> delete(queue, m);
@@ -298,7 +303,7 @@ public final class SqsEventConsumer implements SmartLifecycle, WorkerStatus {
       return;
     }
     synchronized (flight) {
-      // A heartbeat that already copied this receipt must finish before the final visibility.
+      // Un heartbeat que ya copió este recibo debe terminar antes de la visibilidad final.
       flight.settled = true;
       action.run();
     }
@@ -314,7 +319,8 @@ public final class SqsEventConsumer implements SmartLifecycle, WorkerStatus {
       String queue, Message m, @Nullable EventEnvelope envelope, @Nullable String failure) {
     String dlq = settings.deadLetterQueues().get(queue);
     if (dlq == null) {
-      // the queue's redrive policy moves it after maxReceiveCount; make it visible again now
+      // la política de redrive de la cola lo mueve tras maxReceiveCount; se hace visible de nuevo
+      // de inmediato
       sqs.changeMessageVisibility(
           b -> b.queueUrl(queue).receiptHandle(m.receiptHandle()).visibilityTimeout(0));
       return;

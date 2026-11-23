@@ -78,8 +78,8 @@ jobs:
     timeout-minutes: 30
     environment: ${{ inputs.environment }}
     steps:
-      # No checkout or build tool is needed to promote a verified product.
-      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # No se necesita checkout ni herramienta de build para promover un producto verificado.
+      # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
       # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
       - uses: edgarrth/java-framework-custom/.github/actions/consume-build@axiz-workflows-v2.0.0 # x-release-please-version
         id: build

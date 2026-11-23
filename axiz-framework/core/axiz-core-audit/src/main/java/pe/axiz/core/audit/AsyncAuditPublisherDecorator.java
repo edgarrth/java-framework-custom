@@ -1,6 +1,6 @@
 package pe.axiz.core.audit;
 
-/** Exposes a native asynchronous delegate for lifecycle and operational metrics. */
+/** Expone un delegado asíncrono nativo para el ciclo de vida y las métricas operativas. */
 public interface AsyncAuditPublisherDecorator {
   AsyncAuditEventPublisher delegate();
 }

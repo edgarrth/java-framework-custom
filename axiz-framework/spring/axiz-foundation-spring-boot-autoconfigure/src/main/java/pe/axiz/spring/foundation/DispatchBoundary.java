@@ -1,11 +1,14 @@
 package pe.axiz.spring.foundation;
 
-/** Opens infrastructure work whose completion must run after message handling transactions exit. */
+/**
+ * Abre trabajo de infraestructura cuya finalización debe ejecutarse después de que terminen las
+ * transacciones de manejo de mensajes.
+ */
 @FunctionalInterface
 public interface DispatchBoundary {
   Scope open();
 
-  /** Completion runs once the enclosing dispatcher has released its transaction. */
+  /** La finalización se ejecuta una vez que el dispatcher contenedor ha liberado su transacción. */
   @FunctionalInterface
   interface Scope extends AutoCloseable {
     @Override

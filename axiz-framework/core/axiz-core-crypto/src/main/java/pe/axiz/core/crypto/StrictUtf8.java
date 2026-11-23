@@ -7,7 +7,7 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-/** Bounded, lossless text encoding for authenticated cryptographic inputs. */
+/** Codificación de texto acotada y sin pérdida para entradas criptográficas autenticadas. */
 final class StrictUtf8 {
   private StrictUtf8() {}
 

@@ -9,7 +9,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbConvertedBy;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 
-/** Storage mapping: plaintext delivery addresses never enter DynamoDB. */
+/** Mapeo de almacenamiento: las direcciones de entrega en texto plano nunca entran en DynamoDB. */
 @DynamoDbBean
 public class ContactItem {
   private String customerId = "";
@@ -20,7 +20,7 @@ public class ContactItem {
 
   public ContactItem() {}
 
-  /** Used by the customer profile writer (and the explicit local demo seed). */
+  /** Lo usan el escritor de perfiles de cliente (y la semilla explícita de la demo local). */
   public static ContactItem protect(CustomerContact contact, FieldEncryptor cipher) {
     var item = new ContactItem();
     item.customerId = contact.getCustomerId();

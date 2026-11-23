@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write a schema-validated deployment record from verified source and real environment approvals."""
+"""Escribe un registro de despliegue validado por esquema a partir del código fuente verificado y de aprobaciones reales del entorno."""
 import argparse
 import datetime
 import json

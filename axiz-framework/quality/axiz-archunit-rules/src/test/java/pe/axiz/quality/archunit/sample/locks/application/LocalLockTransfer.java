@@ -2,7 +2,7 @@ package pe.axiz.quality.archunit.sample.locks.application;
 
 import java.util.concurrent.locks.ReentrantLock;
 
-/** Violates the cluster rules: a JVM-local lock and a synchronized business method. */
+/** Incumple las reglas de clúster: un lock local de la JVM y un método de negocio synchronized. */
 public class LocalLockTransfer {
 
   private final ReentrantLock lock = new ReentrantLock();
@@ -10,13 +10,13 @@ public class LocalLockTransfer {
   public void debit() {
     lock.lock();
     try {
-      // move money
+      // mover dinero
     } finally {
       lock.unlock();
     }
   }
 
   public synchronized void credit() {
-    // move money
+    // mover dinero
   }
 }

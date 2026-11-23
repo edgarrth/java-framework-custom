@@ -1,5 +1,5 @@
 {{=<% %>=}}
-# Promotion and rollback consume signed build bytes; never rebuild or accept a loose image tag.
+# La promoción y el rollback consumen bytes de build firmados; nunca se reconstruye ni se acepta un tag de imagen suelto.
 name: deploy
 on:
   workflow_dispatch:
@@ -36,7 +36,7 @@ jobs:
       actions: read
       id-token: write
     needs: axiz-workflows-trust
-    # Immutable internal release: axiz-workflows-trust must succeed first.
+    # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
     uses: edgarrth/java-framework-custom/.github/workflows/lib-deploy.yaml@axiz-workflows-v2.0.0
     with:

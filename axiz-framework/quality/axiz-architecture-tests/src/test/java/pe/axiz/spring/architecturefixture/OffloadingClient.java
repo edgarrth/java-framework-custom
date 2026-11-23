@@ -3,7 +3,7 @@ package pe.axiz.spring.architecturefixture;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-/** Deliberate architecture violation used only by the negative regression test. */
+/** Infracción deliberada de arquitectura que solo usa la prueba de regresión negativa. */
 public class OffloadingClient {
   public Mono<String> call() {
     return Mono.fromCallable(() -> "blocking-provider").subscribeOn(Schedulers.boundedElastic());

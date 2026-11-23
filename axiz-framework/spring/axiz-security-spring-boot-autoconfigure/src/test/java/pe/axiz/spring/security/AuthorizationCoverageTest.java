@@ -173,7 +173,8 @@ class AuthorizationCoverageTest {
               SecurityContextHolder.getContext().setAuthentication(auth);
               try {
                 assertThrows(AccessDeniedException.class, controller::pay);
-                // Inspect the target's counter, since CGLIB fields themselves belong to the proxy.
+                // Se inspecciona el contador del objetivo, ya que los campos de CGLIB pertenecen al
+                // propio proxy.
                 var target =
                     (ProtectedController) ((Advised) controller).getTargetSource().getTarget();
                 assertEquals(0, target.calls.get());

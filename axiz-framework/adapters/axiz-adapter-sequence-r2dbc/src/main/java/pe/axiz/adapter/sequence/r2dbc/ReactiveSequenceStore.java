@@ -3,8 +3,9 @@ package pe.axiz.adapter.sequence.r2dbc;
 import reactor.core.publisher.Mono;
 
 /**
- * Native reactive counter reservation. A successful value is durably committed independently of the
- * caller's business transaction, so cached blocks cannot be allocated again after rollback.
+ * Reserva reactiva nativa de contadores. Un valor exitoso se confirma de forma durable con
+ * independencia de la transacción de negocio de quien llama, de modo que los bloques en caché no
+ * pueden asignarse otra vez tras un rollback.
  */
 @FunctionalInterface
 public interface ReactiveSequenceStore {

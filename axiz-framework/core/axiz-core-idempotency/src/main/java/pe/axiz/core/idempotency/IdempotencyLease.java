@@ -13,8 +13,8 @@ import java.util.function.Supplier;
 import pe.axiz.core.concurrent.Stages;
 
 /**
- * Owned renewal lifetime. Each attempt has a deadline, including submission by a synchronous
- * driver. Losing the lease marks the execution uncertain once; it never releases the reservation.
+ * Vida de renovación propia. Cada intento tiene un plazo, incluido el envío por un driver síncrono.
+ * Perder el lease marca la ejecución como incierta una sola vez; nunca libera la reserva.
  */
 public final class IdempotencyLease implements AutoCloseable {
   private final AtomicBoolean active = new AtomicBoolean(true);
@@ -55,7 +55,7 @@ public final class IdempotencyLease implements AutoCloseable {
     worker.start();
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored") // Completion is explicitly forwarded to answer.
+  @SuppressWarnings("FutureReturnValueIgnored") // La finalización se reenvía a answer.
   private static boolean renewWithin(Supplier<CompletionStage<Boolean>> renew, long timeoutNanos)
       throws InterruptedException {
     var answer = new CompletableFuture<Boolean>();
@@ -96,14 +96,18 @@ public final class IdempotencyLease implements AutoCloseable {
   }
 
   private static void reportFailure() {
-    // Neither provider messages nor causes/suppressed exceptions are safe to log.
+    // Ni los mensajes del proveedor ni las causas o excepciones suprimidas son seguros para
+    // registrarse en log.
     System.getLogger(IdempotencyLease.class.getName())
         .log(
             System.Logger.Level.ERROR,
             "Idempotency reservation lost; unable to persist UNKNOWN, retained reservation requires reconciliation");
   }
 
-  /** Uses one renewal interval as the I/O deadline (services renew at one third of their lease). */
+  /**
+   * Usa un intervalo de renovación como plazo de E/S (los servicios renuevan a un tercio de su
+   * lease).
+   */
   public static IdempotencyLease start(
       Duration interval,
       Supplier<CompletionStage<Boolean>> renew,

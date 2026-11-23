@@ -1,98 +1,98 @@
 # Notifications Processor
 
-Customer notifications and audit archive.
+Notificaciones a clientes y archivo de auditoría.
 
 | | |
 |---|---|
-| Archetype | `event-processor`: Processes subscribed events |
-| Structure | `eda` |
-| Extensions | None |
+| Arquetipo | `event-processor`: Procesa los eventos suscritos |
+| Estructura | `eda` |
+| Extensiones | Ninguna |
 | Stack | `servlet` |
-| Persistence | `dynamodb` |
+| Persistencia | `dynamodb` |
 | axiz | `2.0.0` |
-| Base package | `pe.axiz.payments.notifications` |
+| Paquete base | `pe.axiz.payments.notifications` |
 
-## In the demo
+## En la demo
 
-Event processor (EDA style, DynamoDB).
+Procesador de eventos (estilo EDA, DynamoDB).
 
-- `payment-order.status-changed.v1` (Kafka): notifies COMPLETED and REJECTED payments through the
-  customer's channel (contacts table), publishing `notification.requested.v1` to SNS.
-- `pe.axiz.audit.event.v1` (SQS): archives the audit trail on S3 (`audit/yyyy/MM/dd/<service>/`)
-  with a daily manifest updated under a DynamoDB lock.
-- Redeliveries are removed by the inbox (DynamoDB); failures go to the dead-letter topic/queue.
+- `payment-order.status-changed.v1` (Kafka): notifica los pagos COMPLETED y REJECTED por el canal
+  del cliente (tabla de contactos) y publica `notification.requested.v1` en SNS.
+- `pe.axiz.audit.event.v1` (SQS): archiva la pista de auditoría en S3 (`audit/yyyy/MM/dd/<service>/`)
+  con un manifiesto diario actualizado bajo un lock de DynamoDB.
+- El inbox (DynamoDB) descarta las reentregas; los fallos van al tópico o cola de mensajes fallidos.
 
-## Requirements
+## Requisitos
 
-- JDK 25 (Maven comes with the wrapper `./mvnw`)
-- Docker, for `docker compose` and the Testcontainers tests
-- Access to the GitHub Packages repository that publishes axiz
+- JDK 25 (Maven viene con el wrapper `./mvnw`)
+- Docker, para `docker compose` y las pruebas con Testcontainers
+- Acceso al repositorio de GitHub Packages que publica axiz
 
-## Build and test
+## Compilación y pruebas
 
 ```bash
-./mvnw verify                 # enforcer rules, tests and architecture rules
-./mvnw spotless:apply         # formats the code (run it before pushing)
-./mvnw -Pquality verify       # CI gate: + format check, Checkstyle, Error Prone + NullAway, SpotBugs/FindSecBugs,
-                              # dependency convergence and coverage thresholds
-./mvnw -Pnative native:compile  # GraalVM native image
+./mvnw verify                 # reglas de enforcer, pruebas y reglas de arquitectura
+./mvnw spotless:apply         # formatea el código (se ejecuta antes de hacer push)
+./mvnw -Pquality verify       # control de CI: además formato, Checkstyle, Error Prone con NullAway, SpotBugs/FindSecBugs,
+                              # convergencia de dependencias y umbrales de cobertura
+./mvnw -Pnative native:compile  # imagen nativa con GraalVM
 ```
 
-`ArchitectureTest` enforces the rules of the `eda` style and the general axiz rules;
-`NotificationsProcessorApplicationTest` starts the service against real dependencies in containers.
+`ArchitectureTest` hace cumplir las reglas del estilo `eda` y las reglas generales de axiz;
+`NotificationsProcessorApplicationTest` arranca el servicio contra dependencias reales en contenedores.
 
-## Run locally
+## Ejecución local
 
 ```bash
 local/dev-secrets.sh       # random development-only secrets in local/secrets (git-ignored)
 docker compose up -d
-export AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_REGION=us-east-1   # LocalStack, not real credentials
+export AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_REGION=us-east-1   # LocalStack, no son credenciales reales
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-Or `axiz local up` / `axiz local down`. Traces, metrics and logs are in Grafana at
-<http://localhost:3000> (OpenTelemetry collector on ports 4317/4318).
+También `axiz local up` / `axiz local down`. Las trazas, métricas y logs están en Grafana en
+<http://localhost:3000> (colector OpenTelemetry en los puertos 4317/4318).
 
-## Structure
+## Estructura
 
-- `pe.axiz.payments.notifications.handler`: Event handlers, one per event type.
-- `pe.axiz.payments.notifications.event`: Event payloads.
+- `pe.axiz.payments.notifications.handler`: Handlers de eventos, uno por tipo de evento.
+- `pe.axiz.payments.notifications.event`: Payloads de eventos.
 
-## Capabilities
+## Capacidades
 
-| Capability | Starter | What it brings |
+| Capacidad | Starter | Qué aporta |
 |---|---|---|
-| `foundation` | `axiz-foundation-spring-boot-starter` | Clock and business calendar (zone, weekends, holidays), JSON and validation defaults |
-| `web` | `axiz-web-spring-boot-starter` | Request metadata headers, correlation, pagination, API versioning, CORS and JSON conventions |
-| `errors` | `axiz-errors-spring-boot-starter` | RFC 9457 problem details, error catalog (ConfigMap `APP_NAME-errors`), external error mapping |
-| `logging` | `axiz-logging-spring-boot-starter` | Structured JSON logs with trace and request context, HTTP access log with masking |
-| `observability` | `axiz-observability-spring-boot-starter` | OpenTelemetry traces and metrics through Micrometer (OTLP), no Java agent |
-| `metrics` | `axiz-metrics-spring-boot-starter` | Generic event metrics (count, duration, amounts by currency, values) with bounded tags |
-| `config` | `axiz-config-spring-boot-starter` | ConfigMaps mounted as files (axiz-common, `APP_NAME`, `APP_NAME-errors`; no Kubernetes API access), Parameter Store, required keys check |
-| `sensitive` | `axiz-sensitive-spring-boot-starter` | Masking of sensitive fields in responses, logs and audit by sensitivity level |
-| `messaging-kafka` | `axiz-messaging-spring-boot-starter` | CloudEvents over Amazon MSK with IAM auth, retries, DLQ and trace propagation |
-| `dynamodb` | `axiz-dynamodb-spring-boot-starter` | DynamoDB enhanced client, repositories with cursor pagination and optimistic locking |
-| `messaging-sqs` | `axiz-messaging-spring-boot-starter` | CloudEvents over SQS (standard and FIFO) consumers and publishers with DLQ |
-| `messaging-sns` | `axiz-messaging-spring-boot-starter` | CloudEvents publishing to SNS topics (fan-out) |
-| `inbox` | `axiz-inbox-spring-boot-starter` | Consumer de-duplication (inbox) with leases and retention, JDBC or DynamoDB |
-| `notification` | `axiz-notification-spring-boot-starter` | Templated notifications (email, SMS, push) published as events |
-| `storage-s3` | `axiz-storage-spring-boot-starter` | Object storage on S3 (streaming, presigned URLs, metadata), observed |
-| `lock` | `axiz-lock-spring-boot-starter` | Distributed locks (in memory only in local/test; shared environments need lock-redis or lock-dynamodb) |
-| `lock-dynamodb` | `axiz-lock-spring-boot-starter` | Distributed locks on DynamoDB (leases) |
+| `foundation` | `axiz-foundation-spring-boot-starter` | Reloj y calendario de negocio (zona, fines de semana, feriados), valores por defecto de JSON y validación |
+| `web` | `axiz-web-spring-boot-starter` | Cabeceras de metadatos de la petición, correlación, paginación, versionado de API, CORS y convenciones JSON |
+| `errors` | `axiz-errors-spring-boot-starter` | Detalles de problema RFC 9457, catálogo de errores (ConfigMap `APP_NAME-errors`) y mapeo de errores externos |
+| `logging` | `axiz-logging-spring-boot-starter` | Logs JSON estructurados con contexto de traza y de petición, log de acceso HTTP con enmascaramiento |
+| `observability` | `axiz-observability-spring-boot-starter` | Trazas y métricas OpenTelemetry mediante Micrometer (OTLP), sin agente Java |
+| `metrics` | `axiz-metrics-spring-boot-starter` | Métricas genéricas de eventos (conteo, duración, importes por moneda, valores) con etiquetas acotadas |
+| `config` | `axiz-config-spring-boot-starter` | ConfigMaps montados como archivos (axiz-common, `APP_NAME`, `APP_NAME-errors`; sin acceso a la API de Kubernetes), Parameter Store y comprobación de claves obligatorias |
+| `sensitive` | `axiz-sensitive-spring-boot-starter` | Enmascaramiento de campos sensibles en respuestas, logs y auditoría según el nivel de sensibilidad |
+| `messaging-kafka` | `axiz-messaging-spring-boot-starter` | CloudEvents sobre Amazon MSK con autenticación IAM, reintentos, DLQ y propagación de trazas |
+| `dynamodb` | `axiz-dynamodb-spring-boot-starter` | Enhanced client de DynamoDB, repositorios con paginación por cursor y bloqueo optimista |
+| `messaging-sqs` | `axiz-messaging-spring-boot-starter` | Consumidores y publicadores de CloudEvents sobre SQS (estándar y FIFO) con DLQ |
+| `messaging-sns` | `axiz-messaging-spring-boot-starter` | Publicación de CloudEvents en tópicos SNS (difusión) |
+| `inbox` | `axiz-inbox-spring-boot-starter` | Deduplicación en el consumidor (inbox) con leases y retención, sobre JDBC o DynamoDB |
+| `notification` | `axiz-notification-spring-boot-starter` | Notificaciones con plantillas (email, SMS, push) publicadas como eventos |
+| `storage-s3` | `axiz-storage-spring-boot-starter` | Almacenamiento de objetos en S3 (streaming, URL prefirmadas, metadatos), observado |
+| `lock` | `axiz-lock-spring-boot-starter` | Locks distribuidos (en memoria solo en local/test; los ambientes compartidos necesitan lock-redis o lock-dynamodb) |
+| `lock-dynamodb` | `axiz-lock-spring-boot-starter` | Locks distribuidos en DynamoDB (leases) |
 
-Add more with `axiz add <capability>`: it adds the starter, its properties, the ConfigMap keys and a
-usage example.
+Se agregan más con `axiz add <capability>`: añade el starter, sus propiedades, las claves del ConfigMap
+y un ejemplo de uso.
 
-## Configuration
+## Configuración
 
-- `application.yaml` holds defaults only. Environment values live in the ConfigMaps `axiz-common`,
-  `notifications-processor` and `notifications-processor-errors`, mounted as files by the chart
-  (`deploy/helm/notifications-processor/values-<env>.yaml`, keys `config` and `errors`).
-- Secrets never go to the repository nor to ConfigMaps: they come from AWS Secrets Manager through
-  the ExternalSecret and are mounted as files in `/var/run/secrets/axiz`.
-- AWS access uses the pod identity (IRSA or EKS Pod Identity); there are no AWS keys anywhere.
+- `application.yaml` contiene solo valores por defecto. Los valores de cada ambiente están en los ConfigMaps `axiz-common`,
+  `notifications-processor` y `notifications-processor-errors`, que el chart monta como archivos
+  (`deploy/helm/notifications-processor/values-<env>.yaml`, claves `config` y `errors`).
+- Los secretos nunca van al repositorio ni a los ConfigMaps: provienen de AWS Secrets Manager mediante
+  el ExternalSecret y se montan como archivos en `/var/run/secrets/axiz`.
+- El acceso a AWS usa la identidad del pod (IRSA o EKS Pod Identity); no hay claves de AWS en ningún lugar.
 
-Keys each environment must define:
+Claves que cada ambiente debe definir:
 
 - `axiz.foundation.calendar.holidays`
 - `spring.kafka.bootstrap-servers`
@@ -101,37 +101,38 @@ Keys each environment must define:
 - `axiz.messaging.sqs.queues`
 - `axiz.storage.bucket`
 
-## Deployment
+## Despliegue
 
-`deploy/helm/notifications-processor` contains the chart: Deployment with probes, Service, HPA, PDB,
-ConfigMaps mounted as files, ExternalSecret, ServiceAccount and a NetworkPolicy. Pods do not
-require Kubernetes API permissions to read their mounted configuration.
-The pipelines in `.github/workflows` call the shared axiz workflows, pinned to an immutable release (`@axiz-workflows-vX.Y.Z`; Renovate proposes grouped updates to the next immutable release tag):
+`deploy/helm/notifications-processor` contiene el chart: Deployment con probes, Service, HPA, PDB,
+ConfigMaps montados como archivos, ExternalSecret, ServiceAccount y una NetworkPolicy. Los pods no
+requieren permisos sobre la API de Kubernetes para leer su configuración montada.
+Los pipelines de `.github/workflows` llaman a los workflows compartidos de axiz, fijados a una release inmutable (`@axiz-workflows-vX.Y.Z`; Renovate propone actualizaciones agrupadas hacia el siguiente tag de release inmutable):
 
-- `ci.yaml`: pull requests run the shared checks and the build with every quality gate; `main`
-  builds the image (Jib, signed with cosign) and deploys it to dev and then qa; a tag `v*` deploys
-  to prod after the approval of the `prod` environment.
-- Deployments are GitOps: the pipeline records the release (chart commit, image tag and digest) in
-  the GitOps repository and Argo CD applies it. `cd.yaml` redeploys or rolls back an existing image.
-- `release.yaml`: release-please keeps a release pull request with the next version and the
-  changelog; merging it creates the tag.
+- `ci.yaml`: los pull requests ejecutan las comprobaciones compartidas y el build con todos los controles
+  de calidad; `main` construye la imagen (Jib, firmada con cosign) y la despliega en dev y luego en qa;
+  un tag `v*` despliega en prod tras la aprobación del ambiente `prod`.
+- Los despliegues son GitOps: el pipeline registra la release (commit del chart, tag y digest de la imagen)
+  en el repositorio GitOps y Argo CD la aplica. `cd.yaml` vuelve a desplegar o revierte una imagen existente.
+- `release.yaml`: release-please mantiene un pull request de release con la siguiente versión y el
+  changelog; al fusionarlo se crea el tag.
 
-## Decisions
+## Decisiones
 
-## Protected contacts and local seed
+## Contactos protegidos y datos locales de arranque
 
-`ContactItem` persists an `EncryptedValue` address. `CustomerContact` is the decrypted
-in-memory delivery model. Axiz `FieldEncryptor` authenticates the customer ID and the
-channel with each address; copying ciphertext to a different customer or channel fails.
-The customer profile writer must use the same context `notification.address` and the
-length-prefixed customer/channel binding (see `ContactItem.protect`). Keep old key
-versions available during rotation; the mounted secret is `field-key-v1`.
+`ContactItem` persiste una dirección `EncryptedValue`. `CustomerContact` es el modelo de entrega
+descifrado en memoria. `FieldEncryptor` de Axiz autentica el ID del cliente y el canal junto con cada
+dirección; copiar texto cifrado a otro cliente o canal falla. El escritor del perfil de clientes debe
+usar el mismo contexto `notification.address` y el binding de cliente y canal con prefijo de longitud
+(ver `ContactItem.protect`). Las versiones anteriores de la clave se mantienen disponibles durante la
+rotación; el secreto montado es `field-key-v1`.
 
-The `local` profile explicitly enables `demo.local.seed-contacts`. `LocalContactSeed`
-requires a loopback AWS endpoint, environment `local` and table prefix `local-`. It
-inserts the two fictitious demo contacts with Axiz encryption, preserving existing rows
-on restart. Infrastructure scripts create tables without writing plaintext contacts.
-Run `local/dev-secrets.sh` before starting. Production profiles do not enable the seed.
+El perfil `local` activa de forma explícita `demo.local.seed-contacts`. `LocalContactSeed` requiere
+un endpoint de AWS en loopback, el ambiente `local` y el prefijo de tabla `local-`. Inserta los dos
+contactos ficticios de la demo con cifrado de Axiz y conserva las filas existentes al reiniciar. Los
+scripts de infraestructura crean las tablas sin escribir contactos en texto plano. Antes de arrancar
+se ejecuta `local/dev-secrets.sh`. Los perfiles de producción no activan estos datos de arranque.
 
-Legacy plaintext rows are rejected. Recreate disposable local data, or perform an
-authorized migration with the matching field key before upgrading persisted data.
+Las filas con direcciones en texto plano se rechazan. Los datos locales desechables se recrean, o se
+hace una migración autorizada con la clave de campo correspondiente antes de usar los datos
+persistidos.

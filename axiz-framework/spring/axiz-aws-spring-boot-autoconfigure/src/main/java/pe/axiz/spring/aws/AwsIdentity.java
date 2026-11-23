@@ -28,7 +28,10 @@ import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.utils.SdkAutoCloseable;
 
-/** Context-owned identity: capability, service, unqualified global, then lazy SDK defaults. */
+/**
+ * Identidad propia del contexto: capacidad, servicio, global sin calificar y luego los valores por
+ * defecto diferidos del SDK.
+ */
 public final class AwsIdentity implements SdkAutoCloseable, SmartInitializingSingleton {
   static final String BEAN_NAME = "axizAwsIdentity";
   private final ConfigurableListableBeanFactory beans;
@@ -42,7 +45,10 @@ public final class AwsIdentity implements SdkAutoCloseable, SmartInitializingSin
     this.environment = Objects.requireNonNull(environment);
   }
 
-  /** Returns an independent closeable resource; application providers remain Spring-owned. */
+  /**
+   * Devuelve un recurso cerrable independiente; los proveedores de la aplicación siguen siendo
+   * propiedad de Spring.
+   */
   public AwsCredentialSource source(AwsService service, AwsCapability capability) {
     if (service == AwsService.UNSPECIFIED || capability == AwsCapability.UNSPECIFIED)
       throw new IllegalArgumentException("An explicit AWS service and capability are required");
@@ -75,8 +81,9 @@ public final class AwsIdentity implements SdkAutoCloseable, SmartInitializingSin
       level = "CONTEXT_DEFAULT";
       origin = "context";
     } else {
-      // A selected lazy lookup creates a real dependency on this manager. No scanning of
-      // unrelated beans in creation, and no consumer names are part of the public API.
+      // Una búsqueda diferida seleccionada crea una dependencia real de este gestor. No se recorren
+      // beans no relacionados durante la creación y ningún nombre de consumidor forma parte de la
+      // API pública.
       if (chosen.owner == beans) beans.registerDependentBean(chosen.name, BEAN_NAME);
       provider = chosen.owner.getBean(chosen.name, AwsCredentialsProvider.class);
       level = !specific.isEmpty() ? "CAPABILITY" : !services.isEmpty() ? "SERVICE" : "GLOBAL";
@@ -98,7 +105,10 @@ public final class AwsIdentity implements SdkAutoCloseable, SmartInitializingSin
         });
   }
 
-  /** Defers acquisition until the callback needs it; each invocation owns a separate resource. */
+  /**
+   * Difiere la adquisición hasta que el callback la necesita; cada invocación posee un recurso
+   * separado.
+   */
   public Supplier<AwsCredentialSource> factory(AwsService service, AwsCapability capability) {
     checkOpen();
     if (service == AwsService.UNSPECIFIED || capability == AwsCapability.UNSPECIFIED)
@@ -107,7 +117,7 @@ public final class AwsIdentity implements SdkAutoCloseable, SmartInitializingSin
     return () -> source(target.service(), target.capability());
   }
 
-  /** Transfers one resource to the SDK client without changing transport or instrumentation. */
+  /** Transfiere un recurso al cliente del SDK sin cambiar el transporte ni la instrumentación. */
   public <B extends AwsClientBuilder<B, C>, C> B configure(
       B builder, AwsService service, AwsCapability capability) {
     var resource = source(service, capability);
@@ -121,7 +131,8 @@ public final class AwsIdentity implements SdkAutoCloseable, SmartInitializingSin
 
   @Override
   public void afterSingletonsInstantiated() {
-    // Metadata only, including inactive scopes; never resolve credentials or instantiate providers.
+    // Solo metadatos, incluidos los ámbitos inactivos; nunca se resuelven credenciales ni se
+    // instancian proveedores.
     Map<String, List<Candidate>> groups = new HashMap<>();
     for (Candidate candidate : candidates(beans)) {
       String scope =

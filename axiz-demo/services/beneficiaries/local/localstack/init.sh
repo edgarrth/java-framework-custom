@@ -1,8 +1,8 @@
 #!/bin/bash
-# Creates the AWS resources beneficiaries uses locally (runs when LocalStack is ready).
-# In real environments these resources are created by Terraform, never by the service.
+# Crea los recursos de AWS que beneficiaries usa en local (se ejecuta cuando LocalStack está listo).
+# En los entornos reales estos recursos los crea Terraform, nunca el servicio.
 set -euo pipefail
-table() { # name, then "attribute:type:KEYTYPE" for each key attribute
+table() { # nombre y luego "attribute:type:KEYTYPE" por cada atributo de clave
   local name=$1 defs=() keys=(); shift
   for k in "$@"; do IFS=: read -r a t kt <<<"$k"
     defs+=("AttributeName=$a,AttributeType=$t"); keys+=("AttributeName=$a,KeyType=$kt"); done

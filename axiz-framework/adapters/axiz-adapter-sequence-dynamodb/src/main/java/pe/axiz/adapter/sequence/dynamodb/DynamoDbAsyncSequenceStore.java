@@ -11,7 +11,10 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.ReturnValue;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 
-/** Native asynchronous atomic block allocation, sharing the synchronous sequence records. */
+/**
+ * Asignación atómica asíncrona nativa de bloques, que comparte los registros de secuencia
+ * síncronos.
+ */
 public final class DynamoDbAsyncSequenceStore implements AsyncSequenceStore {
   @SuppressFBWarnings(
       value = "EI_EXPOSE_REP2",

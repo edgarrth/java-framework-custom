@@ -11,7 +11,9 @@ import pe.axiz.core.audit.AuditChainState;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.outbox.OutboxWriter;
 
-/** Blocking targets are called exclusively by the bounded strict confirmation worker. */
+/**
+ * Los destinos bloqueantes los invoca exclusivamente el worker acotado de confirmación estricta.
+ */
 final class StrictAuditTargets {
   private StrictAuditTargets() {}
 

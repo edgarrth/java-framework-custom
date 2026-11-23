@@ -78,7 +78,7 @@ jobs:
           ref: ${{ inputs.source-sha }}
           persist-credentials: false
           fetch-depth: 0
-      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
       # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
       - uses: edgarrth/java-framework-custom/.github/actions/consume-build@axiz-workflows-v2.0.0 # x-release-please-version
         id: candidate
@@ -90,7 +90,7 @@ jobs:
           manifest-sha256: ${{ inputs.candidate-manifest-sha256 }}
           kind: maven-library
           token: ${{ secrets.CANDIDATE_READ_TOKEN || github.token }}
-      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
       # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
       - uses: edgarrth/java-framework-custom/.github/actions/build-inputs@axiz-workflows-v2.0.0 # x-release-please-version
         id: inputs
@@ -108,7 +108,7 @@ jobs:
           candidate-bundle: ${{ steps.candidate.outputs.bundle-path }}
           candidate-manifest-sha256: ${{ inputs.candidate-manifest-sha256 }}
           token: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
-      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
       # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
       - uses: edgarrth/java-framework-custom/.github/actions/setup-maven@axiz-workflows-v2.0.0 # x-release-please-version
         with:
@@ -167,17 +167,17 @@ jobs:
             jq -e --arg platform "$platform" '. == [$platform]' <<< "$PLATFORMS" >/dev/null
             profiles=quality,native
           fi
-          # Build required sibling modules from this checkout. Install only into this job's
-          # isolated local repository so the later Jib invocation resolves those same bytes.
+          # Se compilan los módulos hermanos requeridos desde esta copia. Se instalan solo en el
+          # repositorio local aislado de este job para que Jib resuelva después esos mismos bytes.
           "$PYTHON" "$TOOLS/check_architecture.py" "$MODULE" --prepare
           mvn -B -ntp -f pom.xml -pl "$MODULE" -am "-P$profiles" install 2>&1 | tee target/build-reports/verify.log
           "$PYTHON" "$TOOLS/check_architecture.py" "$MODULE" | tee target/build-reports/architecture.json
           if [[ "$VARIANT" == native ]]; then
-            # Reuse the verified package/AOT outputs; forking package again imports generated proxies into architecture tests.
+            # Se reutilizan las salidas package/AOT verificadas; repetir package importaría proxies generados en las pruebas de arquitectura.
             mvn -B -ntp -f "$MODULE/pom.xml" "-P$profiles" native:compile-no-fork native:test 2>&1 | tee -a target/build-reports/verify.log
           fi
           if [[ "$BASE_IMAGE" == scratch ]]; then
-            # A dynamically linked native executable cannot run in an empty filesystem.
+            # Un ejecutable nativo enlazado de forma dinámica no puede correr en un sistema de archivos vacío.
             readelf -l "$MODULE/target/$SERVICE" > target/build-reports/native-elf.txt
             if grep -q INTERP target/build-reports/native-elf.txt; then
               echo '::error::scratch requires a statically linked native executable'; exit 1
@@ -227,7 +227,7 @@ jobs:
           mkdir -p target/service-content/images target/service-content/chart
           while IFS= read -r platform; do
             archive="$GITHUB_WORKSPACE/target/service-content/images/${platform//\//-}.tar"
-            # Each archive is packaged from the same already tested outputs; no remote writes.
+            # Cada archivo se empaqueta desde las mismas salidas ya probadas; no hay escrituras remotas.
             mvn -B -ntp -f "$MODULE/pom.xml" "-P$profiles" jib:buildTar \
               "-Djib.to.image=$image:$tag" "-Djib.from.image=$BASE_IMAGE" "-Djib.from.platforms=$platform" \
               -Djib.container.format=OCI "-Djib.outputPaths.tar=$archive" \
@@ -289,7 +289,7 @@ jobs:
           METADATA: ${{ steps.inputs.outputs.metadata }}
         run: |
           set -euo pipefail
-          # Trivy was installed by the preceding SHA-pinned source scan action.
+          # Trivy lo instaló la acción previa de escaneo de fuentes, fijada por SHA.
           mapfile -t platforms < <(jq -r '.parameters.platforms[]' "$METADATA")
           [[ "${#platforms[@]}" -gt 0 ]]
           reports=()
@@ -329,7 +329,7 @@ jobs:
       packages: write
       id-token: write
     steps:
-      # Source is scanned as data. No source command, Maven, image or application is executed.
+      # El código fuente se escanea como datos. No se ejecuta ningún comando del código fuente, Maven, imagen ni aplicación.
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           ref: ${{ inputs.source-sha }}
@@ -386,7 +386,7 @@ jobs:
           TRIVY_PASSWORD: ${{ github.token }}
         run: |
           set -euo pipefail
-          # Trivy was installed by the preceding SHA-pinned source scan action.
+          # Trivy lo instaló la acción previa de escaneo de fuentes, fijada por SHA.
           mapfile -t platforms < <(jq -r '.parameters.platforms[]' "$METADATA")
           [[ "${#platforms[@]}" -gt 0 ]]
           reports=()
@@ -397,7 +397,7 @@ jobs:
             reports+=("$report")
           done
           jq -s . "${reports[@]}" > target/build-reports/image-scan.json
-      # Exact immutable internal release: evaluate code and schema cannot come from the PR.
+      # Release interna inmutable y exacta: el código y el esquema de evaluación no pueden provenir del PR.
       - name: Complete vulnerability evidence and protected risk deadlines
         # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
         uses: edgarrth/java-framework-custom/.github/actions/check-vulnerabilities@axiz-workflows-v2.0.0 # x-release-please-version

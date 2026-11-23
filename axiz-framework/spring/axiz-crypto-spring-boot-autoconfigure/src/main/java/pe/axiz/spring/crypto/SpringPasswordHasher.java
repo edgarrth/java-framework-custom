@@ -5,7 +5,7 @@ import java.util.Objects;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import pe.axiz.core.crypto.PasswordHasher;
 
-/** Argon2id and BCrypt through Spring Security's encoders. */
+/** Argon2id y BCrypt mediante los codificadores de Spring Security. */
 public final class SpringPasswordHasher implements PasswordHasher {
 
   private final PasswordEncoder encoder;

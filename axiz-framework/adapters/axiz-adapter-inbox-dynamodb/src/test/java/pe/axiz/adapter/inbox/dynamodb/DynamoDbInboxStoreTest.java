@@ -31,7 +31,7 @@ import software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse;
 
 class DynamoDbInboxStoreTest {
 
-  /** Evaluates the conditions this store uses against an in-memory table. */
+  /** Evalúa contra una tabla en memoria las condiciones que usa este almacén. */
   static final class FakeDynamo implements DynamoDbClient {
     final Map<String, Map<String, AttributeValue>> items = new HashMap<>();
 
@@ -104,7 +104,7 @@ class DynamoDbInboxStoreTest {
         store.tryAcquire("c", "e-1", "b", now, now.plusSeconds(60), now.plusSeconds(3600));
     assertEquals(Acquisition.Status.BUSY, busy.status());
     assertEquals(now.plusSeconds(60), busy.leaseUntil());
-    // A's lease expires and B takes over
+    // el lease de A expira y B toma el control
     assertEquals(
         Acquisition.Status.ACQUIRED,
         store
@@ -152,14 +152,14 @@ class DynamoDbInboxStoreTest {
 
           @Override
           public boolean purgesOnDemand() {
-            return false; // table TTL
+            return false; // TTL de la tabla
           }
         };
     return InboxStoreContract.checks(backend).stream()
         .map(c -> DynamicTest.dynamicTest(c.name(), c::run));
   }
 
-  /** Answers every write with the given failure. */
+  /** Responde cada escritura con el fallo indicado. */
   static DynamoDbClient failing(RuntimeException failure) {
     return new DynamoDbClient() {
       @Override
@@ -190,8 +190,8 @@ class DynamoDbInboxStoreTest {
   @Test
   void aRefusedWriteWithoutTheCurrentItemIsBusyWithAnUnknownLease() {
     Instant now = Instant.parse("2026-01-01T00:00:00Z");
-    // the condition failed but DynamoDB returned no item (or one without lease): busy, lease
-    // unknown
+    // la condición falló pero DynamoDB no devolvió ítem (o uno sin lease): ocupado, lease
+    // desconocido
     DynamoDbInboxStore withoutItem =
         new DynamoDbInboxStore(
             failing(ConditionalCheckFailedException.builder().message("exists").build()), "t");

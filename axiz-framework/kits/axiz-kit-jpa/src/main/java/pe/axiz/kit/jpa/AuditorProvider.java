@@ -2,7 +2,7 @@ package pe.axiz.kit.jpa;
 
 import java.util.Optional;
 
-/** Who is changing data: the authenticated principal name, or the system. */
+/** Quién está cambiando los datos: el nombre del principal autenticado o el sistema. */
 @FunctionalInterface
 public interface AuditorProvider {
 

@@ -30,7 +30,10 @@ import java.util.concurrent.atomic.LongAdder;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.json.JsonWriter;
 
-/** Bounded, deeply immutable snapshots. Unknown values are never stringified. */
+/**
+ * Instantáneas acotadas y profundamente inmutables. Los valores desconocidos nunca se convierten a
+ * texto.
+ */
 final class AuditDetails {
   static final int MAX_NODES = 500;
   static final int MAX_BYTES = 32 * 1024;
@@ -61,7 +64,7 @@ final class AuditDetails {
       var details = freezer.map(source, 0);
       return new Frozen(details, freezer.sanitized);
     } catch (RuntimeException failure) {
-      // A hostile root map cannot produce a scalar: discard that entire subtree.
+      // Un mapa raíz hostil no puede producir un escalar: se descarta todo ese subárbol.
       return new Frozen(new FrozenMap(Map.of()), 1);
     }
   }
@@ -73,7 +76,8 @@ final class AuditDetails {
   private FrozenMap map(Map<?, ?> source, int depth) {
     Map<String, @Nullable Object> out = new LinkedHashMap<>();
     for (var entry : source.entrySet()) {
-      // Invalid keys must not allow an unbounded scan that spends no output budget.
+      // Las claves inválidas no deben permitir un recorrido ilimitado que no consuma presupuesto de
+      // salida.
       if (++visited > MAX_NODES) {
         sanitized++;
         break;

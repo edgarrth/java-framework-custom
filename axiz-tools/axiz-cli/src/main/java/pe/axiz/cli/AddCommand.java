@@ -9,7 +9,9 @@ import pe.axiz.codegen.project.CapabilityAdder;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
-/** {@code axiz add <capability>...}: starter, properties, ConfigMap keys, tables and an example. */
+/**
+ * {@code axiz add <capability>...}: starter, propiedades, claves de ConfigMap, tablas y un ejemplo.
+ */
 @Command(
     mixinStandardHelpOptions = true,
     name = "add",

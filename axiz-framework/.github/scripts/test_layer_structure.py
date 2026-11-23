@@ -1,4 +1,4 @@
-"""Regression of the closed technology exceptions after extracting provider-neutral ports."""
+"""Regresión de las excepciones tecnológicas cerradas tras extraer puertos neutrales respecto del proveedor."""
 import importlib.util
 import tempfile
 import unittest

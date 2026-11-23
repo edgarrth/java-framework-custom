@@ -1,11 +1,11 @@
 #!/bin/bash
-# Authenticated DAST of every REST service of the demo with the OWASP ZAP API scan, driven by the
-# OpenAPI contracts in contracts/ (passive and active rules). Fails when ZAP reports a FAIL; its
-# warnings are kept in the reports for review.
+# DAST autenticado de cada servicio REST de la demo con el escaneo de API de OWASP ZAP, guiado por
+# los contratos OpenAPI de contracts/ (reglas pasivas y activas). Falla cuando ZAP reporta un FAIL; sus
+# advertencias se conservan en los reportes para su revisión.
 #
 # Local (scripts/demo.sh up): scripts/dast.sh
-# Elsewhere: KC_URL=... DAST_TARGETS="payments-ux=http://host:port ..." scripts/dast.sh
-# Reports: target/dast/zap-<service>.{html,json,log}
+# En otros entornos: KC_URL=... DAST_TARGETS="payments-ux=http://host:port ..." scripts/dast.sh
+# Reportes: target/dast/zap-<service>.{html,json,log}
 set -Eeuo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
 KC_URL=${KC_URL:-http://localhost:8180}
@@ -15,7 +15,7 @@ DAST_TARGETS=${DAST_TARGETS:-"payments-ux=http://localhost:8080 payment-orders=h
 beneficiaries=http://localhost:8082 banking-core=http://localhost:8083 \
 payment-process=http://localhost:8084 payments-history=http://localhost:8086 \
 payment-network-gateway=http://localhost:8087"}
-# internal services take a service token; channel-facing ones a customer token
+# los servicios internos reciben un token de servicio; los orientados al canal, un token de cliente
 declare -A machine=([banking-core]=1 [payment-process]=1 [payment-network-gateway]=1)
 
 fail() { printf '\033[31mFAILED: %s\033[0m\n' "$*" >&2; exit 1; }
@@ -36,7 +36,7 @@ token() {
 
 out="$root/target/dast"
 mkdir -p "$out"
-chmod 777 "$out" # the ZAP container runs as an unprivileged user
+chmod 777 "$out" # el contenedor de ZAP se ejecuta con un usuario sin privilegios
 failed=()
 for target in $DAST_TARGETS; do
   service=${target%%=*}
@@ -44,8 +44,8 @@ for target in $DAST_TARGETS; do
   contract="$root/contracts/$service.yaml"
   [ -f "$contract" ] || fail "no contract for $service"
   bearer=$(token "$service") || fail "no token for $service"
-  # replacer rules add the bearer token and an idempotency key to every request ZAP sends; -z is
-  # split like a shell command line, so the space after "Bearer" is escaped
+  # las reglas replacer añaden el bearer token y una clave de idempotencia a cada petición que envía ZAP; -z se
+  # divide como una línea de comandos de shell, por lo que el espacio tras "Bearer" se escapa
   rules="-config replacer.full_list(0).description=auth -config replacer.full_list(0).enabled=true"
   rules+=" -config replacer.full_list(0).matchtype=REQ_HEADER"
   rules+=" -config replacer.full_list(0).matchstr=Authorization"

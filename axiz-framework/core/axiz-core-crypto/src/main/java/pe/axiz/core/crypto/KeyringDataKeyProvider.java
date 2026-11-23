@@ -5,9 +5,10 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Immutable bounded wrapping-key routing. Providers and clients are borrowed, not closed here. A
- * route is an immutable identity: never repoint it at another key, alias or wrapping algorithm.
- * Underlying providers must authenticate the supplied context. There is no trial decryption.
+ * Enrutamiento inmutable y acotado de claves de envoltura. Los proveedores y clientes son prestados
+ * y no se cierran aquí. Una ruta es una identidad inmutable: nunca se redirige a otra clave, alias
+ * o algoritmo de envoltura. Los proveedores subyacentes deben autenticar el contexto suministrado.
+ * No hay descifrado por tanteo.
  */
 public final class KeyringDataKeyProvider implements DataKeyProvider {
   private final Map<String, DataKeyProvider> providers;
@@ -44,7 +45,8 @@ public final class KeyringDataKeyProvider implements DataKeyProvider {
   }
 
   /**
-   * Unauthenticated header inspection for maintenance planning; decrypt to establish authenticity.
+   * Inspección no autenticada de la cabecera para planificar el mantenimiento; se descifra para
+   * establecer la autenticidad.
    */
   public static String envelopeKeyId(byte[] envelope) {
     return DataKeyRouting.parse(EnvelopePayload.parse(envelope).encryptedKey()).keyId();

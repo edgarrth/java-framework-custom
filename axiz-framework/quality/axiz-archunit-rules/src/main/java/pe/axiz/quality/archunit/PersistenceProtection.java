@@ -10,7 +10,7 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 
-/** Examines the effective JPA field/property access or DynamoDB getter mapping. */
+/** Examina el acceso efectivo por campo o propiedad de JPA o el mapeo de getters de DynamoDB. */
 final class PersistenceProtection {
   static final String ENTITY = "jakarta.persistence.Entity";
   static final String DYNAMO =
@@ -141,8 +141,8 @@ final class PersistenceProtection {
           .filter(c -> c instanceof JavaClass type && type.isAssignableTo(CONVERTER))
           .isPresent();
     }
-    // EncryptedConverter's input contract is String. An autoApply converter for another
-    // attribute type cannot protect a String merely by being present in the service.
+    // El contrato de entrada de EncryptedConverter es String. Un converter autoApply para otro tipo
+    // de atributo no puede proteger un String por el mero hecho de estar presente en el servicio.
     return converters.stream()
         .anyMatch(
             c ->

@@ -52,7 +52,8 @@ import pe.axiz.core.http.ClientCredentialsAsyncTokenProvider;
 
 class AsyncClientCredentialsTest {
   private final TrackingClient http = new TrackingClient();
-  // Test-only HTTP driver; production selects a native DNS/transport implementation in Spring.
+  // Driver HTTP solo para pruebas; en producción Spring selecciona una implementación nativa de DNS
+  // y transporte.
   private final AsyncHttpExchange transport =
       (request, maxBytes) ->
           Stages.map(
@@ -99,7 +100,8 @@ class AsyncClientCredentialsTest {
           } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
           } catch (IOException cancelled) {
-            // Cancellation intentionally closes a response while the local server is writing it.
+            // La cancelación cierra intencionalmente una respuesta mientras el servidor local la
+            // escribe.
           }
         });
     server.start();
@@ -204,8 +206,9 @@ class AsyncClientCredentialsTest {
     second.cancel(true);
     var nativeFuture = http.nativeCall.get();
     assertTrue(nativeFuture.isDone());
-    // HttpClient cancels the exchange first; its future may complete with a wrapped cancellation
-    // before CompletableFuture.cancel can mark its direct state as cancelled (JDK MinimalFuture).
+    // HttpClient cancela primero el intercambio; su future puede completarse con una cancelación
+    // envuelta antes de que CompletableFuture.cancel pueda marcar su estado directo como cancelado
+    // (MinimalFuture del JDK).
     var cancelled = assertThrows(RuntimeException.class, nativeFuture::join);
     assertInstanceOf(
         CancellationException.class,

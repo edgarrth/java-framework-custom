@@ -7,8 +7,8 @@ import org.springframework.core.env.Environment;
 import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
 
 /**
- * Gives Flyway a JDBC connection authenticated with an IAM token (the migration runs once at
- * startup, well within the token's lifetime).
+ * Entrega a Flyway una conexión JDBC autenticada con un token IAM (la migración se ejecuta una vez
+ * en el arranque, holgadamente dentro de la vida útil del token).
  */
 public final class FlywayPasswordCustomizer implements FlywayConfigurationCustomizer {
 

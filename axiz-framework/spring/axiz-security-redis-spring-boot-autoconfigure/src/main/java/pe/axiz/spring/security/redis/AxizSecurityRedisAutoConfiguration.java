@@ -19,8 +19,9 @@ import pe.axiz.core.security.RateLimiter;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 
 /**
- * Cluster-wide rate limits on ElastiCache (Redis/Valkey), using the connection settings of Boot's
- * Redis support ({@code spring.data.redis.*}, including TLS with certificate verification).
+ * Límites de tasa a nivel de clúster sobre ElastiCache (Redis/Valkey), usando la configuración de
+ * conexión del soporte Redis de Boot ({@code spring.data.redis.*}, incluido TLS con verificación de
+ * certificados).
  */
 @AutoConfiguration(
     afterName = "org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration",
@@ -36,9 +37,9 @@ import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 @EnableConfigurationProperties(AxizSecurityRedisProperties.class)
 public class AxizSecurityRedisAutoConfiguration {
 
-  // no destroy method: the connection belongs to the factory's RedisClient, which closes it when
-  // the factory stops (a lifecycle phase that runs before beans are destroyed); closing it again
-  // made Lettuce warn "Connection is already closed" at every shutdown
+  // sin método destroy: la conexión pertenece al RedisClient de la fábrica, que la cierra cuando la
+  // fábrica se detiene (una fase del ciclo de vida que se ejecuta antes de destruir los beans);
+  // cerrarla otra vez hace que Lettuce advierta "Connection is already closed" en cada apagado
   @Bean(destroyMethod = "")
   StatefulRedisConnection<String, String> axizRateLimitRedisConnection(
       LettuceConnectionFactory factory) {

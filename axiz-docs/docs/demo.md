@@ -7,17 +7,17 @@ Los nombres, cuentas y contratos externos son ficticios.
 
 ## Servicios
 
-| Service | Role / structure + extensions / stack | Persistence | What it shows |
+| Servicio | Rol / estructura + extensiones / stack | Persistencia | Qué muestra |
 |---|---|---|---|
-| `payments-ux` | ux / bff / reactive | Ninguno | Channel API, compositions with optional parts, token relay, Redis cache and idempotency, feature flags, masking, error translation |
-| `payment-orders` | business / hexagonal + cqrs / servlet | Aurora | Domain rules, business calendar and cut-off, sequences, field encryption + blind index, transactional outbox, audit to MSK |
-| `beneficiaries` | business / layered / servlet | DynamoDB | Repositories with cursor pagination, soft delete, optimistic locking, cache, idempotency on DynamoDB |
-| `banking-core` | core / hexagonal / servlet | Ninguno | Anti-corruption layer: REST with client credentials, SOAP with WS-Security, Redis locks, audit to SQS |
-| `payment-network-gateway` | gateway / hexagonal / servlet | Ninguno | Payment network isolation, API key from secrets, transfer idempotency with Redis, audit to SQS |
-| `payment-process` | business / hexagonal + saga / servlet | Aurora | Saga with compensations and recovery, Kafka consumer, ShedLock, tenancy |
-| `notifications-processor` | event-processor / eda | DynamoDB | Kafka and SQS handlers, inbox, notifications to SNS, audit archive on S3 with DynamoDB locks |
-| `settlement-batch` | batch / batch / CronJob | Aurora | Spring Batch over a fixed-width S3 file, control totals, idempotent load, job exit codes |
-| `payments-history` | business / hexagonal + cqrs / reactive | Aurora (R2DBC) | Read model fed by Kafka: reactive command and query buses, reactive transactions on R2DBC, Spring Data R2DBC with auditing, encrypted and money columns, R2DBC inbox |
+| `payments-ux` | ux / bff / reactive | Ninguno | API de canal, composiciones con partes opcionales, relay de tokens, caché e idempotencia en Redis, feature flags, enmascaramiento, traducción de errores |
+| `payment-orders` | business / hexagonal + cqrs / servlet | Aurora | Reglas de dominio, calendario de negocio y hora de corte, secuencias, cifrado de campos + índice ciego, outbox transaccional, auditoría en MSK |
+| `beneficiaries` | business / layered / servlet | DynamoDB | Repositorios con paginación por cursor, borrado lógico, bloqueo optimista, caché, idempotencia en DynamoDB |
+| `banking-core` | core / hexagonal / servlet | Ninguno | Capa anticorrupción: REST con client credentials, SOAP con WS-Security, locks en Redis, auditoría en SQS |
+| `payment-network-gateway` | gateway / hexagonal / servlet | Ninguno | Aislamiento de la red de pagos, API key desde secretos, idempotencia de transferencias con Redis, auditoría en SQS |
+| `payment-process` | business / hexagonal + saga / servlet | Aurora | Saga con compensaciones y recuperación, consumidor Kafka, ShedLock, tenancy |
+| `notifications-processor` | event-processor / eda | DynamoDB | Handlers de Kafka y SQS, inbox, notificaciones a SNS, archivo de auditoría en S3 con locks de DynamoDB |
+| `settlement-batch` | batch / batch / CronJob | Aurora | Spring Batch sobre un archivo de ancho fijo en S3, totales de control, carga idempotente, códigos de salida del job |
+| `payments-history` | business / hexagonal + cqrs / reactive | Aurora (R2DBC) | Modelo de lectura alimentado por Kafka: buses reactivos de comandos y consultas, transacciones reactivas sobre R2DBC, Spring Data R2DBC con auditoría, columnas cifradas y monetarias, inbox R2DBC |
 
 ## Flujos
 

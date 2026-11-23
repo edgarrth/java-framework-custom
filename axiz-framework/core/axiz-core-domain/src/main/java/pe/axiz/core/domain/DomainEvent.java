@@ -3,21 +3,24 @@ package pe.axiz.core.domain;
 import java.time.Instant;
 
 /**
- * Something that happened in the domain. Events are immutable (normally records) and are published
- * only after the transaction that produced them commits.
+ * Algo que ocurrió en el dominio. Los eventos son inmutables (normalmente records) y se publican
+ * solo después de que la transacción que los produjo hace commit.
  */
 public interface DomainEvent {
 
-  /** Unique id of this event (UUIDv7); used for deduplication downstream. */
+  /** Id único de este evento (UUIDv7); se usa para deduplicación aguas abajo. */
   String eventId();
 
-  /** When it happened. */
+  /** Momento en que ocurrió. */
   Instant occurredAt();
 
-  /** Id of the aggregate that produced it. */
+  /** Id del agregado que lo produjo. */
   String aggregateId();
 
-  /** Event type, by default the simple class name in kebab-case, e.g. {@code order-placed}. */
+  /**
+   * Tipo de evento; por defecto, el nombre simple de la clase en kebab-case, por ejemplo {@code
+   * order-placed}.
+   */
   default String eventType() {
     return EventTypes.kebab(getClass().getSimpleName());
   }

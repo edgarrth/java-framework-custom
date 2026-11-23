@@ -45,7 +45,10 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-/** Real PostgreSQL locks, transaction rollback, committed checkpoints and native execution. */
+/**
+ * Locks reales de PostgreSQL, rollback de transacciones, checkpoints confirmados y ejecución
+ * nativa.
+ */
 @Timeout(120)
 class PostgresAuditChainIT {
   private static PostgreSQLContainer postgres;
@@ -200,8 +203,9 @@ class PostgresAuditChainIT {
                               seal(chain, event("event-" + index))
                                   .flatMap(
                                       signed -> {
-                                        // A simplified record write uses the same resource and
-                                        // transaction as the chain head.
+                                        // Una escritura simplificada del registro usa el mismo
+                                        // recurso y la misma transacción que la cabeza de la
+                                        // cadena.
                                         return sql.update(
                                                 "INSERT INTO axiz_outbox"
                                                     + " (id,destination,aggregate_type,"

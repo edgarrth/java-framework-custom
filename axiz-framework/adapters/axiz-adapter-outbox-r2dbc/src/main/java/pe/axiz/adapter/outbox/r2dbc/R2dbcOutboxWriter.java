@@ -12,8 +12,8 @@ import pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter;
 import reactor.core.publisher.Mono;
 
 /**
- * Registers events in the outbox inside the caller's reactive transaction: they are published if
- * and only if that transaction commits.
+ * Registra eventos en el outbox dentro de la transacción reactiva de quien llama: se publican si y
+ * solo si esa transacción hace commit.
  */
 public final class R2dbcOutboxWriter implements ReactiveOutboxWriter {
 

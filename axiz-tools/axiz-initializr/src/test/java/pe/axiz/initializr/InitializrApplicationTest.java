@@ -22,9 +22,10 @@ import pe.axiz.core.security.RateLimiter;
 import pe.axiz.initializr.config.SecurityConfiguration;
 
 /**
- * The whole application starts as it ships (every axiz starter, the real services and the security
- * chain). The SSO discovery and Redis quota boundary are replaced with test beans; the resource
- * server decoder resolves the issuer lazily and is never called here.
+ * La aplicación completa arranca tal como se distribuye (todos los starters de axiz, los servicios
+ * reales y la cadena de seguridad). El descubrimiento del SSO y la frontera de cuotas en Redis se
+ * reemplazan por beans de prueba; el decodificador del resource server resuelve el emisor de forma
+ * diferida y aquí nunca se invoca.
  */
 @SpringBootTest(
     properties = {

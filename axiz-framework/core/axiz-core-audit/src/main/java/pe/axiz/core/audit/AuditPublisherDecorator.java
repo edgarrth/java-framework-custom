@@ -1,6 +1,9 @@
 package pe.axiz.core.audit;
 
-/** Exposes a wrapped publisher so lifecycle and operational metrics remain discoverable. */
+/**
+ * Expone un publicador envuelto para que el ciclo de vida y las métricas operativas sigan siendo
+ * descubribles.
+ */
 public interface AuditPublisherDecorator {
   AuditPublisher delegate();
 }

@@ -42,8 +42,8 @@ import pe.axiz.core.security.TrustedIssuer;
 import reactor.core.publisher.Mono;
 
 /**
- * A caller without the required scope gets 403 before the body is read; a 400 would describe the
- * contract of an endpoint the caller may not use (OWASP API5).
+ * Un invocante sin el scope requerido recibe 403 antes de que se lea el cuerpo; un 400 describiría
+ * el contrato de un endpoint que el invocante no puede usar (OWASP API5).
  */
 class PreBindingAuthorizationHttpTest {
   private static final String ISSUER = "https://prebinding-fixture.example";
@@ -122,7 +122,7 @@ class PreBindingAuthorizationHttpTest {
                           .contentType(MediaType.APPLICATION_JSON)
                           .content(MALFORMED))
                   .andExpect(status().isBadRequest());
-              // an expression that reads arguments is decided after binding, as before
+              // una expresión que lee argumentos se decide después del binding
               client
                   .perform(
                       post("/accounts/other/debits")

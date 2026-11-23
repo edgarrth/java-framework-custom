@@ -47,7 +47,7 @@ class SoapTest {
               new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
           action.set(exchange.getRequestHeaders().getFirst("SOAPAction"));
           try {
-            // Deliberately stall the HTTP peer to exercise the real transport timeout.
+            // Se bloquea deliberadamente el par HTTP para ejercitar el timeout real del transporte.
             Thread.sleep(delayMs);
           } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

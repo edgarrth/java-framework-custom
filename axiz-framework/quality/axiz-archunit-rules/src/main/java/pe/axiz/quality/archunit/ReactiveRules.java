@@ -7,7 +7,7 @@ import com.tngtech.archunit.lang.ArchRule;
 import java.util.List;
 import java.util.Set;
 
-/** No synchronous I/O or scheduler escape hatch in reactive service code. */
+/** Sin E/S síncrona ni vías de escape mediante schedulers en el código de servicios reactivos. */
 public final class ReactiveRules {
   private ReactiveRules() {}
 

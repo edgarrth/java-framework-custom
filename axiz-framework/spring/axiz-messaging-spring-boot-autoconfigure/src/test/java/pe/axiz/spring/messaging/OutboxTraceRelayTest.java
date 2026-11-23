@@ -24,8 +24,8 @@ import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.messaging.PublishResult;
 
 /**
- * The relay publishes an outbox event outside the request that wrote it: the publication continues
- * the trace of the write (stored with the event), not the trace of the relay loop.
+ * El relay publica un evento del outbox fuera de la solicitud que lo escribió: la publicación
+ * continúa la traza de la escritura (almacenada con el evento), no la traza del bucle del relay.
  */
 class OutboxTraceRelayTest {
 
@@ -95,7 +95,7 @@ class OutboxTraceRelayTest {
         };
     ObservedEventPublisher publisher = new ObservedEventPublisher(broker, registry, properties());
 
-    // the relay loop has an observation of its own (one per batch), current while it publishes
+    // el bucle del relay tiene su propia observación (una por lote), vigente mientras publica
     Observation.createNotStarted("axiz.outbox.relay", registry)
         .observe(() -> publisher.publish("orders", fromOutbox()));
 
@@ -114,7 +114,8 @@ class OutboxTraceRelayTest {
             .filter(s -> "publish orders".equals(s.getName()))
             .findFirst()
             .orElseThrow();
-    // dispatch continues the write; the publication is its child; the consumer gets the publication
+    // el dispatch continúa la escritura; la publicación es su hija; el consumidor recibe la
+    // publicación
     assertEquals(WRITE_TRACE, dispatch.context().traceId());
     assertEquals(WRITE_SPAN, dispatch.context().parentId());
     assertEquals(WRITE_TRACE, publish.context().traceId());

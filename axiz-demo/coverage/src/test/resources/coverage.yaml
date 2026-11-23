@@ -1,4 +1,4 @@
-# Every claim requires an executed operation, current JUnit evidence and catalog artifacts.
+# Cada afirmación requiere una operación ejecutada, evidencia actual de JUnit y artefactos del catálogo.
 foundation:
 - service: payment-orders
   file: src/test/java/pe/axiz/payments/orders/PaymentOrdersApplicationTest.java

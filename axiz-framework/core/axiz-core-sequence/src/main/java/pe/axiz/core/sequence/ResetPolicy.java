@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import org.jspecify.annotations.Nullable;
 
-/** When a formatted sequence starts again from 1. */
+/** Momento en que una secuencia formateada vuelve a empezar desde 1. */
 public enum ResetPolicy {
   NEVER(null),
   DAILY(DateTimeFormatter.BASIC_ISO_DATE),

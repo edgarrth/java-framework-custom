@@ -9,8 +9,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Versioned equality indexes using a dedicated HMAC key, explicit scope and lossless framing.
- * Canonicalization belongs to the field profile; this primitive never modifies the supplied value.
+ * Índices de igualdad versionados que usan una clave HMAC dedicada, alcance explícito y
+ * delimitación sin pérdida. La canonicalización corresponde al perfil del campo; esta primitiva
+ * nunca modifica el valor suministrado.
  */
 public final class BlindIndex implements AutoCloseable {
 
@@ -40,7 +41,10 @@ public final class BlindIndex implements AutoCloseable {
     return compute(canonicalValue, scope, keyId);
   }
 
-  /** Creates no immutable plaintext String; private working copies are erased after hashing. */
+  /**
+   * No crea ningún String inmutable en texto plano; las copias de trabajo privadas se borran tras
+   * el hash.
+   */
   public KeyedHash index(char[] canonicalValue, IndexScope scope, String keyId) {
     char[] owned = canonicalValue.clone();
     try {
@@ -63,7 +67,10 @@ public final class BlindIndex implements AutoCloseable {
     }
   }
 
-  /** The configured map contains active read keys only; the write key is returned first. */
+  /**
+   * El mapa configurado contiene solo claves de lectura activas; la clave de escritura se devuelve
+   * primero.
+   */
   public List<KeyedHash> candidates(String canonicalValue, IndexScope scope) {
     List<KeyedHash> result = new ArrayList<>();
     result.add(index(canonicalValue, scope));

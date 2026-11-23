@@ -24,7 +24,10 @@ import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 
-/** Explicit bridge: Cloud AWS never chooses a scoped provider by generic type injection. */
+/**
+ * Puente explícito: Cloud AWS nunca elige un proveedor con ámbito mediante inyección por tipo
+ * genérico.
+ */
 @AutoConfiguration(
     after = AxizAwsIdentityAutoConfiguration.class,
     beforeName =

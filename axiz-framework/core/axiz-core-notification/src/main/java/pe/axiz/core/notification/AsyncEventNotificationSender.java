@@ -7,8 +7,8 @@ import pe.axiz.core.messaging.AsyncEventPublisher;
 import pe.axiz.core.messaging.EventFactory;
 
 /**
- * Native notification requests with the same event id, schema and correlation as the imperative
- * sender.
+ * Peticiones de notificación nativas con el mismo id de evento, esquema y correlación que el emisor
+ * imperativo.
  */
 public final class AsyncEventNotificationSender implements AsyncNotificationSender {
   private final EventFactory events;

@@ -37,7 +37,10 @@ import pe.axiz.core.outbox.OutboxWriter;
 import pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter;
 import reactor.core.publisher.Mono;
 
-/** Composition and transaction admission; provider integration tests verify database atomicity. */
+/**
+ * Composición y admisión de transacciones; las pruebas de integración del proveedor verifican la
+ * atomicidad de la base de datos.
+ */
 class OutboxCompositionTest {
   private static final Clock CLOCK = Clock.fixed(Instant.EPOCH, ZoneOffset.UTC);
   private static final RequestMetadata METADATA =

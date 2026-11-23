@@ -92,7 +92,7 @@ class AuditShutdownTest {
                 try {
                   release.await();
                 } catch (InterruptedException ignored) {
-                  /* deliberately uncooperative test callback */
+                  /* callback de prueba deliberadamente no cooperativo */
                 }
               }
               throw new IllegalStateException("late failure");
@@ -146,7 +146,7 @@ class AuditShutdownTest {
                   try {
                     release.await();
                   } catch (InterruptedException ignored) {
-                    /* deliberately uncooperative */
+                    /* deliberadamente no cooperativo */
                   }
                 }
                 throw new IllegalStateException("late fallback failure");

@@ -1,11 +1,11 @@
-# The eight demo services as containers on the network of compose.yaml (profile "apps").
-# Images come from Jib (axiz/<service>:local); scripts/compose.sh builds them and starts
-# infrastructure and services in one command. Each service keeps the profiles local,platform
-# and the port it uses on the host; SPRING_APPLICATION_JSON replaces the localhost endpoints with
-# the names of this network (same settings as kind/values/<service>.yaml).
-# Development only: no value here is a real credential.
+# Los ocho servicios de la demo como contenedores en la red de compose.yaml (perfil "apps").
+# Las imágenes provienen de Jib (axiz/<service>:local); scripts/compose.sh las construye y arranca
+# la infraestructura y los servicios con un solo comando. Cada servicio conserva los perfiles local,platform
+# y el puerto que usa en el host; SPRING_APPLICATION_JSON reemplaza los endpoints de localhost por
+# los nombres de esta red (los mismos ajustes que kind/values/<service>.yaml).
+# Solo para desarrollo: ningún valor de este archivo es una credencial real.
 services:
-  # the services read the token keys over plain HTTP only from a cluster-local name, as in kind
+  # los servicios leen las claves de los tokens por HTTP plano solo desde un nombre local del clúster, como en kind
   keycloak:
     networks:
       default:
@@ -16,7 +16,7 @@ services:
     profiles:
     - apps
     restart: on-failure
-    # the secret files of local/secrets are private to the user who runs the demo
+    # los archivos de secretos de local/secrets son privados del usuario que ejecuta la demo
     user: ${AXIZ_UID:-1000}:${AXIZ_GID:-1000}
     depends_on:
       postgres:
@@ -50,7 +50,7 @@ services:
     profiles:
     - apps
     restart: on-failure
-    # the secret files of local/secrets are private to the user who runs the demo
+    # los archivos de secretos de local/secrets son privados del usuario que ejecuta la demo
     user: ${AXIZ_UID:-1000}:${AXIZ_GID:-1000}
     depends_on:
       postgres:
@@ -84,7 +84,7 @@ services:
     profiles:
     - apps
     restart: on-failure
-    # the secret files of local/secrets are private to the user who runs the demo
+    # los archivos de secretos de local/secrets son privados del usuario que ejecuta la demo
     user: ${AXIZ_UID:-1000}:${AXIZ_GID:-1000}
     depends_on:
       postgres:
@@ -118,7 +118,7 @@ services:
     profiles:
     - apps
     restart: on-failure
-    # the secret files of local/secrets are private to the user who runs the demo
+    # los archivos de secretos de local/secrets son privados del usuario que ejecuta la demo
     user: ${AXIZ_UID:-1000}:${AXIZ_GID:-1000}
     depends_on:
       postgres:
@@ -152,7 +152,7 @@ services:
     profiles:
     - apps
     restart: on-failure
-    # the secret files of local/secrets are private to the user who runs the demo
+    # los archivos de secretos de local/secrets son privados del usuario que ejecuta la demo
     user: ${AXIZ_UID:-1000}:${AXIZ_GID:-1000}
     depends_on:
       postgres:
@@ -186,7 +186,7 @@ services:
     profiles:
     - apps
     restart: on-failure
-    # the secret files of local/secrets are private to the user who runs the demo
+    # los archivos de secretos de local/secrets son privados del usuario que ejecuta la demo
     user: ${AXIZ_UID:-1000}:${AXIZ_GID:-1000}
     depends_on:
       postgres:
@@ -220,7 +220,7 @@ services:
     profiles:
     - apps
     restart: on-failure
-    # the secret files of local/secrets are private to the user who runs the demo
+    # los archivos de secretos de local/secrets son privados del usuario que ejecuta la demo
     user: ${AXIZ_UID:-1000}:${AXIZ_GID:-1000}
     depends_on:
       postgres:
@@ -254,7 +254,7 @@ services:
     profiles:
     - apps
     restart: on-failure
-    # the secret files of local/secrets are private to the user who runs the demo
+    # los archivos de secretos de local/secrets son privados del usuario que ejecuta la demo
     user: ${AXIZ_UID:-1000}:${AXIZ_GID:-1000}
     depends_on:
       postgres:

@@ -11,7 +11,7 @@ import pe.axiz.core.secrets.SecretValue;
 import software.amazon.awssdk.services.ssm.SsmAsyncClient;
 import software.amazon.awssdk.services.ssm.model.ParameterNotFoundException;
 
-/** Native SSM SecureString lookups with cancellation of the exact SDK request. */
+/** Consultas nativas de SecureString en SSM con cancelación de la petición exacta del SDK. */
 public final class ParameterStoreAsyncResolver implements AsyncSecretResolver {
   @SuppressFBWarnings(
       value = "EI_EXPOSE_REP2",

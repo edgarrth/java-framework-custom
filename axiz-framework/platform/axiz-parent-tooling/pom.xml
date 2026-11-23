@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  axiz-parent-tooling: parent of build tools and generators.
-  Adds: JSpecify, JUnit, module naming, formatting and code standards. This is not a core parent.
+  axiz-parent-tooling: parent de las herramientas de build y los generadores.
+  Añade: JSpecify, JUnit, nombrado de módulos, formato y estándares de código. No es un parent de core.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">

@@ -1,4 +1,4 @@
--- axiz outbox (Aurora PostgreSQL). Include it in the service Flyway migrations.
+-- outbox de axiz (Aurora PostgreSQL). Debe incluirse en las migraciones Flyway del servicio.
 CREATE TABLE IF NOT EXISTS axiz_outbox (
   id              VARCHAR(64)  PRIMARY KEY,
   destination     VARCHAR(512) NOT NULL,
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS axiz_outbox_aggregate (
   PRIMARY KEY (aggregate_type, aggregate_id)
 );
 
--- The audit chain head advances in the same transaction as its outbox records.
+-- La cabeza de la cadena de auditoría avanza en la misma transacción que sus registros de outbox.
 CREATE TABLE IF NOT EXISTS axiz_audit_chain (
     chain_id VARCHAR(256) PRIMARY KEY,
     last_sequence BIGINT NOT NULL CHECK (last_sequence >= 0),

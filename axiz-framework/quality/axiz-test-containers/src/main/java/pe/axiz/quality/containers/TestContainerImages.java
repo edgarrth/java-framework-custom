@@ -23,9 +23,10 @@ import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.TestcontainersConfiguration;
 
 /**
- * Builds patched test images from the same recipes as generated local environments. Construction is
- * lazy: defining a container does not contact Docker, so tests can check availability first. The
- * complete Dockerfile hash identifies the local image; no private image registry is needed.
+ * Construye imágenes de prueba parcheadas a partir de las mismas recetas que los entornos locales
+ * generados. La construcción es diferida: definir un contenedor no contacta a Docker, por lo que
+ * las pruebas pueden verificar primero la disponibilidad. El hash completo del Dockerfile
+ * identifica la imagen local; no se necesita un registro privado de imágenes.
  */
 public final class TestContainerImages {
   private TestContainerImages() {}
@@ -43,7 +44,10 @@ public final class TestContainerImages {
     return new GenericContainer<>(image("valkey")).withExposedPorts(6379);
   }
 
-  /** AWS emulator built from the same locked distribution used in local demos. */
+  /**
+   * Emulador de AWS construido a partir de la misma distribución fijada que se usa en las demos
+   * locales.
+   */
   public static LocalStackContainer localstack() {
     var container =
         new LocalStackContainer(
@@ -75,7 +79,10 @@ public final class TestContainerImages {
     return container;
   }
 
-  /** Lazy image for custom KafkaContainer subclasses, including TLS listener fixtures. */
+  /**
+   * Imagen diferida para subclases personalizadas de KafkaContainer, incluidos los fixtures de
+   * listener TLS.
+   */
   public static Future<String> kafkaImage() {
     return image("kafka");
   }
@@ -152,7 +159,8 @@ public final class TestContainerImages {
   }
 
   private static String resource(String path) {
-    // The names come exclusively from these factories, never from user-controlled paths.
+    // Los nombres provienen exclusivamente de estas fábricas, nunca de rutas controladas por el
+    // usuario.
     try (var input = TestContainerImages.class.getResourceAsStream("images/" + path)) {
       return new String(
           Objects.requireNonNull(input, "Missing container recipe").readAllBytes(),

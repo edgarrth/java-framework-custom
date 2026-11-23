@@ -18,9 +18,10 @@ import pe.axiz.core.tokenization.TokenOperation;
 import pe.axiz.core.tokenization.vault.VaultScope;
 
 /**
- * Blocking maintenance capability on a separate connection, never a public token API. Inventory
- * detects old reservations; only a trusted termination verifier permits conditional recovery. No
- * age, disconnected client, missing pod or expired request is itself termination evidence.
+ * Capacidad de mantenimiento bloqueante sobre una conexión separada, nunca una API pública de
+ * tokens. El inventario detecta reservas antiguas; solo un verificador de terminación confiable
+ * permite la recuperación condicional. Ni la antigüedad, ni un cliente desconectado, ni un pod
+ * ausente ni una petición expirada son por sí mismos evidencia de terminación.
  */
 public final class RedisTokenBudgetRecovery {
   static final String RECONCILE =
@@ -42,10 +43,11 @@ public final class RedisTokenBudgetRecovery {
   private final RecoveryJournal journal;
 
   /**
-   * Must prove this exact execution is permanently fenced AND all accepted provider/Redis I/O has
-   * completed or been reconciled, including late effects. Evidence must be durable and bound to the
-   * namespace, scope key, lease, process incarnation and operation in the reservation. An
-   * unrecognized or unavailable evidence source must return false or throw, never allow.
+   * Debe probar que esta ejecución exacta tiene fencing permanente Y que toda la E/S aceptada del
+   * proveedor o de Redis terminó o se reconcilió, incluidos los efectos tardíos. La evidencia debe
+   * ser durable y estar ligada al namespace, la clave de alcance, el lease, la encarnación del
+   * proceso y la operación de la reserva. Una fuente de evidencia no reconocida o no disponible
+   * debe devolver false o lanzar una excepción, nunca permitir.
    */
   @FunctionalInterface
   public interface TerminationVerifier {
@@ -53,14 +55,18 @@ public final class RedisTokenBudgetRecovery {
   }
 
   /**
-   * Durable administrative audit, independent of business token audit; record intent before I/O.
+   * Auditoría administrativa durable, independiente de la auditoría de tokens de negocio; se
+   * registra la intención antes de la E/S.
    */
   @FunctionalInterface
   public interface RecoveryJournal {
     void record(Stage stage, Reservation reservation, UUID evidence);
   }
 
-  /** Unknown outcomes require another conditional reconciliation, never blind deletion. */
+  /**
+   * Los resultados desconocidos requieren otra reconciliación condicional, nunca un borrado a
+   * ciegas.
+   */
   public enum Stage {
     REQUESTED,
     RELEASED,
@@ -69,7 +75,7 @@ public final class RedisTokenBudgetRecovery {
     UNKNOWN
   }
 
-  /** Opaque scope identity used by the administrative evidence authority. */
+  /** Identidad opaca de alcance usada por la autoridad de evidencia administrativa. */
   public record ScopeIdentity(String namespace, String key) {
     public ScopeIdentity {
       Objects.requireNonNull(namespace);
@@ -77,7 +83,10 @@ public final class RedisTokenBudgetRecovery {
     }
   }
 
-  /** Immutable evidence target; encoded identity is retained for exact compare-and-delete. */
+  /**
+   * Objetivo de evidencia inmutable; la identidad codificada se conserva para un compare-and-delete
+   * exacto.
+   */
   public record Reservation(
       ScopeIdentity scope,
       UUID lease,
@@ -96,7 +105,7 @@ public final class RedisTokenBudgetRecovery {
       Objects.requireNonNull(encoded);
     }
 
-    /** Age is for alerting only, never authorization to reclaim capacity. */
+    /** La antigüedad sirve solo para alertas, nunca como autorización para recuperar capacidad. */
     public Duration age(Instant observedAt) {
       Duration age = Duration.between(acquiredAt, observedAt);
       return age.isNegative() ? Duration.ZERO : age;
@@ -104,7 +113,8 @@ public final class RedisTokenBudgetRecovery {
   }
 
   /**
-   * Scan is not a consistent snapshot; repeat a full cycle and deduplicate leases for monitoring.
+   * El scan no es una instantánea consistente; se repite un ciclo completo y se deduplican los
+   * leases para el monitoreo.
    */
   public record Inventory(
       String nextCursor,
@@ -132,7 +142,10 @@ public final class RedisTokenBudgetRecovery {
     this.journal = Objects.requireNonNull(journal);
   }
 
-  /** One bounded scan call per configured tenant/type/domain; Redis COUNT is a server hint. */
+  /**
+   * Una llamada de scan acotada por cada tenant/tipo/dominio configurado; COUNT de Redis es una
+   * sugerencia para el servidor.
+   */
   public Inventory inspect(VaultScope scope, String cursor) {
     if (cursor == null || !cursor.matches("[0-9]{1,20}"))
       throw new IllegalArgumentException("Invalid inventory cursor");
@@ -151,7 +164,8 @@ public final class RedisTokenBudgetRecovery {
               } catch (IllegalArgumentException
                   | IllegalStateException
                   | DateTimeException malformed) {
-                // Keep scanning; malformed entries are alert-only, never deletion candidates.
+                // Se sigue escaneando; las entradas mal formadas solo generan alertas, nunca son
+                // candidatas a borrado.
                 invalid.add(Hashing.sha256Hex(lease));
               }
             });
@@ -162,14 +176,16 @@ public final class RedisTokenBudgetRecovery {
   }
 
   /**
-   * Verifies external proof, journals intent, then atomically compares all three stored values. A
-   * changed or partial reservation is never removed. Repeating a confirmed removal is idempotent.
-   * An unavailable proof/journal/Redis retains uncertainty instead of inventing success.
+   * Verifica la prueba externa, registra la intención en el journal y luego compara de forma
+   * atómica los tres valores almacenados. Una reserva cambiada o parcial nunca se elimina. Repetir
+   * una eliminación confirmada es idempotente. Una prueba, journal o Redis no disponible conserva
+   * la incertidumbre en lugar de inventar un éxito.
    */
   public Stage reconcile(VaultScope scope, Reservation reservation, UUID evidence) {
     Objects.requireNonNull(evidence);
     String prefix = BudgetKeys.prefix(namespace, scope);
-    // Reparse the encoded value: callers cannot manufacture a different proof target from it.
+    // Se vuelve a parsear el valor codificado: quienes llaman no pueden fabricar a partir de él un
+    // objetivo de prueba distinto.
     Reservation actual = parse(prefix, reservation.lease(), reservation.encoded());
     if (!actual.equals(reservation) || !verifier.terminated(actual, evidence))
       throw new IllegalStateException("Verified termination evidence is required");

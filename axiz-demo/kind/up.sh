@@ -1,10 +1,10 @@
 #!/bin/bash
-# Whole demo inside a local kind cluster, with the same Helm charts the environments use:
-#   kind/up.sh          create the cluster, build and load the images, deploy everything
-#   kind/up.sh down     delete the cluster
-# Needs docker, kind, kubectl, helm and jq. The channel API ends up on http://localhost:9080,
-# Keycloak on http://localhost:9180 and Grafana on http://localhost:9300 (the local demo of
-# scripts/demo.sh uses 8080/8180/3000, so both can run at the same time).
+# Toda la demo dentro de un clúster kind local, con los mismos charts de Helm que usan los entornos:
+#   kind/up.sh          crea el clúster, construye y carga las imágenes y despliega todo
+#   kind/up.sh down     elimina el clúster
+# Requiere docker, kind, kubectl, helm y jq. La API del canal queda en http://localhost:9080,
+# Keycloak en http://localhost:9180 y Grafana en http://localhost:9300 (la demo local de
+# scripts/demo.sh usa 8080/8180/3000, así que ambas pueden ejecutarse a la vez).
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd); root=$(dirname "$here")
 services=(payment-orders beneficiaries banking-core payment-network-gateway payment-process notifications-processor payments-history payments-ux settlement-batch)
@@ -14,21 +14,21 @@ if [ "${1:-}" = down ]; then kind delete cluster --name axiz-demo; exit 0; fi
 
 kind get clusters | grep -qx axiz-demo || kind create cluster --config "$here/cluster.yaml"
 
-# images: Jib to the local Docker daemon, then into the kind node
+# imágenes: Jib al daemon local de Docker y luego al nodo de kind
 for s in "${services[@]}"; do
   (cd "$root/services/$s" && ./mvnw -q -DskipTests -Daxiz.image.repository="axiz/$s" -Daxiz.image.tag=local jib:dockerBuild)
   kind load docker-image "axiz/$s:local" --name axiz-demo
 done
 
-# infrastructure stand-ins
+# sustitutos de infraestructura
 docker compose -f "$root/local/compose.yaml" build postgres valkey kafka wiremock keycloak localstack otel-lgtm
 kind load docker-image axiz-local/postgres:17.12-r2 axiz-local/valkey:8.1.8-r1 axiz-local/kafka:4.2.2-r1 axiz-local/wiremock:3.13.2-r1 axiz-local/keycloak:26.8.2-r1 axiz-local/localstack:4.14.0-r1 axiz-local/otel-lgtm:2026.11-r1 --name axiz-demo
 kubectl apply -k "$here/deps"
 kubectl -n $ns wait --for=condition=available deploy --all --timeout=300s
 kubectl -n $ns wait --for=condition=complete job/kafka-topics --timeout=300s
 
-# secrets: the charts mount <service>-secrets; in kind they come from the dev-secrets files
-# configuration shared by every service of the namespace (mounted by each chart, optional)
+# secretos: los charts montan <service>-secrets; en kind provienen de los archivos de dev-secrets
+# configuración compartida por todos los servicios del namespace (la monta cada chart, opcional)
 kubectl -n $ns apply -f "$root/deploy/platform/axiz-common.yaml"
 
 bash "$root/scripts/dev-secrets.sh"
@@ -39,12 +39,12 @@ for s in "${services[@]}"; do
   fi
 done
 
-# services, with the chart of each one and its kind values
+# servicios, con el chart de cada uno y sus valores para kind
 for s in "${services[@]}"; do
   helm upgrade --install "$s" "$root/services/$s/deploy/helm/$s" -n $ns -f "$here/values/$s.yaml" --wait --timeout 10m
 done
 
-# run the settlement job once now (it is a CronJob)
+# se ejecuta una vez el job de liquidación (es un CronJob)
 kubectl -n $ns create job --from=cronjob/settlement-batch settlement-batch-now || true
 echo "demo ready. End-to-end payment:"
 echo "  kubectl -n $ns port-forward svc/beneficiaries 9082:80 &"

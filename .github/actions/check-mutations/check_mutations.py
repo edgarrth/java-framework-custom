@@ -1,4 +1,4 @@
-"""PIT thresholds must not hide a broken worker JVM. Timeouts can legitimately detect loops."""
+"""Los umbrales de PIT no deben ocultar una JVM de worker rota. Los timeouts pueden detectar bucles de forma legítima."""
 from collections import Counter
 from pathlib import Path
 import sys
@@ -11,7 +11,7 @@ def check(root):
     totals = Counter()
     files = sorted(Path(root).glob('**/target/pit-reports/mutations.xml'))
     for path in files:
-        # Trusted build POM/report, after executing the same checkout; no request XML is parsed.
+                # POM o reporte de build de confianza, tras ejecutar el mismo checkout; no se analiza XML de la petición.
         # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse
         statuses = Counter(m.get('status') for m in ET.parse(path).getroot().findall('mutation'))
         totals.update(statuses)

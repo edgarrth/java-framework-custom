@@ -53,7 +53,7 @@ class ParameterSafetyTest {
     var operation = new LinkedHashMap<String, Object>();
     operation.put("operationId", "findRecords");
     operation.put("responses", Map.of("204", Map.of("description", "ok")));
-    operation.put("security", List.of()); // explicit public access: the fixture is about names
+    operation.put("security", List.of()); // acceso público explícito: el fixture es de nombres
     var item = new LinkedHashMap<String, Object>();
     item.put("get", operation);
     var parameters =

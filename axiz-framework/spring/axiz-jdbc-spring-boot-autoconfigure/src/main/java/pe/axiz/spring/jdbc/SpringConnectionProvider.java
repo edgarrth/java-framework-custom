@@ -10,8 +10,8 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import pe.axiz.kit.jdbc.ConnectionProvider;
 
 /**
- * Connection provider bound to Spring transactions: inside a transaction the transaction's
- * connection is returned and left open on release.
+ * Proveedor de conexiones vinculado a las transacciones de Spring: dentro de una transacción se
+ * devuelve la conexión de la transacción y se deja abierta al liberarla.
  */
 public final class SpringConnectionProvider implements ConnectionProvider {
 

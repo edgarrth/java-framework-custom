@@ -29,8 +29,8 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 
 /**
- * Starts the whole service against real dependencies in containers (Testcontainers): wiring,
- * configuration, migrations and health. Needs Docker.
+ * Arranca el servicio completo contra dependencias reales en contenedores (Testcontainers):
+ * cableado, configuración, migraciones y salud. Requiere Docker.
  */
 @SpringBootTest(
     properties = {
@@ -49,8 +49,9 @@ class NotificationsProcessorApplicationTest {
   }
 
   /**
-   * The audit queue the service consumes ({@code axiz.messaging.sqs.queues}), created in LocalStack
-   * before the consumers start, as the infrastructure creates it in each environment.
+   * La cola de auditoría que consume el servicio ({@code axiz.messaging.sqs.queues}), creada en
+   * LocalStack previo al arranque de los consumidores, tal como la crea la infraestructura en cada
+   * entorno.
    */
   @TestConfiguration(proxyBeanMethods = false)
   static class AuditQueue {
@@ -58,8 +59,9 @@ class NotificationsProcessorApplicationTest {
     @Bean
     InitializingBean axizDemoAuditQueue(LocalStackContainer localstack) {
       return () -> {
-        // Provisioning includes the emulator's cold service startup. Runtime clients keep
-        // their normal request budget; this separate bootstrap client closes before startup.
+        // El aprovisionamiento incluye el arranque en frío de los servicios del emulador. Los
+        // clientes de runtime conservan su presupuesto normal por solicitud; este cliente de
+        // arranque independiente se cierra previo al inicio.
         try (var sqs =
             SqsClient.builder()
                 .endpointOverride(localstack.getEndpoint())

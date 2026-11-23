@@ -1,12 +1,12 @@
 # axiz-core-carddata
 
-Card data value types with controlled reveal and masked representations.
+Tipos de valor para datos de tarjeta con revelación controlada y representaciones enmascaradas.
 
-This module owns the `pe.axiz.core.carddata` API. It has no application framework or provider dependency.
+Este módulo es dueño de la API `pe.axiz.core.carddata`. No depende de frameworks de aplicación ni de proveedores.
 
-## Selection
+## Selección
 
-Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
+Las versiones las gestiona `axiz-bom`; las aplicaciones heredan `axiz-parent-service`.
 
 ```xml
 <dependency>
@@ -15,9 +15,9 @@ Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
 </dependency>
 ```
 
-## Types
+## Tipos
 
-Public types declared by this module:
+Tipos públicos que declara este módulo:
 
 - `CardDataErrors`
 - `CardExpiry`
@@ -27,30 +27,30 @@ Public types declared by this module:
 - `SensitiveAuthenticationData`
 - `TruncatedPan`
 
-## Catalog usage
+## Uso desde el catálogo
 
 ```bash
 axiz add carddata
 ```
 
-Required capabilities: `sensitive`.
+Capacidades requeridas: `sensitive`.
 
-## Boundaries
+## Límites
 
-The core owns value types, policies or ports and performs no network or filesystem I/O.
-Spring composition and concrete providers belong in separate modules. Test consumers against
-these contracts without starting Spring.
+El core es dueño de tipos de valor, políticas o puertos y no realiza I/O de red ni de sistema de
+archivos. La composición con Spring y los proveedores concretos pertenecen a módulos separados.
+Los consumidores se prueban contra estos contratos sin arrancar Spring.
 
-For safe value construction, masking and explicit outbound revelation see
-[card data](../../../axiz-docs/docs/guias/datos-de-tarjeta.md).
+La construcción segura de valores, el enmascaramiento y la revelación explícita hacia afuera se
+describen en [datos de tarjeta](../../../axiz-docs/docs/guias/datos-de-tarjeta.md).
 
-## Verification
+## Verificación
 
-From `axiz-framework`:
+Desde `axiz-framework`:
 
 ```bash
 ./mvnw -pl core/axiz-core-carddata -am test
 ```
 
-The full acceptance gate is `./mvnw clean install -Pquality -Daxiz.it.requireDocker=true`.
-Provider integration tests live in `quality/axiz-store-integration-tests` and require Docker.
+La verificación completa es `./mvnw clean install -Pquality -Daxiz.it.requireDocker=true`.
+Las pruebas de integración de proveedores están en `quality/axiz-store-integration-tests` y requieren Docker.

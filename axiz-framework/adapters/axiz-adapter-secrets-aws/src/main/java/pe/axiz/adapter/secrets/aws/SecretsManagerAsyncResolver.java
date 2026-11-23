@@ -12,7 +12,8 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerAsyncClient;
 import software.amazon.awssdk.services.secretsmanager.model.ResourceNotFoundException;
 
 /**
- * Native Secrets Manager lookups. Only a missing secret becomes absence; outages remain failures.
+ * Consultas nativas a Secrets Manager. Solo un secreto inexistente se convierte en ausencia; las
+ * caídas siguen siendo fallos.
  */
 public final class SecretsManagerAsyncResolver implements AsyncSecretResolver {
   @SuppressFBWarnings(

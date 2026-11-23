@@ -16,7 +16,10 @@ import javax.crypto.spec.SecretKeySpec;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.json.JsonWriter;
 
-/** One versioned, length-prefixed definition shared by calculation and verification. */
+/**
+ * Definición única, versionada y con prefijo de longitud, compartida por el cálculo y la
+ * verificación.
+ */
 final class SealPreimage {
   static final String GENESIS = "0".repeat(64);
   private static final int MAX_CONTENT_BYTES = 1024 * 1024;

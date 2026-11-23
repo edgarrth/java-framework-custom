@@ -10,7 +10,7 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.core.env.Environment;
 import pe.axiz.spring.sequence.SequencePoolPolicy;
 
-/** Owns reservation connections independently of the business pool. */
+/** Posee las conexiones de reserva con independencia del pool de negocio. */
 final class R2dbcSequenceConnections implements AutoCloseable {
   private final ConnectionFactory connections;
   private final @Nullable ConnectionPool owner;

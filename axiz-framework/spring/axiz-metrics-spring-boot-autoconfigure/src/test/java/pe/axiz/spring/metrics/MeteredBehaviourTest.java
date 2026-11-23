@@ -38,7 +38,7 @@ import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/** What {@code @Metered} records for each outcome, on both programming models. */
+/** Lo que {@code @Metered} registra para cada resultado, en ambos modelos de programación. */
 class MeteredBehaviourTest {
 
   private final ApplicationContextRunner runner =
@@ -46,7 +46,7 @@ class MeteredBehaviourTest {
           .withConfiguration(AutoConfigurations.of(AxizMetricsAutoConfiguration.class))
           .withBean(MeterRegistry.class, SimpleMeterRegistry::new);
 
-  /** An argument that tells the metrics its channel and amount. */
+  /** Argumento que indica a las métricas su canal y su monto. */
   record Transfer(String channel, Money amount) implements MetricSource {
     @Override
     public void describe(MetricEvent event) {
@@ -54,7 +54,7 @@ class MeteredBehaviourTest {
     }
   }
 
-  /** An argument whose description fails: the call must not be affected. */
+  /** Argumento cuya descripción falla: la llamada no debe verse afectada. */
   record Broken() implements MetricSource {
     @Override
     public void describe(MetricEvent event) {

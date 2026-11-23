@@ -1,8 +1,8 @@
 # axiz-r2dbc-spring-boot-starter
 
-Aurora PostgreSQL for reactive services over R2DBC.
+Aurora PostgreSQL para servicios reactivos sobre R2DBC.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -11,13 +11,14 @@ Aurora PostgreSQL for reactive services over R2DBC.
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Native images
+## Imágenes nativas
 
-The starter includes native-image metadata that initializes the R2DBC proxy observation
-listener at application startup. Its Micrometer logger therefore uses the running application's
-logging backend. The setting is scoped to that listener; SQL observations remain enabled.
+El starter incluye metadatos de native-image que inicializan el listener de observación del proxy R2DBC al
+arranque de la aplicación. Por eso su logger de Micrometer usa el backend de logging de la aplicación en
+ejecución. La configuración se limita a ese listener; las observaciones SQL siguen habilitadas.
 
-IAM consumers add `axiz-adapter-database-auth-aws` with runtime scope. The R2DBC capability selects
-it for generated services; plain password consumers can use this starter without the AWS SDK RDS.
+Los consumidores con IAM agregan `axiz-adapter-database-auth-aws` con scope runtime. La capacidad R2DBC
+lo selecciona para los servicios generados; los consumidores con contraseña simple pueden usar este
+starter sin el RDS del AWS SDK.

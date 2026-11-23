@@ -42,7 +42,10 @@ import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-/** Two independent service instances, genuine Dynamo transactions and detached encrypted rows. */
+/**
+ * Dos instancias independientes del servicio, transacciones reales de Dynamo y filas cifradas
+ * desacopladas.
+ */
 @Timeout(180)
 class BeneficiaryConcurrencyTest {
   private static final NewBeneficiary FIRST =

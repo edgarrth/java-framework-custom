@@ -8,7 +8,9 @@ import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 import pe.axiz.spring.config.ConfigurationEnvironment;
 
-/** Validates the effective configuration after imports have been loaded, before bean creation. */
+/**
+ * Valida la configuración efectiva después de cargar las importaciones, antes de crear los beans.
+ */
 public final class AxizConfigAwsValidationEnvironmentPostProcessor
     implements EnvironmentPostProcessor, Ordered {
   @Override

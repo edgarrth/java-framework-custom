@@ -3,10 +3,10 @@ package pe.axiz.spring.messaging;
 import pe.axiz.core.messaging.EventPublisher;
 
 /**
- * A broker publisher contributed by an adapter auto-configuration (MSK, SQS, SNS). The messaging
- * starter routes each destination to the first adapter that supports it.
+ * Publicador de broker aportado por la autoconfiguración de un adaptador (MSK, SQS, SNS). El
+ * starter de mensajería enruta cada destino al primer adaptador que lo admite.
  *
- * @param name adapter name
- * @param publisher publisher
+ * @param name nombre del adaptador
+ * @param publisher publicador
  */
 public record EventPublisherAdapter(String name, EventPublisher publisher) {}

@@ -5,9 +5,10 @@ import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.CoreErrors;
 
 /**
- * Business work committed, but direct event publication did not complete. Delivery may be partial;
- * never repeat the business operation. Use a transactional outbox for guaranteed delivery. Provider
- * messages, event payloads and the business result are deliberately not retained.
+ * El trabajo de negocio hizo commit, pero la publicación directa de eventos no terminó. La entrega
+ * puede ser parcial; nunca se repite la operación de negocio. Para una entrega garantizada se usa
+ * un outbox transaccional. Los mensajes del proveedor, los payloads de los eventos y el resultado
+ * de negocio no se retienen de forma deliberada.
  */
 public final class PostCommitPublicationException extends BusinessException
     implements CommittedTransactionOutcome {

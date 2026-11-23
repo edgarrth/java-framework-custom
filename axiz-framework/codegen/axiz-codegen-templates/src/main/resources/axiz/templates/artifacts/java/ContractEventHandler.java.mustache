@@ -13,7 +13,10 @@ import reactor.core.publisher.Mono;
 import pe.axiz.core.messaging.TypedEventHandler;
 {{/reactive}}
 
-/** Handles {@code {{eventType}}}. Implement the business action before consuming live messages. */
+/**
+ * Atiende {@code {{eventType}}}. La acción de negocio se implementa previo a consumir mensajes
+ * reales.
+ */
 @Component
 @HandlesEvent("{{eventType}}")
 public class {{className}}Handler extends {{#reactive}}Reactive{{/reactive}}TypedEventHandler<{{className}}> {

@@ -6,13 +6,16 @@ import pe.axiz.core.audit.AuditTrail;
 import pe.axiz.core.context.RequestContext;
 import pe.axiz.core.context.RequestMetadata;
 
-/** Builds the audit context (actor, correlation, channel, tenant) from the current request. */
+/**
+ * Construye el contexto de auditoría (actor, correlación, canal, tenant) a partir de la solicitud
+ * actual.
+ */
 @FunctionalInterface
 public interface AuditContextResolver {
 
   AuditTrail.Context current(@Nullable String ip);
 
-  /** Uses {@link RequestContext}, which the web and security starters fill. */
+  /** Usa {@link RequestContext}, que completan los starters web y de seguridad. */
   static AuditContextResolver fromRequestContext() {
     return ip -> {
       RequestMetadata m = RequestContext.get();

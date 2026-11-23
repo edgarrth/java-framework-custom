@@ -16,10 +16,10 @@ import pe.axiz.payments.process.adapter.out.paymentnetworkgateway.model.Transfer
 import pe.axiz.payments.process.adapter.out.paymentnetworkgateway.model.TransferRequest;
 import pe.axiz.payments.process.domain.PaymentInstruction;
 
-/** What the saga's money movements send to banking-core and what they read back. */
+/** Lo que los movimientos de dinero de la saga envían a banking-core y lo que leen de vuelta. */
 class BankingCoreAdaptersTest {
 
-  /** Client that records requests and answers what the test sets. */
+  /** Cliente que registra las solicitudes y responde lo que fija la prueba. */
   static final class Recording implements BankingCoreClient, PaymentNetworkGatewayClient {
     final List<Object> requests = new ArrayList<>();
     Movement movement = new Movement("MV-1", "POSTED", "OP-1");

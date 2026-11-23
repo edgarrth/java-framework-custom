@@ -1,4 +1,4 @@
-"""Owned loopback STS/IMDS fixture for JVM/ELF acceptance; never calls AWS."""
+"""Fixture propio de STS/IMDS en loopback para la aceptación de JVM y ELF; nunca invoca AWS."""
 import datetime
 import http.server
 import json
@@ -76,8 +76,8 @@ class IrsaFixture:
         self.thread.start()
 
     def environment(self):
-        # Only OS/runtime settings reach the executable under test. In particular no CI token,
-        # registry/package token, Python import path or injected JVM option is inherited.
+                # Solo los ajustes del SO y del runtime llegan al ejecutable bajo prueba. En particular, no se hereda
+        # ningún token de CI, token de registry o de paquetes, ruta de importación de Python ni opción de JVM inyectada.
         allowed = {"PATH", "JAVA_HOME", "SYSTEMROOT", "SystemRoot", "COMSPEC", "WINDIR",
                    "TMP", "TEMP", "TMPDIR", "HOME", "USERPROFILE", "LANG", "LC_ALL"}
         environment = {key: value for key, value in os.environ.items() if key in allowed}

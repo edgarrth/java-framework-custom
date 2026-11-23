@@ -4,14 +4,15 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /**
- * A field of a fixed-width record. Positions are 1-based like in most legacy specifications.
+ * Campo de un registro de ancho fijo. Las posiciones empiezan en 1, como en la mayoría de las
+ * especificaciones de mainframe.
  *
- * @param name field name
- * @param start first position (1-based)
- * @param length length in characters
- * @param type type
- * @param scale decimals for {@link FieldType#DECIMAL}
- * @param pattern date pattern for {@link FieldType#DATE}
+ * @param name nombre del campo
+ * @param start primera posición (desde 1)
+ * @param length longitud en caracteres
+ * @param type tipo
+ * @param scale decimales para {@link FieldType#DECIMAL}
+ * @param pattern patrón de fecha para {@link FieldType#DATE}
  */
 public record FixedField(
     String name, int start, int length, FieldType type, int scale, @Nullable String pattern) {

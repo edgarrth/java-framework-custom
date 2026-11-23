@@ -115,7 +115,7 @@ jobs:
           ref: ${{ inputs.source-sha }}
           fetch-depth: 0
           persist-credentials: false
-      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
       # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
       - uses: edgarrth/java-framework-custom/.github/actions/consume-build@axiz-workflows-v2.0.0 # x-release-please-version
         id: candidate
@@ -127,7 +127,7 @@ jobs:
           manifest-sha256: ${{ inputs.candidate-manifest-sha256 }}
           kind: maven-library
           token: ${{ secrets.CANDIDATE_READ_TOKEN || github.token }}
-      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
       # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
       - uses: edgarrth/java-framework-custom/.github/actions/build-inputs@axiz-workflows-v2.0.0 # x-release-please-version
         id: inputs
@@ -144,7 +144,7 @@ jobs:
           token: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
           candidate-bundle: ${{ steps.candidate.outputs.bundle-path }}
           candidate-manifest-sha256: ${{ inputs.candidate-manifest-sha256 }}
-      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
       # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
       - uses: edgarrth/java-framework-custom/.github/actions/setup-maven@axiz-workflows-v2.0.0 # x-release-please-version
         with:
@@ -225,7 +225,7 @@ jobs:
           output: ${{ inputs.project-directory }}/target/build-reports/scan.json
           severity: UNKNOWN,MEDIUM,HIGH,CRITICAL
           exit-code: '1'
-      # Exact immutable internal release: evaluate code and schema cannot come from the PR.
+      # Release interna inmutable y exacta: el código y el esquema de evaluación no pueden provenir del PR.
       - name: Complete vulnerability evidence and protected risk deadlines
         # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
         uses: edgarrth/java-framework-custom/.github/actions/check-vulnerabilities@axiz-workflows-v2.0.0 # x-release-please-version

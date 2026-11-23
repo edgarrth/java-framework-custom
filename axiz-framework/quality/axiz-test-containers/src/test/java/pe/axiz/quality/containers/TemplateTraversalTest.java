@@ -11,7 +11,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-/** Exercises the actual engine used by WireMock against CVE-2026-55760. */
+/** Ejercita el motor real que usa WireMock frente a CVE-2026-55760. */
 class TemplateTraversalTest {
   @TempDir Path directory;
 

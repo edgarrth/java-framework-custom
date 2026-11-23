@@ -234,8 +234,8 @@ function selectedAndForeignVersions(xml, componentPath) {
     assert.equal(destinations.length, {inherit:1, replace:7, empty:0}[mode]);
     inheritanceCases.push({mode, workflowUpdates: destinations.length});
   }
-  // These writes come from the real strategy, outside extra-files. Never silently infer
-  // sufficient permissions from the explicit destinations while ignoring a new write source.
+  // Estas escrituras provienen de la estrategia real, fuera de extra-files. Nunca se infieren en silencio
+  // permisos suficientes a partir de los destinos explícitos ignorando una nueva fuente de escritura.
   for (const option of ['version-file', 'changelog-path']) {
     const changedConfig = structuredClone(config);
     changedConfig.packages['.github'][option] = '/.github/workflows/unreviewed-destination.yaml';

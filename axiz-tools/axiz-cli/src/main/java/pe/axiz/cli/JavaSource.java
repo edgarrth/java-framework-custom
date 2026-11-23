@@ -1,6 +1,9 @@
 package pe.axiz.cli;
 
-/** Masks Java comments and literals so diagnostic checks inspect code rather than examples. */
+/**
+ * Enmascara los comentarios y literales Java para que las verificaciones de diagnóstico
+ * inspeccionen código y no ejemplos.
+ */
 final class JavaSource {
   private JavaSource() {}
 

@@ -6,7 +6,10 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
-/** Kafka brokers, delivery policy and independently selected authentication integration. */
+/**
+ * Brokers de Kafka, política de entrega e integración de autenticación seleccionada de forma
+ * independiente.
+ */
 @ConfigurationProperties("axiz.messaging.kafka")
 public record AxizMessagingKafkaProperties(
     @Nullable String bootstrapServers,

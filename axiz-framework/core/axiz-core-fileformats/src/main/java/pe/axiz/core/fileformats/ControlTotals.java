@@ -2,7 +2,10 @@ package pe.axiz.core.fileformats;
 
 import java.math.BigDecimal;
 
-/** Running totals checked against a file trailer (record count and amount sum). */
+/**
+ * Totales acumulados que se verifican contra el trailer de un archivo (cantidad de registros y suma
+ * de montos).
+ */
 public final class ControlTotals {
 
   private long records;
@@ -21,7 +24,7 @@ public final class ControlTotals {
     return sum;
   }
 
-  /** Fails when the trailer does not match what was read. */
+  /** Falla cuando el trailer no coincide con lo leído. */
   public void verify(long expectedRecords, BigDecimal expectedSum, int trailerLine) {
     if (records != expectedRecords) {
       throw new FileFormatException(

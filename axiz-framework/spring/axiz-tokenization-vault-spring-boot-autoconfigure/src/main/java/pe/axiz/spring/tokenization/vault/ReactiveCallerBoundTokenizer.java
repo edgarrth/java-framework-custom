@@ -19,7 +19,10 @@ import pe.axiz.core.tokenization.vault.TokenCaller;
 import pe.axiz.spring.foundation.ReactiveStages;
 import reactor.core.publisher.Mono;
 
-/** In-process native consumer; explicit verified identity is obtained inside each subscription. */
+/**
+ * Consumidor nativo en proceso; la identidad verificada explícita se obtiene dentro de cada
+ * suscripción.
+ */
 public final class ReactiveCallerBoundTokenizer {
   @SuppressFBWarnings(
       value = "EI_EXPOSE_REP2",

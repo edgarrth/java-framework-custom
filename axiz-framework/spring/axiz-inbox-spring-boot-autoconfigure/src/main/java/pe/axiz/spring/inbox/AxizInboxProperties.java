@@ -6,13 +6,14 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
- * Idempotent consumption ({@code axiz.inbox.*}): processed message ids per consumer.
+ * Consumo idempotente ({@code axiz.inbox.*}): ids de mensajes procesados por consumidor.
  *
- * @param store {@code jdbc} (Aurora), {@code r2dbc} (Aurora from a reactive service) or {@code
+ * @param store {@code jdbc} (Aurora), {@code r2dbc} (Aurora desde un servicio reactivo) o {@code
  *     dynamodb}
- * @param lease how long a delivery owns a message before a redelivery may take over
- * @param retention how long processed ids are remembered (DynamoDB TTL)
- * @param purgeInterval how often expired JDBC or R2DBC rows are deleted
+ * @param lease tiempo durante el cual una entrega posee un mensaje antes de que una reentrega pueda
+ *     tomarlo
+ * @param retention tiempo durante el cual se recuerdan los ids procesados (TTL de DynamoDB)
+ * @param purgeInterval frecuencia con la que se eliminan las filas JDBC o R2DBC expiradas
  */
 @ConfigurationProperties("axiz.inbox")
 public record AxizInboxProperties(

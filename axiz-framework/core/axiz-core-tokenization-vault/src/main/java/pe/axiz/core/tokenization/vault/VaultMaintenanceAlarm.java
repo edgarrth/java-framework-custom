@@ -1,6 +1,8 @@
 package pe.axiz.core.tokenization.vault;
 
-/** Technical alert when even durable maintenance reconciliation is unavailable. */
+/**
+ * Alerta técnica cuando ni siquiera la reconciliación durable del mantenimiento está disponible.
+ */
 @FunctionalInterface
 public interface VaultMaintenanceAlarm {
   void failed(UncertainVaultMaintenance operation);

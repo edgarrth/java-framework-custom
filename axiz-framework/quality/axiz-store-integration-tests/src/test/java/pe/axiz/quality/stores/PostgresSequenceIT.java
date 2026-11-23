@@ -44,7 +44,10 @@ import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
-/** Native counter reservations commit independently of business writes, including cancellation. */
+/**
+ * Las reservas nativas del contador se confirman de forma independiente de las escrituras de
+ * negocio, incluida la cancelación.
+ */
 @ExtendWith(BlockHoundExtension.class)
 class PostgresSequenceIT {
   private static final Duration T = Duration.ofSeconds(15);

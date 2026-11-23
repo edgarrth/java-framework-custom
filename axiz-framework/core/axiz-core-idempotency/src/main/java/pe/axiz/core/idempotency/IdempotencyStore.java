@@ -5,15 +5,18 @@ import java.util.Optional;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Storage of idempotency records (Redis or DynamoDB in production).
+ * Almacenamiento de registros de idempotencia (Redis o DynamoDB en producción).
  *
- * <p>Every write after {@link #tryStart} is fenced by the owner token of the record: an execution
- * whose retention expired and whose key was acquired again cannot complete or release the new
- * owner's key.
+ * <p>Cada escritura posterior a {@link #tryStart} tiene fencing por el token de propietario del
+ * registro: una ejecución cuya retención expiró y cuya clave se volvió a adquirir no puede
+ * completar ni liberar la clave del nuevo propietario.
  */
 public interface IdempotencyStore {
 
-  /** Atomic full-record comparison; owner and version fence stale writers, including key reuse. */
+  /**
+   * Comparación atómica del registro completo; el propietario y la versión bloquean a los
+   * escritores desfasados, incluida la reutilización de la clave.
+   */
   boolean compareAndSet(IdempotencyRecord expected, @Nullable IdempotencyRecord replacement);
 
   default boolean renew(
@@ -41,7 +44,9 @@ public interface IdempotencyStore {
     return release(key, owner);
   }
 
-  /** Resolution applies only to the generation and version the application actually inspected. */
+  /**
+   * La resolución aplica solo a la generación y la versión que la aplicación inspeccionó realmente.
+   */
   default boolean resolve(
       IdempotencyRecord expected, Resolution resolution, Instant now, Instant retainUntil) {
     if (!expected.liveAt(now)
@@ -56,29 +61,29 @@ public interface IdempotencyStore {
   }
 
   /**
-   * Atomically creates the IN_PROGRESS record when the key is free (absent or past retention).
-   * Lease expiry alone never frees the key.
+   * Crea de forma atómica el registro IN_PROGRESS cuando la clave está libre (ausente o pasada su
+   * retención). La sola expiración del lease nunca libera la clave.
    *
-   * @param record record with its owner token
-   * @return {@code false} when another live record holds the key
+   * @param record registro con su token de propietario
+   * @return {@code false} cuando otro registro vivo tiene la clave
    */
   boolean tryStart(IdempotencyRecord record);
 
   Optional<IdempotencyRecord> find(String key, Instant now);
 
   /**
-   * Stores the response, only if the key is still IN_PROGRESS and held by {@code owner}.
+   * Almacena la respuesta, solo si la clave sigue IN_PROGRESS y en poder de {@code owner}.
    *
-   * @return {@code false} when the owner lost the key (retention expired and key acquired by
-   *     another request)
+   * @return {@code false} cuando el propietario perdió la clave (la retención expiró y otra
+   *     petición adquirió la clave)
    */
   boolean complete(String key, String owner, StoredResponse response, Instant expiresAt);
 
   /**
-   * Deletes the IN_PROGRESS record after a failure so the client can retry, only if it is held by
-   * {@code owner}. Completed records are kept.
+   * Borra el registro IN_PROGRESS tras un fallo para que el cliente pueda reintentar, solo si está
+   * en poder de {@code owner}. Los registros completados se conservan.
    *
-   * @return {@code false} when there was nothing of this owner to release
+   * @return {@code false} cuando no había nada de este propietario que liberar
    */
   boolean release(String key, String owner);
 }

@@ -1,5 +1,5 @@
 "use strict";
-// Exercise Renovate's actual preset resolver, extractors, package rules and replacement engine.
+// Ejercita el resolvedor de presets real de Renovate, sus extractores, las reglas de paquetes y el motor de reemplazo.
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
@@ -72,8 +72,8 @@ GlobalConfig.set({
   endpoint: "https://api.github.com/",
   presetCachePersistence: false,
 });
-// Only the remote file transport is replaced with this fixture's exact tag. All configuration
-// inheritance (including built-in presets) is resolved by Renovate itself, without network.
+// Solo se reemplaza el transporte de archivos remotos con el tag exacto de este fixture. Toda la herencia
+// de configuración (incluidos los presets integrados) la resuelve el propio Renovate, sin red.
 const { GithubHttp } = moduleAt("util/http/github.js");
 const loaded = [];
 GithubHttp.prototype.getJsonUnchecked = async function (location) {

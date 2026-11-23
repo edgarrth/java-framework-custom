@@ -65,7 +65,10 @@ import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 
-/** Real SQS/SNS routing, notification wire identity and imperative/native FIFO coexistence. */
+/**
+ * Enrutamiento real de SQS/SNS, identidad de transporte de las notificaciones y coexistencia FIFO
+ * imperativa y nativa.
+ */
 @ExtendWith(BlockHoundExtension.class)
 class LocalStackMessagingIT {
   private static final Duration T = Duration.ofSeconds(20);
@@ -275,8 +278,7 @@ class LocalStackMessagingIT {
                           .subscribeOn(Schedulers.parallel()))
                   .expectComplete()
                   .verify(T);
-              // The same event id from the servlet producer coexists and is deduplicated by
-              // SNS/SQS.
+              // El mismo id de evento del productor servlet coexiste y SNS/SQS lo deduplica.
               new EventNotificationSender(
                       ctx.getBean(EventFactory.class), new SnsEventPublisher(setupSns), topic)
                   .send(request);

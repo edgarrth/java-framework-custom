@@ -23,7 +23,10 @@ import pe.axiz.spring.sequence.AxizSequenceAutoConfiguration;
 import pe.axiz.spring.sequence.AxizSequenceProperties;
 import pe.axiz.spring.sequence.ReactiveSequences;
 
-/** PostgreSQL sequence reservations remain durable when a business transaction rolls back. */
+/**
+ * Las reservas de secuencias de PostgreSQL siguen siendo durables cuando una transacción de negocio
+ * hace rollback.
+ */
 @AutoConfiguration(
     before = AxizSequenceAutoConfiguration.class,
     afterName = "org.springframework.boot.r2dbc.autoconfigure.R2dbcAutoConfiguration")
@@ -55,9 +58,9 @@ public class AxizSequenceR2dbcAutoConfiguration {
   @ConditionalOnMissingBean
   ReactiveSequences axizR2dbcSequences(
       AxizSequenceProperties properties, ReactiveSequenceStore store, ObjectProvider<Clock> clock) {
-    // A counter reservation intentionally owns its transaction. This private bridge shares only
-    // the JDK allocation algorithm; the public R2DBC contract remains Mono and never joins or
-    // transports a business transaction through CompletionStage.
+    // Una reserva de contador posee intencionalmente su transacción. Este puente privado solo
+    // comparte el algoritmo de asignación del JDK; el contrato público de R2DBC sigue siendo Mono y
+    // nunca se une a una transacción de negocio ni la transporta mediante CompletionStage.
     return new ReactiveSequences(
         properties,
         (name, period, amount) ->

@@ -45,7 +45,10 @@ import pe.axiz.core.outbox.OutboxWriter;
 import pe.axiz.spring.jdbc.SpringConnectionProvider;
 import pe.axiz.spring.jdbc.SpringTransactionRunner;
 
-/** Faults around a real database commit must not erase or misclassify sealed attempts. */
+/**
+ * Las fallas alrededor de un commit real de base de datos no deben borrar ni clasificar mal los
+ * intentos sellados.
+ */
 @Timeout(15)
 class DurableAuditProtocolTest {
   private enum Fault {

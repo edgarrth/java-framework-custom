@@ -3,7 +3,10 @@ package pe.axiz.core.lock;
 import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 
-/** Asynchronous owner-fenced lease. Release must be composed into the caller's termination path. */
+/**
+ * Lease asíncrono con fencing por propietario. La liberación debe componerse en la ruta de
+ * terminación de quien llama.
+ */
 public interface AsyncLockHandle {
   String resource();
 

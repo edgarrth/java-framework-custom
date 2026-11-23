@@ -66,7 +66,7 @@ class I18nTest {
 
   @Test
   void englishIsServedWhenTheDefaultLocaleIsSpanish() {
-    // the services run with es-PE by default: an English request must not fall to Spanish
+    // los servicios corren con es-PE por defecto: una petición en inglés no debe caer en español
     BundleMessageResolver framework =
         new BundleMessageResolver(List.of("axiz.i18n.messages"), ES_PE);
     assertEquals("The request is not valid.", framework.get("error.AXZ-CORE-0001", Locale.ENGLISH));
@@ -74,7 +74,7 @@ class I18nTest {
         "The request is not valid.",
         framework.get("error.AXZ-CORE-0001", Locale.forLanguageTag("en-GB")));
     assertEquals("La solicitud no es válida.", framework.get("error.AXZ-CORE-0001", ES_PE));
-    // a language without bundle gets the default locale
+    // un idioma sin bundle recibe el locale por defecto
     assertEquals("La solicitud no es válida.", framework.get("error.AXZ-CORE-0001", Locale.FRENCH));
   }
 

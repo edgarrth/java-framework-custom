@@ -18,21 +18,21 @@ import pe.axiz.payments.bankingcore.domain.MovementOrder;
 import pe.axiz.payments.bankingcore.domain.MovementStatus;
 
 /**
- * Anti-corruption adapter of the core banking system: debits and reversals through its REST facade
- * (client credentials, HTTP service group {@code core-banking}), credits through its SOAP service.
- * Core codes and states never leave this class.
+ * Adaptador anticorrupción del sistema core bancario: débitos y reversiones mediante su fachada
+ * REST (client credentials, grupo de servicios HTTP {@code core-banking}) y abonos mediante su
+ * servicio SOAP. Los códigos y estados del core nunca salen de esta clase.
  */
 @Component
 public class CoreBankingAdapter implements CoreAccounts {
 
-  /** Core error codes and what they mean for us. */
+  /** Códigos de error del core y su significado para este servicio. */
   static final String INSUFFICIENT_FUNDS = "CB-51";
 
   static final String ACCOUNT_BLOCKED = "CB-62";
   static final String ACCOUNT_CLOSED = "CB-63";
   static final String UNKNOWN_MOVEMENT = "CB-14";
 
-  /** The account does not belong to the holder sent with the debit. */
+  /** La cuenta no pertenece al titular enviado con el débito. */
   static final String NOT_ACCOUNT_HOLDER = "CB-17";
 
   private final CoreBankingClient client;
@@ -87,7 +87,7 @@ public class CoreBankingAdapter implements CoreAccounts {
     return new Movement(id, state(m.state()), reference);
   }
 
-  /** Core states: {@code P} posted, {@code R} reversed. */
+  /** Estados del core: {@code P} contabilizado, {@code R} revertido. */
   static MovementStatus state(@Nullable String coreState) {
     return switch (coreState == null ? "" : coreState) {
       case "P" -> MovementStatus.POSTED;
@@ -96,7 +96,10 @@ public class CoreBankingAdapter implements CoreAccounts {
     };
   }
 
-  /** Business rejections become our errors; anything else stays a dependency failure. */
+  /**
+   * Los rechazos de negocio se convierten en errores propios; cualquier otro caso sigue siendo una
+   * falla de dependencia.
+   */
   static RuntimeException translate(ExternalServiceException e, String reference) {
     String code = e.detail().code();
     if (INSUFFICIENT_FUNDS.equals(code)) {

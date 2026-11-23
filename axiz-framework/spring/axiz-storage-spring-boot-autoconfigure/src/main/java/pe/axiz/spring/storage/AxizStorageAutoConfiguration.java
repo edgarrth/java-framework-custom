@@ -17,7 +17,9 @@ import pe.axiz.core.storage.InMemoryObjectStorage;
 import pe.axiz.core.storage.ObjectStorage;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 
-/** In-memory storage for tests and local runs ({@code axiz.storage.type=memory}). */
+/**
+ * Almacenamiento en memoria para pruebas y ejecuciones locales ({@code axiz.storage.type=memory}).
+ */
 @AutoConfiguration
 @EnableConfigurationProperties(AxizStorageProperties.class)
 public class AxizStorageAutoConfiguration {

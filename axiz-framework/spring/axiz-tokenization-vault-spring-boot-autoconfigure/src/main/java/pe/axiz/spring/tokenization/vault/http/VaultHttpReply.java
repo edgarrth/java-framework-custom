@@ -15,7 +15,7 @@ import pe.axiz.core.json.JsonWriter;
 import pe.axiz.core.tokenization.TokenErrors;
 
 /**
- * Owned bytes written only by the dedicated endpoint, with cleanup on completion or cancellation.
+ * Bytes propios escritos solo por el endpoint dedicado, con limpieza al completar o al cancelar.
  */
 final class VaultHttpReply implements AutoCloseable {
   private boolean deleted;

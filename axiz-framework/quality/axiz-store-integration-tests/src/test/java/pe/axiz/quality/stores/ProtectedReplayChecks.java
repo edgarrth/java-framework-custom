@@ -44,7 +44,10 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
-/** Real-store checks share the public HTTP idempotency path; only key wrapping is synthetic. */
+/**
+ * Las verificaciones sobre almacenes reales comparten la ruta pública de idempotencia HTTP; solo el
+ * envoltorio de claves es sintético.
+ */
 final class ProtectedReplayChecks {
   private static final byte[] BODY = "{\"document\":\"00123456\"}".getBytes(StandardCharsets.UTF_8);
 
@@ -152,7 +155,8 @@ final class ProtectedReplayChecks {
           .expectBody(byte[].class)
           .isEqualTo(BODY);
       assertEquals(1, api.effects.get());
-      // All contenders compare the exact persisted ciphertext; encryption is never repeated by CAS.
+      // Todos los competidores comparan el texto cifrado persistido exacto; CAS nunca repite el
+      // cifrado.
       StepVerifier.create(
               Flux.range(0, 32)
                   .flatMap(
@@ -182,7 +186,7 @@ final class ProtectedReplayChecks {
           .isCreated()
           .expectBody(byte[].class)
           .isEqualTo(BODY);
-      // Replaying the same bytes under another request key must fail authentication.
+      // Reproducir los mismos bytes bajo otra clave de solicitud debe fallar la autenticación.
       String copiedKey = UUID.randomUUID().toString();
       var copied =
           IdempotencyRecord.builder(

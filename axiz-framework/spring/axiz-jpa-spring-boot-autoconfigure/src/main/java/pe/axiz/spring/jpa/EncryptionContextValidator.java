@@ -15,7 +15,7 @@ import org.springframework.orm.jpa.EntityManagerFactoryInfo;
 import org.springframework.util.ClassUtils;
 import pe.axiz.kit.jpa.EncryptedConverter;
 
-/** Validates actual entity converters after JPA has built its metamodel. */
+/** Valida los converters reales de las entidades después de que JPA ha construido su metamodelo. */
 final class EncryptionContextValidator implements SmartInitializingSingleton {
   private final ApplicationContext context;
 

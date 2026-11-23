@@ -5,7 +5,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.LongAdder;
 
-/** Seals before admission. Owns and closes its delegate exactly once. */
+/** Sella antes de la admisión. Es dueño de su delegado y lo cierra exactamente una vez. */
 public final class SealingAuditPublisher
     implements AuditPublisher, AuditPublisherDecorator, AutoCloseable, AuditIntegrityMetrics {
   private final AuditSealer sealer;

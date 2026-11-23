@@ -7,7 +7,7 @@ import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.render.JavaFormatter;
 
-/** Real generated consumers exercise scoped, authenticated-only and public HTTP decisions. */
+/** Consumidores generados reales que ejercitan decisiones HTTP con scope, solo autenticadas y públicas. */
 class GenerateAccessPolicySamples {
   private static final String CONTRACT =
       """

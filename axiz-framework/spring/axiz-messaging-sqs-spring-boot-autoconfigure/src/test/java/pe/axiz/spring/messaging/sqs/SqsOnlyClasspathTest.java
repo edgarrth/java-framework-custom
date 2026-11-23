@@ -33,7 +33,8 @@ import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * SQS applications must start and publish without any Kafka or SNS integration on their classpath.
+ * Las aplicaciones SQS deben arrancar y publicar sin ninguna integración de Kafka ni SNS en su
+ * classpath.
  */
 class SqsOnlyClasspathTest {
   private static final String DESTINATION =

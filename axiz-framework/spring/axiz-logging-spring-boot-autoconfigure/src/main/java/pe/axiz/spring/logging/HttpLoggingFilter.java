@@ -24,9 +24,9 @@ import pe.axiz.core.api.HttpPayloadPolicy;
 import pe.axiz.core.logging.HttpLogFormatter;
 
 /**
- * One access-log line per request (logger {@code axiz.http}) with method, path, status, duration
- * and allow-listed headers. Bodies are optional, JSON only, masked and truncated. Query strings are
- * not logged because they may carry personal data.
+ * Una línea de log de acceso por solicitud (logger {@code axiz.http}) con método, ruta, estado,
+ * duración y cabeceras permitidas. Los cuerpos son opcionales, solo JSON, enmascarados y truncados.
+ * Las query strings no se registran porque pueden contener datos personales.
  */
 public class HttpLoggingFilter extends OncePerRequestFilter implements Ordered {
 
@@ -116,8 +116,8 @@ public class HttpLoggingFilter extends OncePerRequestFilter implements Ordered {
   }
 
   /**
-   * Keeps at most {@code limit} bytes of the request body and remembers whether the body was
-   * longer, so a cut body is never masked as if it were whole.
+   * Conserva como máximo {@code limit} bytes del cuerpo de la solicitud y recuerda si el cuerpo era
+   * más largo, de modo que un cuerpo cortado nunca se enmascara como si estuviera completo.
    */
   static final class BoundedRequest extends ContentCachingRequestWrapper {
 

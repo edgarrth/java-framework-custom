@@ -2,7 +2,7 @@ package pe.axiz.core.featureflags;
 
 import java.util.Optional;
 
-/** Source of flag definitions (ConfigMap-bound properties, Parameter Store). */
+/** Fuente de definiciones de flags (propiedades enlazadas a un ConfigMap, Parameter Store). */
 @FunctionalInterface
 public interface FlagProvider {
 

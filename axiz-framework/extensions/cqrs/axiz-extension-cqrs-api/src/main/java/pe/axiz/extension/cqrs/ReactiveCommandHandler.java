@@ -3,12 +3,12 @@ package pe.axiz.extension.cqrs;
 import org.reactivestreams.Publisher;
 
 /**
- * Handles one command type without blocking (reactive services on WebFlux and R2DBC). The publisher
- * emits at most one value, usually a {@code Mono}; it runs in the reactive transaction and the rest
- * of the pipeline of the reactive bus.
+ * Maneja un tipo de comando sin bloquear (servicios reactivos sobre WebFlux y R2DBC). El publisher
+ * emite como máximo un valor, normalmente un {@code Mono}; corre en la transacción reactiva y en el
+ * resto del pipeline del bus reactivo.
  *
- * @param <C> command type
- * @param <R> result type
+ * @param <C> tipo del comando
+ * @param <R> tipo del resultado
  */
 public interface ReactiveCommandHandler<C extends Command<R>, R> {
 

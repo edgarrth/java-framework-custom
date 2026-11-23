@@ -5,12 +5,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
- * Orchestrated sagas ({@code axiz.saga.*}) with persisted state and compensation.
+ * Sagas orquestadas ({@code axiz.saga.*}) con estado persistido y compensación.
  *
- * @param stepAttempts attempts of a step on transient failures
- * @param compensationAttempts attempts of a compensation
- * @param initialDelay first retry delay
- * @param maxDelay retry delay cap
+ * @param stepAttempts intentos de un paso ante fallos transitorios
+ * @param compensationAttempts intentos de una compensación
+ * @param initialDelay retraso del primer reintento
+ * @param maxDelay tope del retraso de reintento
  */
 @ConfigurationProperties("axiz.saga")
 public record AxizSagaProperties(

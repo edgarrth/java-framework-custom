@@ -9,7 +9,7 @@ import pe.axiz.extension.cqrs.QueryHandler;
 import pe.axiz.extension.cqrs.ReactiveCommandHandler;
 import pe.axiz.extension.cqrs.ReactiveQueryHandler;
 
-/** Registers plain application handlers and policies from the composition root. */
+/** Registra los handlers y las políticas de aplicación planos desde la raíz de composición. */
 @Configuration(proxyBeanMethods = false)
 @ComponentScan(
     basePackages = "pe.axiz.payments.orders.application",

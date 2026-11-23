@@ -5,9 +5,9 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.tokenization.Token;
 
 /**
- * Restricted reconciliation evidence. UNCERTAIN means storage acknowledgement is unknown;
- * SUCCESS/CONFLICT means the operation completed but its final audit was not confirmed. A full
- * token is included only for a record mutation.
+ * Evidencia de reconciliación restringida. UNCERTAIN significa que se desconoce el acuse del
+ * almacenamiento; SUCCESS/CONFLICT significa que la operación terminó pero su auditoría final no se
+ * confirmó. Solo se incluye un token completo para una mutación de registro.
  */
 public record UncertainVaultMaintenance(VaultMaintenanceEvent event, @Nullable Token token) {
   public UncertainVaultMaintenance {

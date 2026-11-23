@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-logging-spring-boot-autoconfigure
 
-Structured JSON logging, operation logging with masking and HTTP request logs (auto-configuration).
+Logs JSON estructurados, registro de operaciones con enmascaramiento y logs de peticiones HTTP (autoconfiguración).
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,20 +12,20 @@ Structured JSON logging, operation logging with masking and HTTP request logs (a
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `AxizLoggingAutoConfiguration` | `LogOperation` through an infrastructure advisor (AOT and native friendly, no AspectJ) and the HTTP access log for servlet and reactive applications. |
-| `AxizLoggingEnvironmentPostProcessor` | Structured logging defaults, applied before the logging system starts. |
-| `AxizLoggingProperties` | Logging conventions (`axiz.logging.*`). |
-| `FailureKind` | Tells expected business rejections (logged at WARN) from failures (logged at ERROR). |
-| `HttpLoggingFilter` | One access-log line per request (logger `axiz.http`) with method, path, status, duration and allow-listed headers. |
-| `HttpLoggingWebFilter` | Reactive access log: same line as the servlet filter, without bodies. |
-| `LogOperationInterceptor` | Applies `LogOperation`: entry and exit lines with duration and outcome. |
+| `AxizLoggingAutoConfiguration` | `LogOperation` mediante un advisor de infraestructura (compatible con AOT y nativo, sin AspectJ) y el log de acceso HTTP para aplicaciones servlet y reactivas. |
+| `AxizLoggingEnvironmentPostProcessor` | Valores por defecto del logging estructurado, aplicados antes de que arranque el sistema de logging. |
+| `AxizLoggingProperties` | Convenciones de logging (`axiz.logging.*`). |
+| `FailureKind` | Distingue los rechazos de negocio esperados (registrados en WARN) de los fallos (registrados en ERROR). |
+| `HttpLoggingFilter` | Una línea de log de acceso por petición (logger `axiz.http`) con método, ruta, estado, duración y cabeceras permitidas. |
+| `HttpLoggingWebFilter` | Log de acceso reactivo: la misma línea que el filtro servlet, sin cuerpos. |
+| `LogOperationInterceptor` | Aplica `LogOperation`: líneas de entrada y salida con duración y resultado. |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-logging-spring-boot-autoconfigure verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl spring/axiz-logging-spring-boot-autoconfigure verify`.

@@ -1,6 +1,6 @@
 # axiz-architecture-tests
 
-ArchUnit tests of the framework itself (`FrameworkArchitectureTest`): layer 1 is plain Java (no
-Spring, Quarkus or upper layers), layer 2 never depends on layer 3, the `-api` modules of the
-frameworks depend only on layer 1, each starter uses only its own capability or the foundation
-starter, and there are no cycles between core capabilities or between styles. Not published.
+Pruebas ArchUnit del propio framework (`FrameworkArchitectureTest`): la capa 1 es Java simple (sin
+Spring, Quarkus ni capas superiores), la capa 2 nunca depende de la capa 3, los módulos `-api` de los
+frameworks dependen solo de la capa 1, cada starter usa solo su propia capacidad o el starter base, y
+no hay ciclos entre capacidades del núcleo ni entre estilos. No se publica.

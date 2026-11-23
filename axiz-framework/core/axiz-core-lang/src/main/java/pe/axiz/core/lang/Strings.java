@@ -5,7 +5,7 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
-/** Small string helpers that the JDK lacks. */
+/** Pequeñas utilidades de cadenas que le faltan al JDK. */
 public final class Strings {
 
   private static final Pattern DIACRITICS = Pattern.compile("\\p{M}+");
@@ -22,7 +22,10 @@ public final class Strings {
     return !isBlank(value);
   }
 
-  /** Whether every UTF-16 surrogate is paired, so UTF-8 encoding loses no identity information. */
+  /**
+   * Indica si cada surrogate UTF-16 tiene pareja, de modo que la codificación UTF-8 no pierde
+   * información de identidad.
+   */
   public static boolean isWellFormedUnicode(String value) {
     for (int i = 0; i < value.length(); i++) {
       char c = value.charAt(i);
@@ -50,18 +53,21 @@ public final class Strings {
     return value.length() <= maxLength ? value : value.substring(0, maxLength);
   }
 
-  /** Removes accents, e.g. "Peñarol Ñandú" becomes "Penarol Nandu". */
+  /** Elimina acentos, por ejemplo "Peñarol Ñandú" se convierte en "Penarol Nandu". */
   public static String stripAccents(String value) {
     return DIACRITICS.matcher(Normalizer.normalize(value, Normalizer.Form.NFD)).replaceAll("");
   }
 
-  /** Lowercase ASCII kebab-case identifier: "Pago Interbancario" becomes "pago-interbancario". */
+  /**
+   * Identificador ASCII en minúsculas y kebab-case: "Pago Interbancario" se convierte en
+   * "pago-interbancario".
+   */
   public static String slug(String value) {
     String ascii = stripAccents(value).toLowerCase(Locale.ROOT);
     return EDGE_DASH.matcher(NON_SLUG.matcher(ascii).replaceAll("-")).replaceAll("");
   }
 
-  /** Left-pads with the given character up to the length (never truncates). */
+  /** Rellena a la izquierda con el carácter indicado hasta la longitud (nunca trunca). */
   public static String leftPad(String value, int length, char pad) {
     if (value.length() >= length) {
       return value;
@@ -69,7 +75,7 @@ public final class Strings {
     return String.valueOf(pad).repeat(length - value.length()) + value;
   }
 
-  /** Right-pads with the given character up to the length (never truncates). */
+  /** Rellena a la derecha con el carácter indicado hasta la longitud (nunca trunca). */
   public static String rightPad(String value, int length, char pad) {
     if (value.length() >= length) {
       return value;

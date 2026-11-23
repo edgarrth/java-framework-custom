@@ -9,21 +9,21 @@ import pe.axiz.payments.bankingcore.adapter.out.corebanking.model.CoreDebit;
 import pe.axiz.payments.bankingcore.adapter.out.corebanking.model.CoreMovement;
 
 /**
- * Client of the Core banking (simulated) API (2.3.0), HTTP service group {@code core-banking}: base
- * URL, timeouts, retries, circuit breaker and authentication come from {@code
- * axiz.http-client.clients.core-banking.*}.
+ * Cliente de la API de Core banking (simulada) (2.3.0), grupo de servicios HTTP {@code
+ * core-banking}: la URL base, los timeouts, los reintentos, el circuit breaker y la autenticación
+ * provienen de {@code axiz.http-client.clients.core-banking.*}.
  */
 @HttpExchange
 public interface CoreBankingClient {
 
-  /** Holds and posts a debit (POST /core/v2/accounts/{account}/debits). */
+  /** Retiene y contabiliza un débito (POST /core/v2/accounts/{account}/debits). */
   @PostExchange("/core/v2/accounts/{account}/debits")
   CoreMovement postDebit(
       @PathVariable("account") String account,
       @RequestHeader(name = "X-Request-Ref", required = true) String xRequestRef,
       @RequestBody CoreDebit body);
 
-  /** Reverses a posted movement (POST /core/v2/movements/{mvId}/reversal). */
+  /** Revierte un movimiento contabilizado (POST /core/v2/movements/{mvId}/reversal). */
   @PostExchange("/core/v2/movements/{mvId}/reversal")
   CoreMovement postReversal(
       @PathVariable("mvId") String mvId,

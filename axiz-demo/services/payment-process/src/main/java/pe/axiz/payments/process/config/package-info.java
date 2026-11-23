@@ -1,4 +1,4 @@
-/** Wiring of use cases, ports and adapters. */
+/** Cableado de casos de uso, puertos y adaptadores. */
 @NullMarked
 package pe.axiz.payments.process.config;
 

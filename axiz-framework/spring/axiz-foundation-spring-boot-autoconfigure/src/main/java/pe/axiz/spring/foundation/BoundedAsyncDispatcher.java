@@ -26,9 +26,10 @@ import pe.axiz.core.concurrent.BoundedCallbackExecutor;
 import pe.axiz.core.concurrent.Stages;
 
 /**
- * Bounded submission boundary for transports whose asynchronous send can block on admission.
- * Capacity covers queued submissions AND broker acknowledgements; saturation never runs on callers.
- * Construct at startup, close with the transport. Cancellation after send cannot retract a message.
+ * Límite acotado de envío para transportes cuyo envío asíncrono puede bloquearse en la admisión. La
+ * capacidad cubre los envíos en cola Y las confirmaciones del broker; la saturación nunca se
+ * ejecuta en los invocantes. Se construye en el arranque y se cierra con el transporte. Una
+ * cancelación posterior al envío no puede retirar un mensaje.
  */
 public final class BoundedAsyncDispatcher implements AutoCloseable {
   private final BoundedCallbackExecutor executor;
@@ -106,7 +107,7 @@ public final class BoundedAsyncDispatcher implements AutoCloseable {
     Stages.observe(
         result,
         (value, error) -> {
-          // A timeout cannot free an accepted Kafka send: the broker may still acknowledge it.
+          // Un timeout no puede liberar un envío Kafka aceptado: el broker aún puede confirmarlo.
           if (state.compareAndSet(0, 2)) {
             pending.remove(admissionKey);
             capacity.release();

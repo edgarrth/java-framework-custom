@@ -23,8 +23,8 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Dependency rules of the framework itself (section 3 of the definition), checked on every build
- * over the whole reactor.
+ * Reglas de dependencias del propio framework (sección 3 de la definición), verificadas en cada
+ * build sobre todo el reactor.
  */
 @AnalyzeClasses(packages = "pe.axiz", importOptions = ImportOption.DoNotIncludeTests.class)
 class FrameworkArchitectureTest {
@@ -133,7 +133,8 @@ class FrameworkArchitectureTest {
                 }
               });
 
-  // Only presentation text rendering may use bounded workers; business/provider I/O remains native.
+  // Solo el renderizado de texto de presentación puede usar workers acotados; la E/S de negocio y
+  // de proveedores sigue siendo nativa.
   private static final Set<String> ERROR_TEXT_RENDERING_BOUNDARIES =
       Set.of(
           "pe.axiz.spring.errors.ProblemWebExceptionHandler.handle("
@@ -145,7 +146,10 @@ class FrameworkArchitectureTest {
           "pe.axiz.spring.security.AxizSecurityAutoConfiguration$ReactiveConfiguration."
               + "axizSecurityRenderingScheduler()");
 
-  /** Request/event code cannot disguise blocking I/O with a worker scheduler. */
+  /**
+   * El código de solicitudes y eventos no puede disfrazar E/S bloqueante con un scheduler de
+   * workers.
+   */
   @ArchTest
   static final ArchRule FRAMEWORK_DOES_NOT_OFFLOAD_BLOCKING_IO =
       noClasses()
@@ -207,7 +211,7 @@ class FrameworkArchitectureTest {
           .dependOnClassesThat()
           .resideOutsideOfPackages("pe.axiz.core.lang..", "java..", "org.jspecify.annotations..");
 
-  /** Layer 1 is plain Java: no Spring, no Quarkus, no upper layers. */
+  /** La capa 1 es Java plano: sin Spring, sin Quarkus y sin capas superiores. */
   @ArchTest
   static final ArchRule CORE_IS_PLAIN_JAVA =
       noClasses()
@@ -235,7 +239,10 @@ class FrameworkArchitectureTest {
               "org.reactivestreams..")
           .because("layer 1 is framework-neutral so a Quarkus extension can wire the same core");
 
-  /** Core contracts cannot acquire technology through framework adapters or persistence kits. */
+  /**
+   * Los contratos del core no pueden adquirir tecnología mediante adaptadores del framework ni kits
+   * de persistencia.
+   */
   @ArchTest
   static final ArchRule CORE_DOES_NOT_KNOW_TECHNOLOGY =
       noClasses()
@@ -245,7 +252,10 @@ class FrameworkArchitectureTest {
           .dependOnClassesThat()
           .resideInAnyPackage("pe.axiz.adapter..", "pe.axiz.kit..");
 
-  /** Core may classify transport exceptions, but it must never implement network or file I/O. */
+  /**
+   * El core puede clasificar excepciones de transporte, pero nunca debe implementar E/S de red ni
+   * de archivos.
+   */
   @ArchTest
   static final ArchRule CORE_DOES_NOT_PERFORM_IO =
       ArchRuleDefinition.classes()
@@ -278,7 +288,7 @@ class FrameworkArchitectureTest {
                 }
               });
 
-  /** Spring wiring never depends on application structures or extensions. */
+  /** El cableado de Spring nunca depende de las estructuras ni de las extensiones de aplicación. */
   @ArchTest
   static final ArchRule SPRING_DOES_NOT_KNOW_STRUCTURES =
       noClasses()
@@ -288,16 +298,20 @@ class FrameworkArchitectureTest {
           .dependOnClassesThat()
           .resideInAnyPackage("pe.axiz.structure..", "pe.axiz.extension..");
 
-  /** Structure/extension contracts use core and their own API, with CQRS to hexagonal reuse. */
+  /**
+   * Los contratos de estructuras y extensiones usan el core y su propia API, con reutilización de
+   * hexagonal desde CQRS.
+   */
   @ArchTest
   static final ArchRule STRUCTURE_APIS_ARE_PLAIN_JAVA =
       ArchRuleDefinition.classes().that(apiPackages()).should(onlyUseOwnApiOrCore());
 
   /**
-   * A capability starter only uses its own package and the shared foundation adapters; capabilities
-   * talk to each other through core ports. Audit and messaging may share the Kafka transport
-   * validator, which contains no capability or business behavior; JDBC integrations use the Spring
-   * JDBC support, and inbox stores implement the completion ports messaging defines.
+   * Un starter de capacidad solo usa su propio paquete y los adaptadores base compartidos; las
+   * capacidades se comunican entre sí mediante puertos del core. Auditoría y mensajería pueden
+   * compartir el validador de transporte de Kafka, que no contiene comportamiento de capacidades ni
+   * de negocio; las integraciones JDBC usan el soporte JDBC de Spring y los almacenes inbox
+   * implementan los puertos de finalización que define mensajería.
    */
   @ArchTest
   static final ArchRule STARTERS_ARE_ISOLATED =
@@ -306,16 +320,16 @@ class FrameworkArchitectureTest {
           .resideInAPackage("pe.axiz.spring..")
           .should(onlyUseOwnCapabilityOrFoundation());
 
-  /** No cycles between core capabilities. */
+  /** Sin ciclos entre las capacidades del core. */
   @ArchTest
   static final ArchRule CORE_HAS_NO_CYCLES =
       slices().matching("pe.axiz.core.(*)..").should().beFreeOfCycles();
 
-  /** No cycles within or between structures and extensions. */
+  /** Sin ciclos dentro de las estructuras y extensiones ni entre ellas. */
   @ArchTest
   static final ArchRule STRUCTURES_HAVE_NO_CYCLES = moduleSlices(Set.of("structure", "extension"));
 
-  /** No cycles between capabilities or technologies, including cross-layer module cycles. */
+  /** Sin ciclos entre capacidades o tecnologías, incluidos los ciclos de módulos entre capas. */
   @ArchTest
   static final ArchRule FRAMEWORK_MODULES_HAVE_NO_CYCLES =
       moduleSlices(Set.of("core", "adapter", "kit", "spring", "structure", "extension"));
@@ -355,7 +369,8 @@ class FrameworkArchitectureTest {
               target.isPrimitive()
                   || name.startsWith("java.")
                   || name.startsWith("org.jspecify.")
-                  // Compile-only static-analysis metadata, including the annotation's enum default.
+                  // Metadatos de análisis estático solo de compilación, incluido el valor enum por
+                  // defecto de la anotación.
                   || name.equals("edu.umd.cs.findbugs.annotations.SuppressFBWarnings")
                   || name.equals("edu.umd.cs.findbugs.annotations.SuppressMatchType")
                   || name.startsWith("org.slf4j.")
@@ -496,8 +511,9 @@ class FrameworkArchitectureTest {
             .matches("pe\\.axiz\\.adapter\\..*\\.(aws|dynamodb|s3|sqs|sns|kms)(\\..*)?");
   }
 
-  // This single port preserves the transaction's subscriber context without a database dependency.
-  // No other public Reactor API is admitted by this exception.
+  // Este único puerto preserva el contexto del suscriptor de la transacción sin una dependencia de
+  // base de datos.
+  // Esta excepción no admite ninguna otra API pública de Reactor.
   private static boolean reactorOutboxContract(JavaClass type) {
     return Set.of(
             "pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter",

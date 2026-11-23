@@ -3,7 +3,7 @@ package pe.axiz.core.errors;
 import java.util.List;
 import java.util.Map;
 
-/** The input is invalid; carries one violation per field. */
+/** La entrada no es válida; lleva una violación por campo. */
 public class ValidationException extends AxizException {
 
   private static final long serialVersionUID = 1L;

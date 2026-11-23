@@ -1,56 +1,62 @@
-# Protected data: executable consumer examples
+# Datos protegidos: ejemplos ejecutables de consumidor
 
-Run from `axiz-demo` with JDK 25, installed Axiz artifacts and Docker:
+Se ejecuta desde `axiz-demo` con JDK 25, los artefactos de Axiz instalados y Docker:
 
 ```sh
 ./mvnw -pl examples/protected-data -Pquality verify
 ```
 
-This test-only module provisions disposable LocalStack DynamoDB, KMS, SQS and Secrets
-Manager resources, plus authenticated Valkey. It does not contact AWS remotely and is
-not a deployable vault service. The normal demo reactor runs it; Docker absence fails.
+Este módulo, solo de pruebas, aprovisiona recursos desechables de LocalStack DynamoDB, KMS, SQS y
+Secrets Manager, además de Valkey autenticado. No contacta AWS de forma remota y no es un servicio de
+bóveda desplegable. El reactor normal de la demo lo ejecuta; la ausencia de Docker lo hace fallar.
 
-`ProtectedDataExampleTest` composes the real Spring provider integrations and demonstrates:
+`ProtectedDataExampleTest` compone las integraciones reales de proveedores de Spring y muestra:
 
-- PAN and DNI tokenization into a central encrypted DynamoDB vault, repeat lookup and
-  authorized reveal. Client-visible results contain a token and permitted metadata;
-  ciphertext and equality fingerprints remain inside the vault.
-- Independent DNI field protection: receive ciphertext plus keyed HMAC, store both in
-  an application-owned DynamoDB table, search by the HMAC, and decrypt with tenant,
-  domain and stable row binding. This path does not invoke tokenization.
-- Separate encryption/index keys resolved from Secrets Manager, KMS envelope encryption,
-  authenticated distributed budgets and acknowledged HMAC-sealed SQS audit records.
-- `VaultMaintenanceRecipe` demonstrates administrative authorization, index rotation/reindex,
-  pruning obsolete search references, KMS wrapping-key rotation/re-encryption, guarded key
-  retirement and retention expiry. Tokens remain stable across rotation.
+- Tokenización de PAN y DNI en una bóveda central cifrada en DynamoDB, búsqueda repetida y
+  revelación autorizada. Los resultados visibles para el cliente contienen un token y los metadatos
+  permitidos; el texto cifrado y las huellas de igualdad permanecen dentro de la bóveda.
+- Protección independiente del campo DNI: se recibe el texto cifrado más un HMAC con clave, se
+  guardan ambos en una tabla DynamoDB propia de la aplicación, se busca por el HMAC y se descifra con
+  el binding de tenant, dominio y fila estable. Este camino no invoca la tokenización.
+- Claves separadas de cifrado e índice resueltas desde Secrets Manager, cifrado de sobre con KMS,
+  presupuestos distribuidos autenticados y registros de auditoría en SQS sellados con HMAC y confirmados.
+- `VaultMaintenanceRecipe` muestra la autorización administrativa, la rotación y reindexación del
+  índice, la poda de referencias de búsqueda obsoletas, la rotación de la clave de envoltura de KMS y
+  el recifrado, el retiro protegido de claves y la expiración por retención. Los tokens se mantienen
+  estables durante la rotación.
 
-Rotation is an operational protocol. Provision the new keys and deploy readers that know both
-versions before activating a new write version. Quiesce old writers, activate the version, replace
-the immutable runtime configuration with new writers and resume traffic. The vault rejects stale
-writers. Run bounded migration pages until no old records remain; prove that state before retiring
-the old version. Index pruning uses the maintenance preparation/proof contract. External KMS key
-disablement must also account for other keysets, backups and retention obligations.
+La rotación es un protocolo operativo. Se aprovisionan las claves nuevas y se despliegan lectores que
+conocen ambas versiones antes de activar una versión de escritura nueva. Se detienen los escritores de
+la versión anterior, se activa la versión, se reemplaza la configuración inmutable de runtime con los
+nuevos escritores y se reanuda el tráfico. La bóveda rechaza a los escritores desfasados. Se ejecutan
+páginas de migración acotadas hasta que no queden registros de la versión anterior; ese estado se
+demuestra antes de retirar la versión anterior. La poda de índices usa el contrato de preparación y
+prueba de mantenimiento. Desactivar una clave externa de KMS también debe considerar otros keysets,
+los respaldos y las obligaciones de retención.
 
-Administrative calls use a separate principal with only the maintenance scope and trusted tenant,
-keyset and clock. Retention is demonstrated with a controlled test clock, never a date supplied
-by a public caller. An uncertain maintenance result is sent to a dedicated reconciliation queue
-with action, operation ID, keyset/version and scope. That restricted queue may need the full token
-to perform reconciliation; application logs retain only redacted diagnostics. Operators must
-consume and reconcile it before treating an uncertain outcome as complete.
+Las llamadas administrativas usan un principal separado con solo el scope de mantenimiento y un tenant,
+keyset y reloj confiables. La retención se muestra con un reloj de prueba controlado, nunca con una
+fecha que entregue un llamador público. Un resultado de mantenimiento incierto se envía a una cola de
+conciliación dedicada con la acción, el ID de operación, el keyset y la versión, y el ámbito. Esa cola
+restringida puede necesitar el token completo para hacer la conciliación; los logs de la aplicación
+conservan solo diagnósticos redactados. Los operadores deben consumirla y conciliarla antes de dar por
+completo un resultado incierto.
 
-For remote application consumers, see
+Para consumidores remotos de aplicación, ver
 [`RemoteTokenClientRecipeTest`](../provider-recipes/src/test/java/pe/axiz/demo/providers/RemoteTokenClientRecipeTest.java).
-It shows the public token client on both web stacks. `ReactiveVaultRecipe` uses native asynchronous DynamoDB, KMS, Redis and acknowledged SQS audit
-providers, checks tenant isolation and closes sensitive results inside completion callbacks. This module
-concentrates on the real vault providers and independent encryption/index operations.
+Muestra el cliente público de tokens en ambos stacks web. `ReactiveVaultRecipe` usa proveedores nativos asíncronos de DynamoDB, KMS, Redis y auditoría
+en SQS confirmada, comprueba el aislamiento por tenant y cierra los resultados sensibles dentro de los
+callbacks de finalización. Este módulo se concentra en los proveedores reales de la bóveda y en las
+operaciones independientes de cifrado e índice.
 
-Identities are deliberately supplied at the trusted **internal** `VaultOperations`
-boundary. These examples do not implement JWT authentication or expose an HTTP API.
-The framework's `VaultAcceptanceIT` separately exercises signed JWT and HTTP boundaries.
-A deployed vault must verify identity before constructing `TokenCaller`, configure TLS,
-restricted IAM, key custody/rotation, retention and reconciliation operations. LocalStack
-functional acceptance is not a PCI DSS certification or proof of AWS IAM enforcement.
+Las identidades se entregan a propósito en el límite **interno** confiable `VaultOperations`. Estos
+ejemplos no implementan autenticación JWT ni exponen una API HTTP. El `VaultAcceptanceIT` del framework
+ejercita por separado los límites de JWT firmado y HTTP. Una bóveda desplegada debe verificar la
+identidad antes de construir `TokenCaller` y configurar TLS, IAM restringido, custodia y rotación de
+claves, retención y operaciones de conciliación. La aceptación funcional con LocalStack no es una
+certificación PCI DSS ni una prueba de la aplicación de IAM en AWS.
 
-The test fixture creates tables and initial key-state records as an infrastructure owner.
-The runtime provider verifies them and does not create tables. Fixture cleanup closes
-clients, keys and containers; test output never prints values or secret material.
+El fixture de prueba crea las tablas y los registros iniciales de estado de claves como propietario de
+la infraestructura. El proveedor de runtime los verifica y no crea tablas. La limpieza del fixture
+cierra los clientes, las claves y los contenedores; la salida de las pruebas nunca imprime valores ni
+material secreto.

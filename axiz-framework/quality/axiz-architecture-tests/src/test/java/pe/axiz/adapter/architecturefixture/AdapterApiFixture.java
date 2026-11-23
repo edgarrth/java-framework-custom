@@ -2,11 +2,11 @@ package pe.axiz.adapter.architecturefixture;
 
 import org.reactivestreams.Subscriber;
 
-/** Fixtures distinguish an exported protocol leak from an internal SDK bridge. */
+/** Los fixtures distinguen una fuga de protocolo exportada de un puente interno hacia el SDK. */
 public final class AdapterApiFixture {
   private AdapterApiFixture() {}
 
-  /** Invalid exported adapter signature. */
+  /** Firma de adaptador exportada inválida. */
   public static final class Exposed {
     public void subscribe(Subscriber<String> target) {}
   }

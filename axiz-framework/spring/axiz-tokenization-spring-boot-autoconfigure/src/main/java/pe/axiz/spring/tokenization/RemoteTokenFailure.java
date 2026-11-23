@@ -5,7 +5,8 @@ import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.tokenization.TokenErrors;
 
 /**
- * Preserve only the closed token error catalog; transport loss cannot prove a mutation rolled back.
+ * Solo se conserva el catálogo cerrado de errores de tokens; una pérdida de transporte no puede
+ * demostrar que una mutación hizo rollback.
  */
 final class RemoteTokenFailure {
   private RemoteTokenFailure() {}

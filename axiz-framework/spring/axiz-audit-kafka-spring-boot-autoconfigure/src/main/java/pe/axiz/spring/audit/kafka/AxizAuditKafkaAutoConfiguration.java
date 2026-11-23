@@ -31,9 +31,9 @@ import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 import pe.axiz.spring.kafka.KafkaTransportSecurity;
 
 /**
- * Kafka audit transport with owned producers and bounded, idempotent all-replica acknowledgement.
- * Authentication properties come from the configured producer factory; its settings are not
- * mutated.
+ * Transporte de auditoría Kafka con productores propios y confirmación acotada, idempotente y de
+ * todas las réplicas. Las propiedades de autenticación provienen de la fábrica de productores
+ * configurada; su configuración no se modifica.
  */
 @AutoConfiguration(
     beforeName = {
@@ -50,7 +50,7 @@ import pe.axiz.spring.kafka.KafkaTransportSecurity;
 @ConditionalOnBooleanProperty(name = "axiz.audit.enabled", matchIfMissing = true)
 @EnableConfigurationProperties(AxizAuditKafkaProperties.class)
 public class AxizAuditKafkaAutoConfiguration {
-  /** Bind and validate destination settings before constructing transport resources. */
+  /** Enlaza y valida la configuración del destino antes de construir los recursos de transporte. */
   public AxizAuditKafkaAutoConfiguration(AxizAuditKafkaProperties properties) {
     Objects.requireNonNull(properties);
     super();

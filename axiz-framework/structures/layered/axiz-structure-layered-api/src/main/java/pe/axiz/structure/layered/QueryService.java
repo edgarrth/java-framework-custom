@@ -6,21 +6,21 @@ import pe.axiz.core.api.PageRequest;
 import pe.axiz.core.errors.NotFoundException;
 
 /**
- * Read operations of a resource.
+ * Operaciones de lectura de un recurso.
  *
- * @param <T> resource type
- * @param <I> id type
+ * @param <T> tipo del recurso
+ * @param <I> tipo del id
  */
 public interface QueryService<T, I> {
 
-  /** Logical resource name used in errors, e.g. {@code parameter}. */
+  /** Nombre lógico del recurso usado en los errores, por ejemplo {@code parameter}. */
   String resourceName();
 
   Optional<T> find(I id);
 
   Page<T> list(PageRequest request);
 
-  /** The resource or a 404 problem. */
+  /** El recurso o un problema 404. */
   default T get(I id) {
     return find(id).orElseThrow(() -> new NotFoundException(resourceName(), id));
   }

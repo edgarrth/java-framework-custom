@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Semantic configuration check only; builds/format validation run in the preceding CI step.
+# Solo verificación semántica de la configuración; el build y la validación de formato se ejecutan en el step previo de CI.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 framework_root=$PWD

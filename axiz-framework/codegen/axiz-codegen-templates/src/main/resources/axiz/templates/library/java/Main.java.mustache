@@ -3,9 +3,10 @@ package {{project.basePackage}};
 import java.util.Objects;
 
 /**
- * Entry point of the {{project.name}} library. Replace this example with the library API.
+ * Punto de entrada de la biblioteca {{project.name}}. Este ejemplo se reemplaza por la API de la
+ * biblioteca.
  *
- * @param name a non-blank name
+ * @param name un nombre no vacío
  */
 public record {{platform.mainClass}}(String name) {
 
@@ -16,7 +17,7 @@ public record {{platform.mainClass}}(String name) {
     }
   }
 
-  /** Greeting for the name. */
+  /** Saludo para el nombre. */
   public String greeting() {
     return "Hello " + name;
   }

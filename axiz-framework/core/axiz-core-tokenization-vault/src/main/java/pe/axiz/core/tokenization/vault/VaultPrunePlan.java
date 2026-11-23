@@ -1,6 +1,6 @@
 package pe.axiz.core.tokenization.vault;
 
-/** Proof that a complete traversal observed the current fingerprint on every remaining record. */
+/** Prueba de que un recorrido completo observó la huella actual en cada registro restante. */
 public final class VaultPrunePlan {
   private final FingerprintKeyState state;
   private final String obsoleteKey;

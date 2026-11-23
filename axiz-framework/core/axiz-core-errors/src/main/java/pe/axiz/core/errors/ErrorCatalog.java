@@ -8,8 +8,8 @@ import java.util.Optional;
 import java.util.TreeSet;
 
 /**
- * Externalized error catalog. Starts with the framework definitions and is extended with the
- * service catalog (YAML in the JAR or the {@code <service>-errors} ConfigMap).
+ * Catálogo de errores externalizado. Empieza con las definiciones del framework y se extiende con
+ * el catálogo del servicio (YAML en el JAR o el ConfigMap {@code <service>-errors}).
  */
 public final class ErrorCatalog {
 
@@ -36,10 +36,11 @@ public final class ErrorCatalog {
   }
 
   /**
-   * Returns the definition or fails; use it at startup to verify that referenced codes exist.
+   * Devuelve la definición o falla; se usa al arrancar para verificar que existan los códigos
+   * referenciados.
    *
-   * @param code error code
-   * @return the definition
+   * @param code código de error
+   * @return la definición
    */
   public ErrorDefinition require(String code) {
     return find(code).orElseThrow(() -> new IllegalArgumentException("Unknown error code " + code));
@@ -53,7 +54,7 @@ public final class ErrorCatalog {
     return definitions.size();
   }
 
-  /** Builder; later entries replace earlier ones with the same code. */
+  /** Builder; las entradas posteriores reemplazan a las previas con el mismo código. */
   public static final class Builder {
     private final Map<String, ErrorDefinition> map = new LinkedHashMap<>();
 
@@ -70,11 +71,11 @@ public final class ErrorCatalog {
     }
 
     /**
-     * Adds entries from flat properties: {@code <CODE>.category}, {@code <CODE>.title} and the
-     * optional {@code <CODE>.type} and {@code <CODE>.message-key}.
+     * Agrega entradas a partir de propiedades planas: {@code <CODE>.category}, {@code <CODE>.title}
+     * y los opcionales {@code <CODE>.type} y {@code <CODE>.message-key}.
      *
-     * @param properties flat key/value pairs
-     * @return this builder
+     * @param properties pares clave/valor planos
+     * @return este builder
      */
     public Builder addProperties(Map<String, String> properties) {
       TreeSet<String> codes = new TreeSet<>();

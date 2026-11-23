@@ -1,6 +1,9 @@
 package pe.axiz.core.crypto;
 
-/** Trusted tenant and domain supplied by the application, never taken from an encrypted record. */
+/**
+ * Tenant y dominio confiables suministrados por la aplicación, nunca tomados de un registro
+ * cifrado.
+ */
 public record FieldScope(String tenant, String domain) {
   public FieldScope {
     require(tenant);

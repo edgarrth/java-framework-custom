@@ -8,7 +8,7 @@ import org.springframework.http.server.PathContainer;
 import org.springframework.web.util.pattern.PathPattern;
 import org.springframework.web.util.pattern.PathPatternParser;
 
-/** Decides which requests are audited, using {@code PathPattern} matching only. */
+/** Decide qué solicitudes se auditan, usando solo coincidencia con {@code PathPattern}. */
 final class HttpAuditRules {
 
   private final Set<String> methods;

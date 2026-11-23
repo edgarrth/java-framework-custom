@@ -115,7 +115,7 @@ class InboxTest {
     InboxDeduplicator dedup =
         new InboxDeduplicator(store, Duration.ofMinutes(5), Duration.ofDays(7), clock);
     Deduplicator.Claim a = dedup.claim("c", "e-5");
-    clock.now = clock.now.plus(Duration.ofMinutes(6)); // A is slow: its lease expires
+    clock.now = clock.now.plus(Duration.ofMinutes(6)); // A es lento: su lease expira
     Deduplicator.Claim b = dedup.claim("c", "e-5");
     assertEquals(Deduplicator.Claim.Status.ACQUIRED, b.status());
     assertFalse(dedup.failed("c", "e-5", a.token()), "A cannot release B's claim");
@@ -195,7 +195,7 @@ class InboxTest {
   void aRegistrationReleasedWhileAcquiringIsRedeliveredAtOnce() throws Exception {
     Instant now = clock.now;
     store.tryAcquire("c", "e-9", "a", now, now.plusSeconds(60), now.plusSeconds(600));
-    // the owner releases its registration between our insert attempt and our read
+    // el propietario libera su registro entre el intento de insert y la lectura
     ConnectionProvider racing =
         new ConnectionProvider() {
           @Override
@@ -309,7 +309,7 @@ class InboxTest {
             return 0;
           }
         };
-    unknownLease.verifySchema(); // nothing to check by default
+    unknownLease.verifySchema(); // nada que verificar por defecto
     Deduplicator.Claim busy =
         new InboxDeduplicator(unknownLease, Duration.ofSeconds(30), Duration.ofHours(1), clock)
             .claim("c", "e-1");
@@ -337,8 +337,8 @@ class InboxTest {
   }
 
   /**
-   * Regression: a database created with the previous layout (no owner column) is detected at
-   * startup, upgraded by a new migration and keeps its data and invariants.
+   * Regresión: una base de datos creada con la disposición previa (sin columna owner) se detecta al
+   * arrancar, se actualiza con una migración nueva y conserva sus datos e invariantes.
    */
   @Test
   void anIncompleteSchemaIsRejectedBeforeConsumption() throws Exception {

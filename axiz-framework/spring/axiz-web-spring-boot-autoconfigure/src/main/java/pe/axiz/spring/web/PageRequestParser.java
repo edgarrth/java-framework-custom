@@ -12,8 +12,9 @@ import pe.axiz.core.errors.FieldViolation;
 import pe.axiz.core.errors.ValidationException;
 
 /**
- * Parses {@code page}, {@code size} and {@code sort} query parameters. Pages are zero-based;
- * invalid values are rejected with a 400 problem instead of being silently corrected.
+ * Interpreta los parámetros de query {@code page}, {@code size} y {@code sort}. Las páginas
+ * empiezan en cero; los valores inválidos se rechazan con un problema 400 en lugar de corregirse en
+ * silencio.
  */
 public final class PageRequestParser {
 
@@ -64,8 +65,8 @@ public final class PageRequestParser {
       }
       parsed = Sort.parse(expressions);
     } catch (IllegalArgumentException malformed) {
-      // the core keeps rejecting malformed expressions; at the HTTP boundary they are the client's
-      // error (400 with the field), never a 500. The value is not echoed back
+      // el core sigue rechazando las expresiones malformadas; en el límite HTTP son un error del
+      // cliente (400 con el campo), nunca un 500. El valor no se devuelve en la respuesta
       violations.add(
           FieldViolation.of(
               "sort", "Pattern", "sort must be field[,asc|desc] (letters, digits, _ .)"));

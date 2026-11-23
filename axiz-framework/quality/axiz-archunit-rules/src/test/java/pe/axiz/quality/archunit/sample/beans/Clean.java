@@ -1,6 +1,6 @@
 package pe.axiz.quality.archunit.sample.beans;
 
-/** A configuration named apart from its beans. */
+/** Una configuración con un nombre distinto del de sus beans. */
 @Configuration
 public class Clean {
 

@@ -1,4 +1,4 @@
-"""Boot the actual service JAR using bootstrap variables rendered by its Helm chart."""
+"""Arranca el JAR real del servicio usando las variables de bootstrap que renderiza su chart de Helm."""
 from contextlib import closing
 import base64
 import hashlib
@@ -77,7 +77,7 @@ def verify_chart_startup(jar, chart, endpoint, output):
                 "MANAGEMENT_TRACING_ENABLED": "false", "MANAGEMENT_OTLP_METRICS_EXPORT_ENABLED": "false",
                 "MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENABLED": "false", "AXIZ_LOGGING_JSON": "false",
             })
-            # The chart itself exports the environment; a duplicate env entry would hide a broken contract.
+                        # El propio chart exporta el entorno; una entrada env duplicada ocultaría un contrato roto.
             process_variables.pop("AXIZ_CONFIG_ENVIRONMENT")
             remote = case in {"chart-bootstrap", "chart-missing-selector"}
             if case == "chart-late-selector":
@@ -98,11 +98,11 @@ def verify_chart_startup(jar, chart, endpoint, output):
                 rendered.pop("AXIZ_CONFIG_ENVIRONMENT")  # Explicit application-local.yaml supplies local.
             environment = {key: value for key, value in fixture.items() if not key.startswith(("AWS_", "AXIZ_"))}
             environment.update(rendered)
-            command = ["java", "-jar", str(jar)]  # No --spring.config.import, system selector or extra application argument.
+            command = ["java", "-jar", str(jar)]  # Sin --spring.config.import, selector de sistema ni argumento adicional de la aplicación.
             log_path = output / (case + ".log")
             healthy = case in {"chart-bootstrap", "chart-local-profile"}
             with log_path.open("w") as log:
-                # A fixed java -jar command, real local JAR and only OS/IRSA + rendered chart variables.
+                                # Un comando java -jar fijo, un JAR local real y solo variables del SO/IRSA + variables del chart renderizado.
                 # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-tainted-env-args.dangerous-subprocess-use-tainted-env-args
                 process = subprocess.Popen(command, env=environment, stdout=log, stderr=subprocess.STDOUT)
                 try:

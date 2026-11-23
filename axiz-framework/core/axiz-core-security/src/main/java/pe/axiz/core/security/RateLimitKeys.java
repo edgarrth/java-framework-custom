@@ -5,22 +5,25 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 
-/** Builds rate-limit keys from the authenticated principal. */
+/** Construye claves de límite de tasa a partir del principal autenticado. */
 public final class RateLimitKeys {
 
   private RateLimitKeys() {}
 
-  /** Key per calling application and route group. */
+  /** Clave por aplicación que llama y grupo de rutas. */
   public static String forClient(AxizPrincipal principal, String routeGroup) {
     return "rl:" + routeGroup + ":" + issuerKey(principal.issuer()) + ":" + principal.clientId();
   }
 
-  /** Key per end user (falls back to the client for machine tokens). */
+  /** Clave por usuario final (para tokens de máquina recurre al cliente). */
   public static String forSubject(AxizPrincipal principal, String routeGroup) {
     return "rl:" + routeGroup + ":" + issuerKey(principal.issuer()) + ":" + principal.name();
   }
 
-  /** Anonymous gateway budgets use the connection address, never a caller-supplied header. */
+  /**
+   * Los presupuestos anónimos del gateway usan la dirección de la conexión, nunca una cabecera
+   * suministrada por quien llama.
+   */
   public static String forAnonymous(String remoteAddress, String routeGroup) {
     if (remoteAddress.isBlank() || remoteAddress.length() > 128)
       throw new IllegalArgumentException("A bounded connection address is required");

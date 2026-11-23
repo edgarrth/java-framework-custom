@@ -2,5 +2,5 @@ package pe.axiz.core.carddata;
 
 import pe.axiz.core.sensitive.SelfMasking;
 
-/** Authentication data that must never be persisted or published. */
+/** Datos de autenticación que nunca deben persistirse ni publicarse. */
 public interface SensitiveAuthenticationData extends SelfMasking {}

@@ -6,8 +6,9 @@ import java.util.List;
 import pe.axiz.quality.archunit.selfcheck.application.UnsafeMoney;
 
 /**
- * Confirms that the service's actual rule collection rejects a known prohibited fixture. This
- * catches empty/disconnected rule sets; it does not prove every individual architecture rule.
+ * Confirma que la colección real de reglas del servicio rechaza un fixture prohibido conocido.
+ * Detecta conjuntos de reglas vacíos o desconectados; no prueba cada regla de arquitectura
+ * individual.
  */
 public final class ArchitectureSelfCheck {
   private ArchitectureSelfCheck() {}

@@ -2,7 +2,10 @@ package pe.axiz.core.tokenization;
 
 import java.util.Map;
 
-/** Bounds snapshots. The server profile additionally enforces its explicit key allowlist. */
+/**
+ * Acota las instantáneas. El perfil del servidor además aplica su lista explícita de claves
+ * permitidas.
+ */
 public final class TokenMetadata {
   private TokenMetadata() {}
 

@@ -30,9 +30,9 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.crypto.CryptoException;
 
 /**
- * JWS and JWE utilities with a fixed allow-list of algorithms: PS256, RS256 and ES256 for
- * signatures; RSA-OAEP-256 with A256GCM for encryption. Tokens using any other algorithm (including
- * {@code none}) are rejected.
+ * Utilidades JWS y JWE con una lista fija de algoritmos permitidos: PS256, RS256 y ES256 para
+ * firmas; RSA-OAEP-256 con A256GCM para cifrado. Se rechazan los tokens que usan cualquier otro
+ * algoritmo (incluido {@code none}).
  */
 public final class Jose {
 
@@ -42,12 +42,12 @@ public final class Jose {
   private Jose() {}
 
   /**
-   * Signs a payload.
+   * Firma un payload.
    *
-   * @param payload text to sign (typically JSON)
-   * @param key RSA or EC private key
-   * @param keyId key id published in the JWKS
-   * @return compact JWS
+   * @param payload texto a firmar (normalmente JSON)
+   * @param key clave privada RSA o EC
+   * @param keyId id de la clave publicado en el JWKS
+   * @return JWS compacto
    */
   public static String sign(String payload, PrivateKey key, @Nullable String keyId) {
     try {
@@ -66,7 +66,7 @@ public final class Jose {
   }
 
   /**
-   * Verifies a JWS and returns its payload, or empty when the signature or algorithm is invalid.
+   * Verifica un JWS y devuelve su payload, o vacío cuando la firma o el algoritmo no son válidos.
    */
   public static Optional<String> verify(String compact, PublicKey key) {
     try {
@@ -84,7 +84,7 @@ public final class Jose {
     }
   }
 
-  /** Encrypts a payload for the owner of the RSA public key (RSA-OAEP-256 + A256GCM). */
+  /** Cifra un payload para el dueño de la clave pública RSA (RSA-OAEP-256 + A256GCM). */
   public static String encrypt(String payload, RSAPublicKey key, @Nullable String keyId) {
     try {
       JWEObject jwe =
@@ -100,7 +100,7 @@ public final class Jose {
     }
   }
 
-  /** Decrypts a JWE; only RSA-OAEP-256 with A256GCM is accepted. */
+  /** Descifra un JWE; solo se acepta RSA-OAEP-256 con A256GCM. */
   public static String decrypt(String compact, RSAPrivateKey key) {
     try {
       JWEObject jwe = JWEObject.parse(compact);

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  axiz-dependencies: third-party versions governed by the platform (BOM, imported, not inherited).
-  Order matters: the first imported BOM wins for a given artifact.
-  Renovate keeps these versions up to date (see renovate.json).
+  axiz-dependencies: versiones de terceros gobernadas por la plataforma (BOM, importado, no heredado).
+  El orden importa: el primer BOM importado prevalece para un artefacto dado.
+  Renovate mantiene estas versiones al día (ver renovate.json).
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -30,13 +30,13 @@
     <revision>2.0.0</revision>
     <axiz.packages.url>https://maven.pkg.github.com/edgarrth/java-framework-custom</axiz.packages.url>
 
-    <!-- 4.1.2 manages Tomcat 11.0.27 (fixes of 11.0.25 to 11.0.27, see the Tomcat 11 security page) -->
+    <!-- 4.1.2 gestiona Tomcat 11.0.27 (correcciones de 11.0.25 a 11.0.27, ver la página de seguridad de Tomcat 11) -->
     <spring-boot.version>4.1.2</spring-boot.version>
     <spring-cloud.version>2025.1.3</spring-cloud.version>
     <spring-cloud-aws.version>4.2.0</spring-cloud-aws.version>
-    <!-- GHSA-ccrj-gw8r-854m: bounded W3C tracestate parsing; align API, SDK and exporters. -->
+    <!-- GHSA-ccrj-gw8r-854m: análisis acotado de tracestate de W3C; se alinean API, SDK y exporters. -->
     <opentelemetry.version>1.67.0</opentelemetry.version>
-    <!-- at least the version aws-msk-iam-auth 2.3.8 requires (2.51.2): one SDK for every client -->
+    <!-- como mínimo la versión que requiere aws-msk-iam-auth 2.3.8 (2.51.2): un único SDK para todos los clientes -->
     <awssdk.version>2.57.0</awssdk.version>
     <resilience4j.version>2.4.0</resilience4j.version>
     <shedlock.version>7.10.1</shedlock.version>
@@ -46,44 +46,44 @@
     <datasource-micrometer.version>2.2.1</datasource-micrometer.version>
     <datasource-proxy.version>1.11.0</datasource-proxy.version>
     <openfeature.version>1.23.0</openfeature.version>
-    <!-- Jackson lines with the fixes of GHSA-7hhh-6rmp-j9qf, GHSA-p6pp-m3f8-5c89, GHSA-cxp5-3px4-pw24,
-         GHSA-wv8q-qhhj-9h54, GHSA-gx83-3vf8-gh7j, GHSA-q4xh-88c3-wmh7 and GHSA-wjgm-6hv5-3cvf, pinned
-         through their BOMs (imported before Spring Boot's). Jackson 2 is only a transitive dependency
-         (AWS MSK IAM auth requires 2.22.1 or later); axiz uses Jackson 3. -->
+    <!-- Líneas de Jackson con las correcciones de GHSA-7hhh-6rmp-j9qf, GHSA-p6pp-m3f8-5c89, GHSA-cxp5-3px4-pw24,
+         GHSA-wv8q-qhhj-9h54, GHSA-gx83-3vf8-gh7j, GHSA-q4xh-88c3-wmh7 y GHSA-wjgm-6hv5-3cvf, fijadas
+         mediante sus BOM (importados antes que el de Spring Boot). Jackson 2 es solo una dependencia transitiva
+         (AWS MSK IAM auth requiere 2.22.1 o posterior); axiz usa Jackson 3. -->
     <jackson2.version>2.22.3</jackson2.version>
     <jackson3.version>3.1.7</jackson3.version>
-    <!-- transitive (kafka-clients): 1.11.4 fixes GHSA-343h-94h5-c4wr, GHSA-4v53-57pg-c464,
-         GHSA-6cx8-rjf8-pr8g, GHSA-gm45-99xc-r7wv, GHSA-mcr4-qmvw-px4g and GHSA-xx22-p4ch-683r -->
+    <!-- transitiva (kafka-clients): 1.11.4 corrige GHSA-343h-94h5-c4wr, GHSA-4v53-57pg-c464,
+         GHSA-6cx8-rjf8-pr8g, GHSA-gm45-99xc-r7wv, GHSA-mcr4-qmvw-px4g y GHSA-xx22-p4ch-683r -->
     <lz4-java.version>1.11.4</lz4-java.version>
-    <!-- Kafka compression: fixes GHSA-gwq9-9ffj-mvrv, GHSA-q233-g92q-qxp6 and GHSA-xqrx-qh46-34m7. -->
+    <!-- Compresión de Kafka: corrige GHSA-gwq9-9ffj-mvrv, GHSA-q233-g92q-qxp6 y GHSA-xqrx-qh46-34m7. -->
     <snappy-java.version>1.1.10.9</snappy-java.version>
-    <!-- Tools (formatter / refaster): fixes GHSA-xxph-c9ww-hj94. -->
+    <!-- Herramientas (formatter / refaster): corrige GHSA-xxph-c9ww-hj94. -->
     <guava.version>33.7.2-jre</guava.version>
-    <!-- Annotation jars have their own dependency lifecycle: Guava 33.7.2 requires 2.50.0.
-         The Error Prone compiler plugin is versioned separately in the root build POM. -->
+    <!-- Los jars de anotaciones tienen su propio ciclo de vida de dependencias: Guava 33.7.2 requiere 2.50.0.
+         El plugin del compilador Error Prone se versiona por separado en el POM de build raíz. -->
     <errorprone-annotations.version>2.50.0</errorprone-annotations.version>
     <jetbrains-annotations.version>26.0.2-1</jetbrains-annotations.version>
-    <!-- the version Spring Boot 4.1.2 manages, declared here only to exclude a beta (see below) -->
+    <!-- la versión que gestiona Spring Boot 4.1.2, declarada aquí solo para excluir una beta (ver más abajo) -->
     <lettuce.version>7.5.2.RELEASE</lettuce.version>
-    <!-- transitive (r2dbc-postgresql): 3.3 fixes GHSA-p9jg-fcr6-3mhf (channel binding downgrade) -->
+    <!-- transitiva (r2dbc-postgresql): 3.3 corrige GHSA-p9jg-fcr6-3mhf (degradación de channel binding) -->
     <scram.version>3.3</scram.version>
-    <!-- annotations the OpenFeature SDK classes carry; same version as the root build's SpotBugs -->
+    <!-- anotaciones que llevan las clases del SDK de OpenFeature; la misma versión que SpotBugs en el build raíz -->
     <spotbugs.version>4.10.3</spotbugs.version>
     <archunit.version>1.5.1</archunit.version>
     <wiremock.version>3.13.2</wiremock.version>
-    <!-- WireMock templates: CVE-2026-55760 is fixed in 4.5.2. -->
+    <!-- Plantillas de WireMock: CVE-2026-55760 está corregido en 4.5.2. -->
     <handlebars.version>4.5.2</handlebars.version>
-    <!-- WireMock 3 uses the helpers' original package names; only the engine contains the CVE. -->
+    <!-- WireMock 3 usa los nombres de paquete originales de los helpers; solo el motor contiene el CVE. -->
     <handlebars-helpers.version>4.3.1</handlebars-helpers.version>
-    <!-- Converge Nashorn and JSON Smart on one ASM line supporting the project's JDK. -->
+    <!-- Nashorn y JSON Smart convergen en una sola línea de ASM compatible con el JDK del proyecto. -->
     <asm.version>9.10.1</asm.version>
-    <!-- Align the unshaded WireMock and Testcontainers dependency paths. -->
+    <!-- Se alinean las rutas de dependencias de WireMock sin shading y de Testcontainers. -->
     <commons-io.version>2.20.0</commons-io.version>
-    <!-- Keep WireMock's EE10 and Spring Boot's EE11 on the same Jetty runtime line. -->
+    <!-- EE10 de WireMock y EE11 de Spring Boot se mantienen en la misma línea de runtime de Jetty. -->
     <jetty.version>12.1.14</jetty.version>
-    <!-- 3.0.6 supports the Jackson 3.1 line managed by Spring Boot. -->
+    <!-- 3.0.6 admite la línea Jackson 3.1 que gestiona Spring Boot. -->
     <json-schema-validator.version>3.0.6</json-schema-validator.version>
-    <!-- Testcontainers 2.0.5 transport API used by the cleanup-image builder. -->
+    <!-- API de transporte de Testcontainers 2.0.5 que usa el builder de la imagen de limpieza. -->
     <docker-java.version>3.7.1</docker-java.version>
     <blockhound.version>1.0.16.RELEASE</blockhound.version>
     <picocli.version>4.7.7</picocli.version>
@@ -92,11 +92,11 @@
     <mapstruct.version>1.6.3</mapstruct.version>
     <bouncycastle.version>1.85</bouncycastle.version>
     <jspecify.version>1.0.1</jspecify.version>
-    <!-- pgJDBC exposes these annotations on its native API but declares them runtime-only. -->
+    <!-- pgJDBC expone estas anotaciones en su API nativa pero las declara solo de runtime. -->
     <checker-qual.version>3.55.1</checker-qual.version>
-    <!-- first protobuf-java whose full runtime does not use sun.misc.Unsafe (see dependencyManagement) -->
+    <!-- primera versión de protobuf-java cuyo runtime completo no usa sun.misc.Unsafe (ver dependencyManagement) -->
     <protobuf.version>4.36.2</protobuf.version>
-    <!-- same version as Spring Security 7.1 (not managed by Spring Boot) -->
+    <!-- la misma versión que Spring Security 7.1 (Spring Boot no la gestiona) -->
     <nimbus-jose-jwt.version>10.9.1</nimbus-jose-jwt.version>
   </properties>
 
@@ -179,9 +179,9 @@
         <artifactId>json-schema-validator</artifactId>
         <version>${json-schema-validator.version}</version>
       </dependency>
-      <!-- AWS clients without the async Netty HTTP client: axiz only builds synchronous clients
-           (Apache HTTP client, the SDK default), and Netty already comes from Reactor and Lettuce
-           in the version Spring Boot manages. One HTTP stack per role, no second Netty adapter. -->
+      <!-- Clientes de AWS sin el cliente HTTP asíncrono de Netty: axiz solo construye clientes síncronos
+           (cliente HTTP de Apache, el predeterminado del SDK), y Netty ya llega desde Reactor y Lettuce
+           en la versión que gestiona Spring Boot. Una pila HTTP por rol, sin un segundo adaptador de Netty. -->
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
         <artifactId>dynamodb</artifactId>
@@ -288,8 +288,8 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
-      <!-- Jackson 2 first: both BOMs manage jackson-annotations (shared by both lines) and the newest
-           one, 2.22, is the one Jackson 2.22 requires; Jackson 3.1 needs 2.21 or later -->
+      <!-- Jackson 2 primero: ambos BOM gestionan jackson-annotations (compartido por las dos líneas) y la más
+           reciente, 2.22, es la que requiere Jackson 2.22; Jackson 3.1 necesita 2.21 o posterior -->
       <dependency>
         <groupId>com.fasterxml.jackson</groupId>
         <artifactId>jackson-bom</artifactId>
@@ -347,8 +347,8 @@
         <scope>import</scope>
       </dependency>
 
-      <!-- Lettuce depends on redis-authx-core 0.1.1-beta2, used only by its Entra ID token provider
-           (io.lettuce.authx), which axiz does not use: the platform ships no pre-release library -->
+      <!-- Lettuce depende de redis-authx-core 0.1.1-beta2, que solo usa su proveedor de tokens de Entra ID
+           (io.lettuce.authx), que axiz no usa: la plataforma no incluye ninguna biblioteca preliminar -->
       <dependency>
         <groupId>io.lettuce</groupId>
         <artifactId>lettuce-core</artifactId>
@@ -390,10 +390,10 @@
         <artifactId>nimbus-jose-jwt</artifactId>
         <version>${nimbus-jose-jwt.version}</version>
       </dependency>
-      <!-- OTLP metrics (micrometer-registry-otlp → opentelemetry-proto) carry protobuf-java. Up to
-           4.35.x its runtime calls the terminally deprecated memory methods of sun.misc.Unsafe
-           (warning on Java 24+, slated for removal); from 4.36 (protobuf v36) the full runtime
-           used by generated code no longer does. -->
+      <!-- Las métricas OTLP (micrometer-registry-otlp, que depende de opentelemetry-proto) incluyen protobuf-java.
+           Hasta 4.35.x su runtime invoca los métodos de memoria de sun.misc.Unsafe marcados como terminalmente obsoletos
+           (advertencia en Java 24+, con eliminación prevista); a partir de 4.36 (protobuf v36) el runtime completo
+           que usa el código generado no los invoca. -->
       <dependency>
         <groupId>com.google.protobuf</groupId>
         <artifactId>protobuf-java</artifactId>
@@ -484,7 +484,7 @@
         <artifactId>jmustache</artifactId>
         <version>${jmustache.version}</version>
       </dependency>
-      <!-- formats generated code (axiz-initializr); the build plugin version lives in the root pom -->
+      <!-- formatea el código generado (axiz-initializr); la versión del plugin de build reside en el pom raíz -->
       <dependency>
         <groupId>com.google.googlejavaformat</groupId>
         <artifactId>google-java-format</artifactId>

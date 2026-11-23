@@ -8,8 +8,9 @@ import java.util.Objects;
 import pe.axiz.core.security.NonceStore;
 
 /**
- * Nonce store shared by every instance of a service: one atomic {@code SET key 1 NX PX ttl} per
- * nonce. If Redis cannot answer it throws, so the signature check fails closed.
+ * Almacén de nonces compartido por todas las instancias de un servicio: un {@code SET key 1 NX PX
+ * ttl} atómico por nonce. Si Redis no puede responder, lanza una excepción, de modo que la
+ * verificación de la firma falla en cerrado.
  */
 public final class RedisNonceStore implements NonceStore {
 

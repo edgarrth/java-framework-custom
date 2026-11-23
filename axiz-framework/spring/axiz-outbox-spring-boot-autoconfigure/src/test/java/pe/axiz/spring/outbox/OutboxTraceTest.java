@@ -56,18 +56,19 @@ class OutboxTraceTest {
     Observation request = Observation.start("http.server.requests", registry);
     List<EventEnvelope> stored = new ArrayList<>();
     try (Observation.Scope ignored = request.openScope()) {
-      // what OutboxWriter does for TransactionalEvents, durable audit and every other writer
+      // lo que hace OutboxWriter para TransactionalEvents, la auditoría durable y cualquier otro
+      // writer
       OutboxTrace.tracing(registry).traced("orders", event(), stored::add);
     }
     request.stop();
     SimpleSpan requestSpan = tracer.getSpans().getFirst();
     SimpleSpan writeSpan = tracer.getSpans().getLast();
-    // the write span is a child of the request, and its context travels with the stored event
+    // el span de escritura es hijo de la solicitud, y su contexto viaja con el evento almacenado
     assertEquals(requestSpan.context().spanId(), writeSpan.context().parentId());
     assertEquals(
         "00-" + requestSpan.context().traceId() + "-" + writeSpan.context().spanId() + "-01",
         stored.getFirst().extension(EventEnvelope.OUTBOX_TRACEPARENT).orElseThrow());
-    // the regular traceparent belongs to the publication, written by the relay
+    // el traceparent ordinario pertenece a la publicación y lo escribe el relay
     assertFalse(stored.getFirst().extension(EventEnvelope.TRACEPARENT).isPresent());
     assertEquals("outbox write orders", writeSpan.getName());
   }

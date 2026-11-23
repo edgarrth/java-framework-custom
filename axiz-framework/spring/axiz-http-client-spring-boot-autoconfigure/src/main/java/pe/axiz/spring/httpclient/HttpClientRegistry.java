@@ -20,7 +20,10 @@ import pe.axiz.core.http.ClientSettings;
 import pe.axiz.core.secrets.AsyncSecretResolver;
 import pe.axiz.core.secrets.SecretResolver;
 
-/** Validated settings and shared per-client components (resilience, credentials, transport). */
+/**
+ * Configuración validada y componentes compartidos por cliente (resiliencia, credenciales,
+ * transporte).
+ */
 public final class HttpClientRegistry implements AutoCloseable {
 
   private final Map<String, ClientSettings> settings = new LinkedHashMap<>();
@@ -57,7 +60,7 @@ public final class HttpClientRegistry implements AutoCloseable {
     this.sslBundles = sslBundles;
     this.clock = clock;
     this.tenantHeader = tenantHeader;
-    // fail fast at startup on invalid client settings
+    // falla de inmediato en el arranque ante una configuración de cliente inválida
     raw.forEach((name, c) -> settings.put(name, c.toSettings(name, transportSecurity)));
     try {
       settings.forEach(
@@ -102,7 +105,10 @@ public final class HttpClientRegistry implements AutoCloseable {
         s.name(), n -> OutboundAuth.create(s, secrets, properties.tokenRenewBefore(), clock));
   }
 
-  /** Returns startup-built native credentials; no client construction occurs on a request. */
+  /**
+   * Devuelve las credenciales nativas construidas en el arranque; no se construye ningún cliente
+   * durante una solicitud.
+   */
   public OutboundAuth asyncAuth(ClientSettings settings) {
     if (closed.get()) throw new IllegalStateException("HTTP client registry is closed");
     var prepared = nativeAuth.get(settings.name());
@@ -151,12 +157,14 @@ public final class HttpClientRegistry implements AutoCloseable {
     return Map.copyOf(settings);
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción con nombre; build comprueba los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable AxizHttpClientProperties properties = null;
     private @Nullable CircuitBreakerRegistry circuitBreakers = null;

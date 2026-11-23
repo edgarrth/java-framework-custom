@@ -7,9 +7,9 @@ import pe.axiz.core.sensitive.Sensitive;
 import pe.axiz.core.sensitive.SensitivityLevel;
 
 /**
- * Frequent beneficiary of a customer, independent of its persistence mapping. Removal is logical:
- * {@code deletedAt} is set and the item stays for audit; queries skip removed items. {@code
- * version} gives optimistic locking on every write.
+ * Beneficiario frecuente de un cliente, independiente de su mapeo de persistencia. La eliminación
+ * es lógica: se asigna {@code deletedAt} y el elemento se conserva para auditoría; las consultas
+ * omiten los elementos eliminados. {@code version} aporta bloqueo optimista en cada escritura.
  */
 public class Beneficiary {
 
@@ -24,10 +24,10 @@ public class Beneficiary {
   private @Nullable Instant deletedAt;
   private @Nullable Long version;
 
-  /** Required by JSON codecs and repository mapping. */
+  /** Requerido por los codecs JSON y el mapeo del repositorio. */
   public Beneficiary() {}
 
-  /** A new, active beneficiary. */
+  /** Beneficiario nuevo y activo. */
   public static Beneficiary register(
       String customerId, String beneficiaryId, NewBeneficiary data, Instant now) {
     Beneficiary b = new Beneficiary();
@@ -42,24 +42,27 @@ public class Beneficiary {
     return b;
   }
 
-  /** Changes the alias shown to the customer. */
+  /** Cambia el alias que se muestra al cliente. */
   public void rename(String newAlias, Instant now) {
     this.alias = newAlias.strip();
     this.updatedAt = now;
   }
 
-  /** Logical removal: the item is kept but no longer listed or returned. */
+  /** Eliminación lógica: el elemento se conserva, pero deja de listarse y de devolverse. */
   public void remove(Instant now) {
     this.deletedAt = now;
     this.updatedAt = now;
   }
 
-  /** Whether the beneficiary was removed (not a bean property, so it is not persisted). */
+  /**
+   * Indica si el beneficiario fue eliminado (no es una propiedad de bean, por lo que no se
+   * persiste).
+   */
   public boolean removed() {
     return deletedAt != null;
   }
 
-  /** Whether it points to the same destination account. */
+  /** Indica si apunta a la misma cuenta de destino. */
   public boolean sameAccount(String otherCci) {
     return cci.equals(otherCci);
   }

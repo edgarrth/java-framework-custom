@@ -72,13 +72,13 @@ class SagaOwnershipTest {
           public String execute(String value, SagaStepExecution execution) {
             fence.set(execution.fence());
             entered.countDown();
-            // Model an already submitted remote request which ignores local interruption.
+            // Se modela una petición remota ya enviada que ignora la interrupción local.
             boolean waiting = true;
             while (waiting) {
               try {
                 waiting = !deliver.await(5, TimeUnit.SECONDS);
               } catch (InterruptedException ignored) {
-                /* The remote effect still arrives. */
+                /* El efecto remoto llega igualmente. */
               }
               if (waiting && deliver.getCount() != 0)
                 throw new AssertionError("test did not release effect");

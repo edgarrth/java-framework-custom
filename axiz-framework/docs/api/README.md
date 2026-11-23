@@ -1,41 +1,42 @@
-# Public API policy
+# Política de API pública
 
-The public API inventory records the public and protected signatures and constants of every published JAR. CI compares each build with this inventory and applies the publication mode selected in `release-policy.json`. The initial framework release is 2.0.0.
+El inventario de API pública registra las firmas y constantes públicas y protegidas de cada JAR publicado. CI compara cada build con este inventario y aplica el modo de publicación seleccionado en `release-policy.json`. La release inicial del framework es 2.0.0.
 
-`release-policy.json` explicitly selects one of two modes:
+`release-policy.json` selecciona de forma explícita uno de dos modos:
 
-- `first-release`: only version 2.0.0 with no baseline. The gate authenticates to the GitHub API and enumerates Maven packages and their versions,
-  filtering the exact source repository and framework coordinates. An existing published v2 release,
-  failed query or ambiguous response rejects this mode. Candidate repositories, local Maven
-  caches and unrelated products do not count as published framework versions.
-- `published-baseline`: requires a genuinely earlier v2 version in that final repository.
-  The gate first downloads that baseline from the final repository into a separate directory,
-  recording hashes. It does not trust candidate/local Maven caches. Maven's strict `api-compat`
-  profile must produce fresh Japicmp reports for every published
-  JAR. Missing baseline resolution fails; it never falls back to first-release mode.
+- `first-release`: solo la versión 2.0.0, sin línea base. El control se autentica en la API de GitHub y enumera los paquetes Maven y sus versiones,
+  filtrando el repositorio de origen exacto y las coordenadas del framework. Una release del framework ya publicada,
+  una consulta fallida o una respuesta ambigua rechazan este modo. Los repositorios candidatos, las cachés locales
+  de Maven y los productos no relacionados no cuentan como versiones publicadas del framework.
+- `published-baseline`: requiere una versión del framework realmente anterior en ese repositorio final.
+  El control descarga primero esa línea base desde el repositorio final a un directorio separado y
+  registra sus hashes. No confía en las cachés de Maven candidatas ni locales. El perfil estricto `api-compat`
+  de Maven debe producir reportes nuevos de Japicmp para cada JAR
+  publicado. Si la línea base no se resuelve, falla; nunca pasa al modo first-release.
 
-For both modes, class-file signatures are extracted with `javap -protected -constants` and
-compared with the approved `public-api.json` inventory. Adding/removing modules or changing
-public/protected signatures requires review. Evidence stores the observed signatures, their
-SHA-256 and each actual JAR's SHA-256, plus source/run/attempt and the gate result. CI retains
-this evidence for 90 days and it remains a mandatory gate before promotion.
+En ambos modos, las firmas de los archivos de clase se extraen con `javap -protected -constants` y se
+comparan con el inventario aprobado `public-api.json`. Agregar o quitar módulos o cambiar firmas
+públicas o protegidas requiere revisión. El registro del control guarda las firmas observadas, su
+SHA-256 y el SHA-256 de cada JAR real, además del origen, la ejecución, el intento y el resultado. CI
+conserva ese registro durante 90 días y sigue siendo un control obligatorio antes de la promoción.
 
-To prepare local review evidence after a build:
+Para preparar la revisión local después de un build:
 
 ```bash
 python3 .github/scripts/check-api-compatibility.py --inventory-only
 ```
 
-This command explicitly does **not** pass the release gate. Review the exported signatures
-before updating `public-api.json`; never approve changes just to silence CI. The normal gate
-requires `PACKAGES_URL`, with read credentials in `PACKAGES_USERNAME`/`PACKAGES_TOKEN`. The token must have `read:packages` and the principal must
-be able to enumerate GitHub Maven packages and versions and GET released artifacts; it needs no write permission:
+Este comando de forma explícita **no** supera el control de release. Las firmas exportadas se revisan
+antes de actualizar `public-api.json`; nunca se aprueban cambios solo para silenciar CI. El control normal
+requiere `PACKAGES_URL`, con credenciales de lectura en `PACKAGES_USERNAME`/`PACKAGES_TOKEN`. El token debe tener `read:packages` y el principal debe
+poder enumerar los paquetes Maven de GitHub y sus versiones y hacer GET de los artefactos publicados; no necesita permisos de escritura:
 
 ```bash
 python3 .github/scripts/check-api-compatibility.py
 ```
 
-After the first immutable publication, change the policy to `published-baseline`, advance the
-target version and set baseline to the actual published 2.0.0. Keep its published artifacts
-immutable. Builds produce signed candidates; deploy independently promotes those exact bytes
-without rebuilding. Signature checks preserve the separation between building and promoting artifacts.
+Después de la primera publicación inmutable, la política cambia a `published-baseline`, se avanza la
+versión objetivo y la línea base se fija en la 2.0.0 realmente publicada. Sus artefactos publicados se
+mantienen inmutables. Los builds producen candidatos firmados; el despliegue promueve de forma
+independiente esos mismos bytes sin recompilar. Las comprobaciones de firma preservan la separación
+entre construir y promover artefactos.

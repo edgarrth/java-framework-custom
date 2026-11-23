@@ -9,7 +9,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
-/** Servlet side of {@link PreBindingAuthorization}: runs before argument resolution. */
+/**
+ * Lado servlet de {@link PreBindingAuthorization}: se ejecuta antes de la resolución de argumentos.
+ */
 final class PreBindingAuthorizationInterceptor implements HandlerInterceptor {
 
   private final PreAuthorizeAuthorizationManager manager;

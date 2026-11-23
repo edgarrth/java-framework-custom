@@ -337,7 +337,7 @@ class OutboxTest {
         .publishBudget(Duration.ofMillis(1))
         .build()
         .relayOnce();
-    // the relay hands it to the (observed) publisher, which continues that trace
+    // el relay lo entrega al publicador (observado), que continúa esa traza
     assertEquals(
         parent, relayed.getFirst().extension(EventEnvelope.OUTBOX_TRACEPARENT).orElseThrow());
   }

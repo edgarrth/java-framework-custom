@@ -16,7 +16,9 @@ import pe.axiz.payments.process.application.usecase.Processes;
 import pe.axiz.payments.process.domain.PaymentInstruction;
 import pe.axiz.payments.process.domain.ProcessStatus;
 
-/** A process interrupted mid-way (crash, redeploy) is resumed by the recovery job. */
+/**
+ * El job de recuperación reanuda un proceso interrumpido a mitad de camino (caída, redespliegue).
+ */
 class SagaRecoveryJobTest {
 
   final Processes processes = new Processes();

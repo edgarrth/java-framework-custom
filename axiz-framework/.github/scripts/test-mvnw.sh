@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Checks that the Maven wrapper never runs an unverified distribution: missing pinned checksum in
-# strict mode, published checksum, pinned checksum and tampered download. Uses a local fake
-# repository (file:// URLs), no network.
+# Verifica que el Maven wrapper nunca ejecuta una distribución sin verificar: checksum fijado ausente en
+# modo estricto, checksum publicado, checksum fijado y descarga manipulada. Usa un repositorio
+# falso local (URLs file://), sin red.
 set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 T=$(mktemp -d)
@@ -26,7 +26,7 @@ run() { rm -rf "${T:?}/home"; cached "$@"; }
 cached() { (cd "$T/p" && MAVEN_USER_HOME="$T/home" "$@" ./mvnw -q >/dev/null 2>&1); }
 fail() { echo "FAIL: $*" >&2; exit 1; }
 tamper_checksum() {
-  # Always change the digest: a freshly built ZIP can already have a checksum starting with 0.
+  # El digest siempre se modifica: un ZIP recién construido puede tener un checksum que empieza por 0.
   local checksum replacement
   checksum=$(sed -n 's/^distributionSha512Sum=//p' "$PROPS")
   case "$checksum" in
@@ -44,16 +44,16 @@ run env MVNW_REQUIRE_PINNED_CHECKSUM=true || fail "pinned checksum not accepted"
 tamper_checksum
 run env && fail "tampered distribution accepted"
 [ ! -e "$T/home/wrapper/dists/apache-maven-9.9.9/apache-maven-9.9.9" ] || fail "tampered zip unpacked"
-# strict mode is not bypassed by a distribution already in the cache
+# una distribución que ya está en la caché no evita el modo estricto
 grep -v '^distributionSha512Sum=' "$PROPS" > "$T/props" && cp "$T/props" "$PROPS"
 run env || fail "published checksum not accepted (cache warm-up)"
 cached env MVNW_REQUIRE_PINNED_CHECKSUM=true && fail "strict mode ran a cached, unpinned distribution"
-# a cache verified against another checksum is verified again (and a tampered download rejected)
+# una caché verificada contra otro checksum se verifica de nuevo (y una descarga manipulada se rechaza)
 (cd "$T/p" && ./mvnw --pin-checksum >/dev/null 2>&1) || fail "pin failed"
 cached env MVNW_REQUIRE_PINNED_CHECKSUM=true || fail "cache verified against the same checksum rejected"
 tamper_checksum
 cached env && fail "cache reused although the pinned checksum changed"
-# a distribution put in the cache without verification (no marker) is not trusted
+# una distribución puesta en la caché sin verificación (sin marcador) no es de confianza
 (cd "$T/p" && ./mvnw --pin-checksum >/dev/null 2>&1) || fail "pin failed"
 rm -rf "${T:?}/home" && mkdir -p "$T/home/wrapper/dists/apache-maven-9.9.9/apache-maven-9.9.9/bin"
 printf '#!/bin/sh\necho UNVERIFIED\n' > "$T/home/wrapper/dists/apache-maven-9.9.9/apache-maven-9.9.9/bin/mvn"
@@ -62,7 +62,7 @@ out=$(cd "$T/p" && MAVEN_USER_HOME="$T/home" ./mvnw 2>/dev/null) || fail "verifi
 [ "$out" != "UNVERIFIED" ] || fail "an unverified cached distribution was executed"
 cmp -s "$ROOT/mvnw" "$ROOT/codegen/axiz-codegen-templates/src/main/resources/axiz/templates/shared/mvnw" \
   || fail "the generated projects' wrapper differs from the framework's"
-# Fresh-source model bootstrap uses only local install goals, preserving argument boundaries.
+# El bootstrap del modelo desde código fuente recién obtenido usa solo goals de instalación local y conserva los límites de los argumentos.
 mkdir -p "$T/p/platform/axiz-dependencies" "$T/p/platform/axiz-bom"
 touch "$T/p/platform/axiz-dependencies/pom.xml" "$T/p/platform/axiz-bom/pom.xml"
 (cd "$T/p" && MAVEN_USER_HOME="$T/home" FAKE_MAVEN_ARGUMENT_LOG="$T/bootstrap-args" \

@@ -19,7 +19,8 @@ import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.ImageNameSubstitutor;
 
 /**
- * Builds the inspectable reaper before Testcontainers needs it, without starting another reaper.
+ * Construye el reaper inspeccionable previo a que Testcontainers lo necesite, sin iniciar otro
+ * reaper.
  */
 public final class PatchedRyukImageSubstitutor extends ImageNameSubstitutor {
   private final Supplier<DockerClient> clients;
@@ -44,8 +45,8 @@ public final class PatchedRyukImageSubstitutor extends ImageNameSubstitutor {
   private synchronized String ensureImage() {
     Map<String, String> files = TestContainerImages.files("ryuk");
     String name = TestContainerImages.imageName("ryuk", files);
-    // getTransportConfig discovers Docker without ResourceReaper.init(). Using client() here
-    // would recurse while the reaper's own image is being resolved.
+    // getTransportConfig descubre Docker sin ResourceReaper.init(). Usar client() aquí generaría
+    // una recursión mientras se resuelve la propia imagen del reaper.
     try (DockerClient docker = clients.get()) {
       try {
         docker.inspectImageCmd(name).exec();

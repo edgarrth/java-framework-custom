@@ -3,8 +3,9 @@ package pe.axiz.core.sequence;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Native asynchronous atomic sequence allocation. A successful endpoint must already be durable,
- * independent of the caller's business transaction. Cancelled reservations may leave gaps.
+ * Asignación atómica de secuencias asíncrona nativa. Un extremo exitoso ya debe ser durable, con
+ * independencia de la transacción de negocio de quien llama. Las reservas canceladas pueden dejar
+ * huecos.
  */
 @FunctionalInterface
 public interface AsyncSequenceStore {

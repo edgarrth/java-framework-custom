@@ -1,6 +1,9 @@
 package pe.axiz.core.tokenization;
 
-/** Explicit provider promises; operation UUID correlation is not durable idempotency. */
+/**
+ * Promesas explícitas del proveedor; la correlación por UUID de operación no es idempotencia
+ * durable.
+ */
 public record TokenizerCapabilities(
     boolean deduplicates,
     boolean acceptsOperationId,

@@ -1,6 +1,6 @@
 package pe.axiz.core.tenancy;
 
-/** The operation needs a tenant but none is bound. */
+/** La operación necesita un tenant pero no hay ninguno ligado. */
 public class TenantRequiredException extends IllegalStateException {
 
   private static final long serialVersionUID = 1L;

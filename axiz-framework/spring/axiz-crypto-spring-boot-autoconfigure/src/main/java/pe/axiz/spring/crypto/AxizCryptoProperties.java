@@ -8,23 +8,26 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
- * Cryptography ({@code axiz.crypto.*}). Configuration only names secrets; key material is resolved
- * at startup through the {@code SecretResolver} and never appears in configuration.
+ * Criptografía ({@code axiz.crypto.*}). La configuración solo nombra secretos; el material de
+ * claves se resuelve en el arranque mediante el {@code SecretResolver} y nunca aparece en la
+ * configuración.
  *
- * @param fields field encryption (AES-256-GCM, key rotation by key id)
- * @param password password hashing
+ * @param fields cifrado de campos (AES-256-GCM, rotación de claves por id de clave)
+ * @param password hash de contraseñas
  */
 @ConfigurationProperties("axiz.crypto")
 public record AxizCryptoProperties(@DefaultValue Fields fields, @DefaultValue Password password) {
 
   /**
-   * Field encryption.
+   * Cifrado de campos.
    *
-   * @param currentKeyId key id used for new values
-   * @param keyIds every key id still able to decrypt (rotation keeps old ones)
-   * @param secretPrefix secret name of a key is {@code secretPrefix + keyId} (base64, 32 bytes)
-   * @param indexCurrentKeyId active HMAC write key id
-   * @param indexSecrets active HMAC read key ids mapped to secret names
+   * @param currentKeyId id de clave usado para los valores nuevos
+   * @param keyIds todos los ids de clave que aún pueden descifrar (la rotación conserva los
+   *     anteriores)
+   * @param secretPrefix el nombre del secreto de una clave es {@code secretPrefix + keyId} (base64,
+   *     32 bytes)
+   * @param indexCurrentKeyId id de la clave HMAC de escritura activa
+   * @param indexSecrets ids de las claves HMAC de lectura activas asociados a nombres de secretos
    */
   public record Fields(
       @Nullable String currentKeyId,
@@ -63,9 +66,9 @@ public record AxizCryptoProperties(@DefaultValue Fields fields, @DefaultValue Pa
   }
 
   /**
-   * Password hashing.
+   * Hash de contraseñas.
    *
-   * @param algorithm {@code argon2id}, {@code bcrypt} or {@code pbkdf2}
+   * @param algorithm {@code argon2id}, {@code bcrypt} o {@code pbkdf2}
    */
   public record Password(@DefaultValue("argon2id") String algorithm) {}
 }

@@ -31,7 +31,7 @@ import pe.axiz.spring.sequence.AxizSequenceProperties;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-/** DynamoDB atomic counters ({@code axiz.sequence.store=dynamodb}). */
+/** Contadores atómicos de DynamoDB ({@code axiz.sequence.store=dynamodb}). */
 @AutoConfiguration(afterName = "pe.axiz.spring.dynamodb.AxizDynamoDbAutoConfiguration")
 @ConditionalOnClass(name = "pe.axiz.adapter.sequence.dynamodb.DynamoDbSequenceStore")
 @ConditionalOnProperty(name = "axiz.sequence.store", havingValue = "dynamodb")
@@ -43,7 +43,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 })
 public class AxizSequenceDynamoDbAutoConfiguration {
 
-  /** Only without the DynamoDB starter (or another {@link DynamoDbClient} bean): same settings. */
+  /** Solo sin el starter de DynamoDB (u otro bean {@link DynamoDbClient}): misma configuración. */
   @Bean(destroyMethod = "close")
   @ConditionalOnMissingBean
   @ConditionalOnImperativeApplication

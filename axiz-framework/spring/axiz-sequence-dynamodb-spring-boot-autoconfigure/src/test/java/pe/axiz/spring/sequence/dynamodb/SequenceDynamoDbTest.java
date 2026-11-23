@@ -12,7 +12,7 @@ import pe.axiz.core.sequence.SequenceStore;
 import pe.axiz.spring.aws.AxizAwsIdentityAutoConfiguration;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-/** Sequence counters on DynamoDB for services without a relational database. */
+/** Contadores de secuencias sobre DynamoDB para servicios sin base de datos relacional. */
 class SequenceDynamoDbTest {
 
   private final ApplicationContextRunner runner =

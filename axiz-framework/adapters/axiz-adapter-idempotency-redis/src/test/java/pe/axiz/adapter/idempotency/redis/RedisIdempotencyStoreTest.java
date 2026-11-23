@@ -31,8 +31,8 @@ import pe.axiz.test.support.MutableClock;
 class RedisIdempotencyStoreTest {
 
   /**
-   * Minimal Redis: SET NX/XX, GET, DEL and the two Lua scripts of the store, evaluated with the
-   * same semantics (status and owner checked atomically).
+   * Redis mínimo: SET NX/XX, GET, DEL y los dos scripts Lua del almacén, evaluados con la misma
+   * semántica (estado y propietario verificados de forma atómica).
    */
   @SuppressWarnings("unchecked")
   static RedisCommands<String, String> fakeRedis(Map<String, String> data) {
@@ -97,7 +97,7 @@ class RedisIdempotencyStoreTest {
             });
   }
 
-  /** Options as sent to the server, for example {@code NX PX 60000}. */
+  /** Opciones tal como se envían al servidor, por ejemplo {@code NX PX 60000}. */
   static String options(SetArgs setArgs) {
     CommandArgs<String, String> args = new CommandArgs<>(StringCodec.UTF8);
     setArgs.build(args);
@@ -135,14 +135,14 @@ class RedisIdempotencyStoreTest {
     assertTrue(store.find("missing", Instant.now()).isEmpty());
   }
 
-  /** Regression: A's lock expires, B takes the key, A finishes late. */
+  /** Regresión: el lock de A expira, B toma la clave y A termina tarde. */
   @Test
   void aLateOwnerCannotOverwriteOrReleaseTheKeyOfTheNewOwner() {
     Map<String, String> data = new HashMap<>();
     RedisIdempotencyStore store = new RedisIdempotencyStore(fakeRedis(data), "idem:");
     Instant exp = Instant.now().plusSeconds(60);
     assertTrue(store.tryStart(inProgress("k", "owner-a", exp)));
-    data.remove("idem:k"); // A's lock expired (Redis TTL)
+    data.remove("idem:k"); // el lock de A expiró (TTL de Redis)
     assertTrue(store.tryStart(inProgress("k", "owner-b", exp)));
 
     assertFalse(
@@ -176,7 +176,10 @@ class RedisIdempotencyStoreTest {
     assertTrue(RedisIdempotencyStore.COMPLETE_SCRIPT.contains("'PX', ARGV[3]"));
   }
 
-  /** Shared store contract against the fake; the fake has no TTL, so expiry deletes the key. */
+  /**
+   * Contrato compartido del almacén contra el fake; el fake no tiene TTL, así que la expiración
+   * borra la clave.
+   */
   @TestFactory
   Stream<DynamicTest> contract() {
     Map<String, String> data = new HashMap<>();

@@ -10,7 +10,10 @@ import org.springframework.context.annotation.Role;
 import org.springframework.core.env.Environment;
 import pe.axiz.spring.foundation.AxizTransportProperties;
 
-/** Declarative, passive infrastructure; AWS providers and the SDK source remain lazy. */
+/**
+ * Infraestructura declarativa y pasiva; los proveedores AWS y la fuente del SDK siguen siendo
+ * diferidos.
+ */
 @AutoConfiguration
 @EnableConfigurationProperties({
   AxizAwsAsyncTransportProperties.class,
@@ -22,7 +25,7 @@ import pe.axiz.spring.foundation.AxizTransportProperties;
       "pe.axiz.adapter.aws.identity.AwsCredentialSource"
     })
 public class AxizAwsIdentityAutoConfiguration {
-  /** Spring configuration with an early, static infrastructure factory. */
+  /** Configuración de Spring con una fábrica de infraestructura estática y temprana. */
   protected AxizAwsIdentityAutoConfiguration() {}
 
   @Bean(name = AwsIdentity.BEAN_NAME, destroyMethod = "close")

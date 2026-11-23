@@ -17,10 +17,11 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * Outbox store on Aurora PostgreSQL over R2DBC, same table as the JDBC store ({@code
- * axiz/sql/outbox-postgresql.sql}). {@link #insert} is non-blocking and joins the caller's reactive
- * transaction; the {@link OutboxStore} methods are for the relay, which runs on its own thread
- * inside an {@code R2dbcTransactionRunner} transaction, and wait up to {@code timeout}.
+ * Almacén de outbox sobre Aurora PostgreSQL mediante R2DBC, con la misma tabla que el almacén JDBC
+ * ({@code axiz/sql/outbox-postgresql.sql}). {@link #insert} no bloquea y se une a la transacción
+ * reactiva de quien llama; los métodos de {@link OutboxStore} son para el relay, que corre en su
+ * propio hilo dentro de una transacción de {@code R2dbcTransactionRunner}, y esperan hasta {@code
+ * timeout}.
  */
 public final class R2dbcOutboxStore implements OutboxStore {
 
@@ -44,7 +45,7 @@ public final class R2dbcOutboxStore implements OutboxStore {
     this.timeout = Objects.requireNonNull(timeout);
   }
 
-  /** Inserts a record in the current reactive transaction. */
+  /** Inserta un registro en la transacción reactiva actual. */
   public Mono<Void> insert(OutboxRecord r) {
     return sql.queryOne(
             "INSERT INTO "
@@ -292,7 +293,7 @@ public final class R2dbcOutboxStore implements OutboxStore {
         .build();
   }
 
-  /** Waits for a statement that produces a value (row count, rows). */
+  /** Espera una sentencia que produce un valor (número de filas, filas). */
   private <T> T await(Mono<T> work) {
     T value = block(work);
     if (value == null) {
@@ -301,7 +302,7 @@ public final class R2dbcOutboxStore implements OutboxStore {
     return value;
   }
 
-  /** Waits for a statement that completes without a value ({@code Mono<Void>}). */
+  /** Espera una sentencia que termina sin valor ({@code Mono<Void>}). */
   private void run(Mono<Void> work) {
     block(work);
   }

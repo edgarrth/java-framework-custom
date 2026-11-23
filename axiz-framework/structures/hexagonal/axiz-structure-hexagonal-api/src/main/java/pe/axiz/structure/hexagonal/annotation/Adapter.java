@@ -6,7 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** Marks an adapter: it implements an outbound port or drives an inbound port. */
+/** Marca un adaptador: implementa un puerto de salida o dirige un puerto de entrada. */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

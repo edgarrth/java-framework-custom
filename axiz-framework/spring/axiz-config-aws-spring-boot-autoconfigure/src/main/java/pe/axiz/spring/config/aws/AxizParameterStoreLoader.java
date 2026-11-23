@@ -8,7 +8,7 @@ import org.springframework.boot.context.config.ConfigDataLoader;
 import org.springframework.boot.context.config.ConfigDataLoaderContext;
 import org.springframework.boot.logging.DeferredLogFactory;
 
-/** Delegates parameter materialization without selecting another credentials provider. */
+/** Delega la materialización de parámetros sin seleccionar otro proveedor de credenciales. */
 public final class AxizParameterStoreLoader
     implements ConfigDataLoader<AxizParameterStoreResource> {
   private final DeferredLogFactory logs;

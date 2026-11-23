@@ -4,7 +4,7 @@ import org.springframework.boot.test.context.runner.AbstractApplicationContextRu
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 
-/** Selects an actual web application type, including Spring's conditional configuration. */
+/** Selecciona un tipo real de aplicación web, incluida la configuración condicional de Spring. */
 final class RecipeStacks {
   private RecipeStacks() {}
 

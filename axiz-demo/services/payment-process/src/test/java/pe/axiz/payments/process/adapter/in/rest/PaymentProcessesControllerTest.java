@@ -16,7 +16,7 @@ import pe.axiz.payments.process.adapter.in.rest.model.ProcessView;
 import pe.axiz.payments.process.application.usecase.Processes;
 import pe.axiz.spring.test.OpenApiResponses;
 
-/** The operations endpoint over the real saga: a process started by hand and read back. */
+/** El endpoint de operaciones sobre la saga real: un proceso iniciado a mano y leído de vuelta. */
 class PaymentProcessesControllerTest {
 
   final Processes processes = new Processes();

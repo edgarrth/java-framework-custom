@@ -40,7 +40,9 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName;
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 
-/** Minimal consumer classpath: no hand-picked AutoConfigurations and no broker mocks. */
+/**
+ * Classpath mínimo del consumidor: sin AutoConfigurations elegidas a mano y sin mocks del broker.
+ */
 class SqsConsumerExampleTest {
   private static final String TYPE = "demo.receipt.created";
   private static final Duration WAIT = Duration.ofSeconds(30);
@@ -251,7 +253,7 @@ class SqsConsumerExampleTest {
     send(context, stack, "standard", "poison-direct");
     send(context, stack, "redrive", "poison-redrive");
     send(context, stack, "fifo", "fifo-1");
-    send(context, stack, "fifo", "fifo-1"); // same event id is deduplicated by FIFO
+    send(context, stack, "fifo", "fifo-1"); // FIFO deduplica el mismo id de evento
     send(context, stack, "fifo", "fifo-2");
     send(context, stack, "fifo", "poison-fifo");
     context.getBean(SqsEventConsumer.class).start();

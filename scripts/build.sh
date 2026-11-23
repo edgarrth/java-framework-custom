@@ -1,12 +1,12 @@
 #!/bin/bash
-# Builds the framework libraries, the tools and the demo in dependency order, from the repository
-# root:
-#   scripts/build.sh                 framework, tools and demo with tests and quality checks
-#   scripts/build.sh --skip-tests    the same artifacts without tests or quality checks
-#   scripts/build.sh --only <part>   one part: framework, tools or demo (tests included unless
-#                                    --skip-tests is also given)
-# The framework is installed in ~/.m2 first; tools and demo resolve it from there. Tests with
-# containers need Docker running.
+# Construye las bibliotecas del framework, las herramientas y la demo en orden de dependencias, desde la raíz
+# del repositorio:
+#   scripts/build.sh                 framework, herramientas y demo con pruebas y controles de calidad
+#   scripts/build.sh --skip-tests    los mismos artefactos sin pruebas ni controles de calidad
+#   scripts/build.sh --only <part>   una parte: framework, tools o demo (con pruebas salvo que
+#                                    también se indique --skip-tests)
+# Primero se instala el framework en ~/.m2; las herramientas y la demo lo resuelven desde allí. Las pruebas
+# con contenedores requieren Docker en ejecución.
 set -Eeuo pipefail
 trap 'printf "\\033[31m%s: unexpected failure (exit %s) at line %s: %s\\033[0m\\n" "${0##*/}" "$?" "$LINENO" "$BASH_COMMAND" >&2' ERR
 root=$(cd "$(dirname "$0")/.." && pwd)

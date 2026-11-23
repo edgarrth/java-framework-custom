@@ -1,6 +1,6 @@
 package pe.axiz.core.fileformats;
 
-/** Malformed record in a file; carries the line number. */
+/** Registro mal formado en un archivo; lleva el número de línea. */
 public class FileFormatException extends RuntimeException {
 
   private static final long serialVersionUID = 1L;

@@ -1,6 +1,6 @@
-# Nightly native compilation: builds and runs the tests of each listed module as a GraalVM native
-# image, so AOT and reachability problems show up the day they are introduced. Used by the demo
-# (every service) and by the framework (one generated service per archetype).
+# Compilación nativa nocturna: construye y ejecuta las pruebas de cada módulo listado como imagen nativa
+# de GraalVM, de modo que los problemas de AOT y de alcanzabilidad aparecen el mismo día en que se introducen.
+# La usan la demo (cada servicio) y el framework (un servicio generado por arquetipo).
 name: native-nightly
 on:
   workflow_call:
@@ -69,7 +69,7 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
-      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
       # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
       - uses: edgarrth/java-framework-custom/.github/actions/setup-maven@axiz-workflows-v2.0.0 # x-release-please-version
         with:

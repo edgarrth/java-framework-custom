@@ -1,4 +1,4 @@
-# Each monorepo component publishes an exact <component>-v<x.y.z> immutable tag.
+# Cada componente del monorepo publica un tag inmutable exacto <component>-v<x.y.z>.
 name: release-self
 on:
   push:

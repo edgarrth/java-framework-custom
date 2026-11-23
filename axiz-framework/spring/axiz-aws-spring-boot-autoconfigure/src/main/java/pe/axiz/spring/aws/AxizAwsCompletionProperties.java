@@ -3,7 +3,10 @@ package pe.axiz.spring.aws;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
-/** Shared callback admission settings used independently by AWS capabilities. */
+/**
+ * Configuración compartida de admisión de callbacks que las capacidades AWS usan de forma
+ * independiente.
+ */
 @ConfigurationProperties("axiz.aws.completion")
 public record AxizAwsCompletionProperties(
     @DefaultValue("2") int workers, @DefaultValue("256") int queueCapacity) {

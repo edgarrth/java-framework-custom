@@ -10,7 +10,10 @@ import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
-/** Cold discovery and JWKS download run on a non-blocking thread, not a bounded-elastic bridge. */
+/**
+ * El descubrimiento en frío y la descarga del JWKS se ejecutan en un hilo no bloqueante, no en un
+ * puente bounded-elastic.
+ */
 @ExtendWith(BlockHoundExtension.class)
 class NativeJwksTest {
   @Test

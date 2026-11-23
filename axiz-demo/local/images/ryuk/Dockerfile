@@ -1,4 +1,4 @@
-# Ryuk 0.14.0 with the maintained Moby SDK and an inspectable Go binary (no UPX).
+# Ryuk 0.14.0 con el SDK de Moby mantenido y un binario de Go inspeccionable (sin UPX).
 FROM golang:1.27.4-alpine3.24@sha256:70bd7ddea8b6cbe5d6943cde279d6b67feb10cc924fb9100d1d8757c1575b280 AS builder
 WORKDIR /src
 RUN apk add --no-cache patch=2.8.1-r0 curl \
@@ -14,8 +14,8 @@ FROM scratch
 COPY --from=certificates /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=builder /ryuk /ryuk
 COPY LICENSE /LICENSE
-# Development/test lifecycle controller: it must access the runner's Docker socket,
-# whose owning group varies by host. Docker access itself grants daemon-level control.
-# Never deploy Ryuk with application workloads or mount the daemon socket into them.
+# Controlador del ciclo de vida para desarrollo y pruebas: debe acceder al socket de Docker del runner,
+# cuyo grupo propietario varía según el host. El acceso a Docker en sí otorga control a nivel del daemon.
+# Nunca se despliega Ryuk junto con workloads de aplicación ni se monta en ellos el socket del daemon.
 USER 0:0
 ENTRYPOINT ["/ryuk"]

@@ -11,10 +11,10 @@ import pe.axiz.core.domain.DomainEvent;
 
 {{#fw.hexagonal}}{{> domain-event}}{{/fw.hexagonal}}{{#fw.cqrs}}{{> domain-event}}{{/fw.cqrs}}{{^fw.hexagonal}}{{^fw.cqrs}}
 /**
- * Payload of the {@code {{artifact.eventType}}} event (immutable; add the fields of the AsyncAPI
- * contract).
+ * Payload del evento {@code {{artifact.eventType}}} (inmutable; se agregan los campos del contrato
+ * AsyncAPI).
  *
- * @param id identifier of the resource the event is about
+ * @param id identificador del recurso al que se refiere el evento
  */
 public record {{artifact.className}}(String id) {}
 {{/fw.cqrs}}{{/fw.hexagonal}}

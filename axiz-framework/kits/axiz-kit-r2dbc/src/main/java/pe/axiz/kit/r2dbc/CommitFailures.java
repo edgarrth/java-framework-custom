@@ -4,14 +4,16 @@ import io.r2dbc.spi.R2dbcDataIntegrityViolationException;
 import io.r2dbc.spi.R2dbcException;
 import io.r2dbc.spi.R2dbcRollbackException;
 
-/** Preserve explicit server rejection; a transport error never proves a rollback. */
+/**
+ * Se preserva el rechazo explícito del servidor; un error de transporte nunca prueba un rollback.
+ */
 final class CommitFailures {
   private CommitFailures() {}
 
   static RuntimeException classify(Throwable failure) {
     if (failure instanceof R2dbcException rejected) {
       String state = rejected.getSqlState();
-      // SQLState 40003 means statement completion UNKNOWN, despite its class 40 prefix.
+      // SQLState 40003 significa finalización de sentencia UNKNOWN, pese a su prefijo de clase 40.
       if (!"40003".equals(state)
           && (rejected instanceof R2dbcRollbackException
               || rejected instanceof R2dbcDataIntegrityViolationException

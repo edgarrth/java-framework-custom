@@ -5,9 +5,9 @@ Requiere límites explícitos, credenciales y alarma de conciliación; no config
 rate limiter general de la aplicación. Consultar
 [configuración y pruebas](../axiz-tokenization-vault-redis-spring-boot-autoconfigure/README.md).
 
-## Selection
+## Selección
 
-Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
+Las versiones las gestiona `axiz-bom`; las aplicaciones heredan `axiz-parent-service`.
 
 ```xml
 <dependency>
@@ -16,31 +16,32 @@ Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
 </dependency>
 ```
 
-This artifact composes dependencies; its wiring and operational contract are documented in
+Este artefacto compone dependencias; su configuración y su contrato operativo se documentan en
 [`axiz-tokenization-vault-redis-spring-boot-autoconfigure`](../axiz-tokenization-vault-redis-spring-boot-autoconfigure/README.md).
 
-## Catalog usage
+## Uso desde el catálogo
 
 ```bash
 axiz add tokenization-vault-redis
 ```
 
-Required capabilities: `tokenization-vault`, `secrets`.
+Capacidades requeridas: `tokenization-vault`, `secrets`.
 
-The catalog supplies the following properties. Environment placeholders must resolve in the
-service configuration; they are not credentials or provisioned infrastructure.
+El catálogo aporta las siguientes propiedades. Los marcadores de entorno deben resolverse en la
+configuración del servicio; no son credenciales ni infraestructura aprovisionada.
 
 ```yaml
 axiz.tokenization.vault.redis.fail-open: false
 axiz.tokenization.vault.redis.connection.tls: true
 ```
 
-## Operations
+## Operación
 
-Configure an authenticated TLS Redis/Valkey endpoint with bounded connection and command
-timeouts. Size capacity and eviction according to the capability: coordination/idempotency
-state cannot use cache eviction semantics. In-memory substitutes are limited to explicitly
-local/test/ci environments.
+Se configura un endpoint Redis/Valkey autenticado con TLS y timeouts acotados de conexión y de
+comando. La capacidad y el desalojo se dimensionan según la capacidad: el estado de coordinación o
+de idempotencia no puede usar la semántica de desalojo de una caché. Los sustitutos en memoria se
+limitan a ambientes local, test o ci declarados explícitamente.
 
-See [tokenization](../../../axiz-docs/docs/guias/tokenizacion.md) for client/vault boundaries,
-profiles, authorization, retention and the independent field-protection flow.
+La [guía de tokenización](../../../axiz-docs/docs/guias/tokenizacion.md) describe los límites entre
+cliente y bóveda, los perfiles, la autorización, la retención y el flujo independiente de protección
+de campos.

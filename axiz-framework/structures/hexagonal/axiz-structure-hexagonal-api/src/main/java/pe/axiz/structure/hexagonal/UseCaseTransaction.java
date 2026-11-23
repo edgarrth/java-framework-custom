@@ -2,12 +2,15 @@ package pe.axiz.structure.hexagonal;
 
 import java.util.function.Supplier;
 
-/** Runs work in a transaction (implemented by the Spring starter with a transaction template). */
+/**
+ * Ejecuta trabajo en una transacción (lo implementa el starter de Spring con un transaction
+ * template).
+ */
 public interface UseCaseTransaction {
 
   <T> T execute(boolean readOnly, Supplier<T> work);
 
-  /** No transaction: for tests and stateless use cases. */
+  /** Sin transacción: para pruebas y casos de uso sin estado. */
   static UseCaseTransaction none() {
     return new UseCaseTransaction() {
       @Override

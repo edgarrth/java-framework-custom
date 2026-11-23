@@ -1,4 +1,4 @@
-/** Jobs, steps, readers, processors and writers. */
+/** Jobs, pasos, lectores, procesadores y escritores. */
 @NullMarked
 package pe.axiz.payments.settlement.job;
 

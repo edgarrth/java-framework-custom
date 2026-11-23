@@ -1,6 +1,9 @@
 package pe.axiz.core.tokenization.vault;
 
-/** Corrupted or inconsistent references; no plaintext, keys or provider error are exposed. */
+/**
+ * Referencias corruptas o inconsistentes; no se exponen texto plano, claves ni errores del
+ * proveedor.
+ */
 public final class VaultIntegrityException extends RuntimeException {
   private static final long serialVersionUID = 1L;
 

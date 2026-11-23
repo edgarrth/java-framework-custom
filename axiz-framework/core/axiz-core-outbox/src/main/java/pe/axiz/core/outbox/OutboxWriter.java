@@ -9,8 +9,8 @@ import pe.axiz.core.messaging.CloudEventJson;
 import pe.axiz.core.messaging.EventEnvelope;
 
 /**
- * Registers events in the outbox within the caller's transaction. The event is published later by
- * the relay, so it is published if and only if the business transaction commits.
+ * Registra eventos en el outbox dentro de la transacción de quien llama. El relay publica el evento
+ * más tarde, de modo que se publica si y solo si la transacción de negocio hace commit.
  */
 public final class OutboxWriter {
 
@@ -41,12 +41,16 @@ public final class OutboxWriter {
     this.tracing = Objects.requireNonNull(tracing);
   }
 
-  /** Identity of the borrowed transaction resource; null when the store cannot attest it. */
+  /**
+   * Identidad del recurso de transacción prestado; null cuando el almacén no puede certificarla.
+   */
   public @Nullable Object transactionResource() {
     return store.transactionResource();
   }
 
-  /** Stores the event (with the trace context of the caller, see {@link OutboxWriteTracing}). */
+  /**
+   * Almacena el evento (con el contexto de traza de quien llama, ver {@link OutboxWriteTracing}).
+   */
   public void write(String destination, EventEnvelope event, @Nullable String aggregateType) {
     tracing.traced(
         destination,

@@ -33,7 +33,7 @@ import pe.axiz.spring.outbox.OutboxRelayRunner;
 import pe.axiz.test.support.r2dbc.FakeR2dbc;
 
 class OutboxReactiveWiringTest {
-  /** A store with nothing due that counts purges and can be made to fail. */
+  /** Almacén sin nada pendiente que cuenta las purgas y que puede hacerse fallar. */
   static final class CountingStore implements OutboxStore {
 
     public List<OutboxRecord> claimDue(int size, Duration lease, String owner) {

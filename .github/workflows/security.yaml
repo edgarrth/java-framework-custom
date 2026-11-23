@@ -87,8 +87,8 @@ jobs:
           -am -DskipTests -Dpit.skip=true install
       - name: Trivy 0.76.2 on the complete checkout
         env:
-          # Maven SBOM gates resolve the complete dependency graph during the build.
-          # Source scanning must not query public Maven Central for private pe.axiz parents.
+          # Los gates de SBOM de Maven resuelven el grafo completo de dependencias durante el build.
+          # El escaneo del código fuente no debe consultar Maven Central público por los parents privados de pe.axiz.
           TRIVY_OFFLINE_SCAN: 'true'
           TRIVY_TIMEOUT: 20m
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
@@ -102,9 +102,9 @@ jobs:
           limit-severities-for-sarif: true
           output: trivy.sarif
           exit-code: '1'
-      # Internal control: it runs the evaluator of this same commit, so a change to it is checked
-      # by its own pull request. Accepted risks and their deadlines are read from the protected
-      # base branch, never from the pull request.
+      # Control interno: ejecuta el evaluador de este mismo commit, de modo que un cambio en él se verifica
+      # en su propio pull request. Los riesgos aceptados y sus plazos se leen de la rama base protegida,
+      # nunca del pull request.
       - name: Complete vulnerability evidence and protected risk deadlines
         uses: ./.github/actions/check-vulnerabilities
         with:
@@ -242,8 +242,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # Code scanning accepts one run per tool and category: each report keeps its own, stable
-          # across runs (the artifact folder without the run suffix, e.g. infrastructure-postgres).
+          # Code scanning acepta una ejecución por herramienta y categoría: cada reporte conserva la
+          # suya, estable entre ejecuciones (la carpeta del artefacto sin el sufijo de la ejecución,
+          # por ejemplo infrastructure-postgres).
           suffix="-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           while IFS= read -r -d '' report; do
             folder=$(basename "$(dirname "$report")")

@@ -41,7 +41,7 @@ class PaymentSagaTest {
   static final ErrorDefinition REJECTED =
       ErrorDefinition.of("PAYMENTS-NETWORKGATEWAY-0001", ErrorCategory.UNPROCESSABLE, "rejected");
 
-  /** Records every downstream call; failures are injected per operation. */
+  /** Registra cada llamada aguas abajo; las fallas se inyectan por operación. */
   static final class Downstream implements PaymentOrders, Accounts, Transfers {
     final List<String> calls = new ArrayList<>();
     final Map<String, RuntimeException> failures = new HashMap<>();
@@ -93,7 +93,7 @@ class PaymentSagaTest {
     }
   }
 
-  /** Context codec for tests: keeps contexts by reference. */
+  /** Codec de contexto para pruebas: conserva los contextos por referencia. */
   static final class RefCodec implements ContextCodec<PaymentContext> {
     final Map<String, PaymentContext> values = new HashMap<>();
 
@@ -216,12 +216,12 @@ class PaymentSagaTest {
   }
 
   /**
-   * Regression: the debit keeps timing out and its outcome is unknown. The process must not reject
-   * the order or reverse anything: it waits VERIFYING.
+   * Regresión: el débito sigue excediendo el timeout y su resultado es desconocido. El proceso no
+   * debe rechazar la orden ni revertir nada: queda en espera en VERIFYING.
    */
   @Test
   void anUncertainDebitIsVerifiedNeverAssumedMissing() {
-    downstream.transientFailures.put("debit:pp-O-7-debit", 4); // 3 attempts + 1 verification
+    downstream.transientFailures.put("debit:pp-O-7-debit", 4); // 3 intentos + 1 verificación
 
     PaymentProcess p = run("O-7");
 
@@ -233,7 +233,7 @@ class PaymentSagaTest {
   @Test
   void aDebitConfirmedByVerificationContinuesThePayment() {
     downstream.transientFailures.put(
-        "debit:pp-O-8-debit", 3); // every attempt fails, the check works
+        "debit:pp-O-8-debit", 3); // cada intento falla, la verificación funciona
 
     PaymentProcess p = run("O-8");
 

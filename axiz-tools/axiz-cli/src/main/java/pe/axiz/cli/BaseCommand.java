@@ -10,7 +10,7 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
 
-/** Common options and output helpers. */
+/** Opciones comunes y utilidades de salida. */
 abstract class BaseCommand implements AxizCli.EnvironmentAware {
 
   @Spec CommandSpec spec;
@@ -53,9 +53,9 @@ abstract class BaseCommand implements AxizCli.EnvironmentAware {
   }
 
   /**
-   * Leaves the Java sources of a project as its {@code spotless:check} expects. The CLI jar formats
-   * them while it writes them; where google-java-format cannot run (the native binary) the
-   * project's own Maven wrapper runs {@code spotless:apply}.
+   * Deja las fuentes Java de un proyecto tal como las espera su {@code spotless:check}. El jar de
+   * la CLI las formatea mientras las escribe; donde google-java-format no puede ejecutarse (el
+   * binario nativo), el propio Maven wrapper del proyecto ejecuta {@code spotless:apply}.
    */
   void formatSources(Path project) {
     if (environment.javaFormatter().getAsBoolean()) {

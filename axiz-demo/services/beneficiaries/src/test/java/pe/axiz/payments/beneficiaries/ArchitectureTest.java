@@ -8,7 +8,9 @@ import pe.axiz.quality.archunit.Stack;
 import pe.axiz.quality.archunit.Structure;
 import pe.axiz.quality.archunit.TokenizationScope;
 
-/** Rules of the layered style plus the general axiz rules; breaking one fails the build. */
+/**
+ * Reglas del estilo layered más las reglas generales de axiz; incumplir una hace fallar el build.
+ */
 class ArchitectureTest {
 
   @Test

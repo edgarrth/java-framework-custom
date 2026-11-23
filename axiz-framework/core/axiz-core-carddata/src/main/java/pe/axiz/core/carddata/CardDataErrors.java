@@ -3,7 +3,7 @@ package pe.axiz.core.carddata;
 import pe.axiz.core.errors.ErrorCategory;
 import pe.axiz.core.errors.ErrorDefinition;
 
-/** Stable errors; no submitted card data appears in an error message. */
+/** Errores estables; ningún dato de tarjeta enviado aparece en un mensaje de error. */
 public final class CardDataErrors {
   private CardDataErrors() {}
 

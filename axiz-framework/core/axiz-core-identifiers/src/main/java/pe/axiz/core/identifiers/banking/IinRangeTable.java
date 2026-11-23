@@ -14,15 +14,16 @@ import pe.axiz.core.identifiers.CheckDigits;
 import pe.axiz.core.identifiers.banking.BankingIdentifiers.CardBrand;
 
 /**
- * {@link CardSchemeResolver} over an IIN/BIN range table loaded from data (a file, an object in S3,
- * a parameter): the ranges are maintained outside the code and the table carries its own source and
- * version, so an update is a data release, not a deployment.
+ * {@link CardSchemeResolver} sobre una tabla de rangos IIN/BIN cargada desde datos (un archivo, un
+ * objeto en S3, un parámetro): los rangos se mantienen fuera del código y la tabla lleva su propio
+ * origen y versión, de modo que una actualización es una entrega de datos y no un despliegue.
  *
- * <p>Format: one range per line, {@code <low>,<high>,<scheme>}, where {@code low} and {@code high}
- * are prefixes of the same length (1 to 11 digits) and {@code scheme} a {@link CardBrand} name.
- * Empty lines and lines starting with {@code #} are ignored. When ranges overlap, the most specific
- * one wins (the longest prefix, then the narrowest range), which is how co-branded and private
- * ranges inside a scheme range are represented. A malformed line rejects the whole table.
+ * <p>Formato: un rango por línea, {@code <low>,<high>,<scheme>}, donde {@code low} y {@code high}
+ * son prefijos de la misma longitud (1 a 11 dígitos) y {@code scheme} es un nombre de {@link
+ * CardBrand}. Se ignoran las líneas vacías y las que empiezan con {@code #}. Cuando los rangos se
+ * superponen, prevalece el más específico (el prefijo más largo y luego el rango más estrecho), que
+ * es como se representan los rangos co-branded y privados dentro del rango de una marca. Una línea
+ * mal formada rechaza la tabla completa.
  */
 public final class IinRangeTable implements CardSchemeResolver {
 
@@ -51,12 +52,12 @@ public final class IinRangeTable implements CardSchemeResolver {
   }
 
   /**
-   * Reads a table.
+   * Lee una tabla.
    *
-   * @param data the ranges (see the class comment)
-   * @param source name, version and date of the table, as recorded in audit (for example {@code
-   *     "processor-iin 2026-10 (received 2026-10-01)"})
-   * @throws IllegalArgumentException for a malformed line, with its number
+   * @param data los rangos (ver el comentario de la clase)
+   * @param source nombre, versión y fecha de la tabla, tal como se registran en auditoría (por
+   *     ejemplo {@code "processor-iin 2026-10 (received 2026-10-01)"})
+   * @throws IllegalArgumentException para una línea mal formada, con su número
    */
   public static IinRangeTable parse(Reader data, String source) {
     Objects.requireNonNull(source, "source");
@@ -81,7 +82,7 @@ public final class IinRangeTable implements CardSchemeResolver {
     if (ranges.isEmpty()) {
       throw new IllegalArgumentException("The IIN table " + source + " has no ranges");
     }
-    // most specific first: longest prefix, then narrowest range
+    // primero el más específico: prefijo más largo y luego rango más estrecho
     ranges.sort(
         Comparator.comparingInt((Range r) -> -r.low().length()).thenComparingLong(Range::width));
     return new IinRangeTable(ranges, source);
@@ -139,7 +140,7 @@ public final class IinRangeTable implements CardSchemeResolver {
     return source;
   }
 
-  /** Number of ranges loaded (for the startup log and health details). */
+  /** Cantidad de rangos cargados (para el log de arranque y los detalles de health). */
   public int size() {
     return ranges.size();
   }

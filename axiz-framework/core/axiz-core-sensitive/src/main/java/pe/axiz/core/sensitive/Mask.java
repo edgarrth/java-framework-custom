@@ -6,7 +6,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** Shorthand for a masked value of {@link SensitivityLevel#MEDIUM} with the given mask type. */
+/**
+ * Atajo para un valor enmascarado de {@link SensitivityLevel#MEDIUM} con el tipo de máscara
+ * indicado.
+ */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({

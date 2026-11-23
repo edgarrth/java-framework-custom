@@ -12,7 +12,10 @@ import pe.axiz.core.tokenization.Token;
 import pe.axiz.core.tokenization.TokenErrors;
 import pe.axiz.core.tokenization.TokenMetadata;
 
-/** Stored encrypted association. Authenticity is established only by envelope decryption. */
+/**
+ * Asociación cifrada almacenada. La autenticidad se establece solo mediante el descifrado del
+ * envelope.
+ */
 public final class VaultRecord {
   private final Token token;
   private final VaultScope scope;
@@ -104,12 +107,14 @@ public final class VaultRecord {
     return "VaultRecord[" + token.masked() + ", revision=" + revision + "]";
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción nominal; build verifica los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable Token token = null;
     private @Nullable VaultScope scope = null;

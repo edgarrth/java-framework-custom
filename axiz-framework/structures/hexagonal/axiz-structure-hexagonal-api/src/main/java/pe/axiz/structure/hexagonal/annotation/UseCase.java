@@ -7,17 +7,24 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks a use case implementation. The framework wraps its public methods in a transaction, an
- * observation with the operation name and the domain event lifecycle.
+ * Marca una implementación de caso de uso. El framework envuelve sus métodos públicos en una
+ * transacción, una observación con el nombre de la operación y el ciclo de vida de los eventos de
+ * dominio.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface UseCase {
 
-  /** Operation name, e.g. {@code create-payment}; defaults to the class name in kebab-case. */
+  /**
+   * Nombre de la operación, por ejemplo {@code create-payment}; por defecto, el nombre de la clase
+   * en kebab-case.
+   */
   String value() default "";
 
-  /** Read-only use cases run in read-only transactions (routed to Aurora readers). */
+  /**
+   * Los casos de uso de solo lectura se ejecutan en transacciones de solo lectura (encaminadas a
+   * los lectores de Aurora).
+   */
   boolean readOnly() default false;
 }

@@ -9,13 +9,18 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.util.StringUtils;
 import pe.axiz.core.commons.Environments;
 
-/** Imports mounted ConfigMaps before Config Data, after provider conventions; no Kubernetes API. */
+/**
+ * Importa los ConfigMaps montados antes de Config Data, después de las convenciones del proveedor;
+ * sin API de Kubernetes.
+ */
 public class AxizConfigEnvironmentPostProcessor implements EnvironmentPostProcessor, Ordered {
 
-  /** Runs before Boot's config data processing ({@code HIGHEST_PRECEDENCE + 10}). */
+  /**
+   * Se ejecuta antes del procesamiento de config data de Boot ({@code HIGHEST_PRECEDENCE + 10}).
+   */
   public static final int ORDER = Ordered.HIGHEST_PRECEDENCE + 6;
 
-  /** Where the chart mounts the ConfigMaps. */
+  /** Ubicación donde el chart monta los ConfigMaps. */
   public static final String DEFAULT_DIRECTORY = "/etc/axiz/config";
 
   static final String IMPORTS = "axizConfigImports";

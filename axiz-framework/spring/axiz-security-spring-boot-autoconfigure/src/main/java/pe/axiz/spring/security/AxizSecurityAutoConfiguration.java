@@ -84,10 +84,11 @@ import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
 /**
- * OAuth2 resource server for servlet and reactive services: issuer allow-list with per-issuer JWKS,
- * audience and algorithm checks, claims mapped to {@code AxizPrincipal}, method security, security
- * headers, protected actuator, problem responses for 401/403/429 and optional per-caller rate
- * limits. Services may declare their own {@code SecurityFilterChain} to take over.
+ * Resource server OAuth2 para servicios servlet y reactivos: lista de emisores permitidos con JWKS
+ * por emisor, comprobaciones de audiencia y algoritmo, claims asociados a {@code AxizPrincipal},
+ * seguridad de métodos, cabeceras de seguridad, actuator protegido, respuestas de problema para
+ * 401/403/429 y límites de tasa opcionales por invocante. Los servicios pueden declarar su propia
+ * {@code SecurityFilterChain} para tomar el control.
  */
 @AutoConfiguration(
     afterName = "pe.axiz.spring.errors.AxizErrorsAutoConfiguration",
@@ -111,7 +112,10 @@ public class AxizSecurityAutoConfiguration {
 
   static final String CSP = "default-src 'none'; frame-ancestors 'none'";
 
-  /** A token of an issuer outside the allow-list: rejected before any key lookup (401). */
+  /**
+   * Token de un emisor fuera de la lista permitida: se rechaza antes de cualquier búsqueda de
+   * claves (401).
+   */
   static final AuthenticationManager UNTRUSTED_ISSUER =
       authentication -> {
         throw new InvalidBearerTokenException("Invalid issuer");
@@ -123,7 +127,7 @@ public class AxizSecurityAutoConfiguration {
     return issuerPolicy(p.issuers());
   }
 
-  /** The allow-list of issuers; a resource server without one would reject every token. */
+  /** Lista de emisores permitidos; un resource server sin ella rechazaría todos los tokens. */
   static IssuerPolicy issuerPolicy(List<AxizSecurityProperties.Issuer> issuers) {
     if (issuers.isEmpty()) {
       throw new IllegalStateException(
@@ -178,7 +182,10 @@ public class AxizSecurityAutoConfiguration {
     return new SecurityProblems(factory.getIfAvailable());
   }
 
-  /** Explicit single-process rate limits, guarded independently of Spring profiles. */
+  /**
+   * Límites de tasa explícitos de un solo proceso, protegidos con independencia de los perfiles de
+   * Spring.
+   */
   @Bean
   @ConditionalOnMissingBean
   @ConditionalOnBooleanProperty(name = "axiz.security.rate-limit.enabled")
@@ -305,7 +312,8 @@ public class AxizSecurityAutoConfiguration {
     }
 
     /**
-     * Argument-free {@code @PreAuthorize} decides before the request body is read (403, not 400).
+     * Un {@code @PreAuthorize} sin argumentos decide antes de leer el cuerpo de la solicitud (403,
+     * no 400).
      */
     @Bean
     WebMvcConfigurer axizPreBindingAuthorization(
@@ -454,7 +462,8 @@ public class AxizSecurityAutoConfiguration {
     }
 
     /**
-     * Argument-free {@code @PreAuthorize} decides before the request body is read (403, not 400).
+     * Un {@code @PreAuthorize} sin argumentos decide antes de leer el cuerpo de la solicitud (403,
+     * no 400).
      */
     @Bean
     PreBindingAuthorizationWebFilter axizPreBindingAuthorizationWebFilter(
@@ -550,7 +559,7 @@ public class AxizSecurityAutoConfiguration {
     }
   }
 
-  /** The application's method security expression handler, or the default one. */
+  /** El manejador de expresiones de seguridad de métodos de la aplicación, o el de por defecto. */
   static MethodSecurityExpressionHandler expressionHandler(
       ApplicationContext context, ObjectProvider<MethodSecurityExpressionHandler> handlers) {
     return handlers.getIfAvailable(

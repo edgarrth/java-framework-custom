@@ -17,7 +17,7 @@
   <properties>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
-    <!-- M10: measured locally; floor of branch 47/54 and detected mutations 71/85. -->
+    <!-- Umbrales mínimos del módulo: ramas 47/54 y mutaciones detectadas 71/85. -->
     <axiz.coverage.branch>0.87</axiz.coverage.branch>
     <axiz.mutation.threshold>83</axiz.mutation.threshold>
     <axiz.module.name>pe.axiz.core.lock</axiz.module.name>

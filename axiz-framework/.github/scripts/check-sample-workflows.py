@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep framework workflows on one reviewed v2 release and native samples on real service paths."""
+"""Mantiene los workflows del framework en una única release v2 revisada y los samples nativos en rutas de servicio reales."""
 import argparse
 import json
 from pathlib import Path
@@ -62,7 +62,7 @@ def check(root, samples=None, workflows_directory=None):
             if 'spotless:apply' in content or not re.search(r'\./mvnw[^\n]*spotless:check\s+' + goal, content):
                 errors.append(f'{name}: acceptance must check formatting without apply')
     if samples is not None:
-        # Read the actual generator output, never infer its names from a second naming algorithm.
+                # Se lee la salida real del generador; nunca se infieren sus nombres con un segundo algoritmo de nombrado.
         generated = json.loads(Path(samples).read_text())
         if not isinstance(generated, list) or not generated or any(not isinstance(p, str) for p in generated):
             raise ValueError('modules.json must contain a nonempty list of generated project paths')
@@ -74,7 +74,7 @@ def check(root, samples=None, workflows_directory=None):
             if not directory.is_absolute():
                 directory = root / directory
             directory = directory.resolve()
-            directory.relative_to(root)  # Generated samples must belong to this checkout.
+            directory.relative_to(root)  # Los samples generados deben pertenecer a este checkout.
             manifest = yaml.safe_load((directory / '.axiz/project.yaml').read_text())
             if manifest['archetype'] not in ('library', 'starter'):
                 services.add(directory)

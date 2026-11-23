@@ -12,7 +12,8 @@ import pe.axiz.core.tokenization.TokenizationResult;
 import pe.axiz.core.tokenization.Tokenizer;
 
 /**
- * Typed consumer facade; the generic tokenizer retains every authorization and audit obligation.
+ * Fachada tipada para consumidores; el tokenizador genérico conserva todas las obligaciones de
+ * autorización y auditoría.
  */
 public final class PanTokenizer {
   @SuppressFBWarnings(

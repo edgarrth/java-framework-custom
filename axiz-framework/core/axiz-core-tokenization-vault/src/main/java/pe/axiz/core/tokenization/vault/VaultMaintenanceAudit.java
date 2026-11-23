@@ -1,7 +1,8 @@
 package pe.axiz.core.tokenization.vault;
 
 /**
- * Must confirm durable, sealed evidence before returning; a log or in-memory queue is insufficient.
+ * Debe confirmar evidencia durable y sellada antes de retornar; un log o una cola en memoria no son
+ * suficientes.
  */
 @FunctionalInterface
 public interface VaultMaintenanceAudit {

@@ -1,12 +1,12 @@
-# markdownlint (CI): tables and code blocks make long lines unavoidable
+# markdownlint (CI): las tablas y los bloques de código hacen inevitables las líneas largas
 default: true
 MD013: false            # line length
-MD033:                  # inline HTML used by mkdocs-material grids
+MD033:                  # HTML en línea que usan las grids de mkdocs-material
   allowed_elements: [div, br]
-MD041: false            # generated pages start with a comment
+MD041: false            # las páginas generadas empiezan con un comentario
 MD046:
   style: fenced
 MD024:
   siblings_only: true
-# Generated reference pages preserve the source documents' table layout; strict MkDocs checks their structure.
+# Las páginas de referencia generadas conservan la disposición de tablas de los documentos de origen; MkDocs en modo estricto verifica su estructura.
 MD060: false

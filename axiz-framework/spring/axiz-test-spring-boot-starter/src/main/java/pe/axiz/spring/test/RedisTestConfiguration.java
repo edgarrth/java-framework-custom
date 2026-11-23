@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.DynamicPropertyRegistrar;
 import org.testcontainers.containers.GenericContainer;
 
-/** Valkey (Redis protocol) for cache, idempotency, locks and rate limits. */
+/** Valkey (protocolo Redis) para caché, idempotencia, locks y límites de tasa. */
 @TestConfiguration(proxyBeanMethods = false)
 public class RedisTestConfiguration {
 

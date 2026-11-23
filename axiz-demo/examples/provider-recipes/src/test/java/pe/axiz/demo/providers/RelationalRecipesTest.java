@@ -52,7 +52,10 @@ import pe.axiz.spring.sequence.r2dbc.AxizSequenceR2dbcAutoConfiguration;
 import pe.axiz.spring.test.AxizContainers;
 import reactor.core.publisher.Mono;
 
-/** Recipes own provisioning; operations use public ports obtained from the selected starters. */
+/**
+ * Las recetas se encargan del aprovisionamiento; las operaciones usan puertos públicos obtenidos de
+ * los starters seleccionados.
+ */
 class RelationalRecipesTest {
   private static final Duration TIMEOUT = Duration.ofSeconds(15);
   private static final PostgreSQLContainer POSTGRES = AxizContainers.postgres();

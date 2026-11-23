@@ -14,7 +14,10 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.messaging.Deduplicator;
 
-/** Core decisions are tested through the port; JDBC persistence is covered in its adapter. */
+/**
+ * Las decisiones del core se prueban a través del puerto; la persistencia JDBC se cubre en su
+ * adaptador.
+ */
 class InboxDeduplicatorTest {
   private static final Instant NOW = Instant.parse("2026-11-04T00:00:00Z");
   private static final Duration LEASE = Duration.ofMinutes(5);

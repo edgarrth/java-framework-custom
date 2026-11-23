@@ -11,8 +11,8 @@ import pe.axiz.core.concurrent.Stages;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 
 /**
- * Native SQS acceptance with the same CloudEvents and FIFO identities as the imperative adapter.
- * The SDK client is borrowed; its owner closes it at application shutdown.
+ * Aceptación nativa de SQS con los mismos CloudEvents e identidades FIFO que el adaptador
+ * imperativo. El cliente del SDK es prestado; su propietario lo cierra al apagar la aplicación.
  */
 public final class SqsAsyncAuditPublisher implements AsyncAuditEventPublisher {
   @SuppressFBWarnings(

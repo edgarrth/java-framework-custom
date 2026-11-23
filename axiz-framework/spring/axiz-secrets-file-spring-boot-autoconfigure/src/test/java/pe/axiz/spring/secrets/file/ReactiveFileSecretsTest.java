@@ -58,7 +58,7 @@ class ReactiveFileSecretsTest {
                   .hasSingleBean(AsyncSecretResolver.class)
                   .hasSingleBean(ReactiveSecrets.class);
               Files.delete(
-                  secret); // The request must use the startup snapshot, not filesystem I/O.
+                  secret); // La solicitud debe usar la instantánea de arranque, sin E/S de disco.
               var secrets = ctx.getBean(ReactiveSecrets.class);
               StepVerifier.create(secrets.require("payments/password"))
                   .assertNext(value -> assertEquals("mounted", value.reveal()))

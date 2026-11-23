@@ -44,12 +44,12 @@ import reactor.core.publisher.Mono;
 
 class IdempotencyTest {
 
-  /** Stands in for method security ({@code @PreAuthorize}): ordered before the advice. */
+  /** Sustituye a la seguridad de métodos ({@code @PreAuthorize}): se ordena antes del advice. */
   static final class Denied extends RuntimeException {
     private static final long serialVersionUID = 1L;
   }
 
-  /** What the simulated handler does once it runs. */
+  /** Lo que hace el handler simulado una vez que se ejecuta. */
   @FunctionalInterface
   interface Handler {
     void run(HttpServletResponse response, int execution) throws Exception;
@@ -107,7 +107,10 @@ class IdempotencyTest {
     return call(key, body, null, null, Integer.MAX_VALUE);
   }
 
-  /** Filter, then the "dispatcher": the proxied handler and the replay exception handler. */
+  /**
+   * El filtro y luego el "dispatcher": el handler con proxy y el manejador de excepciones de
+   * reproducción.
+   */
   private MockHttpServletResponse call(
       String key,
       String body,
@@ -177,7 +180,8 @@ class IdempotencyTest {
 
   @Test
   void aKeyOutsideTheContractIsRejectedBeforeTheHandlerRuns() {
-    // 16 to 128 characters of [A-Za-z0-9._:-]: too short, too long and unsafe characters
+    // de 16 a 128 caracteres de [A-Za-z0-9._:-]: demasiado corta, demasiado larga y caracteres
+    // inseguros
     for (String key : new String[] {"key-00000001", "k".repeat(129), "key with spaces 0001"}) {
       BusinessException e = assertThrows(BusinessException.class, () -> call(key, "{}"));
       assertEquals(400, e.category().httpStatus(), key);
@@ -186,8 +190,8 @@ class IdempotencyTest {
   }
 
   /**
-   * Regression: the first request was allowed, the caller's permission was then revoked; repeating
-   * it with the same key must be denied without returning the stored body.
+   * La primera solicitud se permitió y luego se revocó el permiso del invocante; repetirla con la
+   * misma clave debe denegarse sin devolver el cuerpo almacenado.
    */
   @Test
   void aReplayIsDeniedWhenTheCallerIsNoLongerAuthorized() throws Exception {
@@ -204,7 +208,7 @@ class IdempotencyTest {
     assertEquals("true", replay.getHeader(IdempotencyReplayHandler.REPLAYED_HEADER));
   }
 
-  /** Regression: an exception escaping the handler is not stored as a 200. */
+  /** Una excepción que escapa del handler no se almacena como un 200. */
   @Test
   void anExceptionEscapingTheHandlerPreservesAnUncertainOperation() throws Exception {
     controller.handler =
@@ -224,8 +228,9 @@ class IdempotencyTest {
   }
 
   /**
-   * A server error (a transient technical failure: timeout of the database, unavailable downstream)
-   * is never stored: the key is released and a retry with the same key runs again.
+   * Un error del servidor (un fallo técnico transitorio: timeout de la base de datos, servicio
+   * aguas abajo no disponible) nunca se almacena: la clave se libera y un reintento con la misma
+   * clave se ejecuta de nuevo.
    */
   @Test
   void aServerErrorDoesNotPermitAnotherExecution() throws Exception {
@@ -247,8 +252,9 @@ class IdempotencyTest {
   }
 
   /**
-   * A client error is a decision about that exact request: it is stored and replayed, so the same
-   * key with the same body gets the same answer and the operation never runs twice.
+   * Un error del cliente es una decisión sobre esa solicitud exacta: se almacena y se reproduce, de
+   * modo que la misma clave con el mismo cuerpo obtiene la misma respuesta y la operación nunca se
+   * ejecuta dos veces.
    */
   @Test
   void aClientErrorIsStoredAndReplayed() throws Exception {
@@ -264,7 +270,7 @@ class IdempotencyTest {
     assertEquals("true", replay.getHeader(IdempotencyReplayHandler.REPLAYED_HEADER));
   }
 
-  /** Regressions: the query string is part of the fingerprint, taken as sent. */
+  /** La query string forma parte de la huella, tomada tal como se envió. */
   @Test
   void theQueryStringAsSentIsPartOfTheFingerprint() throws Exception {
     call("idempotency-key-00000003", "{}", "sort=a&sort=b", null, Integer.MAX_VALUE);
@@ -276,7 +282,7 @@ class IdempotencyTest {
     assertEquals(1, controller.executions.get());
   }
 
-  /** Regression: two callers sharing a key never see each other's responses. */
+  /** Dos invocantes que comparten una clave nunca ven las respuestas del otro. */
   @Test
   void keysAreScopedByCaller() throws Exception {
     MockHttpServletResponse alice =
@@ -293,7 +299,7 @@ class IdempotencyTest {
             .endsWith("PaymentsController#pay"));
   }
 
-  /** Regression: large responses are streamed whole but never fully buffered. */
+  /** Las respuestas grandes se transmiten completas, pero nunca se almacenan enteras en búfer. */
   @Test
   void anOversizedResponseIsReplayedWithoutBodyAndNeverBufferedWhole() throws Exception {
     controller.handler =
@@ -332,7 +338,7 @@ class IdempotencyTest {
         IdempotencySupport.stored(201, Map.of("Location", "/x"), new byte[8], 4).headers());
   }
 
-  /** Regression on WebFlux: the decision is taken inside reactive method security. */
+  /** En WebFlux, la decisión se toma dentro de la seguridad de métodos reactiva. */
   @Test
   void reactiveReplaysAlsoPassAuthorizationFirst() {
     var asyncService =

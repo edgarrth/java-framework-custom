@@ -1,5 +1,5 @@
-# Starter template set: a new capability as a layer 1 library, its Spring Boot auto-configuration
-# and the starter that users add (the same layout as the axiz modules).
+# Conjunto de plantillas de starter: una nueva capacidad como biblioteca de capa 1, su autoconfiguración
+# de Spring Boot y el starter que añaden los usuarios (la misma estructura que los módulos de axiz).
 files:
   - {template: /shared/mvnw, path: mvnw, binary: true}
   - {template: /shared/mvnw.cmd, path: mvnw.cmd, binary: true}

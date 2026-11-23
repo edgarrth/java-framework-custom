@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Layer contracts: every module belongs to the reactor and its name/parent match its layer."""
+"""Contratos de capa: cada módulo pertenece al reactor y su nombre y parent coinciden con su capa."""
 import sys
 import re
 from defusedxml import ElementTree as ET

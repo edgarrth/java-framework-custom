@@ -17,9 +17,9 @@ import pe.axiz.core.i18n.LocaleResolver;
 import pe.axiz.core.i18n.MessageResolver;
 
 /**
- * Message bundles and {@code Accept-Language} handling. Service bundles take precedence over the
- * framework bundle {@code axiz/i18n/messages}; error details are localized through the same
- * resolver.
+ * Bundles de mensajes y manejo de {@code Accept-Language}. Los bundles del servicio tienen
+ * precedencia sobre el bundle del framework {@code axiz/i18n/messages}; los detalles de error se
+ * localizan mediante el mismo resolvedor.
  */
 @AutoConfiguration(
     beforeName = {
@@ -31,7 +31,7 @@ import pe.axiz.core.i18n.MessageResolver;
 @EnableConfigurationProperties(AxizI18nProperties.class)
 public class AxizI18nAutoConfiguration {
 
-  /** Base name of the messages shipped with the framework. */
+  /** Nombre base de los mensajes incluidos en el framework. */
   public static final String FRAMEWORK_BUNDLE = "axiz/i18n/messages";
 
   @Bean
@@ -57,7 +57,7 @@ public class AxizI18nAutoConfiguration {
         messages.find(key, locale, new HashMap<String, Object>(parameters));
   }
 
-  /** Spring MVC: replaces the default {@code localeResolver}. */
+  /** Spring MVC: reemplaza el {@code localeResolver} por defecto. */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
   @ConditionalOnClass(name = "org.springframework.web.servlet.DispatcherServlet")
@@ -70,7 +70,7 @@ public class AxizI18nAutoConfiguration {
     }
   }
 
-  /** WebFlux: replaces the default {@code localeContextResolver}. */
+  /** WebFlux: reemplaza el {@code localeContextResolver} por defecto. */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
   @ConditionalOnClass(name = "org.springframework.web.reactive.DispatcherHandler")

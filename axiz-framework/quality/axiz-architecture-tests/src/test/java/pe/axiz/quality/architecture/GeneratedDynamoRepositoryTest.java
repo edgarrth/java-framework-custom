@@ -19,7 +19,8 @@ import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.project.ProjectManifest;
 
 /**
- * Generated persistence code compiles against actual framework APIs for both stacks and layouts.
+ * El código de persistencia generado compila contra las API reales del framework para ambos stacks
+ * y ambas disposiciones.
  */
 class GeneratedDynamoRepositoryTest {
   @Test

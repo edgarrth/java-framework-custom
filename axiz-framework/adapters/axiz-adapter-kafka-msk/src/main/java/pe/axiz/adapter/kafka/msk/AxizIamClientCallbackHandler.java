@@ -16,9 +16,12 @@ import software.amazon.msk.auth.iam.IAMClientCallbackHandler;
 import software.amazon.msk.auth.iam.internals.AWSCredentialsCallback;
 import software.amazon.msk.auth.iam.internals.region.ConfigurableRegionProvider;
 
-/** MSK authentication with an owned, exclusive web identity source when IRSA is declared. */
+/** Autenticación MSK con una fuente de web identity propia y exclusiva cuando se declara IRSA. */
 public final class AxizIamClientCallbackHandler implements AuthenticateCallbackHandler {
-  /** In-memory credential resource factory; never a string/YAML credential setting. */
+  /**
+   * Fábrica de recursos de credenciales en memoria; nunca una configuración de credenciales en
+   * texto o YAML.
+   */
   public static final String CREDENTIALS_SOURCE_FACTORY_CONFIG =
       "axiz.msk.credentials.source-factory";
 

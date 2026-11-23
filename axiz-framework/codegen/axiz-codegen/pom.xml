@@ -39,7 +39,7 @@
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-lang</artifactId><version>${project.version}</version><scope>test</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-json</artifactId><version>${project.version}</version></dependency>
 
-    <!-- Generation entry points format their output; native consumers may omit the formatter. -->
+    <!-- Los puntos de entrada de la generación formatean su salida; los consumidores nativos pueden omitir el formateador. -->
     <dependency>
       <groupId>com.google.googlejavaformat</groupId>
       <artifactId>google-java-format</artifactId>

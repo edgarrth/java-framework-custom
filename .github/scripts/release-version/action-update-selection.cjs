@@ -1,6 +1,6 @@
 "use strict";
-// Replace only datasource transport. Renovate still applies the actual preset rules,
-// version extraction, versioning and lookupUpdates selection to each extracted dependency.
+// Solo se reemplaza el transporte del datasource. Renovate sigue aplicando las reglas reales del preset,
+// la extracción de versiones, el versionado y la selección de lookupUpdates a cada dependencia extraída.
 const assert = require('node:assert/strict');
 let sequence = 0;
 
@@ -20,7 +20,7 @@ async function lookup({config, moduleAt}, requests, tags) {
         ...custom, ...dep, manager, packageFile, packageName: dep.packageName || dep.depName,
         packageRules: config.packageRules});
       assert.notEqual(selected.enabled, false);
-      // Every transport fixture has its own cache key; tag order must never leak between cases.
+      // Cada fixture de transporte tiene su propia clave de caché; el orden de los tags nunca debe filtrarse entre casos.
       selected.packageName = `axiz-fixture/action-selection-${++sequence}`;
       prototype.getReleases = async () => ({releases: tags.map(version => ({version}))});
       prototype.getDigest = async (_config, version) => version === dep.currentValue

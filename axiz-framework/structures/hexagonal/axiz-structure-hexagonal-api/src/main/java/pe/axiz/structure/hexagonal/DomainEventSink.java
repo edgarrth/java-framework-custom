@@ -4,14 +4,14 @@ import java.util.List;
 import pe.axiz.core.domain.DomainEvent;
 
 /**
- * Where domain events go when a use case finishes. A transactional sink (outbox) receives them
- * inside the transaction; any other sink receives them after a successful commit.
+ * Destino de los eventos de dominio cuando termina un caso de uso. Un sink transaccional (outbox)
+ * los recibe dentro de la transacción; cualquier otro sink los recibe tras un commit exitoso.
  */
 public interface DomainEventSink {
 
   void publish(List<DomainEvent> events);
 
-  /** Whether {@link #publish} must run inside the use case transaction. */
+  /** Indica si {@link #publish} debe ejecutarse dentro de la transacción del caso de uso. */
   default boolean transactional() {
     return false;
   }

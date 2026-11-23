@@ -7,13 +7,14 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Log-safe description of a failure: the chain of causes with each type and the frame that threw
- * it, so an operator can locate the cause without a debugger.
+ * Descripción de un fallo apta para logs: la cadena de causas con el tipo de cada una y el frame
+ * que la lanzó, para que un operador pueda localizar la causa sin un depurador.
  *
- * <p>Messages are never included: a driver, a parser or a service may echo the values it rejected
- * (a duplicate e-mail, a fragment of a request body, a card number). Types and stack frames carry
- * no request data. When a failure is thrown inside the JDK, the first frame outside it is added, so
- * {@code NullPointerException at java.util.Objects.requireNonNull(...)} also says who called it.
+ * <p>Nunca se incluyen los mensajes: un driver, un parser o un servicio pueden repetir los valores
+ * que rechazaron (un e-mail duplicado, un fragmento del cuerpo de una petición, un número de
+ * tarjeta). Los tipos y los frames de la pila no llevan datos de la petición. Cuando un fallo se
+ * lanza dentro del JDK, se agrega el primer frame fuera de él, de modo que {@code
+ * NullPointerException at java.util.Objects.requireNonNull(...)} también indica quién lo llamó.
  *
  * <pre>
  * java.lang.IllegalStateException at pe.axiz.adapter.saga.jdbc.JdbcSagaStateStore.run(
@@ -23,7 +24,7 @@ import org.jspecify.annotations.Nullable;
  */
 public final class Failures {
 
-  /** Causes described at most; deeper chains end with an ellipsis. */
+  /** Máximo de causas descritas; las cadenas más profundas terminan con puntos suspensivos. */
   public static final int MAX_CAUSES = 6;
 
   private static final List<String> PLATFORM =
@@ -31,7 +32,10 @@ public final class Failures {
 
   private Failures() {}
 
-  /** One entry per cause, joined by {@code " | caused by "}; never null, never throws. */
+  /**
+   * Una entrada por causa, unidas con {@code " | caused by "}; nunca es null y nunca lanza
+   * excepciones.
+   */
   public static String describe(@Nullable Throwable failure) {
     if (failure == null) return "none";
     StringBuilder out = new StringBuilder(256);
@@ -51,7 +55,7 @@ public final class Failures {
     return out.toString();
   }
 
-  /** The innermost cause, for metrics and conditions that depend on the original failure. */
+  /** La causa más interna, para métricas y condiciones que dependen del fallo original. */
   public static Throwable rootCause(Throwable failure) {
     Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
     Throwable current = failure;

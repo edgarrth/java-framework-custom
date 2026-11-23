@@ -11,7 +11,9 @@ import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.id.CorrelationIds;
 import reactor.util.context.ContextView;
 
-/** Scopes synchronous presentation work to the explicit reactive request and observation. */
+/**
+ * Limita el trabajo síncrono de presentación a la solicitud y la observación reactivas explícitas.
+ */
 public final class ReactiveRenderContext {
   private ReactiveRenderContext() {}
 
@@ -27,8 +29,9 @@ public final class ReactiveRenderContext {
     try {
       RequestContext.restore(metadata);
       MDC.clear();
-      // Opening the request observation's scope restores its tracing handlers on this worker.
-      // Neither the subscribing thread's MDC nor an arbitrary request header supplies trace IDs.
+      // Abrir el ámbito de la observación de la solicitud restaura sus handlers de tracing en este
+      // worker. Ni el MDC del hilo suscriptor ni una cabecera arbitraria de la solicitud aportan
+      // los IDs de traza.
       try (Observation.Scope ignored = observation.openScope()) {
         if (metadata != null) {
           MDC.put("correlationId", CorrelationIds.reuseOrCreate(metadata.correlationId()));

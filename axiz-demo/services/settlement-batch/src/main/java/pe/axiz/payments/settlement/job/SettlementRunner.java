@@ -26,10 +26,11 @@ import pe.axiz.core.commons.ReviewedState;
 import pe.axiz.core.time.BusinessCalendar;
 
 /**
- * Entry point of the CronJob: works out which file to load and runs the job under a cluster lock
- * (ShedLock on Aurora), so a manual run never overlaps the scheduled one. The process exit code is
- * the job's: 0 when the file was loaded (or had already been), 1 when it failed. A file that was
- * already loaded is not loaded again; its summary is written again if it is missing.
+ * Punto de entrada del CronJob: determina qué archivo cargar y ejecuta el job bajo un lock del
+ * clúster (ShedLock en Aurora), de modo que una ejecución manual nunca se superpone con la
+ * programada. El código de salida del proceso es el del job: 0 cuando el archivo se cargó (o ya
+ * estaba cargado), 1 cuando falló. Un archivo ya cargado no se vuelve a cargar; su resumen se
+ * escribe de nuevo si falta.
  */
 @Component
 @EnableConfigurationProperties(SettlementProperties.class)
@@ -79,11 +80,10 @@ public class SettlementRunner implements ApplicationRunner, ExitCodeGenerator {
   }
 
   /**
-   * Loads one file under the cluster lock.
+   * Carga un archivo bajo el lock del clúster.
    *
-   * @param key object key of the file in the bucket
-   * @return 0 when it was loaded, had already been loaded or another replica is loading it; 1 when
-   *     it failed
+   * @param key clave de objeto del archivo en el bucket
+   * @return 0 cuando se cargó, ya estaba cargado u otra réplica lo está cargando; 1 cuando falló
    */
   public int load(String key) {
     LockingTaskExecutor.TaskResult<Integer> result;
@@ -118,7 +118,7 @@ public class SettlementRunner implements ApplicationRunner, ExitCodeGenerator {
     } catch (JobInstanceAlreadyCompleteException _) {
       LOG.info("Settlement file {} was already loaded", key);
       if (!summary.exists(key)) {
-        // e.g. the bucket was recreated: the rows are the source of truth, the summary follows them
+        // p. ej., el bucket se recreó: las filas son la fuente de verdad y el resumen las sigue
         LOG.warn("Summary of {} is missing; writing it again from the loaded rows", key);
         summary.rewrite(key);
       }
@@ -126,7 +126,7 @@ public class SettlementRunner implements ApplicationRunner, ExitCodeGenerator {
     }
   }
 
-  /** The configured key, or the file of the previous business day. */
+  /** La clave configurada, o el archivo del día hábil previo. */
   String inputKey() {
     String configured = properties.inputKey();
     if (configured != null && !configured.isBlank()) {

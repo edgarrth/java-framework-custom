@@ -8,8 +8,9 @@ import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.core.errors.NotFoundException;
 
 /**
- * Anti-corruption for errors: business codes of downstream services become channel errors; a 404
- * becomes a channel "not found"; anything else stays a dependency error (502/503/504).
+ * Anticorrupción para errores: los códigos de negocio de los servicios aguas abajo se convierten en
+ * errores del canal; un 404 se convierte en un "no encontrado" del canal; cualquier otro caso sigue
+ * siendo un error de dependencia (502/503/504).
  */
 final class DownstreamErrors {
 
@@ -22,7 +23,9 @@ final class DownstreamErrors {
 
   private DownstreamErrors() {}
 
-  /** Maps a downstream failure; {@code resource} names what a 404 refers to. */
+  /**
+   * Convierte una falla aguas abajo; {@code resource} nombra aquello a lo que se refiere un 404.
+   */
   static Throwable translate(Throwable error, String resource, String id) {
     if (!(error instanceof ExternalServiceException e)) {
       return error;

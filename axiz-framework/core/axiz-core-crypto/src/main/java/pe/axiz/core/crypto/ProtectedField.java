@@ -3,7 +3,10 @@ package pe.axiz.core.crypto;
 import java.util.Objects;
 import pe.axiz.core.sensitive.SelfMasking;
 
-/** Atomic persistence unit for the consumer's own table; contains no plaintext or token. */
+/**
+ * Unidad de persistencia atómica para la tabla propia del consumidor; no contiene texto plano ni
+ * token.
+ */
 public record ProtectedField(EncryptedValue ciphertext, KeyedHash index) implements SelfMasking {
   public ProtectedField {
     Objects.requireNonNull(ciphertext);

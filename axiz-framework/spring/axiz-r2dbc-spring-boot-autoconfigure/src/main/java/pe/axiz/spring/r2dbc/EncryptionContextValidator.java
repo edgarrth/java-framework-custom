@@ -9,7 +9,7 @@ import org.springframework.data.r2dbc.mapping.R2dbcMappingContext;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 import pe.axiz.kit.r2dbc.EncryptedText;
 
-/** The scalar converter has one declared purpose; sharing it is explicit and visible. */
+/** El converter escalar tiene un único propósito declarado; compartirlo es explícito y visible. */
 final class EncryptionContextValidator implements SmartInitializingSingleton {
   private final ApplicationContext context;
   private final @Nullable String purpose;

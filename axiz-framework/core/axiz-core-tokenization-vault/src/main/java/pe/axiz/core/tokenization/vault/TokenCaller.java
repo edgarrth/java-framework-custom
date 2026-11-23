@@ -4,7 +4,9 @@ import java.util.Set;
 import pe.axiz.core.tokenization.TokenDomain;
 import pe.axiz.core.tokenization.TokenErrors;
 
-/** Verified identity; never construct from tokenization HTTP request fields. */
+/**
+ * Identidad verificada; nunca se construye a partir de campos de la petición HTTP de tokenización.
+ */
 public record TokenCaller(
     String subject,
     String clientId,

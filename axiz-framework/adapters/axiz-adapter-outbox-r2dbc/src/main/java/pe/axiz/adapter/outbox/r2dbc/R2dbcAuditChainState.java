@@ -16,7 +16,9 @@ import pe.axiz.kit.sql.SqlIdentifiers;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/** PostgreSQL audit heads in the caller's native transaction, without an imperative bridge. */
+/**
+ * Cabezas de auditoría PostgreSQL en la transacción nativa de quien llama, sin puente imperativo.
+ */
 public final class R2dbcAuditChainState implements ReactiveAuditChainState {
   private final ReactiveSql sql;
   private final ConnectionFactory connections;

@@ -11,9 +11,10 @@ import pe.axiz.core.commons.tx.TransactionRunner;
 import reactor.core.publisher.Mono;
 
 /**
- * Transactions for blocking callers over R2DBC (the outbox relay and message consumers, which run
- * on their own threads, never on an event loop): the connection is bound to the thread while the
- * work runs, so {@link R2dbcSql} calls made by the work join the transaction.
+ * Transacciones para llamadores bloqueantes sobre R2DBC (el relay del outbox y los consumidores de
+ * mensajes, que corren en sus propios hilos, nunca en un event loop): la conexión se liga al hilo
+ * mientras corre el trabajo, de modo que las llamadas a {@link R2dbcSql} que hace el trabajo se
+ * unen a la transacción.
  */
 public final class R2dbcTransactionRunner implements TransactionRunner {
 
@@ -30,7 +31,7 @@ public final class R2dbcTransactionRunner implements TransactionRunner {
   @Override
   public <T> T inTransaction(Callable<T> work) throws Exception {
     if (BoundConnection.current(connections) != null) {
-      return work.call(); // already inside a transaction of this runner: join it
+      return work.call(); // ya dentro de una transacción de este runner: se une a ella
     }
     Connection c = Objects.requireNonNull(Mono.from(connections.create()).block(timeout));
     Throwable primary = null;
@@ -63,7 +64,10 @@ public final class R2dbcTransactionRunner implements TransactionRunner {
     }
   }
 
-  /** Closes once; cleanup cannot change a confirmed result or hide the primary failure. */
+  /**
+   * Cierra una sola vez; la limpieza no puede cambiar un resultado confirmado ni ocultar el fallo
+   * principal.
+   */
   private void close(Connection c, @Nullable Throwable primary, boolean discard) {
     try {
       (discard ? DiscardConnection.close(c) : Mono.from(c.close())).block(timeout);

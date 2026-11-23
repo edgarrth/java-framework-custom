@@ -7,8 +7,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Declares access requiring non-anonymous authentication, without requiring an authority. The
- * framework installs a prior authorization interceptor for this contract.
+ * Declara un acceso que requiere autenticación no anónima, sin exigir una autoridad. El framework
+ * instala un interceptor de autorización previo para este contrato.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

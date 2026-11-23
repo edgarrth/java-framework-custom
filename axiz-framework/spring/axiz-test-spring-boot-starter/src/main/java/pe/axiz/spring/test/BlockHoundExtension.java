@@ -10,8 +10,8 @@ import reactor.blockhound.BlockHound;
 import reactor.blockhound.BlockingOperationError;
 
 /**
- * Fails reactive tests that block an event-loop thread. Mandatory for reactive services:
- * {@code @ExtendWith(BlockHoundExtension.class)}.
+ * Hace fallar las pruebas reactivas que bloquean un hilo del event loop. Obligatorio para servicios
+ * reactivos: {@code @ExtendWith(BlockHoundExtension.class)}.
  */
 public class BlockHoundExtension implements BeforeAllCallback {
 
@@ -19,7 +19,10 @@ public class BlockHoundExtension implements BeforeAllCallback {
   private static final Queue<BlockingCall> DETECTED = new ConcurrentLinkedQueue<>();
   private static final AtomicInteger RECORDED = new AtomicInteger();
 
-  /** Bounded diagnostics preserve the original blocking site even when a driver masks the error. */
+  /**
+   * El diagnóstico acotado conserva el punto de bloqueo original incluso cuando un driver enmascara
+   * el error.
+   */
   public record BlockingCall(String thread, String method, List<StackTraceElement> stack) {
     public BlockingCall {
       stack = List.copyOf(stack);
@@ -49,14 +52,15 @@ public class BlockHoundExtension implements BeforeAllCallback {
                               || thread.getName().startsWith("lettuce-epollEventLoop-")
                               || thread.getName().startsWith("lettuce-kqueueEventLoop-")
                               || thread.getName().startsWith("lettuce-eventExecutorLoop-")))
-          // Only the asynchronous logging boundary is allowed, never synchronous appenders.
+          // Solo se permite el límite de logging asíncrono, nunca los appenders síncronos.
           .allowBlockingCallsInside("ch.qos.logback.core.AsyncAppenderBase", "append")
-          // An idle executor worker must wait for work. This exact JDK scheduling boundary does
-          // not cover callbacks or permit blocking queue operations in application code.
+          // Un worker inactivo de un executor debe esperar trabajo. Este límite exacto de
+          // planificación del JDK no cubre callbacks ni permite operaciones bloqueantes de colas en
+          // el código de la aplicación.
           .allowBlockingCallsInside("java.util.concurrent.ThreadPoolExecutor", "getTask")
-          // AWS Netty closes its channel pools on GlobalEventExecutor during client shutdown.
-          // Only this transport cleanup boundary is permitted; caller-side client.close() and
-          // application callbacks do not inherit this allowance.
+          // AWS Netty cierra sus pools de canales en GlobalEventExecutor durante el apagado del
+          // cliente. Solo se permite este límite de limpieza del transporte; client.close() del
+          // lado del invocante y los callbacks de la aplicación no heredan esta excepción.
           .allowBlockingCallsInside("io.netty.channel.pool.SimpleChannelPool", "close")
           .blockingMethodCallback(
               method -> {

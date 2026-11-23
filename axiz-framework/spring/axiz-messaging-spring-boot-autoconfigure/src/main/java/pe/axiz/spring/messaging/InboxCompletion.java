@@ -1,6 +1,6 @@
 package pe.axiz.spring.messaging;
 
-/** JDBC integration supplied only when the inbox connection resource is known. */
+/** Integración JDBC aportada solo cuando se conoce el recurso de conexión del inbox. */
 public interface InboxCompletion {
   Object transactionResource();
 

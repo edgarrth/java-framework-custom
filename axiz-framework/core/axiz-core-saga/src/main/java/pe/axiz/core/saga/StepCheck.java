@@ -3,19 +3,19 @@ package pe.axiz.core.saga;
 import java.util.Objects;
 
 /**
- * What a participant says about a step whose outcome was uncertain (timeout, lost response, server
- * error): the effect was applied, was not applied, or nobody knows yet.
+ * Lo que dice un participante sobre un paso cuyo resultado era incierto (timeout, respuesta
+ * perdida, error de servidor): el efecto se aplicó, no se aplicó o nadie lo sabe aún.
  *
- * @param <C> saga context type
+ * @param <C> tipo del contexto de la saga
  */
 public sealed interface StepCheck<C>
     permits StepCheck.Applied, StepCheck.NotApplied, StepCheck.Rejected, StepCheck.Unknown {
 
   /**
-   * The effect exists; the saga continues with this context (for example with the movement id the
-   * participant reported).
+   * El efecto existe; la saga continúa con este contexto (por ejemplo, con el id de movimiento que
+   * informó el participante).
    *
-   * @param context context after the step
+   * @param context contexto después del paso
    */
   record Applied<C>(C context) implements StepCheck<C> {
     public Applied {
@@ -23,12 +23,16 @@ public sealed interface StepCheck<C>
     }
   }
 
-  /** An observation of absence only. Pending calls may still apply; recovery stays IN_DOUBT. */
+  /**
+   * Solo una observación de ausencia. Las llamadas pendientes aún pueden aplicarse; la recuperación
+   * permanece IN_DOUBT.
+   */
   record NotApplied<C>() implements StepCheck<C> {}
 
   /**
-   * The participant has durably rejected/cancelled this operation's idempotency key and guarantees
-   * that no pending or future attempt with that key can apply. A 404/read miss is insufficient.
+   * El participante rechazó o canceló de forma durable la clave de idempotencia de esta operación y
+   * garantiza que ningún intento pendiente o futuro con esa clave puede aplicarse. Un 404 o una
+   * lectura sin resultado no es suficiente.
    */
   record Rejected<C>() implements StepCheck<C> {}
 
@@ -36,7 +40,10 @@ public sealed interface StepCheck<C>
     return new Rejected<>();
   }
 
-  /** Still uncertain: the saga stays IN_DOUBT and recovery asks again later. */
+  /**
+   * Sigue siendo incierto: la saga permanece IN_DOUBT y la recuperación vuelve a consultar más
+   * tarde.
+   */
   record Unknown<C>() implements StepCheck<C> {}
 
   static <C> StepCheck<C> applied(C context) {

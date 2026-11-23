@@ -7,7 +7,10 @@ import pe.axiz.core.http.AuthType;
 import pe.axiz.core.http.ClientSettings;
 import pe.axiz.spring.httpclient.HttpClientRegistry;
 
-/** Validate protocol invariants at startup before any sensitive request can be sent. */
+/**
+ * Se validan las invariantes del protocolo en el arranque antes de que pueda enviarse cualquier
+ * solicitud sensible.
+ */
 final class RemoteTokenSettings {
   private RemoteTokenSettings() {}
 

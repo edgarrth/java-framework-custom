@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check explicit release destinations against the three closed GitHub App token roles."""
+"""Verifica los destinos de release explícitos contra los tres roles cerrados de token de la GitHub App."""
 import argparse
 import json
 from pathlib import Path
@@ -25,10 +25,10 @@ def release_path(component, filename):
 
 
 def workflow_targets(config):
-    """Reproduce extraFiles nullish inheritance and addPath for explicit, supported destinations.
+    """Reproduce la herencia nullish de extraFiles y addPath para destinos explícitos y admitidos.
 
-    The real planner regression additionally rejects workflow writes from any other source.
-    Glob expansion is remote-dependent and deliberately outside this contract.
+    La regresión real del planificador rechaza además las escrituras de workflows desde cualquier otra fuente.
+    La expansión de globs depende del remoto y queda fuera de este contrato de forma deliberada.
     """
     if not isinstance(config, dict) or not isinstance(config.get('packages'), dict) or not config['packages']:
         raise ValueError('Expected a nonempty Release Please packages configuration')

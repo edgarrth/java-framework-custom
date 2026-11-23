@@ -20,7 +20,9 @@ import reactor.core.publisher.Operators;
 import reactor.util.context.Context;
 import reactor.util.context.ContextView;
 
-/** Native stage subscriptions with explicitly scoped context, without global Reactor hooks. */
+/**
+ * Suscripciones a etapas nativas con contexto de ámbito explícito, sin hooks globales de Reactor.
+ */
 public final class ReactiveStages {
   private static final boolean CONTEXT_AVAILABLE =
       ClassUtils.isPresent(
@@ -28,12 +30,14 @@ public final class ReactiveStages {
 
   private ReactiveStages() {}
 
-  /** Resolves optional context accessors before the first application request. */
+  /**
+   * Resuelve los accesores de contexto opcionales antes de la primera solicitud de la aplicación.
+   */
   public static void initialize() {
     if (CONTEXT_AVAILABLE) Micrometer.initialize();
   }
 
-  /** Defers submission and cancels the native stage when its subscriber cancels. */
+  /** Difiere el envío y cancela la etapa nativa cuando su suscriptor cancela. */
   public static <T> Mono<T> from(Supplier<? extends CompletionStage<T>> work) {
     Objects.requireNonNull(work);
     return Mono.deferContextual(
@@ -41,7 +45,7 @@ public final class ReactiveStages {
             CONTEXT_AVAILABLE ? Micrometer.from(context, work) : Mono.fromCompletionStage(work));
   }
 
-  /** Scopes streaming submission, demand, cancellation and signals for this subscriber. */
+  /** Limita a este suscriptor el envío en streaming, la demanda, la cancelación y las señales. */
   public static <T> Flux<T> flux(Supplier<? extends Publisher<T>> work) {
     Objects.requireNonNull(work);
     return Flux.deferContextual(
@@ -49,8 +53,9 @@ public final class ReactiveStages {
   }
 
   /**
-   * Transfers an owned result to a future with no ambient security context. Both discarded Reactor
-   * signals and a value arriving after cancellation are released; the disposer must not throw.
+   * Transfiere un resultado propio a un future sin contexto de seguridad ambiental. Se liberan
+   * tanto las señales de Reactor descartadas como un valor que llega después de la cancelación; el
+   * liberador no debe lanzar excepciones.
    */
   public static <T> CompletableFuture<T> toOwnedFuture(
       Mono<T> source, Class<T> type, Consumer<? super T> discard) {

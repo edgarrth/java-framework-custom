@@ -14,7 +14,10 @@ import pe.axiz.core.tokenization.vault.AsyncVaultOperations;
 import pe.axiz.core.tokenization.vault.TokenCaller;
 import pe.axiz.core.tokenization.vault.VaultOperations;
 
-/** Caller identity is supplied independently of the DTO; both stacks share output contracts. */
+/**
+ * La identidad del invocante se aporta con independencia del DTO; ambas pilas comparten los
+ * contratos de salida.
+ */
 final class VaultHttpEndpoint {
   private VaultHttpEndpoint() {}
 
@@ -134,7 +137,8 @@ final class VaultHttpEndpoint {
             result.metadata()));
   }
 
-  // Only this authorized engine boundary can construct the revealing response. No global codec.
+  // Solo este límite autorizado del motor puede construir la respuesta que revela valores. Sin
+  // códec global.
   private record RevealedValueResponse(TokenType type, SensitiveValue value) {
     VaultHttpReply write() {
       return VaultHttpReply.json(200, Map.of("type", type.value(), "value", value.reveal()));

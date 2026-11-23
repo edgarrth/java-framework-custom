@@ -8,18 +8,18 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.lang.Checks;
 
 /**
- * Immutable metadata of the request or message being processed.
+ * Metadatos inmutables de la petición o del mensaje en proceso.
  *
- * @param correlationId id shared by every call of the same business flow
- * @param requestId id of this particular request
- * @param channel origin channel (web, mobile, ...), free value declared by the service
- * @param clientId calling application, normally taken from the access token
- * @param subject end user, when there is one
- * @param tenantId tenant, only for multi-tenant services
- * @param issuer issuer of the access token that authenticated the caller, when there is one
- * @param locale preferred locale
- * @param receivedAt reception instant (UTC)
- * @param attributes business headers declared in the header catalog
+ * @param correlationId id compartido por todas las llamadas del mismo flujo de negocio
+ * @param requestId id de esta petición en particular
+ * @param channel canal de origen (web, móvil, etc.), valor libre declarado por el servicio
+ * @param clientId aplicación que llama, normalmente tomada del token de acceso
+ * @param subject usuario final, cuando existe
+ * @param tenantId tenant, solo para servicios multi-tenant
+ * @param issuer emisor del token de acceso que autenticó al llamador, cuando existe
+ * @param locale locale preferido
+ * @param receivedAt instante de recepción (UTC)
+ * @param attributes cabeceras de negocio declaradas en el catálogo de cabeceras
  */
 public record RequestMetadata(
     String correlationId,
@@ -60,12 +60,12 @@ public record RequestMetadata(
   }
 
   /**
-   * Copy with the authenticated caller; the tenant is replaced only when the token carries one.
+   * Copia con el llamador autenticado; el tenant se reemplaza solo cuando el token trae uno.
    *
-   * @param callerClientId calling application
-   * @param callerSubject end user, if any
-   * @param callerTenant tenant from the token, if any
-   * @return the enriched metadata
+   * @param callerClientId aplicación que llama
+   * @param callerSubject usuario final, si existe
+   * @param callerTenant tenant del token, si existe
+   * @return los metadatos enriquecidos
    */
   public RequestMetadata withCaller(
       @Nullable String callerClientId,
@@ -75,13 +75,13 @@ public record RequestMetadata(
   }
 
   /**
-   * Copy with the authenticated caller and the issuer of its token.
+   * Copia con el llamador autenticado y el emisor de su token.
    *
-   * @param callerClientId calling application
-   * @param callerSubject end user, if any
-   * @param callerTenant tenant from the token, if any (otherwise the current one is kept)
-   * @param callerIssuer token issuer, if any
-   * @return the enriched metadata
+   * @param callerClientId aplicación que llama
+   * @param callerSubject usuario final, si existe
+   * @param callerTenant tenant del token, si existe (en otro caso se conserva el actual)
+   * @param callerIssuer emisor del token, si existe
+   * @return los metadatos enriquecidos
    */
   public RequestMetadata withCaller(
       @Nullable String callerClientId,
@@ -101,12 +101,12 @@ public record RequestMetadata(
         attributes);
   }
 
-  /** Builder for {@link RequestMetadata}. */
+  /** Builder de {@link RequestMetadata}. */
   public static Builder builder(String correlationId, String requestId) {
     return new Builder(correlationId, requestId);
   }
 
-  /** Mutable builder; not thread-safe. */
+  /** Builder mutable; no es thread-safe. */
   public static final class Builder {
     private final String correlationId;
     private final String requestId;

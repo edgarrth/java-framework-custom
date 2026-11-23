@@ -8,7 +8,7 @@ import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
 
-/** Uses the real generator for an init spanning S3, DynamoDB, SQS, SNS and KMS. */
+/** Usa el generador real para un init que abarca S3, DynamoDB, SQS, SNS y KMS. */
 class GenerateLocalInfrastructureSample {
   public static void main(String[] args) throws Exception {
     var request =

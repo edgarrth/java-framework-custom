@@ -37,7 +37,7 @@ import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 import software.amazon.awssdk.services.kms.KmsAsyncClient;
 import software.amazon.awssdk.services.kms.KmsClient;
 
-/** Envelope encryption with AWS KMS data keys (cached by age and use count). */
+/** Cifrado de sobre con claves de datos de AWS KMS (cacheadas por antigüedad y número de usos). */
 @AutoConfiguration(afterName = "pe.axiz.spring.foundation.AxizFoundationAutoConfiguration")
 @ConditionalOnClass(
     name = {
@@ -49,7 +49,7 @@ import software.amazon.awssdk.services.kms.KmsClient;
 public class AxizCryptoKmsAutoConfiguration {
 
   /**
-   * Region and endpoint from {@code axiz.aws.region}, {@code axiz.aws.kms.endpoint} or {@code
+   * Región y endpoint tomados de {@code axiz.aws.region}, {@code axiz.aws.kms.endpoint} o {@code
    * axiz.aws.endpoint}.
    */
   @Bean(destroyMethod = "close")

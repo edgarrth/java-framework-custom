@@ -1,9 +1,10 @@
-# Executable capability matrix
+# Matriz ejecutable de capacidades
 
-The catalog defines required stacks and persistence providers. Each row points to an executed
-consumer operation; the build checks its result, variant evidence and runtime artifacts.
+El catálogo define los stacks y los proveedores de persistencia obligatorios. Cada fila apunta a una
+operación de consumidor ejecutada; el build comprueba su resultado, las variantes registradas y los
+artefactos de runtime.
 
-| Capability | Example / operation | Variants | Evidence scope |
+| Capacidad | Ejemplo / operación | Variantes | Alcance de la comprobación |
 |---|---|---|---|
 | `foundation` | [services/payment-orders: `createsAnEncryptedOrderAndReplaysWithoutDuplicatingItsOutboxEvent`](../services/payment-orders/src/test/java/pe/axiz/payments/orders/PaymentOrdersApplicationTest.java) | servlet | integration |
 | `foundation` | [services/payments-history: `projectsThePaymentOrderEvents`](../services/payments-history/src/test/java/pe/axiz/payments/history/PaymentsHistoryApplicationTest.java) | reactive | integration |
@@ -78,5 +79,5 @@ consumer operation; the build checks its result, variant evidence and runtime ar
 | `tenancy` | [examples/provider-recipes: `servletTenantComesFromValidatedIdentityAndIsClearedAfterTheRequest`](../examples/provider-recipes/src/test/java/pe/axiz/demo/providers/CrossCuttingRecipesTest.java) | servlet | consumer-contract |
 | `tenancy` | [examples/provider-recipes: `reactiveTenantPropagatesInTheSubscriberContext`](../examples/provider-recipes/src/test/java/pe/axiz/demo/providers/CrossCuttingRecipesTest.java) | reactive | consumer-contract |
 
-IAM recipes are local identity contracts; they do not authenticate against managed RDS/MSK.
-LocalStack validates local provider behavior. These examples are not PCI DSS certification.
+Las recetas IAM son contratos de identidad locales; no se autentican contra RDS ni MSK gestionados.
+LocalStack valida el comportamiento local de los proveedores. Estos ejemplos no son una certificación PCI DSS.

@@ -20,10 +20,10 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
 
-/** Contacts read from the {@code notification-contacts} table by customer. */
+/** Contactos leídos de la tabla {@code notification-contacts} por cliente. */
 class DynamoContactDirectoryTest {
 
-  /** Answers one stored item, or none. */
+  /** Responde un elemento almacenado o ninguno. */
   static final class Scripted implements DynamoDbClient {
     final List<GetItemRequest> requests = new ArrayList<>();
     Map<String, AttributeValue> item = Map.of();

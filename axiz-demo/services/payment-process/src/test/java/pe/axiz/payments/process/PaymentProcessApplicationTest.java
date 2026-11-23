@@ -29,9 +29,9 @@ import pe.axiz.spring.test.KafkaTestConfiguration;
 import pe.axiz.spring.test.PostgresTestConfiguration;
 
 /**
- * Starts the whole service against real dependencies in containers (Testcontainers): wiring,
- * configuration, migrations and health, and runs the payment saga through its use cases on the JDBC
- * saga store. Needs Docker.
+ * Arranca el servicio completo contra dependencias reales en contenedores (Testcontainers):
+ * cableado, configuración, migraciones y salud, y ejecuta la saga de pago mediante sus casos de uso
+ * sobre el almacén de sagas JDBC. Requiere Docker.
  */
 @SpringBootTest(
     properties = {
@@ -55,8 +55,9 @@ class PaymentProcessApplicationTest {
   }
 
   /**
-   * Use cases run in a transaction: the JDBC saga store must still commit its state and execution
-   * lease on its own connection, and the process must be readable afterwards.
+   * Los casos de uso se ejecutan en una transacción: el almacén de sagas JDBC debe igualmente
+   * confirmar su estado y su lease de ejecución en su propia conexión, y el proceso debe poder
+   * leerse después.
    */
   @Test
   void theSagaCompletesThroughTheTransactionalUseCasesOnTheJdbcStore(
@@ -80,7 +81,7 @@ class PaymentProcessApplicationTest {
     assertEquals(
         ProcessStatus.COMPLETED,
         read.execute(new GetPaymentProcessUseCase.Input(instruction.orderId())).status());
-    // a redelivery of the same order returns the stored process instead of paying twice
+    // una reentrega de la misma orden devuelve el proceso almacenado en lugar de pagar dos veces
     assertEquals(
         ProcessStatus.COMPLETED,
         start.execute(new StartPaymentProcessUseCase.Input(instruction)).status());

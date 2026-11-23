@@ -1,103 +1,110 @@
 # axiz-cli
 
-The `axiz` command: creates services from the archetypes, adds capabilities, generates artifacts
-(use cases, handlers, entities, HTTP clients, migrations), keeps code and OpenAPI/AsyncAPI contracts in
-sync, upgrades services between framework versions and checks a project (`axiz doctor`).
+El comando `axiz`: crea servicios a partir de los arquetipos, añade capacidades, genera artefactos
+(casos de uso, handlers, entidades, clientes HTTP, migraciones), mantiene sincronizados el código y los
+contratos OpenAPI/AsyncAPI, actualiza los servicios entre versiones del framework y comprueba un
+proyecto (`axiz doctor`).
 
-`doctor` reports literal credentials in YAML and `.properties`, including multiline values and
-UUID-like API keys. Use explicit reference properties such as `client-secret-ref` or environment
-placeholders. Header names and authentication mode properties are configuration metadata; a
-lowercase value or a value ending in `-ref` does not turn a credential into a reference.
+`doctor` informa las credenciales literales en YAML y `.properties`, incluidos los valores multilínea
+y las API keys con forma de UUID. Se usan propiedades de referencia explícitas como `client-secret-ref`
+o marcadores de variables de entorno. Los nombres de cabeceras y las propiedades de modo de
+autenticación son metadatos de configuración; un valor en minúsculas o que termina en `-ref` no
+convierte una credencial en una referencia.
 
-It embeds the generation engine of the framework (`pe.axiz:axiz-codegen`), so it works offline and
-produces exactly what the initializr and CI produce. Generated sources come out formatted as `spotless:check`
-expects: the jar ships google-java-format and exports the `jdk.compiler` packages it needs in its
-manifest (`Add-Exports`); the native binary, where the formatter cannot run, runs the project's
-`./mvnw -q spotless:apply` instead.
+Incluye el motor de generación del framework (`pe.axiz:axiz-codegen`), por lo que funciona sin conexión
+y produce exactamente lo mismo que el initializr y CI. Las fuentes generadas salen con el formato que
+espera `spotless:check`: el jar incluye google-java-format y exporta en su manifiesto (`Add-Exports`) los
+paquetes de `jdk.compiler` que necesita; el binario nativo, donde el formateador no puede ejecutarse,
+ejecuta en su lugar `./mvnw -q spotless:apply` del proyecto.
 
 ```bash
-mvn -pl axiz-cli -am package             # target/axiz-cli-<version>-jar-with-dependencies.jar
+mvn -pl axiz-cli -am package             # genera target/axiz-cli-<version>-jar-with-dependencies.jar
 java -jar axiz-cli/target/axiz-cli-*-jar-with-dependencies.jar catalog
-mvn -pl axiz-cli -am -Pnative package    # native binary target/axiz (GraalVM 25)
+mvn -pl axiz-cli -am -Pnative package    # binario nativo target/axiz (GraalVM 25)
 ```
 
-Commands and options: see the README of `axiz-tools` and `axiz --help`.
+Comandos y opciones: ver el README de `axiz-tools` y `axiz --help`.
 
-## Online project generation
+## Generación de proyectos en línea
 
-`axiz new ... --server https://initializr.example` uses `AXIZ_TOKEN` from the environment.
-The CLI does not persist that token or follow HTTP redirects. HTTP errors report the status
-without printing the server's response body, which may contain submitted data.
+`axiz new ... --server https://initializr.example` usa `AXIZ_TOKEN` del entorno. La CLI no persiste
+ese token ni sigue redirecciones HTTP. Los errores HTTP informan el estado sin imprimir el cuerpo de la
+respuesta del servidor, que puede contener datos enviados.
 
-Downloaded and expanded archives are each limited to 50 MiB; an archive may contain at most
-5,000 entries. Extraction rejects unsafe paths, symbolic-link destinations, duplicate output
-paths and file/directory conflicts before writing project files. `--force` allows replacing
-regular files but does not disable these checks. The target must be a directory under the user's
-control; use a private directory if another process could replace its subdirectories concurrently.
+Los archivos comprimidos descargados y expandidos se limitan a 50 MiB cada uno; un archivo puede
+contener como máximo 5.000 entradas. La extracción rechaza rutas inseguras, destinos que son enlaces
+simbólicos, rutas de salida duplicadas y conflictos entre archivos y directorios antes de escribir los
+archivos del proyecto. `--force` permite reemplazar archivos regulares, pero no desactiva estas
+comprobaciones. El destino debe ser un directorio bajo el control del usuario; se usa un directorio
+privado si otro proceso pudiera reemplazar sus subdirectorios de forma concurrente.
 
-## Maven aggregators
+## Agregadores Maven
 
-Run project commands with `--dir` pointing at the directory containing `.axiz/project.yaml`
-and the root POM. The CLI follows declared Maven modules and selects the application containing
-the base `application.yaml`, `application.yml` or `application.properties`. With multiple
-applications, the manifest's contract paths must identify exactly one of them; an ambiguous
-selection fails before writing files. Module paths cannot escape the project or follow symlinks.
+Los comandos de proyecto se ejecutan con `--dir` apuntando al directorio que contiene
+`.axiz/project.yaml` y el POM raíz. La CLI sigue los módulos Maven declarados y selecciona la
+aplicación que contiene el `application.yaml`, `application.yml` o `application.properties` base. Con
+varias aplicaciones, las rutas de contratos del manifiesto deben identificar exactamente una; una
+selección ambigua falla antes de escribir archivos. Las rutas de los módulos no pueden salir del
+proyecto ni seguir enlaces simbólicos.
 
-Generation, contract synchronization, capability dependencies and Flyway migrations use that
-application module. Snapshots and the identity ledger stay beside the root manifest. Reactive
-checks require BlockHound in the application tests, without requiring it in a sibling Java library.
-An upgrade updates all declared Axiz parents; `--rename` changes only the application's artifactId
-and deployment identity. It preserves the aggregator, sibling artifacts, Java packages and stateful
-identities. The bindings of the generated build/deploy workflows (application module, source POM
-and owned chart directory) are updated with the rename; customized workflows remain a patch for
-review.
-Explicitly named reactor POMs can be read by the editors, but the standard service build
-requires `<module>/pom.xml`; upgrading that workflow with another POM filename also produces
-a proposal and preserves the original project.
+La generación, la sincronización de contratos, las dependencias de capacidades y las migraciones
+Flyway usan ese módulo de aplicación. Las instantáneas y el registro de identidad quedan junto al
+manifiesto raíz. Las comprobaciones reactivas exigen BlockHound en las pruebas de la aplicación, sin
+exigirlo en una librería Java hermana. Una actualización cambia todos los parents de Axiz declarados;
+`--rename` cambia solo el artifactId de la aplicación y su identidad de despliegue. Conserva el
+agregador, los artefactos hermanos, los paquetes Java y las identidades con estado. Los bindings de los
+workflows generados de build y despliegue (módulo de aplicación, POM de origen y directorio del chart
+propio) se actualizan con el renombre; los workflows personalizados quedan como un parche para
+revisión.
+Los editores pueden leer POM de reactor nombrados de forma explícita, pero el build estándar de
+servicios requiere `<module>/pom.xml`; actualizar ese workflow con otro nombre de POM también produce
+una propuesta y conserva el proyecto original.
 
-## AsyncAPI contracts
+## Contratos AsyncAPI
 
-Use `axiz new ... --asyncapi events.yaml` to generate Java payload records, typed inbound
-handler skeletons, separate Spring AOT binding metadata and the exact `receive` subscriptions. AsyncAPI 3 operations must reference local channels and messages; `message.name`
-is the versioned CloudEvents type (`pe.axiz.orders.created.v1`). External/cyclic references and
-unflattened traits are rejected. Payload records contain JDK types and are placed in `domain.event`
-for hexagonal services or `event` for the other structures.
+`axiz new ... --asyncapi events.yaml` genera records Java de payload, esqueletos tipados de handlers de
+entrada, metadatos separados de binding de Spring AOT y las suscripciones `receive` exactas. Las
+operaciones AsyncAPI 3 deben referenciar canales y mensajes locales; `message.name` es el tipo
+CloudEvents versionado (`pe.axiz.orders.created.v1`). Se rechazan las referencias externas o cíclicas
+y los traits sin aplanar. Los records de payload contienen tipos del JDK y se ubican en `domain.event`
+en los servicios hexagonales o en `event` en las demás estructuras.
 
-`axiz contract sync --type asyncapi` adds payloads and proposes edits as `.axiz-new`, preserving
-existing code. Optional fields may extend the published type; incompatible changes require a new
-`.vN` type in parallel. `--allow-breaking` cannot override this rule. Use `contract lint --type
-asyncapi` for local structural checks and `contract diff --type asyncapi old.yaml new.yaml` for
-compatibility. Corporate Spectral lint still runs in CI. With only an AsyncAPI contract, `sync`
-and `lint` select it automatically.
+`axiz contract sync --type asyncapi` añade payloads y propone ediciones como `.axiz-new`, conservando
+el código existente. Los campos opcionales pueden extender el tipo publicado; los cambios incompatibles
+requieren un tipo `.vN` nuevo en paralelo. `--allow-breaking` no puede anular esta regla. Se usa
+`contract lint --type asyncapi` para las comprobaciones estructurales locales y
+`contract diff --type asyncapi old.yaml new.yaml` para la compatibilidad. El lint corporativo de
+Spectral se ejecuta en CI. Con solo un contrato AsyncAPI, `sync` y `lint` lo seleccionan de forma
+automática.
 
-`axiz generate event order-created-v1` reads the project's AsyncAPI payload; it never replaces an
-existing record without `--force`. `doctor` compares receive types with subscriptions in the base
-configuration and any explicit profile overrides (YAML or properties), and rejects a stale
-snapshot. The handler skeleton rejects messages until its business action is implemented, so implement it
-before consuming live messages. Runtime subscription verification continues to reject missing
-handlers. Schema comparison cannot establish that an unchanged field
-retains its business meaning; review that as part of any contract change.
+`axiz generate event order-created-v1` lee el payload AsyncAPI del proyecto; nunca reemplaza un record
+existente sin `--force`. `doctor` compara los tipos recibidos con las suscripciones de la configuración
+base y de las sobrescrituras explícitas de perfiles (YAML o properties), y rechaza una instantánea
+desactualizada. El esqueleto del handler rechaza los mensajes hasta que se implementa su acción de
+negocio, por lo que se implementa antes de consumir mensajes reales. La verificación de suscripciones
+en runtime rechaza los handlers ausentes. La comparación de esquemas no puede demostrar que un campo
+sin cambios conserva su significado de negocio; eso se revisa en cada cambio de contrato.
 
-`axiz generate event-handler <name-vN>` (or `handler`) uses the contract's received type and its
-payload. Reactive services get `ReactiveTypedEventHandler` with a `Publisher<Void>` method;
-servlet services get `TypedEventHandler`. It rejects a producer-only type and preserves existing
-implementations. Spring native binding metadata stays in `config`, outside the payload layer.
+`axiz generate event-handler <name-vN>` (o `handler`) usa el tipo recibido del contrato y su payload.
+Los servicios reactivos obtienen `ReactiveTypedEventHandler` con un método `Publisher<Void>`; los
+servicios servlet obtienen `TypedEventHandler`. Rechaza un tipo que solo se produce y conserva las
+implementaciones existentes. Los metadatos de binding nativo de Spring quedan en `config`, fuera de la
+capa de payloads.
 
-Reactive test plans opt in with `@ExtendWith(BlockHoundExtension.class)`. The framework's JUnit
-listener installs detection before schedulers start; the unrelated JUnit extension autodetection
-flag is not required. `doctor` recognizes the actual annotation and excludes comments/literals
-when inspecting it.
+Los planes de prueba reactivos se activan con `@ExtendWith(BlockHoundExtension.class)`. El listener de
+JUnit del framework instala la detección antes de que arranquen los schedulers; no se requiere el flag
+de autodetección de extensiones de JUnit. `doctor` reconoce la anotación real y excluye comentarios y
+literales al inspeccionarla.
 
-## Outbox upgrade preflight
+## Comprobación previa del outbox
 
-`axiz doctor --outbox-jdbc-url jdbc:postgresql://HOST:5432/DATABASE` opts into a read-only
-PostgreSQL report using `AXIZ_DOCTOR_DB_USER` and `AXIZ_DOCTOR_DB_PASSWORD` from the environment.
-Use a read-only database account; do not include credentials in the URL or shell history.
-`--outbox-table` overrides the validated table identifier. Normal `doctor` and `upgrade` checks
-do not connect to a database automatically.
+`axiz doctor --outbox-jdbc-url jdbc:postgresql://HOST:5432/DATABASE` activa un reporte de solo lectura
+sobre PostgreSQL usando `AXIZ_DOCTOR_DB_USER` y `AXIZ_DOCTOR_DB_PASSWORD` del entorno. Se usa una
+cuenta de base de datos de solo lectura; las credenciales no se incluyen en la URL ni en el historial
+del shell. `--outbox-table` sobrescribe el identificador de tabla validado. Las comprobaciones normales
+de `doctor` y `upgrade` no se conectan a una base de datos de forma automática.
 
-The canonical framework query works before and after the sequence upgrade. It lists every
-`FAILED` event, aggregate, destination, error, attempts and whether published/pending successors
-exist. It never changes statuses. Review each row before the maintenance window: `retry` preserves
-the event; `skip` requires an explicit audited decision and is terminal. Retrying cannot reconstruct
-the historical order of successors that were already published by an older relay.
+La consulta canónica del framework lista cada evento `FAILED` con su agregado, destino, error, intentos
+y si existen sucesores publicados o pendientes. Nunca cambia estados. Cada fila se revisa antes de la
+ventana de mantenimiento: `retry` conserva el evento; `skip` requiere una decisión explícita y auditada
+y es terminal. Reintentar no puede reconstruir el orden de sucesores que ya se publicaron.

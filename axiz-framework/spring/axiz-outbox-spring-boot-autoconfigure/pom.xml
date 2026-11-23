@@ -59,7 +59,7 @@
       <artifactId>micrometer-core</artifactId>
       <optional>true</optional>
     </dependency>
-    <!-- real Micrometer tracing handlers (with a test tracer) for the trace through the outbox -->
+    <!-- handlers reales de tracing de Micrometer (con un tracer de prueba) para la traza a través del outbox -->
     <dependency>
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-tracing-test</artifactId>

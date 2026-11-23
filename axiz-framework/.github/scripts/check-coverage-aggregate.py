@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""The aggregated coverage report covers the whole framework.
+"""El reporte de cobertura agregado cubre todo el framework.
 
   check-coverage-aggregate.py <framework root>
-      every module with production code is a `provided` dependency of axiz-coverage-report
-      (JaCoCo's report-aggregate takes classes only from compile, runtime and provided
-      dependencies; a `test` dependency adds execution data and nothing to measure it against)
-      test-only modules must also be included as `test` dependencies for their execution data
+      cada módulo con código de producción es una dependencia `provided` de axiz-coverage-report
+      (report-aggregate de JaCoCo toma clases solo de las dependencias compile, runtime y provided;
+      una dependencia `test` añade datos de ejecución y nada contra lo que medirlos)
+      los módulos solo de pruebas también deben incluirse como dependencias `test` por sus datos de ejecución
   check-coverage-aggregate.py --report <jacoco.xml>
-      an aggregated report holds classes and counters (an empty one fails)
+      un reporte agregado contiene clases y contadores (uno vacío falla)
 """
 import os
 import re
@@ -65,7 +65,7 @@ def check_report(path, root=None):
     if not os.path.isfile(path):
         print(f'::error::{path} missing')
         return 1
-    # Trusted build POM/report, after executing the same checkout; no request XML is parsed.
+        # POM o reporte de build de confianza, tras ejecutar el mismo checkout; no se analiza XML de la petición.
     # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse
     tree = ET.parse(path).getroot()
     packages = tree.findall('.//package')
@@ -92,7 +92,7 @@ def check_report(path, root=None):
         for kind, minimum in (('LINE', 80), ('BRANCH', 70)):
             counter = counters.get(kind)
             if counter is None:
-                continue  # Ports with no executable instructions/branches have no denominator.
+                continue  # Los puertos sin instrucciones ni ramas ejecutables no tienen denominador.
             hit, missed = int(counter.get('covered')), int(counter.get('missed'))
             if hit < 0 or missed < 0:
                 raise ValueError('Negative coverage counter')

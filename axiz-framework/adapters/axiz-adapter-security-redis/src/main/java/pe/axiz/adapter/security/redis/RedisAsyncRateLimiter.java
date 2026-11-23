@@ -13,7 +13,10 @@ import pe.axiz.core.security.AsyncRateLimiter;
 import pe.axiz.core.security.RateLimitUnavailableException;
 import pe.axiz.core.security.RateLimiter;
 
-/** Native asynchronous fixed-window rate limits, with explicit per-route store failure policy. */
+/**
+ * Límites de tasa de ventana fija asíncronos nativos, con política explícita por ruta ante fallos
+ * del almacén.
+ */
 public final class RedisAsyncRateLimiter implements AsyncRateLimiter {
   private final RedisAsyncCommands<String, String> redis;
   private final String prefix;

@@ -124,7 +124,7 @@ class SnsEventPublisherTest {
       p.publish("arn:aws:sns:us-east-1:123:payments.fifo", withSubject);
       assertEquals("order-7", sent.get(1).messageGroupId(), "events of one subject stay in order");
 
-      // an ARN of another service is not an SNS destination
+      // un ARN de otro servicio no es un destino SNS
       assertFalse(p.supports("arn:aws:sqs:us-east-1:123:payments"));
       assertFalse(p.supports("payments"));
     }

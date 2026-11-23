@@ -9,8 +9,8 @@ import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.money.Money;
 
 /**
- * A payment order: the debtor account of a customer pays a creditor account (CCI). Plain Java;
- * persistence and transport live in the adapters.
+ * Orden de pago: la cuenta deudora de un cliente paga a una cuenta acreedora (CCI). Java plano; la
+ * persistencia y el transporte residen en los adaptadores.
  */
 public final class PaymentOrder {
 
@@ -26,7 +26,7 @@ public final class PaymentOrder {
   private PaymentStatus status;
   private @Nullable String statusReason;
 
-  /** Rebuilds an order from its stored state. */
+  /** Reconstruye una orden a partir de su estado almacenado. */
   public PaymentOrder(
       @NonNull String id,
       @NonNull String operationNumber,
@@ -52,7 +52,7 @@ public final class PaymentOrder {
     this.statusReason = statusReason;
   }
 
-  /** A new order, received and waiting to be processed. */
+  /** Orden nueva, recibida y en espera de procesarse. */
   public static PaymentOrder register(
       String id,
       String operationNumber,
@@ -81,7 +81,7 @@ public final class PaymentOrder {
   }
 
   /**
-   * Moves the order to its next status.
+   * Mueve la orden a su siguiente estado.
    *
    * @throws BusinessException {@link PaymentErrors#TRANSITION_NOT_ALLOWED}
    */
@@ -116,7 +116,7 @@ public final class PaymentOrder {
     return creditorCci;
   }
 
-  /** Creditor account showing only its last four digits. */
+  /** Cuenta del acreedor que muestra solo sus últimos cuatro dígitos. */
   public String maskedCreditorCci() {
     return "*".repeat(Math.max(0, creditorCci.length() - 4))
         + creditorCci.substring(Math.max(0, creditorCci.length() - 4));

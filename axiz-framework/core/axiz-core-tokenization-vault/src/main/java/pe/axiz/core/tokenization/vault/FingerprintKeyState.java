@@ -4,7 +4,7 @@ import java.util.HashSet;
 import java.util.List;
 import pe.axiz.core.tokenization.TokenErrors;
 
-/** Durable optimistic barrier for writers and privileged key rotation. */
+/** Barrera optimista durable para escritores y para la rotación privilegiada de claves. */
 public record FingerprintKeyState(
     String keysetId, long version, String writeKeyId, List<String> readKeyIds) {
   public FingerprintKeyState {

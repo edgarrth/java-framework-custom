@@ -11,9 +11,9 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.kit.jpa.AuditableEntity;
 
 /**
- * Row of {@code payment_order}. Account numbers are encrypted (AES-GCM keys from the secret store,
- * rotation by key id); the creditor account also has a blind index (HMAC) to search by it without
- * decrypting.
+ * Fila de {@code payment_order}. Los números de cuenta se cifran (claves AES-GCM del almacén de
+ * secretos, rotación por id de clave); la cuenta del acreedor tiene además un índice ciego (HMAC)
+ * para buscar por ella sin descifrar.
  */
 @Entity
 @Table(name = "payment_order")

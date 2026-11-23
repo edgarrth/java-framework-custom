@@ -70,12 +70,12 @@ class ConfigAwsEnvironmentPostProcessorTest {
 
   @Test
   void parameterStoreClientsExistOnlyWhenParameterStoreIsUsed() {
-    // no SsmClient (and no AWS region needed) unless the service turns Parameter Store on
+    // sin SsmClient (y sin necesidad de región AWS) salvo que el servicio active Parameter Store
     MockEnvironment laptop = new MockEnvironment();
     epp.postProcessEnvironment(laptop, new SpringApplication());
     assertEquals("false", laptop.getProperty("spring.cloud.aws.parameterstore.enabled"));
 
-    // A late selector must fail before a client is created.
+    // Un selector tardío debe fallar antes de que se cree un cliente.
     MockEnvironment enabled = cluster();
     epp.postProcessEnvironment(enabled, new SpringApplication());
     enabled.setProperty("axiz.config.parameter-store.enabled", "true");
@@ -93,7 +93,8 @@ class ConfigAwsEnvironmentPostProcessorTest {
 
   @Test
   void theSecretsManagerConfigIntegrationIsOffUnlessTheServiceTurnsItOn() {
-    // the SDK on the classpath (axiz.secrets) must not build a second client that needs a region
+    // el SDK en el classpath (axiz.secrets) no debe construir un segundo cliente que necesite
+    // región
     MockEnvironment laptop = new MockEnvironment();
     epp.postProcessEnvironment(laptop, new SpringApplication());
     assertEquals("false", laptop.getProperty("spring.cloud.aws.secretsmanager.enabled"));

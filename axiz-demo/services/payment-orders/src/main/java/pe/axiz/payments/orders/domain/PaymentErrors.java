@@ -4,45 +4,48 @@ import pe.axiz.core.errors.ErrorCategory;
 import pe.axiz.core.errors.ErrorDefinition;
 
 /**
- * Error catalog of payment-orders (codes {@code PAYMENTS-PAYMENTORDERS-NNNN}). Detail messages are
- * the {@code error.<code>} keys of the message bundles; the ConfigMap payment-orders-errors can
- * override titles per environment.
+ * Catálogo de errores de payment-orders (códigos {@code PAYMENTS-PAYMENTORDERS-NNNN}). Los mensajes
+ * de detalle son las claves {@code error.<code>} de los paquetes de mensajes; el ConfigMap
+ * payment-orders-errors puede sobrescribir los títulos por entorno.
  */
 public final class PaymentErrors {
 
-  /** The amount exceeds what the customer can still pay today in that currency. */
+  /** El monto excede lo que el cliente todavía puede pagar hoy en esa moneda. */
   public static final ErrorDefinition DAILY_LIMIT_EXCEEDED =
       ErrorDefinition.of(
           "PAYMENTS-PAYMENTORDERS-0001", ErrorCategory.UNPROCESSABLE, "Daily limit exceeded");
 
-  /** The creditor account is not a valid CCI. */
+  /** La cuenta del acreedor no es un CCI válido. */
   public static final ErrorDefinition INVALID_CREDITOR_ACCOUNT =
       ErrorDefinition.of(
           "PAYMENTS-PAYMENTORDERS-0002", ErrorCategory.UNPROCESSABLE, "Invalid creditor account");
 
-  /** The order cannot move to the requested status. */
+  /** La orden no puede pasar al estado solicitado. */
   public static final ErrorDefinition TRANSITION_NOT_ALLOWED =
       ErrorDefinition.of(
           "PAYMENTS-PAYMENTORDERS-0003", ErrorCategory.CONFLICT, "Status change not allowed");
 
-  /** The currency is not operated. */
+  /** La moneda no se opera. */
   public static final ErrorDefinition UNSUPPORTED_CURRENCY =
       ErrorDefinition.of(
           "PAYMENTS-PAYMENTORDERS-0004", ErrorCategory.UNPROCESSABLE, "Currency not supported");
 
-  /** Same amount to the same creditor on the same day: probably a duplicate. */
+  /** Mismo monto al mismo acreedor el mismo día: probablemente un duplicado. */
   public static final ErrorDefinition POSSIBLE_DUPLICATE =
       ErrorDefinition.of(
           "PAYMENTS-PAYMENTORDERS-0005", ErrorCategory.CONFLICT, "Possible duplicate payment");
 
-  /** The request key was already used by this customer for a different order. */
+  /** Este cliente ya usó la clave de solicitud para una orden distinta. */
   public static final ErrorDefinition REQUEST_KEY_REUSED =
       ErrorDefinition.of(
           "PAYMENTS-PAYMENTORDERS-0006",
           ErrorCategory.UNPROCESSABLE,
           "Request key reused with another order");
 
-  /** Another request with the same key was registered at the same time: retry to get it. */
+  /**
+   * Otra solicitud con la misma clave se registró al mismo tiempo: se debe reintentar para
+   * obtenerla.
+   */
   public static final ErrorDefinition CONCURRENT_REQUEST =
       ErrorDefinition.of(
           "PAYMENTS-PAYMENTORDERS-0007",

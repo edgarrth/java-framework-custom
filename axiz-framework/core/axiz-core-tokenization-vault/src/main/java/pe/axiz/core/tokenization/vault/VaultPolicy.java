@@ -22,7 +22,8 @@ import pe.axiz.core.tokenization.TokenOperation;
 import pe.axiz.core.tokenization.TokenType;
 
 /**
- * Shared CPU-only validation, access checks, index planning and record invariants for both engines.
+ * Validación solo de CPU, verificaciones de acceso, planificación de índices e invariantes de
+ * registro compartidas por ambos motores.
  */
 public final class VaultPolicy {
   static final String ENCRYPTION_CONTEXT = "purpose:token-vault";
@@ -172,7 +173,7 @@ public final class VaultPolicy {
     return !record.expiresAt().isAfter(clock.instant());
   }
 
-  /** Checks the stored indexes against authenticated plaintext, never against each other alone. */
+  /** Verifica los índices almacenados contra el texto plano autenticado, nunca solo entre sí. */
   void authenticate(
       Request request, VaultRecord record, byte[] plaintext, @Nullable SensitiveValue expected) {
     if (expected != null && !VaultText.matches(expected, plaintext))

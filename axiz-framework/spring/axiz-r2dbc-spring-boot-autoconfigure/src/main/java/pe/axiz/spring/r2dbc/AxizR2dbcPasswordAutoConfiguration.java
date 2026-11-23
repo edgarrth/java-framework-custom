@@ -6,7 +6,10 @@ import org.springframework.boot.r2dbc.autoconfigure.ConnectionFactoryOptionsBuil
 import org.springframework.context.annotation.Bean;
 import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
 
-/** Connects any dynamic password provider to the writer pool without a provider SDK. */
+/**
+ * Conecta cualquier proveedor de contraseñas dinámicas al pool de escritura sin el SDK de un
+ * proveedor.
+ */
 @AutoConfiguration(
     beforeName = "org.springframework.boot.r2dbc.autoconfigure.R2dbcAutoConfiguration",
     afterName = "pe.axiz.spring.r2dbc.aws.AxizR2dbcIamAutoConfiguration")

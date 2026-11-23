@@ -10,7 +10,7 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.ReturnValue;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 
-/** Atomic counter on DynamoDB ({@code ADD value :inc} with {@code UPDATED_NEW}). */
+/** Contador atómico sobre DynamoDB ({@code ADD value :inc} con {@code UPDATED_NEW}). */
 public final class DynamoDbSequenceStore implements SequenceStore {
 
   @SuppressFBWarnings(

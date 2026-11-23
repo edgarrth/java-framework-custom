@@ -1,6 +1,8 @@
 package pe.axiz.core.metrics;
 
-/** Names of the seven generic instruments (OpenTelemetry style; Prometheus adds suffixes). */
+/**
+ * Nombres de los siete instrumentos genéricos (estilo OpenTelemetry; Prometheus agrega sufijos).
+ */
 public final class MetricNames {
 
   public static final String COUNT = "axiz.events";

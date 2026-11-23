@@ -54,7 +54,7 @@ class SensitiveTest {
               Object described =
                   masker.describe(Map.of("customerCode", "ABC123"), OutputChannel.LOG);
               assertEquals(false, described.toString().contains("ABC123"));
-              // the application's JsonMapper is never masked: no global Jackson module
+              // el JsonMapper de la aplicación nunca enmascara: no hay módulo global de Jackson
               assertTrue(ctx.getBeansOfType(SensitiveJacksonModule.class).isEmpty());
             });
   }
@@ -64,8 +64,9 @@ class SensitiveTest {
 
   @Test
   void onlyServerResponsesAreMaskedTheApplicationMapperKeepsTheValues() {
-    // events, saga contexts, caches and outgoing calls use the application's mapper: a masked
-    // account there would reach the consumer (and the core) as "*********5678"
+    // los eventos, los contextos de saga, las cachés y las llamadas salientes usan el mapper de la
+    // aplicación: una cuenta enmascarada ahí llegaría al consumidor (y al core) como
+    // "*********5678"
     JsonMapper app = JsonMapper.builder().build();
     StaticListableBeanFactory beans =
         new StaticListableBeanFactory(Map.<String, Object>of("jsonMapper", app));

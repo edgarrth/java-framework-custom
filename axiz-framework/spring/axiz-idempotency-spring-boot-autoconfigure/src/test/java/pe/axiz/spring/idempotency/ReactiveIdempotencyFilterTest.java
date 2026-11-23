@@ -27,7 +27,10 @@ import pe.axiz.core.idempotency.InMemoryAsyncIdempotencyStore;
 import pe.axiz.core.idempotency.StoredResponse;
 import reactor.core.publisher.Mono;
 
-/** The reactive filter end to end: first execution stored, retries replayed, failures released. */
+/**
+ * El filtro reactivo de extremo a extremo: primera ejecución almacenada, reintentos reproducidos,
+ * fallos liberados.
+ */
 class ReactiveIdempotencyFilterTest {
 
   @RestController
@@ -92,9 +95,9 @@ class ReactiveIdempotencyFilterTest {
   }
 
   /**
-   * The record is settled on a worker once the response is out: until then a retry sees the key in
-   * progress (409). Retries like a client would, for at most five seconds, and returns the first
-   * answer that is not 409.
+   * El registro se asienta en un worker una vez enviada la respuesta: hasta entonces, un reintento
+   * ve la clave en curso (409). Reintenta como lo haría un cliente, durante cinco segundos como
+   * máximo, y devuelve la primera respuesta que no sea 409.
    */
   private EntityExchangeResult<String> retry(WebTestClient client, String key, String body)
       throws InterruptedException {

@@ -4,7 +4,10 @@ import io.lettuce.core.RedisCredentials;
 import io.lettuce.core.RedisCredentialsProvider.ImmediateRedisCredentialsProvider;
 import pe.axiz.core.secrets.SecretValue;
 
-/** Preloaded credentials: reconnect never invokes a blocking secret resolver on a Netty thread. */
+/**
+ * Credenciales precargadas: la reconexión nunca invoca un resolvedor de secretos bloqueante en un
+ * hilo de Netty.
+ */
 final class TokenRedisCredentials
     implements ImmediateRedisCredentialsProvider, RedisCredentials, AutoCloseable {
   private final String username;

@@ -6,7 +6,9 @@ import pe.axiz.payments.history.application.port.out.PaymentHistories;
 import pe.axiz.payments.history.domain.PaymentHistory;
 import reactor.core.publisher.Mono;
 
-/** Projects a registered order; runs in the reactive transaction of the command pipeline. */
+/**
+ * Proyecta una orden registrada; se ejecuta en la transacción reactiva del pipeline de comandos.
+ */
 public class RecordPaymentRegisteredHandler
     implements ReactiveCommandHandler<RecordPaymentRegisteredCommand, Void> {
 

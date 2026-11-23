@@ -7,14 +7,14 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.lang.Checks;
 
 /**
- * Declares a business header in the header catalog.
+ * Declara una cabecera de negocio en el catálogo de cabeceras.
  *
- * @param name header name as sent on the wire
- * @param required whether inbound requests must carry it
- * @param pattern optional validation pattern
- * @param propagate whether it is forwarded to outbound calls and messages
- * @param sensitive whether its value must be masked in logs and audit
- * @param maxLength maximum accepted length
+ * @param name nombre de la cabecera tal como se envía por la red
+ * @param required indica si las peticiones entrantes deben llevarla
+ * @param pattern patrón de validación opcional
+ * @param propagate indica si se reenvía a las llamadas y mensajes salientes
+ * @param sensitive indica si su valor debe enmascararse en logs y auditoría
+ * @param maxLength longitud máxima aceptada
  */
 public record HeaderDefinition(
     String name,
@@ -50,16 +50,16 @@ public record HeaderDefinition(
     return new HeaderDefinition(name, required, pattern, propagate, true, maxLength);
   }
 
-  /** Lowercase key for case-insensitive lookups. */
+  /** Clave en minúsculas para búsquedas sin distinción de mayúsculas. */
   public String key() {
     return name.toLowerCase(Locale.ROOT);
   }
 
   /**
-   * Validates a header value against this definition.
+   * Valida el valor de una cabecera contra esta definición.
    *
-   * @param value received value (may be null)
-   * @return an error message or null when valid
+   * @param value valor recibido (puede ser null)
+   * @return un mensaje de error o null cuando es válido
    */
   public @Nullable String validate(@Nullable String value) {
     if (value == null || value.isBlank()) {

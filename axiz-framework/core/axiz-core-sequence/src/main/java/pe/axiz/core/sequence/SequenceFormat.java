@@ -5,14 +5,14 @@ import java.util.Objects;
 import pe.axiz.core.lang.Strings;
 
 /**
- * How a sequence value is rendered: {@code prefix + [period + separator] + zero-padded value}, e.g.
- * {@code OP-20260131-000123}.
+ * Forma de presentar un valor de secuencia: {@code prefix + [period + separator] + zero-padded
+ * value}, por ejemplo {@code OP-20260131-000123}.
  *
- * @param prefix fixed prefix
- * @param width minimum digits (zero padded)
- * @param reset reset policy (the period is part of the text when it resets)
- * @param separator separator between parts
- * @param zone zone used to compute the period
+ * @param prefix prefijo fijo
+ * @param width dígitos mínimos (rellenados con ceros)
+ * @param reset política de reinicio (el periodo forma parte del texto cuando se reinicia)
+ * @param separator separador entre las partes
+ * @param zone zona usada para calcular el periodo
  */
 public record SequenceFormat(
     String prefix, int width, ResetPolicy reset, String separator, ZoneId zone) {

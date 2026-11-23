@@ -2,9 +2,11 @@ package pe.axiz.spring.foundation.lifecycle;
 
 import java.time.Duration;
 
-/** Read-only lifecycle diagnostics shared by workers and health wiring. */
+/**
+ * Diagnóstico de ciclo de vida de solo lectura compartido por los workers y el cableado de salud.
+ */
 public interface WorkerStatus {
-  /** Immutable group status without tasks, exception messages or sensitive payloads. */
+  /** Estado inmutable del grupo sin tareas, mensajes de excepción ni payloads sensibles. */
   record Snapshot(String name, WorkerLifecycle.State state, int expected, int alive) {}
 
   Snapshot workerSnapshot();

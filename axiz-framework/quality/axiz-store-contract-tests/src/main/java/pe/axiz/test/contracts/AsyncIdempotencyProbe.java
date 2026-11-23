@@ -13,8 +13,8 @@ import pe.axiz.core.idempotency.IdempotencyStore;
 import pe.axiz.core.idempotency.StoredResponse;
 
 /**
- * Test boundary only: runs the same ownership/expiry contract against a native asynchronous store
- * with bounded waits.
+ * Solo frontera de pruebas: ejecuta el mismo contrato de propiedad y expiración contra un almacén
+ * asíncrono nativo con esperas acotadas.
  */
 public final class AsyncIdempotencyProbe implements IdempotencyStore {
   private final AsyncIdempotencyStore store;

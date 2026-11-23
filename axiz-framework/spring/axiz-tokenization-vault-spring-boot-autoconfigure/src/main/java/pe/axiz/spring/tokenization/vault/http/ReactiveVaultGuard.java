@@ -6,7 +6,10 @@ import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
-/** Retains no-store even for Spring Security and framework-generated error responses. */
+/**
+ * Conserva no-store incluso en las respuestas de error generadas por Spring Security y por el
+ * framework.
+ */
 final class ReactiveVaultGuard implements WebFilter, Ordered {
   private final VaultHttpPolicy policy;
 

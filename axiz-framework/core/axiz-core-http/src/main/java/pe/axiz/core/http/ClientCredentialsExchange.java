@@ -20,7 +20,7 @@ import pe.axiz.core.errors.ExternalErrorDetail;
 import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.core.json.JsonReader;
 
-/** Shared OAuth wire format and validation for synchronous and native transports. */
+/** Formato de red y validación de OAuth compartidos para transportes síncronos y nativos. */
 public final class ClientCredentialsExchange {
   public static final long MAX_RESPONSE_BYTES = 65_536;
   private final URI tokenUri;
@@ -82,7 +82,7 @@ public final class ClientCredentialsExchange {
     try {
       json = JsonReader.parseObject(response.body());
     } catch (IllegalArgumentException invalid) {
-      // Parser diagnostics may include a character from a token or client secret.
+      // Los diagnósticos del parser pueden incluir un carácter de un token o de un client secret.
       throw new IllegalStateException("Token endpoint returned invalid JSON");
     }
     Object token = json.get("access_token");

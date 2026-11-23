@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-core-audit
 
-Immutable audit events, publication policies, sanitization and asynchronous publishers.
+Eventos de auditoría inmutables, políticas de publicación, saneamiento y publicadores asíncronos.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,62 +12,68 @@ Immutable audit events, publication policies, sanitization and asynchronous publ
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `AsyncAuditPublisher` | Imperative background delivery: bounded queue drained by a virtual thread; serves servlet/worker callers. |
-| `AsyncAuditEventPublisher` | Native acceptance port returning a cancellable `CompletionStage<Void>`; no I/O wait during submission. |
-| `AsyncAuditTrail` | Sanitized asynchronous records with the same wire policy as `AuditTrail`. |
-| `AuditRecord` | Shared CPU-only construction of immutable, sanitized event snapshots. |
-| `CompositeAsyncAuditPublisher` | Native fan-out: all sinks attempted, failures reported, active send cancelled on cancellation. |
-| `LoggingAsyncAuditPublisher` | Hand-off to a non-blocking appender; completion acknowledges log hand-off, not durable storage. |
-| `AuditEvent` | Immutable audit record of who did what, on which resource, when and with what result. |
-| `AuditPolicy` | When an audited action is recorded. |
-| `AuditPublishException` | An audit event could not be delivered to its destination. |
-| `AuditPublisher` | Port to publish audit events (log, MSK, SQS...). |
-| `AuditTrail` | Builds sanitized audit events and hands them to the publisher. |
-| `Auditable` | Audits a method: actor, action, resource, outcome and (sanitized) arguments and result. |
-| `CompositeAuditPublisher` | Publishes to several publishers; a failing one does not prevent the others. |
-| `LoggingAuditPublisher` | Writes audit events as JSON lines to the `axiz.audit` logger. |
+| `AsyncAuditPublisher` | Entrega imperativa en segundo plano: cola acotada que vacía un hilo virtual; atiende a llamadores servlet o workers. |
+| `AsyncAuditEventPublisher` | Puerto de aceptación nativo que devuelve un `CompletionStage<Void>` cancelable; no espera I/O al enviar. |
+| `AsyncAuditTrail` | Registros asíncronos saneados con la misma política de formato que `AuditTrail`. |
+| `AuditRecord` | Construcción compartida, solo de CPU, de instantáneas de eventos inmutables y saneadas. |
+| `CompositeAsyncAuditPublisher` | Difusión nativa: se intenta cada destino, se informan los fallos y la cancelación cancela el envío en curso. |
+| `LoggingAsyncAuditPublisher` | Entrega a un appender no bloqueante; completar confirma la entrega al log, no un almacenamiento durable. |
+| `AuditEvent` | Registro de auditoría inmutable de quién hizo qué, sobre qué recurso, cuándo y con qué resultado. |
+| `AuditPolicy` | Cuándo se registra una acción auditada. |
+| `AuditPublishException` | Un evento de auditoría no pudo entregarse a su destino. |
+| `AuditPublisher` | Puerto para publicar eventos de auditoría (log, MSK, SQS, etc.). |
+| `AuditTrail` | Construye eventos de auditoría saneados y los entrega al publicador. |
+| `Auditable` | Audita un método: actor, acción, recurso, resultado y argumentos y retorno saneados. |
+| `CompositeAuditPublisher` | Publica en varios publicadores; el fallo de uno no impide los demás. |
+| `LoggingAuditPublisher` | Escribe los eventos de auditoría como líneas JSON en el logger `axiz.audit`. |
 
-## Native delivery
+## Entrega nativa
 
-Reactive integrations select `AsyncAuditEventPublisher`. In ASYNC mode,
-`QueuedAsyncAuditPublisher` admits events without waiting and delegates acknowledgement waiting to
-its owned drainer; request threads do not wait for network I/O. Builders belong to one operation. Each event receives an immutable snapshot of sanitized details;
-subsequent builder changes cannot alter a delivered event. Native transport ownership stays with
-its application owner. For transactional evidence, use Spring's reactive durable audit and R2DBC
-outbox in the business transaction. Logging requires a non-blocking appender and remains best effort.
+Las integraciones reactivas seleccionan `AsyncAuditEventPublisher`. En modo ASYNC,
+`QueuedAsyncAuditPublisher` admite eventos sin esperar y delega la espera de la confirmación en su
+propio drenador; los hilos de las peticiones no esperan I/O de red. Cada builder pertenece a una
+sola operación. Cada evento recibe una instantánea inmutable de los detalles saneados; los cambios
+posteriores del builder no alteran un evento entregado. El transporte nativo sigue perteneciendo a
+la aplicación que lo crea. Para evidencia transaccional se usa la auditoría durable reactiva de
+Spring con el outbox R2DBC dentro de la transacción de negocio. El log requiere un appender no
+bloqueante y sigue siendo de mejor esfuerzo.
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-audit verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl core/axiz-core-audit verify`.
 
-## Explicit delivery policy in Spring 2.0
+## Política de entrega explícita en Spring
 
-Framework-owned publishers require `axiz.audit.mode=ASYNC|DURABLE|SYNC` outside `local`/`test`.
-Retired boolean selectors are rejected, including alongside a canonical mode. Disabled audit and
-application-owned publishers keep their own delivery policy. ASYNC is the development default and uses
-memory, not crash-safe persistence. The generator writes DURABLE with an effective outbox
-capability, otherwise ASYNC, and preserves existing choices when adding capabilities.
+Los publicadores del framework exigen `axiz.audit.mode=ASYNC|DURABLE|SYNC` fuera de `local`/`test`.
+Los selectores booleanos se rechazan, también junto a un modo canónico. La auditoría desactivada y
+los publicadores propios de la aplicación mantienen su propia política de entrega. ASYNC es el
+valor por defecto en desarrollo y usa memoria, no persistencia resistente a caídas. El generador
+escribe DURABLE cuando hay una capacidad de outbox efectiva, si no ASYNC, y conserva las elecciones
+existentes al agregar capacidades.
 
-`axiz.audit.async.delivery-timeout` (default 10 s) bounds each imperative and native delivery.
-For an imperative sink, the queue drainer waits on a single owned delivery worker with bounded
-admission; a timed-out delivery is cancelled and follows the existing failure/fallback policy.
-Native queue delivery invokes the non-blocking submission contract on its owned virtual drainer
-and awaits one acknowledgement deadline. Cancellation reaches that stage before fallback, avoiding
-two competing timers. This internal native path does not expose an unchecked imperative constructor.
-The delegate must cooperate with interruption and configure its transport timeouts: Java cannot
-forcibly stop a delegate that ignores cancellation, and fallback may duplicate a late delivery.
-Shutdown shares its total 10-second budget across draining, cancellation, fallback and worker
-termination. `Shutdown.terminated` explicitly reports uncooperative callbacks, and `unconfirmed`
-distinguishes uncertain fallback acceptance from confirmed losses. Closed publishers reject new events.
-Queue admission, delivery and shutdown are different limits; none makes ASYNC durable. Context snapshots are opened on the actual delivery
-worker; business transaction state is never transferred across threads.
+`axiz.audit.async.delivery-timeout` (10 s por defecto) acota cada entrega imperativa y nativa.
+Para un destino imperativo, el drenador de la cola espera a un único worker de entrega propio con
+admisión acotada; una entrega que vence se cancela y sigue la política de fallo y respaldo vigente.
+La entrega nativa de la cola invoca el contrato de envío no bloqueante en su propio drenador virtual
+y espera un único plazo de confirmación. La cancelación llega a esa etapa antes del respaldo, lo que
+evita dos temporizadores en competencia. Esta ruta nativa interna no expone un constructor
+imperativo sin validar. El delegado debe cooperar con la interrupción y configurar los timeouts de
+su transporte: Java no puede detener por la fuerza a un delegado que ignora la cancelación, y el
+respaldo puede duplicar una entrega tardía. El apagado reparte su presupuesto total de 10 segundos
+entre el drenado, la cancelación, el respaldo y la terminación del worker. `Shutdown.terminated`
+informa de forma explícita los callbacks que no cooperan, y `unconfirmed` distingue una aceptación
+incierta del respaldo de las pérdidas confirmadas. Los publicadores cerrados rechazan eventos nuevos.
+Admisión en la cola, entrega y apagado son límites distintos; ninguno vuelve durable a ASYNC. Las
+instantáneas de contexto se abren en el worker que entrega; el estado de la transacción de negocio
+nunca se transfiere entre hilos.
 
-DURABLE joins the business transaction only with the same transaction manager/resource and a
-configured outbox destination/relay. Success outside a transaction uses async by default;
-`axiz.audit.durable.outside-transaction=fail` rejects it. This is a consumer policy, not a new default.
+DURABLE se une a la transacción de negocio solo con el mismo gestor de transacciones y recurso, y
+con un destino y relay de outbox configurados. Un éxito fuera de una transacción usa la entrega
+asíncrona por defecto; `axiz.audit.durable.outside-transaction=fail` lo rechaza. Es una política
+del consumidor, no un valor por defecto.

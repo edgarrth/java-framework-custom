@@ -3,7 +3,7 @@ import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.utils.SdkAutoCloseable;
 
 /**
- * Resolves actual web identity using only classes extracted from a final, non-Kafka service JAR.
+ * Resuelve la identidad web real usando solo clases extraídas de un JAR final de servicio sin Kafka.
  */
 class IrsaPackagedProbe {
   public static void main(String[] args) throws Exception {
@@ -11,7 +11,7 @@ class IrsaPackagedProbe {
       Class.forName("org.apache.kafka.clients.producer.KafkaProducer");
       throw new AssertionError("The no-Kafka acceptance consumer unexpectedly contains Kafka");
     } catch (ClassNotFoundException expected) {
-      // STS must be supplied by the framework's AWS integration, not MSK authentication.
+      // STS lo aporta la integración AWS del framework, no la autenticación de MSK.
     }
     AwsCredentialsProvider source;
     SdkAutoCloseable resource;

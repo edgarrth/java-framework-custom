@@ -12,9 +12,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Prestarted callback workers with lock-free bounded admission. Capacity includes active work and
- * queued callbacks. Exhaustion rejects immediately; no caller-runs or unbounded pending work.
- * Construct during startup and close with the owning transport.
+ * Workers de callbacks iniciados de antemano con admisión acotada sin locks. La capacidad incluye
+ * el trabajo activo y los callbacks en cola. El agotamiento rechaza de inmediato; sin caller-runs
+ * ni trabajo pendiente ilimitado. Se construye durante el arranque y se cierra con el transporte
+ * propietario.
  */
 public class BoundedCallbackExecutor extends AbstractExecutorService {
   private final ThreadPoolExecutor workers;
@@ -75,7 +76,10 @@ public class BoundedCallbackExecutor extends AbstractExecutorService {
     }
   }
 
-  /** Live counts only; callers cannot mutate the owned worker queue or bypass admission. */
+  /**
+   * Solo conteos en vivo; quienes llaman no pueden mutar la cola de workers propia ni saltarse la
+   * admisión.
+   */
   public final int getPoolSize() {
     return workers.getPoolSize();
   }

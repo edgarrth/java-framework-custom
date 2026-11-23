@@ -66,15 +66,15 @@
       <artifactId>micrometer-tracing</artifactId>
       <optional>true</optional>
       <exclusions>
-        <!-- spring-aop already ships these classes (repackaged); keeping both breaks
-             BanDuplicateClasses. Spring Boot's tracing modules exclude it the same way. -->
+        <!-- spring-aop ya incluye estas clases (reempaquetadas); mantener ambas rompe
+             BanDuplicateClasses. Los módulos de tracing de Spring Boot la excluyen del mismo modo. -->
         <exclusion>
           <groupId>aopalliance</groupId>
           <artifactId>aopalliance</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
-    <!-- the reactive request observations (MockServerHttpRequest needs Reactor) -->
+    <!-- las observaciones de peticiones reactivas (MockServerHttpRequest necesita Reactor) -->
     <dependency>
       <groupId>io.projectreactor</groupId>
       <artifactId>reactor-core</artifactId>

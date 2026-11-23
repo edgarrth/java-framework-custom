@@ -1,4 +1,4 @@
-"""Version-independent structural fixtures; effective deployment pins stay exact."""
+"""Fixtures estructurales independientes de la versión; los pins efectivos de despliegue se mantienen exactos."""
 from pathlib import Path
 import re
 import sys

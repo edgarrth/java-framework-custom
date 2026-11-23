@@ -10,7 +10,10 @@ import pe.axiz.payments.history.application.command.RecordPaymentStatusChangedCo
 import pe.axiz.payments.history.domain.PaymentStatus;
 import pe.axiz.spring.messaging.ReactiveTypedEventHandler;
 
-/** Projects {@code payment-order.status-changed.v1}; older or repeated changes are ignored. */
+/**
+ * Proyecta {@code payment-order.status-changed.v1}; los cambios más antiguos o repetidos se
+ * ignoran.
+ */
 @Component
 @HandlesEvent(PaymentOrderStatusChangedHandler.TYPE)
 public class PaymentOrderStatusChangedHandler
@@ -19,13 +22,13 @@ public class PaymentOrderStatusChangedHandler
   static final String TYPE = "pe.axiz.payments.payment-order.status-changed.v1";
 
   /**
-   * Payload of the event.
+   * Payload del evento.
    *
-   * @param orderId order
-   * @param customerId customer
-   * @param previous previous status
-   * @param status new status
-   * @param reason reason, when given
+   * @param orderId orden
+   * @param customerId cliente
+   * @param previous estado previo
+   * @param status estado nuevo
+   * @param reason motivo, cuando se indica
    */
   public record PaymentOrderStatusChanged(
       String orderId, String customerId, String previous, String status, @Nullable String reason) {}

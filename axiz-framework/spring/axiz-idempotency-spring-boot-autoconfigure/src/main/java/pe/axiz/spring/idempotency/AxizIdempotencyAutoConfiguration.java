@@ -41,8 +41,8 @@ import pe.axiz.core.idempotency.InMemoryIdempotencyStore;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 
 /**
- * {@code @Idempotent} operations with the {@code Idempotency-Key} header: responses stored in
- * ElastiCache (Redis) or DynamoDB and replayed; 400, 409 and 422 on misuse.
+ * Operaciones {@code @Idempotent} con la cabecera {@code Idempotency-Key}: respuestas almacenadas
+ * en ElastiCache (Redis) o DynamoDB y reproducidas; 400, 409 y 422 ante un uso indebido.
  */
 @AutoConfiguration
 @ConditionalOnWebApplication
@@ -69,8 +69,8 @@ public class AxizIdempotencyAutoConfiguration {
         "axiz.idempotency.store=memory",
         "redis or dynamodb",
         "keys kept per replica let a retry on another replica execute twice");
-    // allowed only where one process runs (local, test): the check above fails anywhere else, so
-    // this is information, not a warning
+    // permitido solo donde se ejecuta un único proceso (local, test): la comprobación anterior
+    // falla en cualquier otro lugar, por lo que esto es información, no una advertencia
     LoggerFactory.getLogger(AxizIdempotencyAutoConfiguration.class)
         .info(
             "Idempotency keys are kept in memory (single process); replicas need redis or"
@@ -95,9 +95,10 @@ public class AxizIdempotencyAutoConfiguration {
   }
 
   /**
-   * {@code @Idempotent} handlers of {@code @Controller} beans are wrapped by an infrastructure
-   * advisor ordered after Spring Security's method authorization: every request, replays included,
-   * passes {@code @PreAuthorize}, {@code @Secured} and JSR-250 checks first.
+   * Los handlers {@code @Idempotent} de los beans {@code @Controller} los envuelve un advisor de
+   * infraestructura ordenado después de la autorización de métodos de Spring Security: toda
+   * solicitud, incluidas las reproducciones, pasa primero las comprobaciones de
+   * {@code @PreAuthorize}, {@code @Secured} y JSR-250.
    */
   @Bean
   @Role(BeanDefinition.ROLE_INFRASTRUCTURE)

@@ -8,7 +8,10 @@ import org.springframework.web.util.pattern.PathPatternParser;
 import pe.axiz.core.security.AxizPrincipal;
 import pe.axiz.core.security.RateLimitKeys;
 
-/** Resolves rules independently for authenticated callers and anonymous connection addresses. */
+/**
+ * Resuelve las reglas de forma independiente para los invocantes autenticados y para las
+ * direcciones de conexión anónimas.
+ */
 public class RateLimitRules {
 
   private final List<Compiled> rules;

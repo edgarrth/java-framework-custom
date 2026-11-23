@@ -35,7 +35,10 @@ import org.springframework.web.reactive.function.client.WebClient;
 import pe.axiz.core.json.JsonReader;
 import reactor.core.publisher.Mono;
 
-/** Bounded native JDK transport shared by discovery and both Nimbus adapters. Never redirects. */
+/**
+ * Transporte nativo acotado del JDK compartido por el descubrimiento y ambos adaptadores de Nimbus.
+ * Nunca sigue redirecciones.
+ */
 final class IssuerHttpTransport implements AutoCloseable {
   private static final int MAX_BYTES = 131_072;
 
@@ -70,7 +73,8 @@ final class IssuerHttpTransport implements AutoCloseable {
     return get(uri, validateBody, false);
   }
 
-  // Both observers explicitly terminate the owned result or cancel its transport; no detached task.
+  // Ambos observadores terminan explícitamente el resultado propio o cancelan su transporte; sin
+  // tareas desligadas.
   @SuppressWarnings("FutureReturnValueIgnored")
   private CompletableFuture<String> get(
       URI uri, Consumer<Map<String, Object>> validateBody, boolean keys) {

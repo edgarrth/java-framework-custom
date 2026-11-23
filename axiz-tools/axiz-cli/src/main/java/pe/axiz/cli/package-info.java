@@ -1,4 +1,6 @@
-/** The axiz command line. Types are non-null unless annotated {@code @Nullable}. */
+/**
+ * La línea de comandos de axiz. Los tipos no son nulos salvo que se anoten con {@code @Nullable}.
+ */
 @NullMarked
 package pe.axiz.cli;
 

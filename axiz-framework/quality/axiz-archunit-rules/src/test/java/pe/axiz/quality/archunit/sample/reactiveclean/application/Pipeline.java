@@ -12,7 +12,7 @@ import pe.axiz.core.notification.NotificationRequest;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/** Composes publishers without blocking or hooks. */
+/** Compone publishers sin bloqueos ni hooks. */
 public class Pipeline {
   public DataKey keyValue(DataKey value) {
     return value;

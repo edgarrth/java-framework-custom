@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Real offline release plans, actual adoption, and complete policy checks in isolated Git copies."""
+"""Planes de release reales sin conexión, adopción real y verificaciones completas de política en copias aisladas de Git."""
 import argparse
 import hashlib
 import json
@@ -110,7 +110,7 @@ class ReleaseEntrypointTest(unittest.TestCase):
 
     @classmethod
     def apply_plan(cls,repo,label):
-        # The shared planner is part of the verified toolchain; every data read targets repo.
+                # El planificador compartido forma parte de la cadena de herramientas verificada; toda lectura de datos apunta a repo.
         script=ROOT/'.github/scripts/release-version/release-plan.cjs'
         completed=subprocess.run(['node',str(script),str(repo)],env=getattr(cls,'env',os.environ),capture_output=True,text=True)
         (cls.output/(label+'.log')).write_text(completed.stdout+completed.stderr)
@@ -215,8 +215,8 @@ exec "$AXIZ_TEST_PYTHON" "$@"
         adopted=self.base/'adopted-metadata';shutil.copytree(self.adopted,adopted,symlinks=True)
         contract=adopted/'.github/workflows/service-deploy.yaml';original=contract.read_text()
         contract.write_text(original.replace('    inputs:\n','    inputs:\n      fixture-only: {type: string, required: true}\n',1))
-        # A whole-tree check now also closes the privileged workflow context, including inputs.
-        # The executable wrapper must still resolve the published contract, not mutable metadata.
+                # Una verificación de todo el árbol cierra también el contexto del workflow privilegiado, incluidas las entradas.
+        # El wrapper ejecutable debe seguir resolviendo el contrato publicado, no metadatos mutables.
         full=self.cli(adopted);self.assertNotEqual(0,full.returncode);self.assertIn('closed role contract',full.stderr)
         wrapper=self.wrapper(adopted,self.current_archive);self.assertEqual(0,wrapper.returncode,wrapper.stderr)
         contract.write_text(original)

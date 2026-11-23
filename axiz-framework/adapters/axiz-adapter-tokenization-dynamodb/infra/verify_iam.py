@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise rendered vault policies with AWS IAM's real simulator; no resource mutation."""
+"""Ejercita las políticas del vault renderizadas con el simulador real de AWS IAM; sin mutar recursos."""
 import argparse
 import json
 import re

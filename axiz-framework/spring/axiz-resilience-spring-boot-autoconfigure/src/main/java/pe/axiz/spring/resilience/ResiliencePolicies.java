@@ -14,8 +14,9 @@ import pe.axiz.core.resilience.RetryPolicy;
 import pe.axiz.core.resilience.TimeoutSettings;
 
 /**
- * Resolves the resilience components of a named dependency from {@code axiz.resilience}. Circuit
- * breakers and bulkheads are created once per name and exported as metrics.
+ * Resuelve los componentes de resiliencia de una dependencia con nombre a partir de {@code
+ * axiz.resilience}. Los circuit breakers y los bulkheads se crean una vez por nombre y se exportan
+ * como métricas.
  */
 public final class ResiliencePolicies {
 
@@ -37,7 +38,9 @@ public final class ResiliencePolicies {
     return new TimeoutSettings(t.connect(), t.read(), t.total());
   }
 
-  /** Retries of transient failures; callers apply it only to idempotent operations. */
+  /**
+   * Reintentos de fallos transitorios; los invocantes lo aplican solo a operaciones idempotentes.
+   */
   public RetryPolicy retry(String name) {
     AxizResilienceProperties.Retry r = properties.policy(name).retry();
     if (r.maxAttempts() <= 1) {
@@ -85,7 +88,10 @@ public final class ResiliencePolicies {
                     .build()));
   }
 
-  /** 4xx answers from a dependency are the caller's problem and must not open the circuit. */
+  /**
+   * Las respuestas 4xx de una dependencia son un problema del invocante y no deben abrir el
+   * circuito.
+   */
   static boolean isClientError(Throwable t) {
     return t instanceof AxizException a
         && !a.category().retryable()

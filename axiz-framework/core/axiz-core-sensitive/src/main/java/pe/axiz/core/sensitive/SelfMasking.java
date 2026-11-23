@@ -1,6 +1,6 @@
 package pe.axiz.core.sensitive;
 
-/** A sensitive value whose safe representation is used without inspecting its contents. */
+/** Valor sensible cuya representación segura se usa sin inspeccionar su contenido. */
 public interface SelfMasking {
   String masked();
 }

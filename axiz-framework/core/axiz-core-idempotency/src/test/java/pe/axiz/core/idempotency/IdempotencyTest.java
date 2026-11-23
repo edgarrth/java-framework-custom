@@ -90,7 +90,7 @@ class IdempotencyTest {
             .httpStatus());
   }
 
-  /** Mutable clock for lock-expiry scenarios. */
+  /** Reloj mutable para escenarios de expiración del lock. */
   static final class TestClock extends Clock {
     Instant now = Instant.parse("2026-01-01T00:00:00Z");
 
@@ -111,8 +111,9 @@ class IdempotencyTest {
   }
 
   /**
-   * Regression: request A holds the key, its lock expires, request B takes the key and is still
-   * running when A finishes. A's response must not be stored over B, nor may A release B's key.
+   * Regresión: la petición A tiene la clave, su lock expira, la petición B toma la clave y sigue en
+   * ejecución cuando A termina. La respuesta de A no debe almacenarse sobre la de B, ni A puede
+   * liberar la clave de B.
    */
   @Test
   void aLateCompletionCannotOverwriteTheExecutionThatTookTheKey() {
@@ -148,7 +149,7 @@ class IdempotencyTest {
   @Test
   void theInMemoryStoreExpiresWithTheServiceClock() {
     TestClock clock = new TestClock();
-    clock.now = Instant.parse("2000-01-01T00:00:00Z"); // far from the system clock
+    clock.now = Instant.parse("2000-01-01T00:00:00Z"); // lejos del reloj del sistema
     IdempotencyService svc =
         new IdempotencyService(
             new InMemoryIdempotencyStore(clock),
@@ -162,10 +163,11 @@ class IdempotencyTest {
   }
 
   /**
-   * Regression: with U+0000 U+0002 inside a part, ("app" + S + "other", "subject") and ("app",
-   * "other" + S + "subject") hashed the same bytes. Parts with control characters are rejected
-   * before anything starts, which keeps the encoding injective without changing the scope of clean
-   * callers (requests in flight across an upgrade keep their keys).
+   * Regresión: con U+0000 U+0002 dentro de una parte, ("app" + S + "other", "subject") y ("app",
+   * "other" + S + "subject") generaban el hash de los mismos bytes. Las partes con caracteres de
+   * control se rechazan antes de que empiece cualquier cosa, lo que mantiene inyectiva la
+   * codificación sin cambiar el alcance de los llamadores limpios (las peticiones en curso durante
+   * una actualización conservan sus claves).
    */
   @Test
   void aPartCannotImitateTheSeparatorsOfTheScope() {
@@ -182,11 +184,11 @@ class IdempotencyTest {
           () -> IdempotencyService.scope("op", "iss" + control, null, null, null),
           control);
     }
-    // the hash of a clean caller is the one earlier releases computed
+    // el hash de un llamador limpio es estable: coincide con el valor de referencia fijo
     assertEquals(
         "op:1762d179852eb97b8e8bd49538404fea2d21f5d01eee4d990616230cab44fc28",
         IdempotencyService.scope("op", "iss", "t1", "app", "user-1"));
-    // empty and absent parts, and non-ASCII text, stay distinct and accepted
+    // las partes vacías y ausentes, y el texto no ASCII, siguen siendo distintos y aceptados
     assertNotEquals(
         IdempotencyService.scope("op", "iss", "", "app", null),
         IdempotencyService.scope("op", "iss", null, "app", ""));
@@ -215,7 +217,7 @@ class IdempotencyTest {
         IdempotencyService.scope("op", "iss", "t1", "app", "user-1"));
   }
 
-  /** Regression: the scope separates issuers, tenants, clients and subjects. */
+  /** Regresión: el alcance separa emisores, tenants, clientes y subjects. */
   @Test
   void theScopeSeparatesEveryCallerDimension() {
     String base = IdempotencyService.scope("op", "iss", "t1", "app", "user-1");
@@ -246,8 +248,9 @@ class IdempotencyTest {
   }
 
   /**
-   * Regressions: the query string is part of the request identity, and is taken as sent, so an
-   * order-sensitive repeated parameter ({@code sort=a&sort=b}) is not confused with its reverse.
+   * Regresiones: la query string forma parte de la identidad de la petición y se toma tal como se
+   * envió, de modo que un parámetro repetido sensible al orden ({@code sort=a&sort=b}) no se
+   * confunde con su inverso.
    */
   @Test
   void theFingerprintIncludesTheQueryStringAsSent() {

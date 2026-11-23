@@ -10,7 +10,7 @@ import org.springframework.web.reactive.result.method.SyncHandlerMethodArgumentR
 import org.springframework.web.server.ServerWebExchange;
 import pe.axiz.core.api.PageRequest;
 
-/** WebFlux resolver for {@link PageRequest} controller parameters. */
+/** Resolvedor de WebFlux para los parámetros {@link PageRequest} de los controladores. */
 public class ReactivePageRequestArgumentResolver implements SyncHandlerMethodArgumentResolver {
 
   private final PageRequestParser parser;

@@ -1,4 +1,4 @@
-"""Validate OCI archives as data and upload their original blobs without executing images."""
+"""Valida los archivos OCI como datos y sube sus blobs originales sin ejecutar imágenes."""
 import base64
 import hashlib
 import json
@@ -59,7 +59,7 @@ def metadata_file(path):
 
 
 def archive(path, destination, platform):
-    """Extract only validated regular OCI files; layer archives remain opaque data."""
+    """Extrae solo archivos OCI regulares validados; los archivos de las capas siguen siendo datos opacos."""
     if platform not in {"linux/amd64", "linux/arm64"} or destination.exists():
         raise ValueError("Expected a supported platform and a fresh OCI destination")
     destination.mkdir(parents=True)
@@ -214,7 +214,7 @@ class Registry:
 
 
 def publish(registry, images, tag):
-    """All archives must have passed validation before calling this mutation phase."""
+    """Todos los archivos deben haber superado la validación antes de invocar esta fase de mutación."""
     if not images or len(images) != len({json.dumps(image[0]["platform"], sort_keys=True) for image in images}):
         raise ValueError("Expected distinct, nonempty image platforms")
     for descriptor, file, blobs in images:

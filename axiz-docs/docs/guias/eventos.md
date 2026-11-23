@@ -66,13 +66,13 @@ transactionalEvents.enqueue(
 - **Sin orden global ni por agregado entre relays.** `ORDER BY created_at` con `SKIP LOCKED` ordena
   dentro de un lote, pero dos réplicas toman lotes distintos en paralelo, y el backoff de un evento
   fallido deja salir a los posteriores antes. Si un contrato necesita orden estricto por agregado:
-  publica con el id del agregado como llave de partición (Kafka y SQS FIFO conservan el orden por
-  llave), lleva una versión o secuencia por agregado en el evento y haz que el consumidor detecte
-  versiones atrasadas o huecos y los descarte o espere.
+  se publica con el id del agregado como llave de partición (Kafka y SQS FIFO conservan el orden por
+  llave), el evento lleva una versión o secuencia por agregado y el consumidor detecta versiones
+  atrasadas o huecos y los descarta o espera.
 - **Transacción abierta mientras se publica.** El relay mantiene los locks del lote mientras envía
-  al broker: mantén `axiz.outbox.relay.batch-size` chico y vigila la duración de la transacción,
-  la edad del evento más antiguo y `axiz.outbox.pending`. No muevas la publicación fuera de la
-  transacción sin diseñar antes la recuperación de reservas vencidas.
+  al broker: `axiz.outbox.relay.batch-size` se mantiene chico y se vigilan la duración de la
+  transacción, la edad del evento más antiguo y `axiz.outbox.pending`. La publicación no se mueve
+  fuera de la transacción sin diseñar primero la recuperación de reservas vencidas.
 
 El outbox persiste los eventos dentro de la transacción de negocio y los publica con reintentos desde un worker independiente.
 
@@ -131,9 +131,9 @@ el servicio de canal renderiza con `TemplateRenderer`.
 
 Para los relays configura límites de conexión, consulta y espera de locks compatibles con su carga.
 `idle_in_transaction_session_timeout` acota transacciones abandonadas inactivas; PostgreSQL 17+
-también permite `transaction_timeout` para limitar su duración total. Usa configuración de rol o
+también permite `transaction_timeout` para limitar su duración total. Se usa una configuración de rol o
 sesión apropiada: si el rol comparte transacciones del negocio, los valores deben respetarlas.
-Axiz no cambia parámetros globales del servidor. Consulta los
+Axiz no cambia parámetros globales del servidor. Ver los
 [parámetros de PostgreSQL 17](https://www.postgresql.org/docs/17/runtime-config-client.html).
 
 Estas protecciones complementan el cierre y rollback del cliente. `SKIP LOCKED` no evita envíos

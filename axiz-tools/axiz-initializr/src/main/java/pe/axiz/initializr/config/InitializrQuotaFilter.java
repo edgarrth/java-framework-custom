@@ -20,7 +20,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import pe.axiz.core.security.RateLimiter;
 import tools.jackson.databind.json.JsonMapper;
 
-/** Authenticated subject + operation quotas; generation concurrency is bounded in each replica. */
+/**
+ * Cuotas por sujeto autenticado y operación; la concurrencia de generación está acotada en cada
+ * réplica.
+ */
 final class InitializrQuotaFilter extends OncePerRequestFilter {
   private static final JsonMapper JSON = JsonMapper.builder().build();
   private final RateLimiter limiter;
@@ -87,7 +90,8 @@ final class InitializrQuotaFilter extends OncePerRequestFilter {
   }
 
   private static String operation(HttpServletRequest request) {
-    // Use the same segment decoding as MVC; the quota key is always the canonical operation.
+    // Se usa la misma decodificación de segmentos que MVC; la clave de cuota siempre es la
+    // operación canónica.
     for (String path :
         new String[] {
           "/v1/projects/github", "/v1/projects", "/v1/projects/validate", "/v1/contracts/lint"

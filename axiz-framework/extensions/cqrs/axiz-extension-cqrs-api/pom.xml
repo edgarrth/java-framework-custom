@@ -27,7 +27,7 @@
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
-    <!-- Publisher only, for reactive handlers; no Reactor or Spring types in the API -->
+    <!-- Solo Publisher, para handlers reactivos; sin tipos de Reactor ni de Spring en la API -->
     <dependency>
       <groupId>org.reactivestreams</groupId>
       <artifactId>reactive-streams</artifactId>

@@ -54,7 +54,10 @@ import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 
-/** Broker acknowledgements and received payloads are checked, not only Spring bean presence. */
+/**
+ * Se verifican los acuses del broker y los payloads recibidos, no solo la presencia de beans de
+ * Spring.
+ */
 class MessagingRecipesTest {
   @Test
   void servletKafkaPublisherReceivesBrokerAcknowledgementAndPreservesEnvelope(

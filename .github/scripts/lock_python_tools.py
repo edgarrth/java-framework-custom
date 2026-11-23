@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Resolve a tool's complete wheel-only dependency tree and pin official PyPI hashes."""
+"""Resuelve el árbol completo de dependencias, solo wheels, de una herramienta y fija los hashes oficiales de PyPI."""
 import argparse
 import concurrent.futures
 import json

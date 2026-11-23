@@ -2,7 +2,7 @@ package pe.axiz.adapter.messaging.kafka;
 
 import java.util.Map;
 
-/** Reliable Kafka publishing settings independent of the authentication provider. */
+/** Configuración de publicación Kafka confiable, independiente del proveedor de autenticación. */
 public final class KafkaProducerPolicy {
   private KafkaProducerPolicy() {}
 

@@ -154,8 +154,8 @@ class R2dbcOutboxStoreTest {
   }
 
   /**
-   * Regression: the blocking {@code append} (used by the imperative outbox writer) waited on a
-   * {@code Mono<Void>} and failed with "returned nothing" after the row had been inserted.
+   * Regresión: el {@code append} bloqueante (usado por el escritor imperativo del outbox) esperaba
+   * un {@code Mono<Void>} y fallaba con "returned nothing" después de insertar la fila.
    */
   @Test
   void blockingAppendCompletesForAStatementWithoutValue() {

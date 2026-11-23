@@ -9,7 +9,9 @@ import org.springframework.core.env.Environment;
 import pe.axiz.core.commons.Environments;
 import pe.axiz.core.tokenization.AsyncTokenizer;
 
-/** Explicit test double requiring both mode=local and an allowed deployment environment. */
+/**
+ * Doble de prueba explícito que requiere tanto mode=local como un entorno de despliegue permitido.
+ */
 @AutoConfiguration(after = AxizTokenizationRemoteAutoConfiguration.class)
 @ConditionalOnProperty(name = "axiz.tokenization.mode", havingValue = "local")
 public class AxizTokenizationLocalAutoConfiguration {

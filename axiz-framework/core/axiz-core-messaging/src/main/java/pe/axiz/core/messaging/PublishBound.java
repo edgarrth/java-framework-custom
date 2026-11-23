@@ -4,7 +4,10 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 
-/** Caller-visible publication budget, including whether some reachable route has no known bound. */
+/**
+ * Presupuesto de publicación visible para quien llama, incluido si alguna ruta alcanzable no tiene
+ * un límite conocido.
+ */
 public record PublishBound(Optional<Duration> known, boolean hasUnbounded) {
   public PublishBound {
     Objects.requireNonNull(known);
@@ -39,7 +42,7 @@ public record PublishBound(Optional<Duration> known, boolean hasUnbounded) {
     return new PublishBound(max, hasUnbounded || other.hasUnbounded);
   }
 
-  /** The explicit fallback covers unknown routes, never reducing any known bound. */
+  /** El fallback explícito cubre las rutas desconocidas, sin reducir nunca un límite conocido. */
   public Duration budget(Optional<Duration> fallback) {
     Objects.requireNonNull(fallback);
     fallback.ifPresent(

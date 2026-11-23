@@ -1,4 +1,4 @@
-"""Require executed, successful architecture and self-check cases from fresh Surefire output."""
+"""Exige casos de arquitectura y de autoverificación ejecutados y exitosos a partir de una salida nueva de Surefire."""
 import argparse
 import json
 from pathlib import Path
@@ -8,7 +8,7 @@ REQUIRED = ("ArchitectureTest", "ArchitectureSelfCheckTest")
 
 
 def prepare(module: Path) -> None:
-    """Remove only prior generated Surefire XML; preserve other build evidence and inputs."""
+    """Elimina solo el XML de Surefire generado previamente; conserva el resto de la evidencia y las entradas del build."""
     module = module.resolve()
     directory = module / "target" / "surefire-reports"
     if directory.resolve() != directory or directory.is_symlink():

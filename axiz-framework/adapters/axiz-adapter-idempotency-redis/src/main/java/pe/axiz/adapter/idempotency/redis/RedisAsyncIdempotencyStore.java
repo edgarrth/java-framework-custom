@@ -18,7 +18,8 @@ import pe.axiz.core.idempotency.StoredResponse;
 import pe.axiz.core.idempotency.StoredResponseCodec;
 
 /**
- * Native asynchronous Redis store, sharing the atomic fencing scripts with the synchronous store.
+ * Almacén Redis asíncrono nativo que comparte los scripts atómicos de fencing con el almacén
+ * síncrono.
  */
 public final class RedisAsyncIdempotencyStore implements AsyncIdempotencyStore {
   private final RedisAsyncCommands<String, String> redis;

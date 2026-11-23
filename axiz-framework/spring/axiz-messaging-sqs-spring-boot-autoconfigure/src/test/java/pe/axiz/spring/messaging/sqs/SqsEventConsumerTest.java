@@ -40,7 +40,7 @@ import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 
 class SqsEventConsumerTest {
 
-  /** Records what the consumer asks SQS to do. */
+  /** Registra lo que el consumidor pide hacer a SQS. */
   static final class FakeSqs implements SqsClient {
     final List<String> calls = new CopyOnWriteArrayList<>();
     final List<SendMessageRequest> sent = new CopyOnWriteArrayList<>();
@@ -268,7 +268,7 @@ class SqsEventConsumerTest {
                 10,
                 Duration.ofSeconds(60)),
             Backoff.exponential(Duration.ofSeconds(1), Duration.ofMinutes(1)));
-    consumer.stop(); // A context may fail before start; stopping must be safe.
+    consumer.stop(); // Un contexto puede fallar antes de arrancar; detenerlo debe ser seguro.
     consumer.process("https://sqs/q", message(validBody()));
     assertEquals(List.of("visibility:1"), sqs.calls);
     sqs.calls.clear();

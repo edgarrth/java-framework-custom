@@ -46,7 +46,10 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
-/** A real cold TLS handshake, strict trust/hostname checks and reconnection on watched threads. */
+/**
+ * Un handshake TLS real en frío, verificaciones estrictas de confianza y nombre de host y
+ * reconexión en hilos vigilados.
+ */
 @ExtendWith(BlockHoundExtension.class)
 class NativeAwsTlsIT {
   @TempDir Path temporary;

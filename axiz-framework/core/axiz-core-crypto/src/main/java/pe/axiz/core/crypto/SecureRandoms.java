@@ -7,16 +7,17 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 
 /**
- * Explicit JCA DRBG selection; construct on the bootstrap thread to acquire its initial entropy.
+ * Selección explícita de DRBG de JCA; se construye en el hilo de arranque para adquirir su entropía
+ * inicial.
  */
 public final class SecureRandoms {
   private SecureRandoms() {}
 
   /**
-   * Creates an independently seeded 256-bit DRBG, without requesting prediction resistance on every
-   * generation. Does not fall back to NativePRNG or a noncryptographic generator. Provider reseed
-   * limits still apply; this method does not claim that every third-party provider is nonblocking
-   * or that the JVM is a validated cryptographic module.
+   * Crea un DRBG de 256 bits con semilla independiente, sin solicitar resistencia a la predicción
+   * en cada generación. No recurre a NativePRNG ni a un generador no criptográfico. Los límites de
+   * resiembra del proveedor siguen aplicando; este método no afirma que todo proveedor de terceros
+   * sea no bloqueante ni que la JVM sea un módulo criptográfico validado.
    */
   public static SecureRandom drbg(String purpose) {
     if (purpose == null || !purpose.matches("[a-z][a-z0-9.-]{0,63}"))

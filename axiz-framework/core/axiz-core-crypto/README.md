@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-core-crypto
 
-AES-256-GCM, envelope encryption, RSA-OAEP, HMAC, hashing, password hashing, blind index and key rotation.
+AES-256-GCM, cifrado de sobre, RSA-OAEP, HMAC, hashes, hash de contraseñas, índice ciego y rotación de claves.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,27 +12,27 @@ AES-256-GCM, envelope encryption, RSA-OAEP, HMAC, hashing, password hashing, bli
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `AsyncDataKeyProvider` | Native envelope-key generation/decryption using CompletionStage. |
-| `AsyncEnvelopeEncryptor` | Shared wire format with bounded, coalesced key caches; last-caller cancellation reaches the provider. |
-| `AesGcm` | AES-256-GCM authenticated encryption with a random 96-bit IV per message and optional additional authenticated data (AAD). |
-| `BlindIndex` | Blind index for searching encrypted columns by equality: HMAC-SHA256 of the normalized value with a dedicated key (never the encryption key), truncated to limit leakage. |
-| `CryptoException` | Cryptographic operation failed (wrong key, tampered data, unavailable provider). |
-| `DataKeyProvider` | Port for envelope encryption data keys (AWS KMS in production). |
-| `EnvelopeEncryptor` | Envelope encryption: data is encrypted locally with a data key that is itself encrypted by the master key (KMS). |
-| `FieldEncryptor` | Encrypts individual values (database fields) with AES-256-GCM. |
-| `Hashing` | SHA-2 hashes and HMAC with constant-time verification. |
-| `KeyProvider` | Supplies symmetric keys by id. |
-| `PasswordHasher` | Password hashing port. |
-| `Pbkdf2PasswordHasher` | PBKDF2-HMAC-SHA256 password hasher available in any JDK (FIPS friendly). |
-| `Rsa` | RSA with OAEP-SHA256 encryption and RSASSA-PSS-SHA256 signatures. |
-| `StaticKeyProvider` | Key provider over keys loaded at startup (for example from Secrets Manager). |
+| `AsyncDataKeyProvider` | Generación y descifrado nativos de claves de sobre con CompletionStage. |
+| `AsyncEnvelopeEncryptor` | Formato compartido con cachés de claves acotadas y agrupadas; la cancelación del último llamador llega al proveedor. |
+| `AesGcm` | Cifrado autenticado AES-256-GCM con un IV aleatorio de 96 bits por mensaje y datos autenticados adicionales (AAD) opcionales. |
+| `BlindIndex` | Índice ciego para buscar por igualdad en columnas cifradas: HMAC-SHA256 del valor normalizado con una clave dedicada (nunca la de cifrado), truncado para limitar la filtración. |
+| `CryptoException` | Falló una operación criptográfica (clave incorrecta, datos alterados o proveedor no disponible). |
+| `DataKeyProvider` | Puerto de claves de datos para cifrado de sobre (AWS KMS en producción). |
+| `EnvelopeEncryptor` | Cifrado de sobre: los datos se cifran localmente con una clave de datos que a su vez cifra la clave maestra (KMS). |
+| `FieldEncryptor` | Cifra valores individuales (campos de base de datos) con AES-256-GCM. |
+| `Hashing` | Hashes SHA-2 y HMAC con verificación en tiempo constante. |
+| `KeyProvider` | Proporciona claves simétricas por identificador. |
+| `PasswordHasher` | Puerto de hash de contraseñas. |
+| `Pbkdf2PasswordHasher` | Hash de contraseñas PBKDF2-HMAC-SHA256 disponible en cualquier JDK (compatible con FIPS). |
+| `Rsa` | RSA con cifrado OAEP-SHA256 y firmas RSASSA-PSS-SHA256. |
+| `StaticKeyProvider` | Proveedor sobre claves cargadas al arrancar (por ejemplo desde Secrets Manager). |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-crypto verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl core/axiz-core-crypto verify`.

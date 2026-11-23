@@ -2,10 +2,16 @@ package pe.axiz.core.audit;
 
 import java.util.Map;
 
-/** Operational counters only. Observed sequences are never trusted completeness checkpoints. */
+/**
+ * Solo contadores operativos. Las secuencias observadas nunca son checkpoints de completitud
+ * confiables.
+ */
 public interface AuditIntegrityMetrics {
   long detailsSanitizedCount();
 
-  /** Highest locally assigned sequence by lane, including attempts that may roll back. */
+  /**
+   * Secuencia más alta asignada localmente por carril, incluidos los intentos que pueden hacer
+   * rollback.
+   */
   Map<String, Long> chainSequences();
 }

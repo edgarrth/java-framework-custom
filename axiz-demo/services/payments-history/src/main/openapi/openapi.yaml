@@ -7,7 +7,7 @@ info:
     projected from the payment order events. Eventually consistent with payment-orders.
 tags:
   - name: payment-history
-# Any authenticated caller with payments:channel or payments:read; the service checks which.
+# Cualquier invocador autenticado con payments:channel o payments:read; el servicio verifica cuál.
 security: [{oauth2: []}]
 paths:
   /v1/customers/{customerId}/payments:

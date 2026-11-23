@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-sensitive-spring-boot-starter
 
-Masking of @Sensitive and @Mask fields in JSON responses, logs and audit.
+Enmascaramiento de campos @Sensitive y @Mask en respuestas JSON, logs y auditoría.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,4 +12,4 @@ Masking of @Sensitive and @Mask fields in JSON responses, logs and audit.
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).

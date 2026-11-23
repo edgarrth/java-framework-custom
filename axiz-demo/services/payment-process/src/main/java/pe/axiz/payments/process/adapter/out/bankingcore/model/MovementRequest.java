@@ -10,7 +10,7 @@ import org.jspecify.annotations.Nullable;
  * @param amount amount
  * @param currency currency
  * @param reference reference
- * @param holderId customer who must own the account (debits)
+ * @param holderId cliente que debe ser titular de la cuenta (débitos)
  */
 public record MovementRequest(
     String accountId,

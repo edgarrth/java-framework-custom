@@ -1,9 +1,9 @@
 #!/bin/bash
-# AWS resources of the whole demo in LocalStack (runs when LocalStack is ready). In real
-# environments Terraform creates them; services never create infrastructure.
+# Recursos de AWS de toda la demo en LocalStack (se ejecuta cuando LocalStack está listo). En los entornos
+# reales los crea Terraform; los servicios nunca crean infraestructura.
 set -euo pipefail
 here=$(dirname "$0")
-table() { # name, then "attribute:type:KEYTYPE" for each key attribute
+table() { # nombre y luego "attribute:type:KEYTYPE" por cada atributo de clave
   local name=$1 defs=() keys=(); shift
   for k in "$@"; do IFS=: read -r a t kt <<<"$k"
     defs+=("AttributeName=$a,AttributeType=$t"); keys+=("AttributeName=$a,KeyType=$kt"); done
@@ -19,31 +19,31 @@ table notification-contacts customerId:S:HASH
 table axiz-inbox pk:S:HASH
 table axiz-locks pk:S:HASH
 
-# payment-orders: KMS key for the envelope encryption of fields
+# payment-orders: clave KMS para el cifrado envolvente de campos
 awslocal kms create-alias --alias-name alias/local \
   --target-key-id "$(awslocal kms create-key --query KeyMetadata.KeyId --output text)" || true
 
-# audit trail queue (banking-core publishes, notifications-processor archives), DLQ after 5
+# cola del registro de auditoría (banking-core publica, notifications-processor archiva), DLQ tras 5 intentos
 dlq_url=$(awslocal sqs create-queue --queue-name axiz-demo-audit-dlq --query QueueUrl --output text)
 dlq_arn=$(awslocal sqs get-queue-attributes --queue-url "$dlq_url" --attribute-names QueueArn \
   --query Attributes.QueueArn --output text)
 awslocal sqs create-queue --queue-name axiz-demo-audit \
   --attributes "{\"RedrivePolicy\":\"{\\\"deadLetterTargetArn\\\":\\\"$dlq_arn\\\",\\\"maxReceiveCount\\\":\\\"5\\\"}\"}" >/dev/null || true
 
-# notification requests (consumed by the notifications platform; here only a topic)
+# solicitudes de notificación (las consume la plataforma de notificaciones; aquí solo un tópico)
 topic_arn=$(awslocal sns create-topic --name local-customer-notifications --query TopicArn --output text)
-# local only: a queue subscribed to the topic keeps a copy of every notification request, so
-# scripts/scenarios.sh can check what notifications-processor sent (raw delivery: the body is the
-# message as published)
+# solo local: una cola suscrita al tópico guarda una copia de cada solicitud de notificación, para que
+# scripts/scenarios.sh pueda verificar lo que envió notifications-processor (entrega raw: el cuerpo es el
+# mensaje tal como se publicó)
 probe_url=$(awslocal sqs create-queue --queue-name local-customer-notifications-probe --query QueueUrl --output text)
 probe_arn=$(awslocal sqs get-queue-attributes --queue-url "$probe_url" --attribute-names QueueArn \
   --query Attributes.QueueArn --output text)
 awslocal sns subscribe --topic-arn "$topic_arn" --protocol sqs --notification-endpoint "$probe_arn" \
   --attributes RawMessageDelivery=true >/dev/null || true
 
-# bucket of the audit archive and the settlement files, with a sample settlement file
+# bucket del archivo de auditoría y de los archivos de liquidación, con un archivo de liquidación de ejemplo
 awslocal s3 mb s3://local-bucket || true
 awslocal s3 cp "$here/NET-SETTLE-SAMPLE.txt" s3://local-bucket/in/settlement/NET-SETTLE-SAMPLE.txt || true
 
-# The local application seeds fictitious contacts with Axiz field encryption.
-# No plaintext address is written to DynamoDB by infrastructure scripts.
+# La aplicación local siembra contactos ficticios con el cifrado de campos de Axiz.
+# Los scripts de infraestructura no escriben ninguna dirección en texto plano en DynamoDB.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run the generated local init twice against real AWS emulation; require a single reusable KMS key.
+# Se ejecuta dos veces el init local generado contra una emulación real de AWS; se exige una única clave KMS reutilizable.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 revision=$(python3 -c 'import xml.etree.ElementTree as E; print(E.parse("pom.xml").getroot().findtext("{*}properties/{*}revision"))')

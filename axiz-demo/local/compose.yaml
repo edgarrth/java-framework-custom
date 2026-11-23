@@ -1,7 +1,7 @@
-# Whole-demo infrastructure for local runs (docker compose up -d, or ../scripts/demo.sh up).
-# Services run on the host with the profiles "local,platform" (scripts/run.sh <service>), so they
-# can be debugged; kind/ deploys everything inside Kubernetes instead.
-# Development only: no value here is a real credential ("local-only" values are placeholders).
+# Infraestructura de toda la demo para ejecuciones locales (docker compose up -d, o ../scripts/demo.sh up).
+# Los servicios se ejecutan en el host con los perfiles "local,platform" (scripts/run.sh <service>), para
+# poder depurarlos; kind/ despliega todo dentro de Kubernetes.
+# Solo para desarrollo: ningún valor de este archivo es una credencial real (los valores "local-only" son marcadores de posición).
 name: axiz-demo
 
 services:
@@ -20,13 +20,13 @@ services:
       interval: 5s
       retries: 10
 
-  # ElastiCache stand-in (cache, idempotency, locks, rate limits)
+  # Sustituto de ElastiCache (caché, idempotencia, locks, límites de tasa)
   valkey:
     image: axiz-local/valkey:8.1.8-r1
     build: {context: ./images/valkey}
     ports: ["127.0.0.1:6379:6379"]
 
-  # MSK stand-in (single KRaft broker, plaintext)
+  # Sustituto de MSK (un único broker KRaft, texto plano)
   kafka:
     image: axiz-local/kafka:4.2.2-r1
     build: {context: ./images/kafka}
@@ -34,9 +34,9 @@ services:
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      # two listeners: containers of this compose reach the broker as kafka:29092, the services on
-      # the host as localhost:9092. With only localhost advertised, a client inside the network
-      # (kafka-topics) is sent back to its own container and the topics are never created.
+      # dos listeners: los contenedores de este compose llegan al broker como kafka:29092 y los servicios del
+      # host como localhost:9092. Si solo se anuncia localhost, un cliente dentro de la red
+      # (kafka-topics) se redirige a su propio contenedor y los tópicos nunca se crean.
       KAFKA_LISTENERS: INTERNAL://:29092,HOST://:9092,CONTROLLER://:9093
       KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,HOST://localhost:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
@@ -61,11 +61,11 @@ services:
       - ./kafka/topics.sh:/topics.sh:ro
     entrypoint: ["/bin/bash", "/topics.sh"]
 
-  # DynamoDB, S3, SQS, SNS, KMS and Secrets Manager
-  # Local state: LocalStack keeps nothing when its container is recreated, PostgreSQL keeps its
-  # data until "scripts/demo.sh down" (which removes both). Nothing depends on them being in step:
-  # the scenarios use their own ids per run, and rerunning a settlement file that was already
-  # loaded writes its summary again when S3 lost it.
+  # DynamoDB, S3, SQS, SNS, KMS y Secrets Manager
+  # Estado local: LocalStack no conserva nada cuando se recrea su contenedor; PostgreSQL conserva sus
+  # datos hasta "scripts/demo.sh down" (que elimina ambos). Nada depende de que estén sincronizados:
+  # los escenarios usan sus propios ids en cada ejecución, y volver a procesar un archivo de liquidación
+  # ya cargado escribe de nuevo su resumen cuando S3 lo perdió.
   localstack:
     image: axiz-local/localstack:4.14.0-r1
     build: {context: ./images/localstack}
@@ -76,7 +76,7 @@ services:
     volumes:
       - ./localstack:/etc/localstack/init/ready.d:ro
 
-  # OIDC provider: realm axiz with demo users and clients (see keycloak/axiz-realm.json)
+  # Proveedor OIDC: realm axiz con usuarios y clientes de la demo (ver keycloak/axiz-realm.json)
   keycloak:
     image: axiz-local/keycloak:26.8.2-r1
     build: {context: ./images/keycloak}
@@ -84,15 +84,15 @@ services:
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: local-only
-      # tokens always carry the issuer the services trust, also when a container asks for them
-      # through the internal network name (back channel)
+      # los tokens llevan siempre el issuer en el que confían los servicios, también cuando un contenedor los
+      # solicita mediante el nombre de la red interna (back channel)
       KC_HOSTNAME: http://localhost:8180
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
     ports: ["127.0.0.1:8180:8080"]
     volumes:
       - ./keycloak:/opt/keycloak/data/import:ro
 
-  # Simulated core banking (REST + SOAP), its token endpoint and the payment network
+  # Core bancario simulado (REST + SOAP), su endpoint de tokens y la red de pagos
   wiremock:
     image: axiz-local/wiremock:3.13.2-r1
     build: {context: ./images/wiremock}
@@ -101,7 +101,7 @@ services:
     volumes:
       - ./wiremock:/home/wiremock:ro
 
-  # Grafana, Tempo, Loki, Prometheus and an OpenTelemetry collector (OTLP 4317/4318)
+  # Grafana, Tempo, Loki, Prometheus y un colector de OpenTelemetry (OTLP 4317/4318)
   otel-lgtm:
     image: axiz-local/otel-lgtm:2026.11-r1
     build: {context: ./images/otel-lgtm}

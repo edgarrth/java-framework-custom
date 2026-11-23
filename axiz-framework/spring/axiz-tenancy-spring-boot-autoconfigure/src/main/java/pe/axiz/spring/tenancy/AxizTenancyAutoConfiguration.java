@@ -11,16 +11,19 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Multi-tenancy, only when {@code axiz.tenancy.enabled=true}: tenant from the token or a trusted
- * header, bound for the request, propagated to logs, outbound calls and messages, and applied to
- * Hibernate {@code @TenantId} entities.
+ * Multi-tenancy, solo cuando {@code axiz.tenancy.enabled=true}: tenant tomado del token o de una
+ * cabecera de confianza, vinculado a la solicitud, propagado a los logs, las llamadas salientes y
+ * los mensajes, y aplicado a las entidades {@code @TenantId} de Hibernate.
  */
 @AutoConfiguration(afterName = "pe.axiz.spring.security.AxizSecurityAutoConfiguration")
 @ConditionalOnBooleanProperty(name = "axiz.tenancy.enabled")
 @EnableConfigurationProperties(AxizTenancyProperties.class)
 public class AxizTenancyAutoConfiguration {
 
-  /** Runs after Spring Security's filter chain so the token tenant is known. */
+  /**
+   * Se ejecuta después de la cadena de filtros de Spring Security para que se conozca el tenant del
+   * token.
+   */
   public static final int FILTER_ORDER = -100 + 10;
 
   @Bean

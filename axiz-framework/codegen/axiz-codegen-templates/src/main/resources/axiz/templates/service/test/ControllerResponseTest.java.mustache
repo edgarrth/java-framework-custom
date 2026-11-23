@@ -43,7 +43,9 @@ import org.springframework.context.ApplicationContext;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
 
-/** Verifies successful HTTP status, model mapping and body through the real controller. */
+/**
+ * Verifica el estado HTTP exitoso, el mapeo del modelo y el cuerpo mediante el controlador real.
+ */
 {{#stack.servlet}}@WebMvcTest{{/stack.servlet}}{{#stack.reactive}}@WebFluxTest{{/stack.reactive}}(controllers = {{item.className}}Controller.class, properties = {
   "axiz.config.environment=test",
   "axiz.security.issuers[0].issuer=https://issuer.test",

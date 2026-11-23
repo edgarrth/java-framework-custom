@@ -1,4 +1,4 @@
-// Exercise the distributed ruleset with the exact CLI version used by service-ci.
+// Ejercita el ruleset distribuido con la versión exacta de la CLI que usa service-ci.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');

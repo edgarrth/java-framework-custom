@@ -18,7 +18,9 @@ import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.Element;
 
-/** Cross-checks test execution against resolved dependencies and the framework checkout. */
+/**
+ * Contrasta la ejecución de las pruebas con las dependencias resueltas y el checkout del framework.
+ */
 final class RuntimeEvidence {
   private static final Map<String, Path> MODULES = new HashMap<>();
 
@@ -101,7 +103,7 @@ final class RuntimeEvidence {
       long builtAt = Files.getLastModifiedTime(artifact).toMillis();
       assertTrue(executedAt >= builtAt, "Re-run demo after rebuilding " + artifact);
       Path module = MODULES.get(fileName(parent(parent(artifact))));
-      if (module == null) continue; // A published dependency without an adjacent source checkout.
+      if (module == null) continue; // Dependencia publicada sin checkout de fuentes adyacente.
       long changed = Files.getLastModifiedTime(module.resolve("pom.xml")).toMillis();
       Path sources = module.resolve("src/main");
       if (Files.isDirectory(sources)) {

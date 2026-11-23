@@ -6,15 +6,18 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Settings of the generic event metrics (bound from {@code axiz.metrics.*}).
+ * Configuración de las métricas genéricas de eventos (enlazada desde {@code axiz.metrics.*}).
  *
- * @param maxEvents maximum distinct event names; the excess is recorded as {@code other}
- * @param maxValuesPerTag default maximum distinct values per tag
- * @param channels allowed channel values
- * @param standardTagPolicies policies for standard tags (category, product, reason, stage, tenant)
- * @param customTags declared custom tags; any other custom tag is dropped
- * @param events optional event catalog
- * @param percentileHistograms whether to publish histogram buckets for distributions
+ * @param maxEvents máximo de nombres de evento distintos; el excedente se registra como {@code
+ *     other}
+ * @param maxValuesPerTag máximo por defecto de valores distintos por tag
+ * @param channels valores de canal permitidos
+ * @param standardTagPolicies políticas de los tags estándar (category, product, reason, stage,
+ *     tenant)
+ * @param customTags tags personalizados declarados; cualquier otro tag personalizado se descarta
+ * @param events catálogo de eventos opcional
+ * @param percentileHistograms indica si se publican los buckets del histograma para las
+ *     distribuciones
  */
 public record MetricsSettings(
     int maxEvents,

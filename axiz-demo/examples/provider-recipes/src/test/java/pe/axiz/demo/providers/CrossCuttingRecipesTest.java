@@ -43,7 +43,10 @@ import pe.axiz.spring.tenancy.AxizTenancyAutoConfiguration;
 import pe.axiz.spring.tenancy.TenantWebFilter;
 import reactor.core.publisher.Mono;
 
-/** Consumer examples: invoke public contracts and verify their externally visible behavior. */
+/**
+ * Ejemplos de consumidor: invocan contratos públicos y verifican su comportamiento visible desde
+ * fuera.
+ */
 @ExtendWith(OutputCaptureExtension.class)
 class CrossCuttingRecipesTest {
   @Configuration(proxyBeanMethods = false)
@@ -161,7 +164,8 @@ class CrossCuttingRecipesTest {
                   ctx.getBean("axizTenantFilter", FilterRegistrationBean.class).getFilter();
               var request = new MockHttpServletRequest("GET", "/statements");
               request.addHeader("X-Tenant-Id", "untrusted-tenant");
-              // This metadata is populated by the security chain after JWT validation in a service.
+              // En un servicio, la cadena de seguridad completa estos metadatos tras validar el
+              // JWT.
               var metadata =
                   RequestMetadata.builder("recipe-correlation", "recipe-request")
                       .tenantId("bank-a")

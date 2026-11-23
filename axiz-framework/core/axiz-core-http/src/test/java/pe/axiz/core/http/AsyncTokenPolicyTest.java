@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.errors.ExternalServiceException;
 
-/** Policy tests use a controllable port, without sockets, workers or a provider SDK. */
+/** Las pruebas de política usan un puerto controlable, sin sockets, workers ni SDK de proveedor. */
 class AsyncTokenPolicyTest {
   private final MovingClock clock = new MovingClock();
   private final AtomicInteger calls = new AtomicInteger();

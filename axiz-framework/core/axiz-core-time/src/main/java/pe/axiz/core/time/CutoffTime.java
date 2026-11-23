@@ -8,11 +8,11 @@ import java.time.ZonedDateTime;
 import java.util.Objects;
 
 /**
- * Daily cut-off: operations received at or after the cut-off, or on a non-business day, are
- * processed on the next business day.
+ * Corte diario: las operaciones recibidas en el corte o después, o en un día no hábil, se procesan
+ * el siguiente día hábil.
  *
- * @param cutoff local cut-off time in the calendar zone
- * @param calendar business calendar
+ * @param cutoff hora local de corte en la zona del calendario
+ * @param calendar calendario de días hábiles
  */
 public record CutoffTime(LocalTime cutoff, BusinessCalendar calendar) {
 
@@ -35,10 +35,10 @@ public record CutoffTime(LocalTime cutoff, BusinessCalendar calendar) {
   }
 
   /**
-   * Business date on which an operation received at {@code receivedAt} is processed.
+   * Fecha hábil en la que se procesa una operación recibida en {@code receivedAt}.
    *
-   * @param receivedAt reception instant
-   * @return processing date
+   * @param receivedAt instante de recepción
+   * @return fecha de procesamiento
    */
   public LocalDate processingDate(Instant receivedAt) {
     ZonedDateTime local = receivedAt.atZone(calendar.zone());

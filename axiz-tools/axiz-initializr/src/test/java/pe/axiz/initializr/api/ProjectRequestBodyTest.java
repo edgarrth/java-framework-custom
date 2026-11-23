@@ -11,7 +11,10 @@ import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
 
-/** How an API request becomes an engine request: archetype defaults and explicit choices. */
+/**
+ * Cómo una solicitud de la API se convierte en una solicitud para el motor: valores por defecto del
+ * arquetipo y elecciones explícitas.
+ */
 class ProjectRequestBodyTest {
 
   @Test

@@ -4,18 +4,18 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.LocalDate;
 import java.util.Objects;
 
-/** Due-date calculation with business-day adjustment conventions. */
+/** Cálculo de fechas de vencimiento con convenciones de ajuste por días hábiles. */
 public final class DueDates {
 
-  /** How to adjust a date that falls on a non-business day. */
+  /** Forma de ajustar una fecha que cae en un día no hábil. */
   public enum Adjustment {
-    /** Keep the date as is. */
+    /** Conserva la fecha tal cual. */
     NONE,
-    /** Move to the next business day. */
+    /** Pasa al siguiente día hábil. */
     FOLLOWING,
-    /** Next business day unless it changes month, then previous business day. */
+    /** Siguiente día hábil salvo que cambie de mes; en ese caso, el día hábil anterior. */
     MODIFIED_FOLLOWING,
-    /** Move to the previous business day. */
+    /** Pasa al día hábil anterior. */
     PRECEDING
   }
 
@@ -42,17 +42,17 @@ public final class DueDates {
     };
   }
 
-  /** Due date after a number of calendar days, adjusted. */
+  /** Fecha de vencimiento tras una cantidad de días calendario, ajustada. */
   public LocalDate afterCalendarDays(LocalDate start, int days, Adjustment adjustment) {
     return adjust(start.plusDays(days), adjustment);
   }
 
-  /** Due date after a number of business days. */
+  /** Fecha de vencimiento tras una cantidad de días hábiles. */
   public LocalDate afterBusinessDays(LocalDate start, int days) {
     return calendar.addBusinessDays(start, days);
   }
 
-  /** Monthly due date on a day of month (clamped to month length), adjusted. */
+  /** Fecha de vencimiento mensual en un día del mes (limitado a la longitud del mes), ajustada. */
   public LocalDate monthly(
       LocalDate start, int monthsAhead, int dayOfMonth, Adjustment adjustment) {
     LocalDate month = start.plusMonths(monthsAhead);

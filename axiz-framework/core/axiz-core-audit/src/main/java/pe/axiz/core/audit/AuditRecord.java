@@ -11,8 +11,8 @@ import pe.axiz.core.sensitive.ObjectMasker;
 import pe.axiz.core.sensitive.OutputChannel;
 
 /**
- * Builds sanitized immutable snapshots without publishing or performing I/O. Instances belong to
- * one recording operation; do not share a mutable record across concurrent subscribers.
+ * Construye instantáneas inmutables saneadas sin publicar ni hacer E/S. Las instancias pertenecen a
+ * una operación de registro; un registro mutable no se comparte entre suscriptores concurrentes.
  */
 public final class AuditRecord {
   private final String service;

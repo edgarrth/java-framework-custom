@@ -24,7 +24,10 @@ import java.util.Properties;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-/** Driver-boundary guarantees; the PostgreSQL integration test checks actual SELECT-only access. */
+/**
+ * Garantías en la frontera del driver; la prueba de integración con PostgreSQL verifica el acceso
+ * real de solo SELECT.
+ */
 class DoctorPreflightSafetyTest {
   private static final String URL = "jdbc:postgresql://fixture.invalid/axiz";
 

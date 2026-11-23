@@ -1,4 +1,4 @@
-/** Models of the payment-orders API. */
+/** Modelos de la API payment-orders. */
 @NullMarked
 package pe.axiz.payments.ux.client.paymentorders.model;
 

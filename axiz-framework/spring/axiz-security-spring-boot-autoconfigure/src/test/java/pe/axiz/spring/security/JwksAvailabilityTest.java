@@ -43,7 +43,10 @@ import pe.axiz.core.security.TrustedIssuer;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/** Network fixtures exercise discovery, key reads, partial bodies and actual security chains. */
+/**
+ * Los fixtures de red ejercitan el descubrimiento, la lectura de claves, los cuerpos parciales y
+ * las cadenas de seguridad reales.
+ */
 class JwksAvailabilityTest {
   private static final Duration LIMIT = Duration.ofSeconds(4);
   private static final RSAKey KEY = key();

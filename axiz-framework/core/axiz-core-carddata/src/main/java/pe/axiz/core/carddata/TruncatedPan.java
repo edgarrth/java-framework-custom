@@ -4,7 +4,10 @@ import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.sensitive.PanDetector;
 import pe.axiz.core.sensitive.SelfMasking;
 
-/** Non-reversible BIN/last-four representation, validated independently of a full PAN. */
+/**
+ * Representación no reversible de BIN y últimos cuatro dígitos, validada de forma independiente de
+ * un PAN completo.
+ */
 public record TruncatedPan(String bin, String last4, int length) implements SelfMasking {
   public TruncatedPan {
     if (bin == null

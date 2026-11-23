@@ -11,7 +11,7 @@ import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.AuditSealer;
 import pe.axiz.core.commons.TransactionOutcome;
 
-/** One immutable fact and the evidence available about its independent persistence attempt. */
+/** Un hecho inmutable y la evidencia disponible sobre su intento independiente de persistencia. */
 final class DurableAuditAttempt {
   private final AuditEvent original;
   private final AtomicReference<@Nullable AuditEvent> signed = new AtomicReference<>();

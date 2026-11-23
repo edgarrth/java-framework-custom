@@ -72,7 +72,10 @@ import software.amazon.awssdk.services.dynamodb.model.KeyType;
 import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 
-/** Idempotency and inbox contracts on DynamoDB (LocalStack): conditional writes and ALL_OLD. */
+/**
+ * Contratos de idempotencia e inbox sobre DynamoDB (LocalStack): escrituras condicionales y
+ * ALL_OLD.
+ */
 @ExtendWith(BlockHoundExtension.class)
 class LocalStackDynamoDbStoresIT {
 
@@ -247,7 +250,7 @@ class LocalStackDynamoDbStoresIT {
 
           @Override
           public boolean purgesOnDemand() {
-            return false; // table TTL
+            return false; // TTL de la tabla
           }
         };
     return InboxStoreContract.checks(backend).stream()
@@ -337,7 +340,7 @@ class LocalStackDynamoDbStoresIT {
           .verify(Duration.ofSeconds(20));
       long last = new DynamoDbSequenceStore(dynamo, "axiz-sequence").increment(name, "", 1);
       Assertions.assertTrue(last > greatest.get());
-      // Force expiry of the short-lived native pool before allocating again.
+      // Se fuerza la expiración del pool nativo de vida corta previo a asignar de nuevo.
       LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(150));
       StepVerifier.create(
               Mono.fromCompletionStage(() -> store.increment(name, "", 1))

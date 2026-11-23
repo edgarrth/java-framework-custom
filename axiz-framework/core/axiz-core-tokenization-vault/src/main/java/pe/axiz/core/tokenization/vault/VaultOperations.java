@@ -8,7 +8,10 @@ import pe.axiz.core.tokenization.TokenDomain;
 import pe.axiz.core.tokenization.TokenType;
 import pe.axiz.core.tokenization.TokenizationResult;
 
-/** Server boundary: caller was verified by authentication, independently of the request DTO. */
+/**
+ * Frontera del servidor: la autenticación verificó a quien llama, con independencia del DTO de la
+ * petición.
+ */
 public interface VaultOperations {
   TokenizationResult tokenize(
       TokenCaller caller,

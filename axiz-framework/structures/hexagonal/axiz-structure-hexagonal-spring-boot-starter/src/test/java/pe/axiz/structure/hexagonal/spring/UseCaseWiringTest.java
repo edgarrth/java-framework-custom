@@ -34,7 +34,10 @@ import pe.axiz.structure.hexagonal.DomainEventSink;
 import pe.axiz.structure.hexagonal.DomainEvents;
 import pe.axiz.structure.hexagonal.annotation.UseCase;
 
-/** Use cases in a transaction, their domain events through the outbox, checked failures. */
+/**
+ * Casos de uso en una transacción, sus eventos de dominio mediante el outbox y los fallos
+ * comprobados.
+ */
 class UseCaseWiringTest {
 
   record CardBlocked(String eventId, Instant occurredAt, String aggregateId)
@@ -69,7 +72,7 @@ class UseCaseWiringTest {
     }
   }
 
-  /** Records whether each transaction was read-only. */
+  /** Registra si cada transacción fue de solo lectura. */
   static final class RecordingTransactions implements PlatformTransactionManager {
     final List<String> begun = new CopyOnWriteArrayList<>();
 
@@ -104,7 +107,7 @@ class UseCaseWiringTest {
         }
       };
 
-  /** Records each event the use case leaves in the outbox. */
+  /** Registra cada evento que el caso de uso deja en el outbox. */
   static final class RecordingEvents extends TransactionalEvents {
     final List<String> enqueued = new CopyOnWriteArrayList<>();
 

@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-kit-jpa
 
-JPA base entity with UUIDv7, auditing, versioning and encrypted attribute converters.
+Entidad base JPA con UUIDv7, auditoría, versionado y convertidores de atributos cifrados.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,21 +12,22 @@ JPA base entity with UUIDv7, auditing, versioning and encrypted attribute conver
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `AuditListener` | Fills the audit columns from the registered auditor provider and clock. |
-| `AuditableEntity` | Entity with creation and modification audit columns (UTC instants and principal names). |
-| `AuditorProvider` | Who is changing data: the authenticated principal name, or explicitly `unattributed` when no identity is available. |
-| `BaseEntity` | Base JPA entity: application-assigned time-ordered UUIDv7 id (index friendly, known before insert) and optimistic locking. |
-| `EncryptedConverter` | Encrypts a String attribute with AES-256-GCM: `@Convert(converter = EncryptedConverter.class)`. |
+| `AuditListener` | Completa las columnas de auditoría con el proveedor de auditor registrado y el reloj. |
+| `AuditableEntity` | Entidad con columnas de auditoría de creación y modificación (instantes UTC y nombres de principal). |
+| `AuditorProvider` | Quién modifica los datos: el nombre del principal autenticado, o explícitamente `unattributed` cuando no hay identidad disponible. |
+| `BaseEntity` | Entidad JPA base: id UUIDv7 ordenado por tiempo y asignado por la aplicación (adecuado para índices y conocido antes de insertar) y bloqueo optimista. |
+| `EncryptedConverter` | Cifra un atributo String con AES-256-GCM: `@Convert(converter = EncryptedConverter.class)`. |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl kits/axiz-kit-jpa verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl kits/axiz-kit-jpa verify`.
 
-Background jobs should supply an explicit workload identity through their auditor provider;
-missing or blank identity is marked `unattributed`, never silently attributed to a trusted system.
+Los procesos en segundo plano proporcionan una identidad de carga de trabajo explícita mediante su
+proveedor de auditor; una identidad ausente o vacía se marca `unattributed` y nunca se atribuye en silencio a
+un sistema confiable.

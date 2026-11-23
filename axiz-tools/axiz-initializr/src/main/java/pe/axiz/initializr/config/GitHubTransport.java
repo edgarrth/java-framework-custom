@@ -7,7 +7,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
-/** Dedicated bounded transport; bearer credentials never follow a provider redirect. */
+/**
+ * Transporte dedicado y acotado; las credenciales bearer nunca siguen una redirección del
+ * proveedor.
+ */
 @Configuration(proxyBeanMethods = false)
 public class GitHubTransport {
   @Bean

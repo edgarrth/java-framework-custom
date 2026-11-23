@@ -4,12 +4,13 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Optional response envelope for services whose consumers require one. Plain bodies are the
- * default; errors always use RFC 9457 problem details, never this envelope.
+ * Envelope de respuesta opcional para servicios cuyos consumidores lo requieren. Los cuerpos
+ * simples son el valor por defecto; los errores siempre usan problem details RFC 9457, nunca este
+ * envelope.
  *
  * @param data payload
- * @param meta metadata such as correlation id
- * @param <T> payload type
+ * @param meta metadatos como el id de correlación
+ * @param <T> tipo del payload
  */
 public record ApiResponse<T>(@Nullable T data, Map<String, Object> meta) {
 

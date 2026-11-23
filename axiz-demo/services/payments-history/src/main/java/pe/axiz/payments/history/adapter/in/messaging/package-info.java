@@ -1,4 +1,7 @@
-/** Messaging adapter: payment order events from MSK, projected through the reactive command bus. */
+/**
+ * Adaptador de mensajería: eventos de órdenes de pago desde MSK, proyectados mediante el bus
+ * reactivo de comandos.
+ */
 @NullMarked
 package pe.axiz.payments.history.adapter.in.messaging;
 

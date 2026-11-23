@@ -64,7 +64,10 @@ import pe.axiz.core.secrets.SecretResolver;
 import pe.axiz.core.secrets.SecretValue;
 import reactor.core.publisher.Mono;
 
-/** The configured clients against a local server: headers, credentials, retries and errors. */
+/**
+ * Los clientes configurados contra un servidor local: cabeceras, credenciales, reintentos y
+ * errores.
+ */
 class HttpClientBehaviourTest {
 
   private HttpServer server;
@@ -491,7 +494,7 @@ class HttpClientBehaviourTest {
         new ClientResilience(settings("bank", AuthSettings.none(), null), registry);
     none.acquire();
     none.release(start, new IOException("reset"), -1);
-    none.acquire(); // without a circuit breaker nothing ever opens
+    none.acquire(); // sin circuit breaker nunca se abre nada
 
     assertTrue(ClientResilience.retryableStatus(429));
     assertFalse(ClientResilience.retryableStatus(500));

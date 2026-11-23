@@ -1,7 +1,8 @@
 package pe.axiz.core.commons.tx;
 
 /**
- * The business transaction completed before a subsequent side effect failed. The business operation
- * must not be retried; reconcile the side effect using its durable business identity.
+ * La transacción de negocio terminó antes de que fallara un efecto secundario posterior. La
+ * operación de negocio no debe reintentarse; el efecto secundario se reconcilia mediante su
+ * identidad de negocio durable.
  */
 public interface CommittedTransactionOutcome {}

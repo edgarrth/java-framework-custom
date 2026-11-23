@@ -27,8 +27,9 @@ import pe.axiz.core.secrets.SecretResolver;
 import pe.axiz.core.secrets.SecretValue;
 
 /**
- * Composes ordered secret sources with common cache policy. Integrations own source selection,
- * provider configuration and resource lifecycles. Values are never logged.
+ * Compone fuentes de secretos ordenadas con una política de caché común. Las integraciones definen
+ * la selección de fuentes, la configuración del proveedor y los ciclos de vida de los recursos. Los
+ * valores nunca se registran.
  */
 @AutoConfiguration
 @ConditionalOnBooleanProperty(name = "axiz.secrets.enabled", matchIfMissing = true)
@@ -105,7 +106,8 @@ public class AxizSecretsAutoConfiguration {
   }
 
   /**
-   * Owns only the caches manufactured here; source clients remain owned by their provider beans.
+   * Posee solo las cachés fabricadas aquí; los clientes de las fuentes siguen perteneciendo a sus
+   * beans de proveedor.
    */
   static final class ManagedAsyncSources implements AsyncSecretResolver, AutoCloseable {
     private final AsyncSecretResolver delegate;

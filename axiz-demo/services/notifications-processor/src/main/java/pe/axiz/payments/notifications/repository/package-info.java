@@ -1,4 +1,4 @@
-/** Notification preferences of customers (DynamoDB). */
+/** Preferencias de notificación de los clientes (DynamoDB). */
 @NullMarked
 package pe.axiz.payments.notifications.repository;
 

@@ -1,12 +1,12 @@
 # axiz-audit-kafka-spring-boot-starter
 
-KAFKA audit publishing.
+Publicación de auditoría en Kafka.
 
-This module owns the `pe.axiz.spring.audit.kafka.starter` API.
+Este módulo es dueño de la API `pe.axiz.spring.audit.kafka.starter`.
 
-## Selection
+## Selección
 
-Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
+Las versiones las gestiona `axiz-bom`; las aplicaciones heredan `axiz-parent-service`.
 
 ```xml
 <dependency>
@@ -15,26 +15,27 @@ Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
 </dependency>
 ```
 
-This artifact composes dependencies; its wiring and operational contract are documented in
+Este artefacto compone dependencias; su configuración y su contrato operativo se documentan en
 [`axiz-audit-kafka-spring-boot-autoconfigure`](../axiz-audit-kafka-spring-boot-autoconfigure/README.md).
 
-## Catalog usage
+## Uso desde el catálogo
 
 ```bash
 axiz add audit-kafka
 ```
 
-Required capabilities: `audit`, `messaging-kafka`.
+Capacidades requeridas: `audit`, `messaging-kafka`.
 
-The catalog supplies the following properties. Environment placeholders must resolve in the
-service configuration; they are not credentials or provisioned infrastructure.
+El catálogo aporta las siguientes propiedades. Los marcadores de entorno deben resolverse en la
+configuración del servicio; no son credenciales ni infraestructura aprovisionada.
 
 ```yaml
 axiz.audit.kafka.topic: ${AXIZ_AUDIT_TOPIC:audit}
 ```
 
-## Operations
+## Operación
 
-Provision topics and broker access with TLS/SASL, bounded transport timeouts and durability
-settings suited to the event contract. Delivery may be repeated; consumers use stable event
-IDs and inbox deduplication. A producer acknowledgement is not a business transaction commit.
+Los tópicos y el acceso al broker se aprovisionan con TLS/SASL, timeouts de transporte acotados y
+una durabilidad adecuada al contrato del evento. La entrega puede repetirse; los consumidores usan
+identificadores de evento estables y deduplicación con inbox. La confirmación del productor no
+equivale a confirmar una transacción de negocio.

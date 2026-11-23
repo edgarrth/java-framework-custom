@@ -6,20 +6,21 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /**
- * What to generate.
+ * Qué se genera.
  *
- * @param name service name in kebab-case, e.g. {@code payment-orders}
- * @param groupId Maven group
- * @param basePackage base Java package
- * @param description one-line description
- * @param archetype archetype id
- * @param structure style
+ * @param name nombre del servicio en kebab-case, p. ej., {@code payment-orders}
+ * @param groupId grupo de Maven
+ * @param basePackage paquete Java base
+ * @param description descripción de una línea
+ * @param archetype id del arquetipo
+ * @param structure estilo
  * @param stack stack
- * @param persistence {@code none}, {@code aurora} or {@code dynamodb}
- * @param capabilities extra capability ids
- * @param openApi OpenAPI 3.1 contract (YAML or JSON); required for archetypes exposing REST
- * @param asyncApi optional AsyncAPI contract
- * @param frameworkVersion axiz version the project builds on
+ * @param persistence {@code none}, {@code aurora} o {@code dynamodb}
+ * @param capabilities ids de capacidades adicionales
+ * @param openApi contrato OpenAPI 3.1 (YAML o JSON); obligatorio para los arquetipos que exponen
+ *     REST
+ * @param asyncApi contrato AsyncAPI opcional
+ * @param frameworkVersion versión de axiz sobre la que se construye el proyecto
  */
 public record ProjectRequest(
     String name,
@@ -55,12 +56,14 @@ public record ProjectRequest(
     FrameworkVersions.requireSupported(frameworkVersion);
   }
 
-  /** Named construction; required values and invariants are checked by build. */
+  /** Construcción con nombre; build verifica los valores obligatorios y las invariantes. */
   public static Builder builder() {
     return new Builder();
   }
 
-  /** Mutable construction state; use one builder per operation, never as shared state. */
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
   public static final class Builder {
     private @Nullable String name = null;
     private @Nullable String groupId = null;

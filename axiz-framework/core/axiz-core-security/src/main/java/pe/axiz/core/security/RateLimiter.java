@@ -3,38 +3,40 @@ package pe.axiz.core.security;
 import java.time.Duration;
 
 /**
- * Rate limiter port. Caller keys come from validated identities; explicitly configured anonymous
- * quotas use the transport peer address. Client headers never supply either identity.
+ * Puerto del limitador de tasa. Las claves de llamador provienen de identidades validadas; las
+ * cuotas anónimas configuradas de forma explícita usan la dirección del par de transporte. Las
+ * cabeceras del cliente nunca suministran ninguna de las dos identidades.
  */
 public interface RateLimiter {
 
   /**
-   * Tries to consume one permit.
+   * Intenta consumir un permiso.
    *
-   * @param key limiter key, see {@link RateLimitKeys}
-   * @param limit permits per window
-   * @param window window length
-   * @return the decision
+   * @param key clave del limitador, ver {@link RateLimitKeys}
+   * @param limit permisos por ventana
+   * @param window longitud de la ventana
+   * @return la decisión
    */
   Decision tryAcquire(String key, long limit, Duration window);
 
   /**
-   * Tries to consume one permit with an explicit policy for when the limiter store is unavailable:
-   * a route group can fail closed (financial operations, callbacks) while others fail open. A
-   * limiter whose store cannot fail (in memory) ignores the policy.
+   * Intenta consumir un permiso con una política explícita para cuando el almacén del limitador no
+   * está disponible: un grupo de rutas puede fallar en cerrado (operaciones financieras, callbacks)
+   * mientras otros fallan en abierto. Un limitador cuyo almacén no puede fallar (en memoria) ignora
+   * la política.
    *
-   * @param failOpen whether the request passes when the store cannot answer
+   * @param failOpen indica si la petición pasa cuando el almacén no puede responder
    */
   default Decision tryAcquire(String key, long limit, Duration window, boolean failOpen) {
     return tryAcquire(key, limit, window);
   }
 
   /**
-   * Decision of the limiter.
+   * Decisión del limitador.
    *
-   * @param allowed whether the request may proceed
-   * @param remaining permits left in the window
-   * @param retryAfter time until a permit becomes available, when rejected
+   * @param allowed indica si la petición puede continuar
+   * @param remaining permisos restantes en la ventana
+   * @param retryAfter tiempo hasta que haya un permiso disponible, cuando se rechaza
    */
   record Decision(boolean allowed, long remaining, Duration retryAfter) {}
 }

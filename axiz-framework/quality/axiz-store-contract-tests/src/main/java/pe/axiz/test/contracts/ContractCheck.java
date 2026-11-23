@@ -3,10 +3,10 @@ package pe.axiz.test.contracts;
 import java.util.Objects;
 
 /**
- * One named property a store must satisfy.
+ * Una propiedad con nombre que un almacén debe cumplir.
  *
- * @param name readable name, used as the test display name
- * @param body the check; throws {@link AssertionError} when the property does not hold
+ * @param name nombre legible, que se usa como nombre visible de la prueba
+ * @param body la verificación; lanza {@link AssertionError} cuando la propiedad no se cumple
  */
 public record ContractCheck(String name, Body body) {
 
@@ -15,7 +15,7 @@ public record ContractCheck(String name, Body body) {
     Objects.requireNonNull(body);
   }
 
-  /** Check body. */
+  /** Cuerpo de la verificación. */
   @FunctionalInterface
   public interface Body {
     void run() throws Exception;

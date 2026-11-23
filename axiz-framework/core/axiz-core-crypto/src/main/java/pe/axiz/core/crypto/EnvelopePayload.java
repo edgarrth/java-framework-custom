@@ -6,7 +6,8 @@ import java.util.Arrays;
 import org.jspecify.annotations.Nullable;
 
 /**
- * One wire format for both stacks. Seal/open consume and clear their caller-owned raw-key buffer.
+ * Un único formato de red para ambas pilas. Seal y open consumen y limpian el buffer de clave en
+ * bruto propiedad de quien llama.
  */
 final class EnvelopePayload {
   private final byte[] encryptedKey;

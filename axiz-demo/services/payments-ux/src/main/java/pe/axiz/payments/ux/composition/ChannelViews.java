@@ -13,8 +13,9 @@ import pe.axiz.payments.ux.composition.model.BeneficiaryView;
 import pe.axiz.payments.ux.composition.model.PaymentView;
 
 /**
- * Shapes downstream data for the channels: account numbers keep their last 4 digits and holder
- * names are fully masked, whatever the downstream service returned.
+ * Adapta los datos aguas abajo para los canales: los números de cuenta conservan sus últimos 4
+ * dígitos y los nombres de los titulares se enmascaran por completo, sin importar lo que devolvió
+ * el servicio aguas abajo.
  */
 final class ChannelViews {
 
@@ -49,12 +50,12 @@ final class ChannelViews {
         .currency(b.currency());
   }
 
-  /** Last 4 digits; values already masked downstream keep their shape. */
+  /** Últimos 4 dígitos; los valores ya enmascarados aguas abajo conservan su forma. */
   static @Nullable String account(@Nullable String value) {
     return value == null ? null : Masker.mask(value, MaskType.DOCUMENT);
   }
 
-  /** Last 4 characters of an account, masked or not. */
+  /** Últimos 4 caracteres de una cuenta, enmascarada o no. */
   static String lastFour(String value) {
     return value.length() <= 4 ? value : value.substring(value.length() - 4);
   }

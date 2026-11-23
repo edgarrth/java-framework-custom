@@ -45,7 +45,10 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-/** Transport tests use verified-authentication doubles; engine access/audit have separate tests. */
+/**
+ * Las pruebas de transporte usan dobles de autenticación verificada; el acceso y la auditoría del
+ * motor tienen pruebas separadas.
+ */
 class VaultHttpServerTest {
   private static final Token TOKEN = Token.fromEntropy(new byte[16]);
   private static final TokenType DNI = new TokenType("DNI");

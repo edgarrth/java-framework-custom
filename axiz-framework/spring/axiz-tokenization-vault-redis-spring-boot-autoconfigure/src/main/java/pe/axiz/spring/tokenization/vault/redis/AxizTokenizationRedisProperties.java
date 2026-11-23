@@ -6,7 +6,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 import pe.axiz.core.tokenization.vault.TokenBudgetPolicy;
 
-/** Explicit shared namespace, all budgets and a dedicated authenticated Redis connection. */
+/**
+ * Espacio de nombres compartido explícito, todos los presupuestos y una conexión Redis dedicada y
+ * autenticada.
+ */
 @ConfigurationProperties("axiz.tokenization.vault.redis")
 public record AxizTokenizationRedisProperties(
     String namespace,
@@ -21,7 +24,9 @@ public record AxizTokenizationRedisProperties(
     if (failOpen) throw new IllegalArgumentException("Token budget fail-open is prohibited");
   }
 
-  /** Standalone transport with verified TLS, a secret reference and bounded native commands. */
+  /**
+   * Transporte standalone con TLS verificado, una referencia a secreto y comandos nativos acotados.
+   */
   public record Redis(
       String host,
       @DefaultValue("6379") int port,

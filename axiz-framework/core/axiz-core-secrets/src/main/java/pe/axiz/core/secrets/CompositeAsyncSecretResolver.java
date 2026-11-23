@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.concurrent.Stages;
 
-/** Ordered native sources. Failures propagate; only absence advances to another source. */
+/** Fuentes nativas ordenadas. Los fallos se propagan; solo la ausencia avanza a otra fuente. */
 public final class CompositeAsyncSecretResolver implements AsyncSecretResolver {
   private final List<AsyncSecretResolver> delegates;
 
@@ -21,7 +21,8 @@ public final class CompositeAsyncSecretResolver implements AsyncSecretResolver {
   @Override
   public CompletionStage<Optional<SecretValue>> resolve(String name) {
     var resolution = new Resolution(name);
-    // Capture context before starting any source; failure must not start remote I/O.
+    // Se captura el contexto antes de iniciar cualquier fuente; un fallo no debe iniciar E/S
+    // remota.
     Stages.observe(
         CompletableFuture.<Void>completedFuture(null),
         (ignored, failure) -> resolution.advance(0),
@@ -53,7 +54,7 @@ public final class CompositeAsyncSecretResolver implements AsyncSecretResolver {
     }
 
     @SuppressWarnings(
-        "FutureReturnValueIgnored") // Context-independent ownership cleanup below cannot throw.
+        "FutureReturnValueIgnored") // La limpieza de propiedad de abajo no puede fallar.
     private void advance(int index) {
       if (isDone()) return;
       if (index == delegates.size()) {
@@ -64,7 +65,8 @@ public final class CompositeAsyncSecretResolver implements AsyncSecretResolver {
       active.set(source.toCompletableFuture());
       var transferred = new AtomicBoolean();
       var received = new AtomicReference<@Nullable SecretValue>();
-      // Always observe ownership, even when the contextual observer cannot enter its scope.
+      // Siempre se observa la propiedad, incluso cuando el observador contextual no puede entrar en
+      // su scope.
       source.whenComplete(
           (value, failure) -> {
             if (value != null && value.isPresent()) {
@@ -83,8 +85,8 @@ public final class CompositeAsyncSecretResolver implements AsyncSecretResolver {
             } else if (value == null) {
               fail(new IllegalStateException("Secret source returned no result"));
             } else if (value.isPresent()) {
-              // Set before completion: the unconditional observer must not close an accepted
-              // result.
+              // Se fija antes de la finalización: el observador incondicional no debe cerrar un
+              // resultado aceptado.
               transferred.set(true);
               if (!complete(value)) value.ifPresent(SecretValue::close);
             } else advance(index + 1);

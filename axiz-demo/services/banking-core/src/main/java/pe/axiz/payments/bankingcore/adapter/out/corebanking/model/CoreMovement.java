@@ -6,6 +6,6 @@ import org.jspecify.annotations.Nullable;
  * CoreMovement.
  *
  * @param mvId mvId
- * @param state P posted, R reversed
+ * @param state P contabilizado, R revertido
  */
 public record CoreMovement(@Nullable String mvId, @Nullable String state) {}

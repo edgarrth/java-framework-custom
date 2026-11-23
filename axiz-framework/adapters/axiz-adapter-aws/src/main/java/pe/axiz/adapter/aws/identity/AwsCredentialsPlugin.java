@@ -8,7 +8,7 @@ import software.amazon.awssdk.core.SdkPlugin;
 import software.amazon.awssdk.core.SdkServiceClientConfiguration;
 import software.amazon.awssdk.utils.SdkAutoCloseable;
 
-/** Transfers a credential resource to the SDK client's lifecycle. */
+/** Transfiere un recurso de credenciales al ciclo de vida del cliente del SDK. */
 public final class AwsCredentialsPlugin implements SdkPlugin {
   private final AwsCredentialSource source;
 
@@ -28,8 +28,9 @@ public final class AwsCredentialsPlugin implements SdkPlugin {
     source.close();
   }
 
-  // The SDK closes credential providers, but does not own/close arbitrary SdkPlugin instances.
-  // This adapter transfers only the resource; the underlying provider remains encapsulated.
+  // El SDK cierra los proveedores de credenciales, pero no es dueño ni cierra instancias
+  // arbitrarias de SdkPlugin. Este adaptador transfiere solo el recurso; el proveedor subyacente
+  // permanece encapsulado.
   private record ClientResource(AwsCredentialSource source)
       implements AwsCredentialsProvider, SdkAutoCloseable {
     @Override

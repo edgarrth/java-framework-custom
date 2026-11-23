@@ -1,5 +1,5 @@
 #!/bin/bash
-# Topics of the local demo; production provisions its topics independently.
+# Tópicos de la demo local; producción aprovisiona sus tópicos de forma independiente.
 set -euo pipefail
 k=/opt/kafka/bin/kafka-topics.sh
 bootstrap=${KAFKA_BOOTSTRAP_SERVERS:-kafka:29092}

@@ -17,7 +17,10 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.sensitive.SensitiveKeys;
 import pe.axiz.core.sensitive.SensitivityLevel;
 
-/** Bounded traversal of stored/published local object graphs and actual persistence mappings. */
+/**
+ * Recorrido acotado de los grafos de objetos locales almacenados o publicados y de los mapeos de
+ * persistencia reales.
+ */
 final class StoredDataPolicy extends ArchCondition<JavaClass> {
   private static final SensitiveKeys KEYS = SensitiveKeys.defaults();
   private static final String SAD = "pe.axiz.core.carddata.SensitiveAuthenticationData";

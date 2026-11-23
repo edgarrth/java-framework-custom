@@ -1,4 +1,4 @@
-"""Inventory pin ownership and validate adoption against the trusted workflow tag history."""
+"""Inventaría la propiedad de los pins y valida la adopción contra el historial de tags de workflow de confianza."""
 import argparse
 import json
 from pathlib import Path

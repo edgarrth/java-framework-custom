@@ -1,128 +1,128 @@
 # Banking Core
 
-Anti-corruption layer of the core banking system (REST and SOAP). Transfers belong to payment-network-gateway.
+Capa anticorrupción del core bancario (REST y SOAP). Las transferencias corresponden a payment-network-gateway.
 
 | | |
 |---|---|
-| Archetype | `core`: Anti-corruption layer for the core banking system |
-| Structure | `hexagonal` |
-| Extensions | None |
+| Arquetipo | `core`: Capa anticorrupción para el core bancario |
+| Estructura | `hexagonal` |
+| Extensiones | Ninguna |
 | Stack | `servlet` |
-| Persistence | `none` |
+| Persistencia | `none` |
 | axiz | `2.0.0` |
-| Base package | `pe.axiz.payments.bankingcore` |
+| Paquete base | `pe.axiz.payments.bankingcore` |
 
-## In the demo
+## En la demo
 
-Anti-corruption layer in front of the core banking system, simulated by WireMock locally
-(contracts in `../../contracts/external`).
+Capa anticorrupción delante del core bancario, simulado con WireMock en local
+(contratos en `../../contracts/external`).
 
-- Debits and reversals through the core REST facade (OAuth2 client credentials), credits through
-  its SOAP service (WS-Security digest). Core codes (`CB-51`, `CB-62`...) become
-  `PAYMENTS-BANKINGCORE-*` errors; they never leave this service.
-- Debits of the same account are serialized across replicas with a Redis lock.
-- Every movement is audited to SQS (archived by notifications-processor). Network transfers are
-  owned by payment-network-gateway.
+- Débitos y reversiones mediante la fachada REST del core (client credentials de OAuth2) y créditos
+  mediante su servicio SOAP (WS-Security digest). Los códigos del core (`CB-51`, `CB-62`, etc.) se
+  convierten en errores `PAYMENTS-BANKINGCORE-*`; nunca salen de este servicio.
+- Los débitos de una misma cuenta se serializan entre réplicas con un lock de Redis.
+- Cada movimiento se audita en SQS (lo archiva notifications-processor). Las transferencias de red
+  corresponden a payment-network-gateway.
 
-## Requirements
+## Requisitos
 
-- JDK 25 (Maven comes with the wrapper `./mvnw`)
-- Docker, for `docker compose` and the Testcontainers tests
-- Access to the GitHub Packages repository that publishes axiz
+- JDK 25 (Maven viene con el wrapper `./mvnw`)
+- Docker, para `docker compose` y las pruebas con Testcontainers
+- Acceso al repositorio de GitHub Packages que publica axiz
 
-## Build and test
+## Compilación y pruebas
 
 ```bash
-./mvnw verify                 # enforcer rules, tests and architecture rules
-./mvnw spotless:apply         # formats the code (run it before pushing)
-./mvnw -Pquality verify       # CI gate: + format check, Checkstyle, Error Prone + NullAway, SpotBugs/FindSecBugs,
-                              # dependency convergence and coverage thresholds
-./mvnw -Pnative native:compile  # GraalVM native image
+./mvnw verify                 # reglas de enforcer, pruebas y reglas de arquitectura
+./mvnw spotless:apply         # formatea el código (se ejecuta antes de hacer push)
+./mvnw -Pquality verify       # control de CI: además formato, Checkstyle, Error Prone con NullAway, SpotBugs/FindSecBugs,
+                              # convergencia de dependencias y umbrales de cobertura
+./mvnw -Pnative native:compile  # imagen nativa con GraalVM
 ```
 
-`ArchitectureTest` enforces the rules of the `hexagonal` style and the general axiz rules;
-`BankingCoreApplicationTest` starts the service against real dependencies in containers.
-`ContractExamplesTest` checks that every request example of the contract is a valid request.
+`ArchitectureTest` hace cumplir las reglas del estilo `hexagonal` y las reglas generales de axiz;
+`BankingCoreApplicationTest` arranca el servicio contra dependencias reales en contenedores.
+`ContractExamplesTest` comprueba que cada ejemplo de petición del contrato sea una petición válida.
 
-## Run locally
+## Ejecución local
 
 ```bash
 local/dev-secrets.sh       # random development-only secrets in local/secrets (git-ignored)
 docker compose up -d
-export AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_REGION=us-east-1   # LocalStack, not real credentials
+export AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_REGION=us-east-1   # LocalStack, no son credenciales reales
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-Or `axiz local up` / `axiz local down`. Traces, metrics and logs are in Grafana at
-<http://localhost:3000> (OpenTelemetry collector on ports 4317/4318).
-Keycloak (<http://localhost:8180>, realm `axiz`) issues local tokens:
+También `axiz local up` / `axiz local down`. Las trazas, métricas y logs están en Grafana en
+<http://localhost:3000> (colector OpenTelemetry en los puertos 4317/4318).
+Keycloak (<http://localhost:8180>, realm `axiz`) emite tokens locales:
 
 ```bash
 curl -s -d grant_type=client_credentials -d client_id=local-client -d client_secret=local-only \
   http://localhost:8180/realms/axiz/protocol/openid-connect/token
 ```
 
-## Contract first
+## Contrato primero
 
-`src/main/openapi/openapi.yaml` is the source of truth. Request and response models are generated at
-build time into `pe.axiz.payments.bankingcore.api.model` (never versioned). Controllers were generated once
-as skeletons that answer `501 Not Implemented` until each operation is implemented.
+`src/main/openapi/openapi.yaml` es la fuente de verdad. Los modelos de petición y de respuesta se generan
+en tiempo de build en `pe.axiz.payments.bankingcore.api.model` (nunca se versionan). Los controladores se generan una sola vez
+como esqueletos que responden `501 Not Implemented` hasta que se implementa cada operación.
 
-- `axiz contract sync` adds skeletons for new operations, reports removed ones and checks breaking
-  changes against the previous version (openapi-diff).
-- Lint the contract with the axiz Spectral ruleset before publishing it.
+- `axiz contract sync` agrega esqueletos para las operaciones nuevas, informa las eliminadas y comprueba
+  los cambios incompatibles contra la versión anterior (openapi-diff).
+- El contrato se valida con el ruleset de Spectral de axiz antes de publicarlo.
 
-| Operation | Method | Path |
+| Operación | Método | Ruta |
 |---|---|---|
 | `debitAccount` | POST | `/v1/debits` |
 | `reverseDebit` | POST | `/v1/debits/{movementId}/reversal` |
 | `creditAccount` | POST | `/v1/credits` |
 
-## Structure
+## Estructura
 
-- `pe.axiz.payments.bankingcore.domain`: Domain model: plain Java, no framework dependencies.
-- `pe.axiz.payments.bankingcore.application.usecase`: Use cases: one class per operation, transactional.
-- `pe.axiz.payments.bankingcore.application.port.out`: Outbound ports implemented by adapters.
-- `pe.axiz.payments.bankingcore.adapter.in.rest`: REST adapter generated from the OpenAPI contract.
-- `pe.axiz.payments.bankingcore.adapter.out`: Outbound adapters: persistence, HTTP clients, messaging.
-- `pe.axiz.payments.bankingcore.config`: Wiring of use cases, ports and adapters.
+- `pe.axiz.payments.bankingcore.domain`: Modelo de dominio: Java simple, sin dependencias de frameworks.
+- `pe.axiz.payments.bankingcore.application.usecase`: Casos de uso: una clase por operación, transaccionales.
+- `pe.axiz.payments.bankingcore.application.port.out`: Puertos de salida implementados por los adaptadores.
+- `pe.axiz.payments.bankingcore.adapter.in.rest`: Adaptador REST generado desde el contrato OpenAPI.
+- `pe.axiz.payments.bankingcore.adapter.out`: Adaptadores de salida: persistencia, clientes HTTP, mensajería.
+- `pe.axiz.payments.bankingcore.config`: Cableado de casos de uso, puertos y adaptadores.
 
-## Capabilities
+## Capacidades
 
-| Capability | Starter | What it brings |
+| Capacidad | Starter | Qué aporta |
 |---|---|---|
-| `foundation` | `axiz-foundation-spring-boot-starter` | Clock and business calendar (zone, weekends, holidays), JSON and validation defaults |
-| `web` | `axiz-web-spring-boot-starter` | Request metadata headers, correlation, pagination, API versioning, CORS and JSON conventions |
-| `errors` | `axiz-errors-spring-boot-starter` | RFC 9457 problem details, error catalog (ConfigMap `APP_NAME-errors`), external error mapping |
-| `logging` | `axiz-logging-spring-boot-starter` | Structured JSON logs with trace and request context, HTTP access log with masking |
-| `observability` | `axiz-observability-spring-boot-starter` | OpenTelemetry traces and metrics through Micrometer (OTLP), no Java agent |
-| `metrics` | `axiz-metrics-spring-boot-starter` | Generic event metrics (count, duration, amounts by currency, values) with bounded tags |
-| `config` | `axiz-config-spring-boot-starter` | ConfigMaps mounted as files (axiz-common, `APP_NAME`, `APP_NAME-errors`; no Kubernetes API access), Parameter Store, required keys check |
-| `i18n` | `axiz-i18n-spring-boot-starter` | Localized messages and problem details (es-PE by default) from messages*.properties |
-| `sensitive` | `axiz-sensitive-spring-boot-starter` | Masking of sensitive fields in responses, logs and audit by sensitivity level |
-| `security` | `axiz-security-spring-boot-starter` | OAuth2 resource server (trusted issuers, audiences, claims), caller context, rate limit |
-| `resilience` | `axiz-resilience-spring-boot-starter` | Timeouts, retry with backoff, circuit breaker and bulkhead policies by name |
-| `http-client` | `axiz-http-client-spring-boot-starter` | Declarative HTTP clients per name with timeouts, retries, circuit breaker, OAuth2 client credentials and header propagation |
-| `secrets` | `axiz-secrets-spring-boot-starter` | Secrets from the mounted ExternalSecret directory, environment, Secrets Manager or Parameter Store, cached |
-| `soap` | `axiz-soap-spring-boot-starter` | SOAP 1.1/1.2 clients with WS-Security, timeouts and observations |
-| `lock` | `axiz-lock-spring-boot-starter` | Distributed locks (in memory only in local/test; shared environments need lock-redis or lock-dynamodb) |
-| `lock-redis` | `axiz-lock-spring-boot-starter` | Distributed locks on ElastiCache (Redis/Valkey) |
-| `audit` | `axiz-audit-spring-boot-starter` | @Auditable business audit trail, sanitized by sensitivity, published asynchronously |
-| `audit-sqs` | `axiz-audit-spring-boot-starter` | Audit events published to SQS |
+| `foundation` | `axiz-foundation-spring-boot-starter` | Reloj y calendario de negocio (zona, fines de semana, feriados), valores por defecto de JSON y validación |
+| `web` | `axiz-web-spring-boot-starter` | Cabeceras de metadatos de la petición, correlación, paginación, versionado de API, CORS y convenciones JSON |
+| `errors` | `axiz-errors-spring-boot-starter` | Detalles de problema RFC 9457, catálogo de errores (ConfigMap `APP_NAME-errors`) y mapeo de errores externos |
+| `logging` | `axiz-logging-spring-boot-starter` | Logs JSON estructurados con contexto de traza y de petición, log de acceso HTTP con enmascaramiento |
+| `observability` | `axiz-observability-spring-boot-starter` | Trazas y métricas OpenTelemetry mediante Micrometer (OTLP), sin agente Java |
+| `metrics` | `axiz-metrics-spring-boot-starter` | Métricas genéricas de eventos (conteo, duración, importes por moneda, valores) con etiquetas acotadas |
+| `config` | `axiz-config-spring-boot-starter` | ConfigMaps montados como archivos (axiz-common, `APP_NAME`, `APP_NAME-errors`; sin acceso a la API de Kubernetes), Parameter Store y comprobación de claves obligatorias |
+| `i18n` | `axiz-i18n-spring-boot-starter` | Mensajes y detalles de problema localizados (es-PE por defecto) desde messages*.properties |
+| `sensitive` | `axiz-sensitive-spring-boot-starter` | Enmascaramiento de campos sensibles en respuestas, logs y auditoría según el nivel de sensibilidad |
+| `security` | `axiz-security-spring-boot-starter` | Servidor de recursos OAuth2 (emisores confiables, audiencias, claims), contexto del llamador y límite de tasa |
+| `resilience` | `axiz-resilience-spring-boot-starter` | Políticas por nombre de timeouts, reintento con backoff, circuit breaker y bulkhead |
+| `http-client` | `axiz-http-client-spring-boot-starter` | Clientes HTTP declarativos por nombre con timeouts, reintentos, circuit breaker, client credentials de OAuth2 y propagación de cabeceras |
+| `secrets` | `axiz-secrets-spring-boot-starter` | Secretos desde el directorio montado del ExternalSecret, el entorno, Secrets Manager o Parameter Store, con caché |
+| `soap` | `axiz-soap-spring-boot-starter` | Clientes SOAP 1.1/1.2 con WS-Security, timeouts y observaciones |
+| `lock` | `axiz-lock-spring-boot-starter` | Locks distribuidos (en memoria solo en local/test; los ambientes compartidos necesitan lock-redis o lock-dynamodb) |
+| `lock-redis` | `axiz-lock-spring-boot-starter` | Locks distribuidos en ElastiCache (Redis/Valkey) |
+| `audit` | `axiz-audit-spring-boot-starter` | Pista de auditoría de negocio con @Auditable, saneada según sensibilidad y publicada de forma asíncrona |
+| `audit-sqs` | `axiz-audit-spring-boot-starter` | Eventos de auditoría publicados en SQS |
 
-Add more with `axiz add <capability>`: it adds the starter, its properties, the ConfigMap keys and a
-usage example.
+Se agregan más con `axiz add <capability>`: añade el starter, sus propiedades, las claves del ConfigMap
+y un ejemplo de uso.
 
-## Configuration
+## Configuración
 
-- `application.yaml` holds defaults only. Environment values live in the ConfigMaps `axiz-common`,
-  `banking-core` and `banking-core-errors`, mounted as files by the chart
-  (`deploy/helm/banking-core/values-<env>.yaml`, keys `config` and `errors`).
-- Secrets never go to the repository nor to ConfigMaps: they come from AWS Secrets Manager through
-  the ExternalSecret and are mounted as files in `/var/run/secrets/axiz`.
-- AWS access uses the pod identity (IRSA or EKS Pod Identity); there are no AWS keys anywhere.
+- `application.yaml` contiene solo valores por defecto. Los valores de cada ambiente están en los ConfigMaps `axiz-common`,
+  `banking-core` y `banking-core-errors`, que el chart monta como archivos
+  (`deploy/helm/banking-core/values-<env>.yaml`, claves `config` y `errors`).
+- Los secretos nunca van al repositorio ni a los ConfigMaps: provienen de AWS Secrets Manager mediante
+  el ExternalSecret y se montan como archivos en `/var/run/secrets/axiz`.
+- El acceso a AWS usa la identidad del pod (IRSA o EKS Pod Identity); no hay claves de AWS en ningún lugar.
 
-Keys each environment must define:
+Claves que cada ambiente debe definir:
 
 - `axiz.foundation.calendar.holidays`
 - `axiz.security.issuers`
@@ -131,19 +131,19 @@ Keys each environment must define:
 - `spring.data.redis.url`
 - `axiz.audit.sqs.queue-url`
 
-## Deployment
+## Despliegue
 
-`deploy/helm/banking-core` contains the chart: Deployment with probes, Service, HPA, PDB,
-ConfigMaps mounted as files, ExternalSecret, ServiceAccount and a NetworkPolicy. Pods do not
-require Kubernetes API permissions to read their mounted configuration.
-The pipelines in `.github/workflows` call the shared axiz workflows, pinned to an immutable release (`@axiz-workflows-vX.Y.Z`; Renovate proposes grouped updates to the next immutable release tag):
+`deploy/helm/banking-core` contiene el chart: Deployment con probes, Service, HPA, PDB,
+ConfigMaps montados como archivos, ExternalSecret, ServiceAccount y una NetworkPolicy. Los pods no
+requieren permisos sobre la API de Kubernetes para leer su configuración montada.
+Los pipelines de `.github/workflows` llaman a los workflows compartidos de axiz, fijados a una release inmutable (`@axiz-workflows-vX.Y.Z`; Renovate propone actualizaciones agrupadas hacia el siguiente tag de release inmutable):
 
-- `ci.yaml`: pull requests run the shared checks and the build with every quality gate; `main`
-  builds the image (Jib, signed with cosign) and deploys it to dev and then qa; a tag `v*` deploys
-  to prod after the approval of the `prod` environment.
-- Deployments are GitOps: the pipeline records the release (chart commit, image tag and digest) in
-  the GitOps repository and Argo CD applies it. `cd.yaml` redeploys or rolls back an existing image.
-- `release.yaml`: release-please keeps a release pull request with the next version and the
-  changelog; merging it creates the tag.
+- `ci.yaml`: los pull requests ejecutan las comprobaciones compartidas y el build con todos los controles
+  de calidad; `main` construye la imagen (Jib, firmada con cosign) y la despliega en dev y luego en qa;
+  un tag `v*` despliega en prod tras la aprobación del ambiente `prod`.
+- Los despliegues son GitOps: el pipeline registra la release (commit del chart, tag y digest de la imagen)
+  en el repositorio GitOps y Argo CD la aplica. `cd.yaml` vuelve a desplegar o revierte una imagen existente.
+- `release.yaml`: release-please mantiene un pull request de release con la siguiente versión y el
+  changelog; al fusionarlo se crea el tag.
 
-## Decisions
+## Decisiones

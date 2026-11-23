@@ -31,8 +31,9 @@ import pe.axiz.payments.orders.application.query.ListPaymentOrdersHandler;
 import pe.axiz.payments.orders.application.query.ListPaymentOrdersQuery;
 
 /**
- * The REST adapter: the commands it builds from the contract models and the contract models it
- * answers with (masked creditor account, UTC timestamps), queries through the real handlers.
+ * El adaptador REST: los comandos que construye a partir de los modelos del contrato y los modelos
+ * del contrato con los que responde (cuenta del acreedor enmascarada, marcas de tiempo UTC), con
+ * consultas mediante los handlers reales.
  */
 class PaymentOrdersControllerTest {
 

@@ -6,7 +6,10 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.adapter.aws.identity.AwsCredentialSource;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 
-/** Type-safe SPI bridge: only opaque pool identities cross JDBC's string property boundary. */
+/**
+ * Puente SPI con tipos seguros: solo identidades opacas de pool cruzan el límite de propiedades de
+ * texto de JDBC.
+ */
 final class JdbcIamCredentialScopes {
   static final String PREFIX = "axiz-jpa-credentials-";
   private static final ConcurrentHashMap<String, AwsCredentialSource> SOURCES =

@@ -1,63 +1,69 @@
 # axiz-adapter-tokenization-dynamodb
 
-Atomic DynamoDB token vault with shared request construction and native asynchronous I/O.
+Bóveda de tokens atómica sobre DynamoDB, con construcción compartida de peticiones e I/O asíncrona nativa.
 
-This module owns the `pe.axiz.adapter.tokenization.dynamodb` API.
+Este módulo es dueño de la API `pe.axiz.adapter.tokenization.dynamodb`.
 
-The operator provisions one table with a string partition key named `pk` and no sort key.
-This adapter never creates a table or enables automatic TTL. Schema version 1 stores:
+El operador aprovisiona una tabla con una clave de partición de tipo cadena llamada `pk` y sin clave
+de ordenamiento. Este adaptador nunca crea la tabla ni activa el TTL automático. La versión 1 del
+esquema almacena:
 
-| Prefix | Contents |
+| Prefijo | Contenido |
 | --- | --- |
-| `T#` | Token, framed scope, canonical profile/version, keyset, fingerprint list, revision, envelope bytes, timestamps and bounded metadata |
-| `F#` | Scope/key/HMAC reference, associated token, keyset and key identifier |
-| `C#` | Versioned keyset control: write key and ordered read keys |
-| `E#` | Independent versioned envelope wrapping-key control |
-| `R#` | Permanent reservation of each activated HMAC/wrapping-key identifier |
-| `I#` | Permanent initialization marker for each HMAC/wrapping control |
+| `T#` | Token, ámbito enmarcado, perfil y versión canónicos, keyset, lista de huellas, revisión, bytes del sobre, marcas de tiempo y metadatos acotados |
+| `F#` | Referencia de ámbito, clave y HMAC, token asociado, keyset e identificador de clave |
+| `C#` | Control versionado del keyset: clave de escritura y claves de lectura ordenadas |
+| `E#` | Control versionado e independiente de la clave de envoltura de sobres |
+| `R#` | Reserva permanente de cada identificador de clave HMAC o de envoltura activado |
+| `I#` | Marcador permanente de inicialización de cada control HMAC o de envoltura |
 
-`DynamoDbTokenVault` and `DynamoDbAsyncTokenVault` borrow their clients. Each request has an
-explicit timeout between 1 ms and 30 seconds. Lookups use transactional snapshots of references
-and owner records, so a concurrent delete is distinguished from a persistent orphan. Writes
-check the HMAC control version and the envelope write route; deletes also check ciphertext to
-fence a recreated token incarnation. Routed DEKs are mandatory for this vault adapter. There is
-no fallback when a control item is absent or when a cached DEK belongs to an old write route.
-Transaction conflicts have a bounded retry budget. A timeout, transport failure or ambiguous
-service error is an uncertain write, not a confirmed collision.
+`DynamoDbTokenVault` y `DynamoDbAsyncTokenVault` toman prestados sus clientes. Cada petición tiene un
+timeout explícito entre 1 ms y 30 segundos. Las consultas usan instantáneas transaccionales de las
+referencias y de los registros propietarios, de modo que un borrado concurrente se distingue de un
+huérfano persistente. Las escrituras comprueban la versión del control HMAC y la ruta de escritura del
+sobre; los borrados también comprueban el texto cifrado para proteger frente a una encarnación recreada
+del token. Las DEK enrutadas son obligatorias en este adaptador de bóveda. No hay alternativa cuando
+falta un ítem de control o cuando una DEK en caché pertenece a una ruta de escritura anterior. Los
+conflictos de transacción tienen un presupuesto de reintentos acotado. Un timeout, un fallo de
+transporte o un error ambiguo del servicio es una escritura incierta, no una colisión confirmada.
 
-`DynamoDbVaultMaintenance` is the separate privileged adapter used by `VaultRotator`. It adds
-conditional control initialization, compare-and-set control transitions, bounded consistent
-scans and atomic record/reference migration. Operational adapters expose none of those methods.
-The injected maintenance client must have its own IAM role; constructing a different Java class
-does not itself establish an IAM boundary. Ordinary services must not write control items or
-scan the table. Do not grant `dynamodb:*`; transactional access is authorized through item actions.
+`DynamoDbVaultMaintenance` es el adaptador privilegiado separado que usa `VaultRotator`. Añade la
+inicialización condicional de controles, transiciones de control con compare-and-set, recorridos
+consistentes acotados y la migración atómica de registros y referencias. Los adaptadores operativos
+no exponen ninguno de esos métodos. El cliente de mantenimiento inyectado debe tener su propio rol IAM;
+construir una clase Java distinta no establece por sí mismo un límite IAM. Los servicios ordinarios no
+deben escribir ítems de control ni recorrer la tabla. No se concede `dynamodb:*`; el acceso
+transaccional se autoriza mediante acciones sobre ítems.
 
-Initialize both HMAC and wrapping controls through the privileged protocol. Their key identifiers
-are reserved atomically and permanently. Removing a key from the read set does not permit later
-reuse of its identifier; retain reservation items, initialization markers and control versions
-during backup/restore. If a control item is lost, initialization cannot reset it with a different
-key: restore and reconcile its prior state before serving writes.
-Reciphering checks the current envelope write route. An index-only migration preserves ciphertext
-and instead checks that its route remains an allowed reader. Both variants also fence the exact
-record incarnation, so a delayed job cannot put an old envelope back after another job replaced it.
+Los controles HMAC y de envoltura se inicializan mediante el protocolo privilegiado. Sus identificadores
+de clave se reservan de forma atómica y permanente. Retirar una clave del conjunto de lectura no permite
+reutilizar después su identificador; los ítems de reserva, los marcadores de inicialización y las
+versiones de control se conservan durante el respaldo y la restauración. Si se pierde un ítem de
+control, la inicialización no puede restablecerlo con otra clave: se restaura y se concilia su estado
+previo antes de atender escrituras.
+El recifrado comprueba la ruta de escritura vigente del sobre. Una migración solo de índices conserva
+el texto cifrado y, en su lugar, comprueba que su ruta siga siendo una lectora permitida. Ambas
+variantes también protegen la encarnación exacta del registro, de modo que un job retrasado no puede
+volver a poner un sobre anterior después de que otro job lo reemplazó.
 
-The exact storage schema is strict. Malformed rows, mismatched scopes, missing owned references
-and conflicting owners fail closed. The reference scan blocks retirement even when a referenced
-token row is missing. Automatic TTL cannot provide atomic deletion of a token and its indexes;
-use coordinated removal through the protocol.
+El esquema exacto de almacenamiento es estricto. Las filas mal formadas, los ámbitos que no coinciden,
+las referencias propias ausentes y los propietarios en conflicto fallan en modo cerrado. El recorrido de
+referencias bloquea el retiro incluso cuando falta la fila del token referenciado. El TTL automático no
+puede borrar de forma atómica un token y sus índices; se usa la eliminación coordinada del protocolo.
 
-`VaultRetention` provides the separate, audited maintenance job for logical expiry. It uses
-revision, timestamps, ciphertext and reference ownership conditions, without decrypting values.
-The [infrastructure package](infra/README.md) includes the schema CloudFormation template,
-separate operational/migration/retention policies and the AWS IAM simulation procedure.
+`VaultRetention` proporciona el job de mantenimiento separado y auditado para la expiración lógica. Usa
+condiciones de revisión, marcas de tiempo, texto cifrado y propiedad de referencias, sin descifrar
+valores. El [paquete de infraestructura](infra/README.md) incluye la plantilla CloudFormation del
+esquema, las políticas separadas de operación, migración y retención, y el procedimiento de simulación
+de AWS IAM.
 
-AWS documents [scan consistency and pagination](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Scan.html)
-and [transaction isolation and idempotency](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html).
-The administrative scan is not a snapshot. The core protocol relies on monotonic reference
-removal and conditional writes under the same control version. Global tables and arbitrary
-direct/import writers are not validated by the local integration test.
+AWS documenta la [consistencia y paginación de los recorridos](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Scan.html)
+y el [aislamiento e idempotencia de las transacciones](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html).
+El recorrido administrativo no es una instantánea. El protocolo del núcleo se apoya en la eliminación
+monótona de referencias y en escrituras condicionales bajo la misma versión de control. La prueba de
+integración local no valida tablas globales ni escritores arbitrarios directos o de importación.
 
-From `axiz-framework`, run the local integration suite with Docker available:
+Desde `axiz-framework`, la suite de integración local se ejecuta con Docker disponible:
 
 ```sh
 mvn -Pquality -pl quality/axiz-store-integration-tests -am \
@@ -65,16 +71,18 @@ mvn -Pquality -pl quality/axiz-store-integration-tests -am \
   -Daxiz.it.requireDocker=true test
 ```
 
-LocalStack exercises actual SDK requests and transactions. It does not certify AWS IAM,
-KMS operation, production durability, PCI compliance or the independent audit/rate-limit integrations.
+LocalStack ejercita peticiones y transacciones reales del SDK. No certifica AWS IAM, la operación de
+KMS, la durabilidad en producción, el cumplimiento PCI ni las integraciones independientes de auditoría
+y de límite de tasa.
 
-## Provider errors and uncertain writes
+## Errores del proveedor y escrituras inciertas
 
-An SDK client/transport failure does not establish that DynamoDB did not receive a mutation.
-`SdkClientException`, lost acknowledgements and generic provider errors after dispatch remain
-`VaultUncertainException`; the engine records restricted reconciliation and does not retry them
-as a token collision. Only confirmed conditional transaction cancellation reasons are classified
-as collisions/contention, and local validation that occurs before dispatch cannot have written.
-Do not broadly translate client errors into a not-applied result. `DynamoDbVaultTest` exercises lost
-acknowledgements with both clients and verifies exactly one transaction dispatch; the core vault
-suite checks reconciliation/audit behavior. These tests do not claim a live AWS outage experiment.
+Un fallo del cliente o del transporte del SDK no demuestra que DynamoDB no recibió una mutación.
+`SdkClientException`, los acuses perdidos y los errores genéricos del proveedor después del envío
+quedan como `VaultUncertainException`; el motor registra una conciliación restringida y no los
+reintenta como colisión de token. Solo los motivos confirmados de cancelación condicional de la
+transacción se clasifican como colisión o contención, y la validación local previa al envío no pudo
+haber escrito. Los errores del cliente no se traducen de forma general a un resultado no aplicado.
+`DynamoDbVaultTest` ejercita acuses perdidos con ambos clientes y verifica exactamente un envío de
+transacción; la suite de la bóveda del núcleo comprueba el comportamiento de conciliación y
+auditoría. Estas pruebas no pretenden reproducir una caída real de AWS.

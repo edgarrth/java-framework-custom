@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-lock-spring-boot-starter
 
-Distributed locks on Redis or DynamoDB with the lock template.
+Locks distribuidos sobre Redis o DynamoDB con la plantilla de lock.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,4 +12,4 @@ Distributed locks on Redis or DynamoDB with the lock template.
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).

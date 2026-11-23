@@ -7,7 +7,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Objects;
 
-/** Clock that tests can move forward or set. Thread-safe. */
+/** Reloj que las pruebas pueden avanzar o fijar. Seguro entre hilos. */
 public final class MutableClock extends Clock {
 
   private volatile Instant now;

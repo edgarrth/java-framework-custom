@@ -19,9 +19,9 @@ import pe.axiz.core.observability.AxizAttributes;
 import pe.axiz.core.observability.AxizObservations;
 
 /**
- * Publishes inside a PRODUCER observation. The tracer's propagator writes the trace context into
- * the CloudEvents distributed-tracing extensions ({@code traceparent}, {@code tracestate}), so it
- * travels the same way on MSK, SQS and SNS.
+ * Publica dentro de una observación PRODUCER. El propagador del tracer escribe el contexto de traza
+ * en las extensiones de trazado distribuido de CloudEvents ({@code traceparent}, {@code
+ * tracestate}), de modo que viaja de la misma forma en MSK, SQS y SNS.
  */
 public final class ObservedEventPublisher implements EventPublisher, BoundedPublisher {
 
@@ -54,11 +54,11 @@ public final class ObservedEventPublisher implements EventPublisher, BoundedPubl
   }
 
   /**
-   * Publishes the event. An event that comes from the outbox carries the trace context of its write
-   * ({@link EventEnvelope#OUTBOX_TRACEPARENT}): the publication then runs inside an {@code
-   * axiz.outbox.dispatch} observation that continues that trace, so the request that wrote the
-   * event, its publication and its consumers form one trace. That extension is removed before
-   * publishing.
+   * Publica el evento. Un evento que proviene del outbox lleva el contexto de traza de su escritura
+   * ({@link EventEnvelope#OUTBOX_TRACEPARENT}): la publicación se ejecuta entonces dentro de una
+   * observación {@code axiz.outbox.dispatch} que continúa esa traza, de modo que la solicitud que
+   * escribió el evento, su publicación y sus consumidores forman una sola traza. Esa extensión se
+   * elimina antes de publicar.
    */
   @Override
   public PublishResult publish(String destination, EventEnvelope event) {

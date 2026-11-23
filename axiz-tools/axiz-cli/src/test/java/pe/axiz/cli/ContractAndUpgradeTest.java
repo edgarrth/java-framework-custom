@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import pe.axiz.codegen.project.ProjectManifest;
 
-/** The answers of {@code axiz contract} and {@code axiz upgrade} beyond the main flow. */
+/** Las respuestas de {@code axiz contract} y {@code axiz upgrade} más allá del flujo principal. */
 class ContractAndUpgradeTest {
 
   static final String NEW_OPERATION =

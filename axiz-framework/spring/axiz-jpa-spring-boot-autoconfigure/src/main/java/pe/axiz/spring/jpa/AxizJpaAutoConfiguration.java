@@ -11,9 +11,10 @@ import pe.axiz.kit.jpa.AuditListener;
 import pe.axiz.kit.jpa.AuditorProvider;
 
 /**
- * Relational persistence conventions: auditing of {@code AuditableEntity} from the authenticated
- * caller, UTC timestamps from the application clock. Base entities, soft delete and optimistic
- * locking live in the entity classes; schema changes go through Flyway.
+ * Convenciones de persistencia relacional: auditoría de {@code AuditableEntity} a partir del
+ * invocante autenticado y marcas de tiempo UTC del reloj de la aplicación. Las entidades base, el
+ * borrado lógico y el bloqueo optimista residen en las clases de entidad; los cambios de esquema
+ * pasan por Flyway.
  */
 @AutoConfiguration(
     beforeName = "org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration")

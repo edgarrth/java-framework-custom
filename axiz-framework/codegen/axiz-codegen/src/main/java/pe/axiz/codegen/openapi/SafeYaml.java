@@ -9,8 +9,9 @@ import org.yaml.snakeyaml.representer.Representer;
 import org.yaml.snakeyaml.resolver.Resolver;
 
 /**
- * YAML loader for untrusted contracts: safe constructor (no arbitrary types), alias and size
- * limits, no duplicate keys, and dates kept as text so examples are not rewritten.
+ * Cargador YAML para contratos no confiables: constructor seguro (sin tipos arbitrarios), límites
+ * de alias y de tamaño, sin claves duplicadas y con las fechas conservadas como texto para que los
+ * ejemplos no se reescriban.
  */
 public final class SafeYaml {
 
@@ -31,7 +32,7 @@ public final class SafeYaml {
         new NoTimestampResolver());
   }
 
-  /** Resolver without the timestamp rule. */
+  /** Resolver sin la regla de marcas de tiempo. */
   static final class NoTimestampResolver extends Resolver {
     @Override
     protected void addImplicitResolvers() {

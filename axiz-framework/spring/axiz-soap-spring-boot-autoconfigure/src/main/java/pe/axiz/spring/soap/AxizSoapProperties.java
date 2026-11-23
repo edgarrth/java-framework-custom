@@ -14,9 +14,9 @@ import pe.axiz.core.soap.SoapVersion;
 import pe.axiz.core.soap.WsSecurity;
 
 /**
- * SOAP clients for legacy systems ({@code axiz.soap.clients.<name>}).
+ * Clientes SOAP para sistemas externos ({@code axiz.soap.clients.<name>}).
  *
- * @param clients clients by logical name
+ * @param clients clientes por nombre lógico
  */
 @ConfigurationProperties("axiz.soap")
 public record AxizSoapProperties(@DefaultValue Map<String, Client> clients) {
@@ -25,17 +25,18 @@ public record AxizSoapProperties(@DefaultValue Map<String, Client> clients) {
   }
 
   /**
-   * One client.
+   * Un cliente.
    *
-   * @param endpoint service URL
-   * @param version SOAP version
-   * @param connectTimeout connection timeout
-   * @param timeout request timeout
-   * @param username WS-Security user, if the service needs one
-   * @param passwordRef secret name of the WS-Security password
-   * @param passwordMode {@code TEXT} or {@code LEGACY_SHA1_DIGEST}; required with a username (no
-   *     default: the counterparty decides, and the legacy digest is never chosen silently)
-   * @param sslBundle optional Spring SSL bundle for this client's trust and client certificate
+   * @param endpoint URL del servicio
+   * @param version versión de SOAP
+   * @param connectTimeout timeout de conexión
+   * @param timeout timeout de la solicitud
+   * @param username usuario de WS-Security, si el servicio lo necesita
+   * @param passwordRef nombre del secreto de la contraseña de WS-Security
+   * @param passwordMode {@code TEXT} o {@code LEGACY_SHA1_DIGEST}; obligatorio con un username (sin
+   *     valor por defecto: decide la contraparte, y el digest SHA-1 nunca se elige en silencio)
+   * @param sslBundle bundle SSL de Spring opcional para la confianza y el certificado de cliente de
+   *     este cliente
    */
   public record Client(
       URI endpoint,
@@ -60,12 +61,17 @@ public record AxizSoapProperties(@DefaultValue Map<String, Client> clients) {
       this(endpoint, version, connectTimeout, timeout, username, passwordRef, passwordMode, null);
     }
 
-    /** Named construction for consumers that configure clients programmatically. */
+    /**
+     * Construcción con nombre para los consumidores que configuran clientes de forma programática.
+     */
     public static Builder builder(URI endpoint) {
       return new Builder(endpoint);
     }
 
-    /** Mutable named configuration; each build returns an independent immutable client value. */
+    /**
+     * Configuración mutable con nombre; cada build devuelve un valor de cliente inmutable e
+     * independiente.
+     */
     public static final class Builder {
       private final URI endpoint;
       private SoapVersion version = SoapVersion.SOAP_11;

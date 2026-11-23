@@ -11,10 +11,11 @@ import pe.axiz.core.storage.StoredObject;
 import pe.axiz.structure.batch.RecordReader;
 
 /**
- * Restartable Spring Batch reader over a file in object storage (S3): the item count is saved in
- * the step execution context, so a failed job resumes after the last committed chunk.
+ * Lector reiniciable de Spring Batch sobre un archivo en almacenamiento de objetos (S3): la
+ * cantidad de ítems se guarda en el contexto de ejecución del step, de modo que un job fallido se
+ * reanuda después del último chunk confirmado.
  *
- * @param <T> record type
+ * @param <T> tipo del registro
  */
 public class StorageRecordItemReader<T> extends AbstractItemCountingItemStreamItemReader<T> {
 
@@ -31,14 +32,15 @@ public class StorageRecordItemReader<T> extends AbstractItemCountingItemStreamIt
   private @Nullable RecordReader<T> reader;
 
   /**
-   * Creates a reader whose saved state is stored under {@code name} (restarts resume from it).
+   * Crea un lector cuyo estado guardado se almacena bajo {@code name} (los reinicios se reanudan a
+   * partir de él).
    *
-   * @param name reader name (key of the saved state)
-   * @param storage object storage
-   * @param key object key
-   * @param format builds the record reader for the stream (CSV, fixed width...)
-   * @param <T> record type
-   * @return the reader
+   * @param name nombre del lector (clave del estado guardado)
+   * @param storage almacenamiento de objetos
+   * @param key clave del objeto
+   * @param format construye el lector de registros para el stream (CSV, ancho fijo, etc.)
+   * @param <T> tipo del registro
+   * @return el lector
    */
   public static <T> StorageRecordItemReader<T> named(
       String name,
@@ -51,12 +53,12 @@ public class StorageRecordItemReader<T> extends AbstractItemCountingItemStreamIt
   }
 
   /**
-   * Creates an unnamed reader; prefer {@link #named}, or call {@code setName} before the step opens
-   * it. The constructor stays visible for step-scope proxies.
+   * Crea un lector sin nombre; es preferible {@link #named}, o llamar a {@code setName} antes de
+   * que el step lo abra. El constructor sigue visible para los proxies con step scope.
    *
-   * @param storage object storage
-   * @param key object key
-   * @param format builds the record reader for the stream (CSV, fixed width...)
+   * @param storage almacenamiento de objetos
+   * @param key clave del objeto
+   * @param format construye el lector de registros para el stream (CSV, ancho fijo, etc.)
    */
   @SuppressFBWarnings(
       value = "CT_CONSTRUCTOR_THROW",

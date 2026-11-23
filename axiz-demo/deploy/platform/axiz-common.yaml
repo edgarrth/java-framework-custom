@@ -1,8 +1,8 @@
-# ConfigMap axiz-common: configuration shared by every service of a namespace (each chart mounts it
-# in /etc/axiz/config/common, read before the service's own ConfigMap). One per environment
-# namespace (kind/up.sh applies it to the demo cluster); apply with
+# ConfigMap axiz-common: configuración compartida por todos los servicios de un namespace (cada chart la monta
+# en /etc/axiz/config/common y se lee antes del ConfigMap propio del servicio). Uno por namespace de
+# entorno (kind/up.sh lo aplica al clúster de la demo); se aplica con
 #   kubectl -n payments-<env> apply -f deploy/platform/axiz-common.yaml
-# The business calendar is maintained by operations (official holidays are published yearly).
+# Operaciones mantiene el calendario laboral (los feriados oficiales se publican cada año).
 apiVersion: v1
 kind: ConfigMap
 metadata:

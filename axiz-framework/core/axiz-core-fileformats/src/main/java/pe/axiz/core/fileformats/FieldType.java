@@ -1,13 +1,13 @@
 package pe.axiz.core.fileformats;
 
-/** Types of fixed-width fields. */
+/** Tipos de campos de ancho fijo. */
 public enum FieldType {
-  /** Text, right padded with spaces. */
+  /** Texto, rellenado con espacios a la derecha. */
   TEXT,
-  /** Integer, left padded with zeros. */
+  /** Entero, rellenado con ceros a la izquierda. */
   INTEGER,
-  /** Decimal with implied decimal point, left padded with zeros. */
+  /** Decimal con punto decimal implícito, rellenado con ceros a la izquierda. */
   DECIMAL,
-  /** Date with a pattern. */
+  /** Fecha con un patrón. */
   DATE
 }

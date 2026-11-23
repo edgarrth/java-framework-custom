@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Internal module: never published. -->
+<!-- Módulo interno: nunca se publica. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
@@ -18,16 +18,16 @@
   <properties>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
-    <!-- tests only: the jar holds just the manifest, by design (no "JAR will be empty" warning) -->
+    <!-- solo pruebas: el jar contiene únicamente el manifiesto, por diseño (sin la advertencia "JAR will be empty") -->
     <maven.jar.forceCreation>true</maven.jar.forceCreation>
     <axiz.module.name>pe.axiz.quality.stores</axiz.module.name>
     <maven.deploy.skip>true</maven.deploy.skip>
-    <!-- Internal tests have no published binary API or 1.x jar. -->
+    <!-- Las pruebas internas no tienen API binaria publicada ni jar 1.x. -->
     <axiz.api.skip>true</axiz.api.skip>
     <maven.install.skip>true</maven.install.skip>
-    <!-- no production code here: the stores are mutation-tested in their own modules -->
+    <!-- aquí no hay código de producción: los almacenes se someten a mutation testing en sus propios módulos -->
     <skipPitest>true</skipPitest>
-    <!-- CI sets it to true: without Docker the build fails instead of skipping these tests -->
+    <!-- CI lo define como true: sin Docker el build falla en lugar de omitir estas pruebas -->
     <axiz.it.requireDocker>false</axiz.it.requireDocker>
     <axiz.test.argLine>-XX:+IgnoreUnrecognizedVMOptions -XX:+AllowRedefinitionToAddDeleteMethods --enable-native-access=ALL-UNNAMED -Djava.security.egd=file:/dev/./urandom</axiz.test.argLine>
   </properties>

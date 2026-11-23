@@ -12,10 +12,11 @@ import pe.axiz.payments.process.application.usecase.StartPaymentProcessUseCase;
 import pe.axiz.payments.process.domain.PaymentInstruction;
 
 /**
- * Starts the payment process when payment-orders registers an order ({@code
- * payment-order.created.v1} on the {@code payments} topic). Redeliveries are harmless: the use case
- * returns the existing process. Business rejections end in the saga; only infrastructure failures
- * reach the consumer retries and its dead-letter topic.
+ * Inicia el proceso de pago cuando payment-orders registra una orden ({@code
+ * payment-order.created.v1} en el tópico {@code payments}). Las reentregas son inocuas: el caso de
+ * uso devuelve el proceso existente. Los rechazos de negocio terminan en la saga; solo las fallas
+ * de infraestructura llegan a los reintentos del consumidor y a su tópico de mensajes fallidos
+ * (dead-letter).
  */
 @Component
 public class PaymentOrderCreatedHandler
@@ -24,14 +25,14 @@ public class PaymentOrderCreatedHandler
   static final String TYPE = "pe.axiz.payments.payment-order.created.v1";
 
   /**
-   * Payload of the event (only the fields this service reads).
+   * Payload del evento (solo los campos que lee este servicio).
    *
-   * @param orderId order
-   * @param operationNumber operation number
-   * @param debtorAccount account to debit
-   * @param creditorCci destination account
-   * @param amount amount
-   * @param currency currency
+   * @param orderId orden
+   * @param operationNumber número de operación
+   * @param debtorAccount cuenta que se debita
+   * @param creditorCci cuenta de destino
+   * @param amount monto
+   * @param currency moneda
    */
   public record PaymentOrderCreated(
       String orderId,

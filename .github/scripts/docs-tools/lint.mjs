@@ -3,7 +3,7 @@ import path from "node:path";
 import { lint } from "markdownlint/promise";
 import { parse } from "yaml";
 
-// The documentation tree is explicit. Native traversal avoids introducing a glob compiler.
+// El árbol de documentación es explícito. El recorrido nativo evita introducir un compilador de globs.
 const root = path.resolve(process.argv[2] || "axiz-docs");
 const docs = path.join(root, "docs");
 const entries = await readdir(docs, { recursive: true, withFileTypes: true });

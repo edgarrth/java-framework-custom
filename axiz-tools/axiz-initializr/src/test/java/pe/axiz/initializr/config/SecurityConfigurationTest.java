@@ -79,20 +79,20 @@ class SecurityConfigurationTest {
     assertThat(decoder.decode(token(key, ISSUER, List.of("account", "axiz-initializr"))))
         .isNotNull();
 
-    // same identity provider and signature, but issued for another API: rejected
+    // mismo proveedor de identidad y firma, pero emitido para otra API: se rechaza
     assertThatThrownBy(() -> decoder.decode(token(key, ISSUER, List.of("payments-api"))))
         .isInstanceOf(JwtValidationException.class)
         .hasMessageContaining("aud");
     assertThatThrownBy(() -> decoder.decode(token(key, ISSUER, List.of())))
         .isInstanceOf(JwtValidationException.class);
-    // the right audience from another issuer: rejected too
+    // la audiencia correcta de otro emisor: también se rechaza
     assertThatThrownBy(
             () ->
                 decoder.decode(
                     token(key, "https://other.example.test", List.of("axiz-initializr"))))
         .isInstanceOf(JwtValidationException.class)
         .hasMessageContaining("iss");
-    // a token without expiration never reaches the API
+    // un token sin expiración nunca llega a la API
     assertThatThrownBy(() -> decoder.decode(token(key, ISSUER, List.of("axiz-initializr"), null)))
         .isInstanceOf(JwtValidationException.class)
         .hasMessageContaining("exp");

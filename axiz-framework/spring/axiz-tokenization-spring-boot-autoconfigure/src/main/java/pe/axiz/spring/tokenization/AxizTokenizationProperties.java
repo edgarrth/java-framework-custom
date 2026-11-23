@@ -4,7 +4,9 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
-/** Explicit remote consumer or synthetic local double; selecting the capability requires a mode. */
+/**
+ * Consumidor remoto explícito o doble local sintético; seleccionar la capacidad requiere un modo.
+ */
 @ConfigurationProperties("axiz.tokenization")
 public record AxizTokenizationProperties(String mode, @Nullable Remote remote) {
   public AxizTokenizationProperties {
@@ -14,7 +16,9 @@ public record AxizTokenizationProperties(String mode, @Nullable Remote remote) {
       throw new IllegalArgumentException("Remote tokenization requires a named HTTP client");
   }
 
-  /** Named authenticated client, with an optional Reactor-independent future facade. */
+  /**
+   * Cliente autenticado con nombre, con una fachada de futures opcional independiente de Reactor.
+   */
   public record Remote(String client, @DefaultValue("false") boolean asyncFacade) {
     public Remote {
       if (client == null || !client.matches("[a-z][a-z0-9-]{1,40}"))

@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-foundation-spring-boot-autoconfigure
 
-Money, time and business calendar, ids and identifier validation for Spring Boot (auto-configuration).
+Dinero, tiempo y calendario de negocio, identificadores y validación de documentos para Spring Boot (autoconfiguración).
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,29 +12,29 @@ Money, time and business calendar, ids and identifier validation for Spring Boot
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `ReactiveInfrastructureBootstrap` | Prepares DRBG and optional context SPI discovery before reactive subscriptions. |
-| `BoundedAsyncDispatcher` | Bounded transport admission, ack deadlines, cancellation and metrics for Kafka submission workers. |
-| `ReactiveStages` | Deferred native stages and streaming publishers with explicitly scoped subscriber context and native cancellation. |
-| `AxizFoundationAutoConfiguration` | Clock, business calendar, id generation, identifier registry and Money JSON support. |
-| `AxizFoundationProperties` | Foundation settings (`axiz.foundation.*`), normally in the `axiz-common` ConfigMap. |
-| `IdentifierConstraintValidator` | Validator of `ValidIdentifier` backed by the identifier registry. |
-| `MoneyJacksonModule` | Jackson module for `Money`: the amount is written as a string so clients never parse it as a binary floating point number. |
-| `ValidIdentifier` | Bean Validation constraint for any registered identifier type, e.g. |
+| `ReactiveInfrastructureBootstrap` | Prepara el DRBG y el descubrimiento opcional de SPI de contexto antes de las suscripciones reactivas. |
+| `BoundedAsyncDispatcher` | Admisión de transporte acotada, plazos de confirmación, cancelación y métricas para los workers de envío a Kafka. |
+| `ReactiveStages` | Etapas nativas diferidas y publicadores de streaming con contexto del suscriptor de alcance explícito y cancelación nativa. |
+| `AxizFoundationAutoConfiguration` | Reloj, calendario de negocio, generación de ids, registro de identificadores y soporte JSON de Money. |
+| `AxizFoundationProperties` | Configuración base (`axiz.foundation.*`), normalmente en el ConfigMap `axiz-common`. |
+| `IdentifierConstraintValidator` | Validador de `ValidIdentifier` respaldado por el registro de identificadores. |
+| `MoneyJacksonModule` | Módulo Jackson para `Money`: el monto se escribe como cadena para que los clientes nunca lo interpreten como número binario de punto flotante. |
+| `ValidIdentifier` | Restricción de Bean Validation para cualquier tipo de identificador registrado. |
 
-JDBC integration (`SpringConnectionProvider`, `SpringTransactionRunner`, `SchemaInitializer`,
-`SqlDialects`) lives in `axiz-jdbc-spring-boot-autoconfigure`; the inbox completion ports used by
-transactional event handlers live in `axiz-messaging-spring-boot-autoconfigure`.
+La integración JDBC (`SpringConnectionProvider`, `SpringTransactionRunner`, `SchemaInitializer`,
+`SqlDialects`) está en `axiz-jdbc-spring-boot-autoconfigure`; los puertos de completitud del inbox que
+usan los handlers de eventos transaccionales están en `axiz-messaging-spring-boot-autoconfigure`.
 
-## AWS identity extension
+## Extensión de identidad AWS
 
-AWS integrations inject the declarative, context-owned `foundation.aws.AwsIdentity` bean.
-It selects optional singleton SDK `AwsCredentialsProvider` beans using typed scopes:
+Las integraciones AWS inyectan el bean declarativo `foundation.aws.AwsIdentity`, propiedad del contexto.
+Selecciona beans singleton opcionales `AwsCredentialsProvider` del SDK mediante scopes tipados:
 
 ```java
 @Bean(destroyMethod = "close")
@@ -49,94 +49,103 @@ StsAssumeRoleCredentialsProvider storageIdentity(
 }
 ```
 
-Import `AwsIdentityFor`, `AwsService` and `AwsCapability` from
-`pe.axiz.spring.aws`. The application configures the STS client and role permissions.
-Declare exactly one of `service` or `capability`:
-`@AwsIdentityFor(capability = AwsCapability.AUDIT)` targets audit, for example.
-Selection order is capability -> AWS service -> unqualified global bean -> context SDK source.
-A unique `@Primary` resolves multiple beans within one scope. Invalid declarations, ambiguous
-scopes and non-singleton providers fail startup, including declarations for unused scopes.
-An unqualified `defaultCandidate=false` bean is excluded from the global scope; a typed scoped
-bean remains eligible. Parent candidates are inherited unless their bean name is shadowed.
+`AwsIdentityFor`, `AwsService` y `AwsCapability` se importan desde `pe.axiz.spring.aws`.
+La aplicación configura el cliente STS y los permisos del rol. Se declara exactamente uno de
+`service` o `capability`: `@AwsIdentityFor(capability = AwsCapability.AUDIT)` apunta a auditoría,
+por ejemplo. El orden de selección es: capacidad, servicio AWS, bean global sin calificar y, por
+último, la fuente SDK del contexto. Un único `@Primary` resuelve varios beans dentro de un scope. Las declaraciones
+inválidas, los scopes ambiguos y los proveedores no singleton hacen fallar el arranque, incluidas las
+declaraciones para scopes sin uso. Un bean `defaultCandidate=false` sin calificar se excluye del scope
+global; un bean con scope tipado sigue siendo elegible. Los candidatos del contexto padre se heredan,
+salvo que su nombre de bean esté sombreado.
 
-Textual or unrelated application qualifiers are excluded from global selection and are never
-interpreted as AWS scopes. Composed annotations may alias the typed annotation attributes.
-A provider is borrowed through a non-closing view of `resolveCredentials`; a custom
-`resolveIdentity` implementation does not bypass the snapshot policy. Application providers
-remain Spring-owned. Asynchronous clients and R2DBC warm and refresh snapshots outside request
-threads. Each capability owns and closes its clients, workers and credential resources.
+Los calificadores textuales o ajenos de la aplicación se excluyen de la selección global y nunca se
+interpretan como scopes AWS. Las anotaciones compuestas pueden usar alias de los atributos de la anotación
+tipada. Un proveedor se presta mediante una vista de `resolveCredentials` que no lo cierra; una
+implementación personalizada de `resolveIdentity` no evita la política de instantáneas. Los proveedores
+de la aplicación siguen siendo propiedad de Spring. Los clientes asíncronos y R2DBC precalientan y
+renuevan las instantáneas fuera de los hilos de petición. Cada capacidad es dueña de sus clientes,
+workers y recursos de credenciales, y los cierra.
 
-The manager is passive infrastructure. Creating it never creates SDK sources or application
-providers; the default source is shared lazily within the context. Consumers inject this manager,
-without bean-factory parameters, runtime bean definitions or consumer-name lifecycle APIs.
-An INFO entry reports the configured source for each selected service/capability pair, once and
-lazily. It contains no credentials or full ARN and makes no AWS calls to identify the principal.
-Foundation remains usable without AWS dependencies. Config-data/bootstrap clients created before
-the application context use Spring Cloud AWS's bootstrap extension instead. A complete SDK client
-supplied by the application retains its owner's identity configuration.
+El gestor es infraestructura pasiva. Crearlo nunca crea fuentes del SDK ni proveedores de la aplicación;
+la fuente por defecto se comparte de forma diferida dentro del contexto. Los consumidores inyectan este
+gestor, sin parámetros de bean factory, definiciones de beans en tiempo de ejecución ni APIs de ciclo de
+vida por nombre de consumidor. Una entrada INFO informa la fuente configurada para cada par
+servicio/capacidad seleccionado, una sola vez y de forma diferida. No contiene credenciales ni el ARN
+completo y no hace llamadas a AWS para identificar al principal. La base sigue siendo usable sin
+dependencias de AWS. Los clientes de config-data o bootstrap creados antes del contexto de la aplicación
+usan la extensión de bootstrap de Spring Cloud AWS. Un cliente SDK completo provisto por la aplicación
+conserva la configuración de identidad de su dueño.
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-foundation-spring-boot-autoconfigure verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl spring/axiz-foundation-spring-boot-autoconfigure verify`.
 
-Reactive services seed the standard JDK DRBG during bootstrap, before clients authenticate or
-request code creates secure random values. On Linux start the JVM with
-`-Djava.security.egd=file:/dev/./urandom`. The service parent sets this for tests, Jib and
-`spring-boot:run`; generated Helm values also include it. Reactive startup fails explicitly if the
-default `SecureRandom` is a different algorithm. The framework does not install a custom security
-provider or weaken the entropy source. SCRAM reconnection tests run with BlockHound enabled.
+Los servicios reactivos siembran el DRBG estándar del JDK durante el bootstrap, antes de que los clientes
+se autentiquen o el código de las peticiones genere valores aleatorios seguros. En Linux la JVM se inicia
+con `-Djava.security.egd=file:/dev/./urandom`. El parent de servicios lo define para pruebas, Jib y
+`spring-boot:run`; los valores de Helm generados también lo incluyen. El arranque reactivo falla
+explícitamente si el `SecureRandom` por defecto es de otro algoritmo. El framework no instala un
+proveedor de seguridad personalizado ni debilita la fuente de entropía. Las pruebas de reconexión SCRAM
+se ejecutan con BlockHound habilitado.
 
-## Reactive startup
+## Arranque reactivo
 
-`ReactiveInfrastructureBootstrap.initialize()` seeds the JDK DRBG and initializes optional
-Micrometer context SPI discovery on the startup thread. Reactive auto-configuration invokes it
-before creating application beans. This prevents a first subscription from scanning JAR files
-on a network worker. `ReactiveRandomBootstrap` remains available as the narrower entropy helper.
+`ReactiveInfrastructureBootstrap.initialize()` siembra el DRBG del JDK e inicializa el descubrimiento
+opcional de SPI de contexto de Micrometer en el hilo de arranque. La autoconfiguración reactiva lo invoca
+antes de crear los beans de la aplicación. Esto evita que una primera suscripción escanee archivos JAR en
+un worker de red. `ReactiveRandomBootstrap` sigue disponible como ayudante de entropía más acotado.
 
-`ReactiveStages.from(...)` bridges a core `CompletionStage` port to `Mono`.
-`ReactiveStages.flux(...)` scopes streaming submission, signals, demand and cancellation. Reactor
-context is authoritative: each subscriber retains its own context even when several callers share
-one native request. Core stage composition captures callbacks through a JDK-only scoped SPI;
-core has no dependency on Reactor or Micrometer. Scopes open and close on the same executing
-thread, restoring the worker's previous context. No global Reactor hook is installed.
-Context propagation remains optional; native stages also work when its JAR is physically absent.
+`ReactiveStages.from(...)` conecta un puerto core `CompletionStage` con `Mono`.
+`ReactiveStages.flux(...)` delimita el envío de streaming, las señales, la demanda y la cancelación. El
+contexto de Reactor es la referencia: cada suscriptor conserva su propio contexto aunque varios llamadores
+compartan una misma petición nativa. La composición de etapas core captura los callbacks mediante una SPI
+con scope solo del JDK; core no depende de Reactor ni de Micrometer. Los scopes se abren y cierran en el
+mismo hilo de ejecución y restauran el contexto previo del worker. No se instala ningún hook global de
+Reactor. La propagación de contexto sigue siendo opcional; las etapas nativas también funcionan cuando
+su JAR no está presente.
 
-## AWS resource ownership
+## Propiedad de los recursos AWS
 
-`AwsIdentity.source(AwsService, AwsCapability)` returns `AwsCredentialSource`: consumers always
-close it or transfer it to their resource owner. `.provider()` is a non-closing SDK view, invalid
-after resource/context closure. `factory(...)` supplies an independent resource per invocation;
-`configure(...)` transfers ownership to an SDK client plugin. `AwsAsyncResources.create` composes
-identity, native transport and the optional context registry. No registry means no metric binding.
+`AwsIdentity.source(AwsService, AwsCapability)` devuelve `AwsCredentialSource`: los consumidores siempre
+la cierran o la transfieren al dueño de su recurso. `.provider()` es una vista del SDK que no cierra,
+inválida después del cierre del recurso o del contexto. `factory(...)` entrega un recurso independiente
+por invocación; `configure(...)` transfiere la propiedad a un plugin del cliente SDK.
+`AwsAsyncResources.create` compone la identidad, el transporte nativo y el registro opcional del contexto.
+Sin registro no hay vinculación de métricas.
 
-Spring's direct dependency graph closes consumers before the identity manager. When a lazy
-application provider is selected, the manager records that actual provider dependency internally,
-so it also survives cleanup of failed pools. It does not scan unrelated beans in creation.
+El grafo de dependencias directas de Spring cierra a los consumidores antes que al gestor de identidad.
+Cuando se selecciona un proveedor diferido de la aplicación, el gestor registra internamente esa
+dependencia real del proveedor, de modo que también sobrevive a la limpieza de pools fallidos. No escanea
+beans ajenos en creación.
 
-## Worker lifecycle and readiness
+## Ciclo de vida de workers y readiness
 
-Inbox purging, outbox relaying and SQS consumers expose immutable worker snapshots.
-With Boot health present, `axizWorkers` is DOWN for failed/stopped groups or missing workers;
-uncaught worker failures are logged by type without raw messages, and stop the remaining group.
-The default readiness group includes `readinessState,axizWorkers`. Applications overriding group
-membership must retain `axizWorkers` to reject traffic when a required worker is unavailable.
+La purga del inbox, el relay del outbox y los consumidores SQS exponen instantáneas inmutables de
+sus workers. Con el health de Boot presente, `axizWorkers` está en DOWN para grupos fallidos o detenidos,
+o cuando faltan workers; los fallos no capturados de un worker se registran por tipo, sin mensajes
+crudos, y detienen el resto del grupo. El grupo de readiness por defecto incluye
+`readinessState,axizWorkers`. Las aplicaciones que redefinen los miembros del grupo deben conservar
+`axizWorkers` para rechazar tráfico cuando un worker requerido no está disponible.
 
-Outbox and SQS drain for 15s by default. Startup rejects a worker grace plus the 5s termination
-margin that exceeds `spring.lifecycle.timeout-per-shutdown-phase` (generated services: 20s).
-Generated charts allow 90s for sequential shutdown phases; adjust the pod budget when adding
-phases, hooks or larger grace periods. Uncooperative I/O never receives a false stopped callback.
+El outbox y SQS drenan durante 15s por defecto. El arranque rechaza un periodo de gracia de worker que,
+sumado al margen de terminación de 5s, supere `spring.lifecycle.timeout-per-shutdown-phase` (servicios
+generados: 20s). Los charts generados permiten 90s para fases de cierre secuenciales; el presupuesto del
+pod se ajusta al agregar fases, hooks o periodos de gracia mayores. La I/O que no coopera nunca recibe un
+callback de detención falso.
 
 ### Operación de workers fallidos
 
-`axizWorkers=DOWN` retira readiness; no reinicia por sí solo un pod. Configure una alerta de
+`axizWorkers=DOWN` retira readiness; no reinicia por sí solo un pod. Se configura una alerta de
 readiness/estado del worker y un procedimiento de diagnóstico y reemplazo del pod. Antes de
-repetir una operación externa, concilie su resultado mediante el mecanismo del proveedor.
+repetir una operación externa, su resultado se concilia mediante el mecanismo del proveedor.
 Un worker terminado conserva `FAILED` para health y rechaza reinicio en la misma instancia.
 Si todos los workers y su cleanup terminaron, `stop(callback)` sí confirma la parada y
 `isRunning()` devuelve false, sin esperar innecesariamente el timeout de fase de Spring.
 Si el cleanup falla o queda I/O vivo, no se confirma la parada ni se habilita un nuevo worker.
 
-`ReactiveRenderContext` scopes synchronous presentation work to the explicit Reactor request and
-Observation, with MDC and thread-local restoration. Optional Netty codecs are initialized before
-traffic: a missing optional class is allowed, but an installed incompatible class fails startup
-with its linkage error instead of deferring an invalid classpath failure to a request.
+`ReactiveRenderContext` delimita el trabajo síncrono de presentación a la petición de Reactor y la
+Observation explícitas, con restauración del MDC y del estado ligado al hilo. Los codecs opcionales de
+Netty se inicializan antes del tráfico: se permite que falte una clase opcional, pero una clase instalada
+incompatible hace fallar el arranque con su error de enlace en lugar de diferir a una petición un fallo
+de classpath inválido.

@@ -13,7 +13,7 @@ import pe.axiz.core.lock.InMemoryDistributedLock;
 import pe.axiz.core.lock.LockObserver;
 import pe.axiz.core.lock.LockTemplate;
 
-/** What a movement sees when its account lock is not obtained or the work fails. */
+/** Lo que ve un movimiento cuando no obtiene el lock de su cuenta o el trabajo falla. */
 class AccountLocksTest {
 
   @Test

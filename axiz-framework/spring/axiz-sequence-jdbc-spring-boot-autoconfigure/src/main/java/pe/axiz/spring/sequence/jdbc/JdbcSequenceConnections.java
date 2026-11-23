@@ -8,7 +8,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.util.ClassUtils;
 import pe.axiz.spring.sequence.SequencePoolPolicy;
 
-/** Owns reservation connections independently of the business pool. */
+/** Posee las conexiones de reserva con independencia del pool de negocio. */
 final class JdbcSequenceConnections implements AutoCloseable {
   private final DataSource connections;
   private final @Nullable AutoCloseable owner;
@@ -48,7 +48,8 @@ final class JdbcSequenceConnections implements AutoCloseable {
         settings.setCredentialsProviderClassName(null);
         settings.setCredentialsProvider(credentials);
       } else if (main.getCredentialsProviderClassName() == null) {
-        // A password rotated on the main pool must also be used for new counter connections.
+        // Una contraseña rotada en el pool principal también debe usarse para las conexiones nuevas
+        // de los contadores.
         settings.setCredentialsProvider(main::getCredentials);
       }
       settings.setPoolName(main.getPoolName() + "-sequence");

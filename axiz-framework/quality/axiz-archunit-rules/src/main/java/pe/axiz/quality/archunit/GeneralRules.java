@@ -20,8 +20,9 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Hygiene rules every axiz service and module follows (section 16 of the definition). Annotation
- * types are referenced by name so the rules do not need Spring on the classpath.
+ * Reglas de higiene que siguen todos los servicios y módulos de axiz (sección 16 de la definición).
+ * Los tipos de anotación se referencian por nombre para que las reglas no necesiten Spring en el
+ * classpath.
  */
 public final class GeneralRules {
 
@@ -46,7 +47,7 @@ public final class GeneralRules {
                                   method.isAnnotatedWith(
                                       "org.springframework.context.annotation.Bean"))));
 
-  /** Dependencies are injected through constructors only. */
+  /** Las dependencias se inyectan solo mediante constructores. */
   public static final ArchRule NO_FIELD_INJECTION =
       noFields()
           .should()
@@ -57,7 +58,7 @@ public final class GeneralRules {
           .beAnnotatedWith("org.springframework.beans.factory.annotation.Value")
           .because("constructor injection makes dependencies explicit and beans immutable");
 
-  /** Singleton beans keep no mutable state between requests. */
+  /** Los beans singleton no guardan estado mutable entre solicitudes. */
   public static final ArchRule NO_MUTABLE_STATE_IN_SINGLETONS =
       fields()
           .that()
@@ -68,7 +69,10 @@ public final class GeneralRules {
           .beFinal()
           .because("request data must never be stored in singleton fields");
 
-  /** Review gate for shared mutable declared types, including injected collections. */
+  /**
+   * Control de revisión para los tipos declarados mutables y compartidos, incluidas las colecciones
+   * inyectadas.
+   */
   public static final ArchRule SINGLETON_FIELDS_OF_MUTABLE_TYPE_ARE_REVIEWED =
       fields()
           .that()
@@ -80,8 +84,9 @@ public final class GeneralRules {
           .should(new ReviewedFields());
 
   /**
-   * Packages that hold business data or carry it across a boundary: domain and application models
-   * and the transport records of inbound and outbound adapters.
+   * Paquetes que contienen datos de negocio o los transportan a través de una frontera: los modelos
+   * de dominio y de aplicación y los records de transporte de los adaptadores de entrada y de
+   * salida.
    */
   private static final String[] DATA_PACKAGES = {
     "..domain..",
@@ -108,7 +113,10 @@ public final class GeneralRules {
               Set.of("float", "double", "java.lang.Float", "java.lang.Double")
                   .contains(type.getName()));
 
-  /** Binary floating point cannot model money or other business quantities, nor carry them. */
+  /**
+   * El punto flotante binario no puede modelar dinero ni otras cantidades de negocio, ni
+   * transportarlas.
+   */
   public static final ArchRule NO_FLOATING_POINT_IN_BUSINESS_MODELS =
       noFields()
           .that()
@@ -117,7 +125,10 @@ public final class GeneralRules {
           .should()
           .haveRawType(BINARY_FLOATING_POINT);
 
-  /** The same for method parameters and results: a {@code double amount} argument loses cents. */
+  /**
+   * Lo mismo para los parámetros y resultados de métodos: un argumento {@code double amount} pierde
+   * centavos.
+   */
   public static final ArchRule NO_FLOATING_POINT_IN_BUSINESS_SIGNATURES =
       methods()
           .that()
@@ -159,9 +170,10 @@ public final class GeneralRules {
           "java.time.MonthDay");
 
   /**
-   * Ambient clocks prevent reproducible domain and application behavior. {@code now()} and {@code
-   * now(ZoneId)} read the system clock, as do {@code Clock.systemUTC()} and its siblings; {@code
-   * now(clock)} with an injected {@link java.time.Clock} is the intended form.
+   * Los relojes ambientales impiden un comportamiento de dominio y de aplicación reproducible.
+   * {@code now()} y {@code now(ZoneId)} leen el reloj del sistema, al igual que {@code
+   * Clock.systemUTC()} y sus variantes; {@code now(clock)} con un {@link java.time.Clock} inyectado
+   * es la forma prevista.
    */
   public static final ArchRule BUSINESS_USES_INJECTED_CLOCK =
       noClasses()
@@ -203,10 +215,10 @@ public final class GeneralRules {
           "javax.crypto.SecretKeyFactory");
 
   /**
-   * Services hash, sign, encrypt and draw random values through {@code axiz-core-crypto} ({@code
-   * Hashing}, {@code AesGcm}, {@code FieldEncryptor}, {@code SecureRandoms}): algorithm, mode and
-   * randomness are reviewed once there, instead of choosing MD5, ECB or {@code java.util.Random} at
-   * each call site.
+   * Los servicios calculan hashes, firman, cifran y obtienen valores aleatorios mediante {@code
+   * axiz-core-crypto} ({@code Hashing}, {@code AesGcm}, {@code FieldEncryptor}, {@code
+   * SecureRandoms}): el algoritmo, el modo y la aleatoriedad se revisan una sola vez allí, en lugar
+   * de elegir MD5, ECB o {@code java.util.Random} en cada punto de llamada.
    */
   public static final ArchRule NO_RAW_CRYPTOGRAPHY_OR_PREDICTABLE_RANDOMNESS =
       noClasses()
@@ -254,7 +266,7 @@ public final class GeneralRules {
 
   public static final ArchRule NO_JODA_TIME = GeneralCodingRules.NO_CLASSES_SHOULD_USE_JODATIME;
 
-  /** No global Reactor hooks; context propagation is done by Micrometer. */
+  /** Sin hooks globales de Reactor; Micrometer se encarga de propagar el contexto. */
   public static final ArchRule NO_REACTOR_GLOBAL_HOOKS =
       noClasses()
           .should()
@@ -264,7 +276,7 @@ public final class GeneralRules {
                   call -> call.getTargetOwner().getName().equals("reactor.core.publisher.Hooks")))
           .because("global hooks leak context and slow down every operator");
 
-  /** Blocking calls are forbidden in reactive pipelines. */
+  /** Se prohíben las llamadas bloqueantes en los pipelines reactivos. */
   public static final ArchRule NO_BLOCK_IN_REACTIVE_CODE =
       noClasses()
           .should()
@@ -279,16 +291,16 @@ public final class GeneralRules {
                   }))
           .because("blocking a reactive pipeline starves the event loop");
 
-  /** Packages of business operations in every style (use cases, handlers, services). */
+  /** Paquetes de operaciones de negocio en cada estilo (casos de uso, handlers, servicios). */
   private static final String[] BUSINESS_PACKAGES = {
     "..application..", "..usecase..", "..service..", "..handler..", "..job.."
   };
 
   /**
-   * Business operations never serialize with JVM-local locks: a service runs several replicas, so a
-   * {@code ReentrantLock} or a {@code synchronized} method protects one pod only and two replicas
-   * can still move the same account at once. They use the distributed lock ({@code LockTemplate} of
-   * axiz-lock) or database constraints.
+   * Las operaciones de negocio nunca se serializan con locks locales de la JVM: un servicio ejecuta
+   * varias réplicas, por lo que un {@code ReentrantLock} o un método {@code synchronized} protege
+   * un solo pod y dos réplicas pueden igualmente mover la misma cuenta a la vez. Se usa el lock
+   * distribuido ({@code LockTemplate} de axiz-lock) o restricciones de base de datos.
    */
   public static final ArchRule NO_JVM_LOCKS_IN_BUSINESS_CODE =
       noClasses()
@@ -300,7 +312,7 @@ public final class GeneralRules {
           .because(
               "a lock in one JVM does not serialize the replicas of a service; use LockTemplate");
 
-  /** Same rule for {@code synchronized} methods. */
+  /** La misma regla para los métodos {@code synchronized}. */
   public static final ArchRule NO_SYNCHRONIZED_BUSINESS_METHODS =
       methods()
           .that()
@@ -311,7 +323,7 @@ public final class GeneralRules {
           .because(
               "a lock in one JVM does not serialize the replicas of a service; use LockTemplate");
 
-  /** Testing authentication tokens never reach production code. */
+  /** Los tokens de autenticación de prueba nunca llegan al código de producción. */
   public static final ArchRule NO_TESTING_AUTHENTICATION =
       noClasses()
           .should()
@@ -319,7 +331,7 @@ public final class GeneralRules {
           .haveFullyQualifiedName(
               "org.springframework.security.authentication.TestingAuthenticationToken");
 
-  /** Parallel HTTP clients are not allowed; use @HttpExchange interfaces. */
+  /** No se permiten clientes HTTP paralelos; se usan interfaces @HttpExchange. */
   public static final ArchRule NO_PARALLEL_HTTP_CLIENTS =
       noClasses()
           .should()
@@ -327,19 +339,28 @@ public final class GeneralRules {
           .resideInAnyPackage("retrofit2..", "feign..", "okhttp3..")
           .because("axiz standardizes on Spring HTTP interface clients");
 
-  /** AWS SDK v1 is forbidden. */
+  /** Se prohíbe la versión 1 del AWS SDK. */
   public static final ArchRule NO_AWS_SDK_V1 =
       noClasses().should().dependOnClassesThat().resideInAPackage("com.amazonaws..");
 
-  /** Services consume ports and public starter facades; adapters are wired at runtime. */
+  /**
+   * Los servicios consumen puertos y fachadas públicas de los starters; los adaptadores se cablean
+   * en tiempo de ejecución.
+   */
   public static final ArchRule NO_TECHNOLOGY_ADAPTERS =
       noClasses().should().dependOnClassesThat().resideInAPackage("pe.axiz.adapter..");
 
-  /** Auto-configuration classes belong to the framework's wiring, not service dependencies. */
+  /**
+   * Las clases de autoconfiguración pertenecen al cableado del framework, no a las dependencias del
+   * servicio.
+   */
   public static final ArchRule NO_AUTOCONFIGURATION_DEPENDENCIES =
       noClasses().should().dependOnClassesThat().haveSimpleNameEndingWith("AutoConfiguration");
 
-  /** Technology kits are restricted to outbound persistence adapters and repositories. */
+  /**
+   * Los kits de tecnología se restringen a los adaptadores de persistencia de salida y a los
+   * repositorios.
+   */
   public static final ArchRule KITS_ONLY_IN_PERSISTENCE_PACKAGES =
       noClasses()
           .that()
@@ -349,16 +370,17 @@ public final class GeneralRules {
           .resideInAPackage("pe.axiz.kit..");
 
   /**
-   * A new framework starts without deprecated code: nothing may call, extend or annotate with an
-   * API its owner marked {@code @Deprecated} (Spring, AWS SDK, Jackson, axiz itself).
+   * Un framework nuevo parte sin código obsoleto: nada puede invocar, extender ni anotar con una
+   * API que su propietario marcó como {@code @Deprecated} (Spring, AWS SDK, Jackson, el propio
+   * axiz).
    */
   public static final ArchRule NO_DEPRECATED_API =
       GeneralCodingRules.DEPRECATED_API_SHOULD_NOT_BE_USED;
 
   /**
-   * Every scanned component has a bean name of its own. A {@code @Configuration} class named like
-   * one of its {@code @Bean} methods (class {@code SettlementJob} with {@code Job settlementJob()})
-   * compiles and passes unit tests, and the application does not start.
+   * Cada componente escaneado tiene un nombre de bean propio. Una clase {@code @Configuration} con
+   * el mismo nombre que uno de sus métodos {@code @Bean} (la clase {@code SettlementJob} con {@code
+   * Job settlementJob()}) compila y supera las pruebas unitarias, pero la aplicación no arranca.
    */
   public static final ArchRule UNIQUE_BEAN_NAMES =
       uniqueBeanNames(
@@ -374,7 +396,7 @@ public final class GeneralRules {
         .because("two beans with one name stop the application at startup");
   }
 
-  /** Every general rule, for {@code @ArchTest} fields or manual checks. */
+  /** Todas las reglas generales, para campos {@code @ArchTest} o verificaciones manuales. */
   public static List<ArchRule> all() {
     return List.of(
         SINGLETON_FIELDS_OF_MUTABLE_TYPE_ARE_REVIEWED,

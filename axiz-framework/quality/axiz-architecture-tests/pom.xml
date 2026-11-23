@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Internal module: never published. -->
+<!-- Módulo interno: nunca se publica. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
@@ -18,11 +18,11 @@
   <properties>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
-    <!-- tests only: the jar holds just the manifest, by design (no "JAR will be empty" warning) -->
+    <!-- solo pruebas: el jar contiene únicamente el manifiesto, por diseño (sin la advertencia "JAR will be empty") -->
     <maven.jar.forceCreation>true</maven.jar.forceCreation>
     <axiz.module.name>pe.axiz.quality.tests</axiz.module.name>
     <maven.deploy.skip>true</maven.deploy.skip>
-    <!-- Internal tests have no published binary API or 1.x jar. -->
+    <!-- Las pruebas internas no tienen API binaria publicada ni jar 1.x. -->
     <axiz.api.skip>true</axiz.api.skip>
     <maven.install.skip>true</maven.install.skip>
   </properties>
@@ -162,7 +162,7 @@
 
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-security-redis-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>test</scope></dependency>
 
-    <!-- Cross-provider wiring tests exercise actual reactive web conditions. -->
+    <!-- Las pruebas de cableado entre proveedores ejercitan condiciones web reactivas reales. -->
     <dependency><groupId>org.springframework</groupId><artifactId>spring-webflux</artifactId><scope>test</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-crypto-kms-spring-boot-starter</artifactId><version>${project.version}</version><scope>test</scope></dependency>
 

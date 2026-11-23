@@ -1,4 +1,4 @@
--- axiz inbox (Aurora PostgreSQL). Include it in the service Flyway migrations.
+-- inbox de axiz (Aurora PostgreSQL). Debe incluirse en las migraciones Flyway del servicio.
 CREATE TABLE IF NOT EXISTS axiz_inbox (
   consumer     VARCHAR(100) NOT NULL,
   message_id   VARCHAR(128) NOT NULL,

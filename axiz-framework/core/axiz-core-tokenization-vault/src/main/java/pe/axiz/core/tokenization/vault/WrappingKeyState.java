@@ -2,11 +2,15 @@ package pe.axiz.core.tokenization.vault;
 
 import java.util.List;
 
-/** Independent durable write/read generation for envelope wrapping keys, never HMAC material. */
+/**
+ * Generación durable e independiente de escritura y lectura para las claves de envoltura del
+ * envelope, nunca material HMAC.
+ */
 public record WrappingKeyState(
     String keysetId, long version, String writeKeyId, List<String> readKeyIds) {
   public WrappingKeyState {
-    // The bounded identifier/set invariants are identical; the domain types remain distinct.
+    // Las invariantes de identificador y de conjunto acotados son idénticas; los tipos de dominio
+    // siguen siendo distintos.
     var checked = new FingerprintKeyState(keysetId, version, writeKeyId, readKeyIds);
     keysetId = checked.keysetId();
     writeKeyId = checked.writeKeyId();

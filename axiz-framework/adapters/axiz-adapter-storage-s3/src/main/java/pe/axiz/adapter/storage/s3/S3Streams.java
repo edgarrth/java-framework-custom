@@ -14,7 +14,7 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 
-/** SDK protocol bridges stay private to the technology boundary. */
+/** Los puentes de protocolo del SDK permanecen privados en la frontera tecnológica. */
 final class S3Streams {
   private S3Streams() {}
 
@@ -173,8 +173,8 @@ final class S3Streams {
       closed.set(true);
       Subscription active = subscription.get();
       if (active != null) active.cancel();
-      // A response whose headers were consumed but whose body was never subscribed still owns a
-      // socket.
+      // Una respuesta cuyas cabeceras se consumieron pero cuyo cuerpo nunca se suscribió sigue
+      // siendo dueña de un socket.
       if (subscribed.compareAndSet(false, true))
         source.subscribe(
             new Subscriber<>() {

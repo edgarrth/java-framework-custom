@@ -28,12 +28,12 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 
-/** The method-level interceptor on both stacks, without a web server. */
+/** El interceptor a nivel de método en ambas pilas, sin servidor web. */
 class IdempotencyInterceptorTest {
 
   private static final Duration T = Duration.ofSeconds(5);
 
-  /** A controller-like target: annotated, optional-key and plain methods. */
+  /** Objetivo similar a un controlador: métodos anotados, con clave opcional y simples. */
   public static class Payments {
     final AtomicInteger runs = new AtomicInteger();
 

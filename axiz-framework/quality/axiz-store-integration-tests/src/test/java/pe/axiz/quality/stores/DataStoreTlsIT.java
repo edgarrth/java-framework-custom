@@ -43,7 +43,10 @@ import pe.axiz.spring.r2dbc.ReaderDatabase;
 import pe.axiz.spring.redis.AxizRedisTransportAutoConfiguration;
 import pe.axiz.spring.test.BlockHoundExtension;
 
-/** Real TLS handshakes, including certificate and hostname rejection, for managed data clients. */
+/**
+ * Handshakes TLS reales, incluido el rechazo por certificado y por nombre de host, para los
+ * clientes de datos administrados.
+ */
 @Timeout(180)
 @ExtendWith(BlockHoundExtension.class)
 class DataStoreTlsIT {
@@ -153,7 +156,7 @@ class DataStoreTlsIT {
         var writer = ConnectionFactoryBuilder.withOptions(options.mutate()).build();
         R2dbcTransportSecurity.validate(writer, PRODUCTION);
         assertQuery(DatabaseClient.create(writer), proof.valid());
-        // The reader must go through the real Axiz builder, its pool and its final decorators.
+        // El lector debe pasar por el builder real de Axiz, su pool y sus decoradores finales.
         new ApplicationContextRunner()
             .withConfiguration(
                 AutoConfigurations.of(

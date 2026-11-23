@@ -5,7 +5,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 import pe.axiz.core.crypto.PayloadProtectionMode;
 
-/** Payload policy and decryption budget reserved before every relay publication. */
+/**
+ * Política de payload y presupuesto de descifrado reservado antes de cada publicación del relay.
+ */
 @ConfigurationProperties("axiz.outbox")
 public record AxizOutboxProtectionProperties(
     @DefaultValue("NONE") PayloadProtectionMode payloadProtection,

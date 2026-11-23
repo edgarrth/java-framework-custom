@@ -22,7 +22,8 @@ import org.testcontainers.images.builder.Transferable;
 
 class PatchedKeycloakIT {
   @Test
-  // Includes a cold image build; HTTP startup retains the separate two-minute deadline.
+  // Incluye una construcción de imagen en frío; el arranque HTTP conserva el plazo independiente de
+  // dos minutos.
   @Timeout(300)
   void importedRealmIssuesSignedTokensAndRejectsWrongCredentialsAsNonRoot() throws Exception {
     boolean available = DockerClientFactory.instance().isDockerAvailable();

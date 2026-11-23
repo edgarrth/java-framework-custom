@@ -12,7 +12,9 @@ import pe.axiz.codegen.asyncapi.AsyncApiDocument;
 import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.render.JavaFormatter;
 
-/** Framework-independent payload records derived from the service's AsyncAPI contract. */
+/**
+ * Records de payload independientes del framework, derivados del contrato AsyncAPI del servicio.
+ */
 public final class EventPayloads {
   private EventPayloads() {}
 

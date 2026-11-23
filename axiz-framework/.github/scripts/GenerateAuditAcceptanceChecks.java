@@ -2,7 +2,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import pe.axiz.codegen.render.JavaFormatter;
 
-/** Framework-only assertions, added after normal generation; never delivered to consumers. */
+/** Aserciones propias del framework, agregadas después de la generación normal; nunca se entregan a los consumidores. */
 class GenerateAuditAcceptanceChecks {
   public static void main(String[] args) throws Exception {
     try (var projects = Files.list(Path.of(args[0]))) {
@@ -22,7 +22,7 @@ class GenerateAuditAcceptanceChecks {
             new StringBuilder(
                 """
 
-                  // Framework acceptance harness: this method is not part of the generated template.
+                  // Arnés de aceptación del framework: este método no forma parte de la plantilla generada.
                   @Test
                   void verifiesFrameworkOwnedAuditTransport(@Autowired ApplicationContext context,
                       @Autowired MeterRegistry metrics) {

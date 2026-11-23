@@ -6,16 +6,17 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 /**
- * A feature flag. It is on when {@code enabled} and every declared restriction matches: channel,
- * tenant, attribute rules and the percentage rollout (stable per targeting key).
+ * Feature flag. Está encendido cuando {@code enabled} y se cumplen todas las restricciones
+ * declaradas: canal, tenant, reglas de atributos y el despliegue por porcentaje (estable por clave
+ * de segmentación).
  *
- * @param name flag name
- * @param enabled master switch
- * @param percentage rollout percentage 0-100
- * @param channels allowed channels (empty: any)
- * @param tenants allowed tenants (empty: any)
- * @param rules attribute to allowed values (all must match)
- * @param variant value returned by {@link FeatureFlags#variant} when on
+ * @param name nombre del flag
+ * @param enabled interruptor maestro
+ * @param percentage porcentaje de despliegue 0-100
+ * @param channels canales permitidos (vacío: cualquiera)
+ * @param tenants tenants permitidos (vacío: cualquiera)
+ * @param rules atributo a valores permitidos (todos deben coincidir)
+ * @param variant valor devuelto por {@link FeatureFlags#variant} cuando está encendido
  */
 public record FlagDefinition(
     String name,

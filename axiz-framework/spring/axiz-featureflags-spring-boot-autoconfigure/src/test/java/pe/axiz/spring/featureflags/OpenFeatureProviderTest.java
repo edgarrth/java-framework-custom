@@ -25,7 +25,10 @@ import pe.axiz.core.featureflags.FeatureFlags;
 import pe.axiz.core.featureflags.FlagDefinition;
 import pe.axiz.core.featureflags.MapFlagProvider;
 
-/** OpenFeature callers get the configured flags, and their own default for unknown ones. */
+/**
+ * Los invocantes de OpenFeature obtienen los flags configurados, y su propio valor por defecto para
+ * los desconocidos.
+ */
 class OpenFeatureProviderTest {
 
   private final AxizOpenFeatureProvider provider =

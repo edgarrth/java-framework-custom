@@ -10,9 +10,10 @@ import org.junit.platform.launcher.TestIdentifier;
 import org.junit.platform.launcher.TestPlan;
 
 /**
- * Installs opted-in blocking detection before any test can start a scheduler. Retransforming an
- * already waiting JDK executor can otherwise invalidate its active locking frame on Java 25.
- * Servlet-only plans do not install BlockHound.
+ * Instala la detección de bloqueos habilitada antes de que cualquier prueba pueda iniciar un
+ * scheduler. De lo contrario, retransformar un executor del JDK que ya está esperando puede
+ * invalidar su frame de bloqueo activo en Java 25. Los planes exclusivamente servlet no instalan
+ * BlockHound.
  */
 public final class BlockHoundTestExecutionListener implements TestExecutionListener {
   @Override

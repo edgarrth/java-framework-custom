@@ -28,7 +28,10 @@ import pe.axiz.core.tokenization.Token;
 import pe.axiz.core.tokenization.TokenDomain;
 import pe.axiz.core.tokenization.TokenType;
 
-/** Real crypto and maintenance protocol over a test-only conditional storage model. */
+/**
+ * Criptografía real y protocolo de mantenimiento sobre un modelo de almacenamiento condicional solo
+ * para pruebas.
+ */
 class VaultRotatorProtocolTest {
   private static final TokenDomain DOMAIN = new TokenDomain("payments");
   private static final VaultScope SCOPE =

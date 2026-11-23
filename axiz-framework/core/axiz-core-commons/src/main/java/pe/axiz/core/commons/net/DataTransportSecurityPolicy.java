@@ -5,11 +5,14 @@ import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.commons.Environments;
 
-/** TLS and peer verification policy for data stores, independent of their client technology. */
+/**
+ * Política de TLS y de verificación del par para almacenes de datos, independiente de la tecnología
+ * de su cliente.
+ */
 public record DataTransportSecurityPolicy(
     @Nullable String environment, boolean allowInsecureDataStores) {
 
-  /** Reads the same explicit environment policy used by all framework exceptions. */
+  /** Lee la misma política de entorno explícita que usan todas las excepciones del framework. */
   public static DataTransportSecurityPolicy from(Function<String, @Nullable String> properties) {
     Objects.requireNonNull(properties, "properties");
     String setting = "axiz.transport.allow-insecure-data-stores";
@@ -21,7 +24,10 @@ public record DataTransportSecurityPolicy(
         properties.apply("axiz.config.environment"), Boolean.parseBoolean(raw));
   }
 
-  /** Requires encryption and authenticated peers; never logs a connection string or credential. */
+  /**
+   * Exige cifrado y pares autenticados; nunca registra en log una cadena de conexión ni una
+   * credencial.
+   */
   public void requireVerified(boolean encrypted, boolean verifiedPeer, String integration) {
     if (encrypted && verifiedPeer) return;
     if (allowInsecureDataStores && Environments.allowsInMemoryState(environment)) return;

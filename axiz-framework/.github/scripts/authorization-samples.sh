@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Requires the current framework installed locally, as in the samples CI job.
+# Requiere el framework actual instalado en local, como en el job de samples de CI.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 revision=$(python3 -c 'import xml.etree.ElementTree as E; print(E.parse("pom.xml").getroot().findtext("{*}properties/{*}revision"))')

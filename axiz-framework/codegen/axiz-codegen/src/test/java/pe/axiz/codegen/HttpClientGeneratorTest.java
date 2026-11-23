@@ -128,7 +128,7 @@ class HttpClientGeneratorTest {
     String plain =
         HttpClientGenerator.model("example", "State", Map.of("enum", List.of("READY")), Map.of());
     assertEquals(
-        "package example;\n\n/** State values. */\npublic enum State {\n  READY\n}\n", plain);
+        "package example;\n\n/** Valores de State. */\npublic enum State {\n  READY\n}\n", plain);
     assertNull(HttpClientGenerator.model("example", "Scalar", Map.of("type", "string"), Map.of()));
   }
 

@@ -11,7 +11,10 @@ import java.util.Arrays;
 import java.util.Optional;
 import pe.axiz.core.secrets.SecretValue;
 
-/** One bounded UTF-8 reader for request-driven and refreshed mounted secrets. */
+/**
+ * Lector UTF-8 acotado único para secretos montados, tanto bajo demanda de peticiones como
+ * renovados.
+ */
 final class SecretFileContents {
   static final int MAX_BYTES = 1024 * 1024;
 

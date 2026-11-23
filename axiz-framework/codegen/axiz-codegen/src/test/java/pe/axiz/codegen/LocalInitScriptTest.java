@@ -18,7 +18,10 @@ import org.junit.jupiter.api.io.TempDir;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
 
-/** Runs the generated Bash against a stateful AWS command boundary, including injected failures. */
+/**
+ * Ejecuta el Bash generado contra una frontera de comandos AWS con estado, incluidas fallas
+ * inyectadas.
+ */
 @EnabledOnOs(OS.LINUX)
 @Timeout(60)
 class LocalInitScriptTest {

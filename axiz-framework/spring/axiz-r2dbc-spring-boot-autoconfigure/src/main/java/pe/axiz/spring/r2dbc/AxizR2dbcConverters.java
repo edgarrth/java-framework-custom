@@ -12,10 +12,10 @@ import pe.axiz.core.money.Money;
 import pe.axiz.kit.r2dbc.EncryptedText;
 
 /**
- * Column converters of axiz types for Spring Data R2DBC: {@link EncryptedText} is stored as
- * AES-256-GCM ciphertext with an explicit field or shared purpose context and {@link Money} as its
- * text form ({@code PEN 150.00}). A service that declares its own {@code R2dbcCustomConversions}
- * includes {@link #all(Supplier, String)} in it.
+ * Converters de columnas de tipos de axiz para Spring Data R2DBC: {@link EncryptedText} se almacena
+ * como texto cifrado AES-256-GCM con un contexto explícito de campo o de propósito compartido, y
+ * {@link Money} en su forma de texto ({@code PEN 150.00}). Un servicio que declara sus propias
+ * {@code R2dbcCustomConversions} incluye en ellas {@link #all(Supplier, String)}.
  */
 public final class AxizR2dbcConverters {
 
@@ -34,7 +34,7 @@ public final class AxizR2dbcConverters {
     return List.of(new MoneyWriter(), new MoneyReader());
   }
 
-  /** Encrypts on write. */
+  /** Cifra al escribir. */
   @WritingConverter
   public static final class EncryptedTextWriter implements Converter<EncryptedText, String> {
 
@@ -52,7 +52,7 @@ public final class AxizR2dbcConverters {
     }
   }
 
-  /** Decrypts on read. */
+  /** Descifra al leer. */
   @ReadingConverter
   public static final class EncryptedTextReader implements Converter<String, EncryptedText> {
 
@@ -70,7 +70,7 @@ public final class AxizR2dbcConverters {
     }
   }
 
-  /** {@code Money} to {@code PEN 150.00}. */
+  /** {@code Money} a {@code PEN 150.00}. */
   @WritingConverter
   public static final class MoneyWriter implements Converter<Money, String> {
     @Override
@@ -79,7 +79,7 @@ public final class AxizR2dbcConverters {
     }
   }
 
-  /** {@code PEN 150.00} to {@code Money}. */
+  /** {@code PEN 150.00} a {@code Money}. */
   @ReadingConverter
   public static final class MoneyReader implements Converter<String, Money> {
     @Override

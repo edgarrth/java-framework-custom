@@ -1,4 +1,4 @@
-/** Domain model: plain Java, no framework dependencies. */
+/** Modelo de dominio: Java plano, sin dependencias de frameworks. */
 @NullMarked
 package pe.axiz.payments.process.domain;
 
