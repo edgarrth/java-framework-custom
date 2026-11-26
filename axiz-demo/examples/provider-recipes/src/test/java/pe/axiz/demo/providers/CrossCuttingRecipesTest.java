@@ -2,10 +2,12 @@ package pe.axiz.demo.providers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
 
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationHandler;
 import io.micrometer.observation.ObservationRegistry;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -76,8 +78,16 @@ class CrossCuttingRecipesTest {
               ctx ->
                   assertThat(ctx.getBean(Statements.class).generate("synthetic-private-account"))
                       .isEqualTo("statement:synthetic-private-account"));
+      // Una aplicación reactiva previa en la misma JVM deja activo el appender asíncrono de axiz,
+      // así
+      // que la línea de cierre puede llegar a la consola un instante después de la invocación.
+      await()
+          .atMost(Duration.ofSeconds(10))
+          .untilAsserted(
+              () ->
+                  assertThat(output.getAll().substring(previousOutputLength))
+                      .contains("operation=Statements.generate", "outcome=success"));
       assertThat(output.getAll().substring(previousOutputLength))
-          .contains("operation=Statements.generate", "outcome=success")
           .doesNotContain("synthetic-private-account");
 
       evidence.publishEntry("axiz.capability.logging", stack);

@@ -9,7 +9,12 @@ fixture=$(mktemp -d "$PWD/target/local-init-acceptance/run.XXXXXX")
   org.codehaus.mojo:exec-maven-plugin:3.5.1:exec \
   -Dexec.executable=java -Dexec.classpathScope=runtime \
   "-Dexec.args=--class-path %classpath \"$PWD/.github/scripts/GenerateLocalInfrastructureSample.java\" \"$fixture\" \"$PWD/codegen/axiz-codegen/src/test/resources/contracts/orders.yaml\" $revision"
-container=$(docker run --rm -d -e SERVICES=s3,dynamodb,sqs,sns,kms "$(cat "$fixture/image.txt")")
+image=$(cat "$fixture/image.txt")
+# La imagen local se construye desde la receta del framework cuando todavía no existe.
+if ! docker image inspect "$image" >/dev/null 2>&1; then
+  docker build --tag "$image" quality/axiz-test-containers/src/main/resources/pe/axiz/quality/containers/images/localstack
+fi
+container=$(docker run --rm -d -e SERVICES=s3,dynamodb,sqs,sns,kms "$image")
 trap 'docker rm -f "$container" >/dev/null' EXIT
 ready=false
 for attempt in {1..30}; do
