@@ -3,7 +3,7 @@ FROM eclipse-temurin:25-jre-alpine@sha256:e1898fd6a11fc965a994d8ace186fd3585aeb6
 ENV KC_RUN_IN_CONTAINER=true
 # El heap local de pruebas y demo se acota con independencia de la RAM disponible en el host de Docker.
 ENV JAVA_OPTS_KC_HEAP="-Xms64m -Xmx512m"
-RUN apk upgrade --no-cache && apk add --no-cache zlib=1.4-r0 libcrypto3=3.5.9-r1 libssl3=3.5.9-r1 openssl=3.5.9-r1 && addgroup -g 1000 keycloak && adduser -D -u 1000 -G keycloak keycloak
+RUN apk upgrade --no-cache && apk add --no-cache zlib libcrypto3 libssl3 openssl && addgroup -g 1000 keycloak && adduser -D -u 1000 -G keycloak keycloak
 COPY --from=distribution --chown=1000:1000 /opt/keycloak /opt/keycloak
 RUN wget -q -O /opt/keycloak/lib/lib/main/com.google.guava.guava-33.7.2-jre.jar https://repo.maven.apache.org/maven2/com/google/guava/guava/33.7.2-jre/guava-33.7.2-jre.jar \
     && printf '%s\n' 'b530942257fb935f8b2cfaa5f8eb5bd59c555fd8e8d01b8ce98912e077ea606c  /opt/keycloak/lib/lib/main/com.google.guava.guava-33.7.2-jre.jar' | sha256sum -c - \

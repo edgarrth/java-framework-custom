@@ -5,10 +5,12 @@ name: framework
 
 on:
   pull_request:
-    paths: ['axiz-framework/**', '.github/workflows/framework.yaml', '.github/workflows/lib-build.yaml']
+    paths: ['axiz-framework/**', 'axiz-demo/local/images/**', '.github/scripts/**',
+            '.github/workflows/framework.yaml', '.github/workflows/lib-build.yaml']
   push:
     branches: [main]
-    paths: ['axiz-framework/**', '.github/workflows/framework.yaml', '.github/workflows/lib-build.yaml']
+    paths: ['axiz-framework/**', 'axiz-demo/local/images/**', '.github/scripts/**',
+            '.github/workflows/framework.yaml', '.github/workflows/lib-build.yaml']
     tags: ['axiz-framework-v*']
   workflow_dispatch:
 
@@ -45,10 +47,15 @@ jobs:
         with:
           node-version: '22'
           package-manager-cache: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.13'
+      - name: Dependencias de los scripts, fijadas por hash
+        run: python -m pip install --require-hashes -r .github/scripts/requirements.txt
       - name: Las recetas de contenedores locales coinciden en sus tres copias
-        run: python3 .github/scripts/sync_container_recipes.py --check
+        run: python .github/scripts/sync_container_recipes.py --check
       - name: La receta de WireMock coincide con su lock de librerías
-        run: python3 .github/scripts/update_wiremock_image.py --check
+        run: python .github/scripts/update_wiremock_image.py --check
       - name: El Maven wrapper fija el checksum de su distribución
         run: |
           for f in axiz-framework/.mvn/wrapper/maven-wrapper.properties \

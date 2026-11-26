@@ -6,11 +6,13 @@ name: tools
 on:
   pull_request:
     paths: ['axiz-tools/**', 'axiz-framework/**', '.github/workflows/tools.yaml',
-            '.github/workflows/lib-build.yaml', '.github/workflows/service-build.yaml']
+            '.github/workflows/lib-build.yaml', '.github/workflows/service-build.yaml',
+            '.github/workflows/framework-snapshot.yaml']
   push:
     branches: [main]
     paths: ['axiz-tools/**', 'axiz-framework/**', '.github/workflows/tools.yaml',
-            '.github/workflows/lib-build.yaml', '.github/workflows/service-build.yaml']
+            '.github/workflows/lib-build.yaml', '.github/workflows/service-build.yaml',
+            '.github/workflows/framework-snapshot.yaml']
     tags: ['axiz-tools-v*']
   workflow_dispatch:
 
@@ -20,11 +22,14 @@ concurrency:
   group: tools-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-env:
-  FRAMEWORK: cd axiz-framework && ./mvnw --bootstrap -B -ntp -q -DskipTests install
-
 jobs:
+  framework:
+    uses: ./.github/workflows/framework-snapshot.yaml
+    permissions:
+      contents: read
+
   build:
+    needs: framework
     uses: ./.github/workflows/lib-build.yaml
     permissions:
       contents: read
@@ -33,10 +38,11 @@ jobs:
       attestations: write
     with:
       working-directory: axiz-tools
-      setup-command: cd axiz-framework && ./mvnw --bootstrap -B -ntp -q -DskipTests install
+      maven-artifact: ${{ needs.framework.outputs.artifact }}
       publish: ${{ startsWith(github.ref, 'refs/tags/axiz-tools-v') }}
 
   initializr:
+    needs: framework
     uses: ./.github/workflows/service-build.yaml
     permissions:
       contents: read
@@ -48,12 +54,12 @@ jobs:
       working-directory: axiz-tools
       module: axiz-initializr
       chart: axiz-initializr/deploy/helm/axiz-initializr
-      setup-command: cd axiz-framework && ./mvnw --bootstrap -B -ntp -q -DskipTests install
+      maven-artifact: ${{ needs.framework.outputs.artifact }}
       publish: ${{ github.event_name == 'push' }}
 
   cli-native:
     if: startsWith(github.ref, 'refs/tags/axiz-tools-v')
-    needs: build
+    needs: [framework, build]
     strategy:
       fail-fast: false
       matrix:
@@ -79,7 +85,12 @@ jobs:
           java-version: '25'
           distribution: graalvm-community
       - name: Framework del mismo commit
-        run: bash -euo pipefail -c "$FRAMEWORK"
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ needs.framework.outputs.artifact }}
+          path: ${{ runner.temp }}/maven-artifact
+      - name: Framework copiado al repositorio Maven local
+        run: mkdir -p ~/.m2/repository && cp -r "$RUNNER_TEMP/maven-artifact/." ~/.m2/repository/
       - name: Binario nativo de la CLI
         working-directory: axiz-tools
         env:
@@ -120,7 +131,7 @@ jobs:
 
   axiz-tools-pr:
     if: always()
-    needs: [build, initializr]
+    needs: [framework, build, initializr]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     permissions: {}

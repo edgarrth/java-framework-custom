@@ -18,11 +18,16 @@ release-please actualiza ese tag en las plantillas del generador.
 | `native` | `false` | Compila con GraalVM y publica la imagen nativa |
 | `platforms` | `linux/amd64` | Plataformas de la imagen |
 | `base-image` | la del POM | Imagen base fijada por digest |
-| `setup-command` | vacío | Comando previo, por ejemplo instalar el framework del mismo commit |
+| `setup-command` | vacío | Comando previo a la compilación |
+| `maven-artifact` | vacío | Artefacto del mismo run con un fragmento del repositorio Maven local, por ejemplo el framework del mismo commit |
 | `publish` | `false` | Publica imagen y chart con atestaciones |
 
 El job `verify` compila con el perfil `quality` y ejecuta las pruebas. En los pull requests
-compara el contrato OpenAPI con la rama destino (oasdiff). Además, valida el chart para cada
+compara el contrato OpenAPI con la rama destino (oasdiff) y falla ante un cambio incompatible.
+Un cambio incompatible intencional se acepta de forma explícita en
+`src/main/openapi/breaking-changes.txt`, junto al contrato: una línea por cambio con el método,
+la ruta y el texto que reporta oasdiff. El archivo pasa por la revisión del code owner, y los
+contratos nunca se suben a servicios externos. Además, valida el chart para cada
 `values*.yaml` (`helm lint --strict` y kubeconform) y escanea el SBOM del grafo de dependencias
 resuelto con Trivy. Una vulnerabilidad MEDIUM, HIGH o CRITICAL rompe el build. Las excepciones
 se declaran en `.trivyignore.yaml` con fecha de vencimiento y justificación, y las revisa el
@@ -37,6 +42,14 @@ versión del POM. Las salidas `image`, `digest`, `chart` y `version` alimentan e
 Permisos del llamador: `contents: read`, `packages: write`, `id-token: write` y
 `attestations: write`.
 
+## Artefactos Maven del mismo run
+
+`maven-artifact` recibe el nombre de un artefacto del mismo run cuya raíz es la de un repositorio
+Maven local, y lo copia a `~/.m2/repository` antes de compilar. En el monorepo,
+`framework-snapshot.yaml` compila el framework una sola vez y lo comparte así con los servicios de
+la demo y las herramientas, en lugar de que cada job lo recompile y descargue de nuevo sus
+dependencias.
+
 ## lib-build
 
 | Entrada | Por defecto | Descripción |
@@ -46,6 +59,7 @@ Permisos del llamador: `contents: read`, `packages: write`, `id-token: write` y
 | `bootstrap` | `false` | Ejecuta el wrapper con `--bootstrap` |
 | `maven-args` | vacío | Argumentos adicionales de la verificación |
 | `setup-command` | vacío | Comando previo |
+| `maven-artifact` | vacío | Igual que en `service-build` |
 | `publish` | `false` | Despliega en GitHub Packages |
 
 `verify` compila con el perfil `quality` y escanea el SBOM con Trivy. `publish` ejecuta

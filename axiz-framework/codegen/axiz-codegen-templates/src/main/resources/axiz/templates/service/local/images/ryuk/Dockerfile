@@ -1,7 +1,7 @@
 # Ryuk 0.14.0 con el SDK de Moby mantenido y un binario de Go inspeccionable (sin UPX).
 FROM golang:1.27.4-alpine3.24@sha256:70bd7ddea8b6cbe5d6943cde279d6b67feb10cc924fb9100d1d8757c1575b280 AS builder
 WORKDIR /src
-RUN apk add --no-cache patch=2.8.1-r0 curl \
+RUN apk add --no-cache patch curl \
  && curl -fLsS --retry 3 -o /tmp/ryuk.tar.gz https://codeload.github.com/testcontainers/moby-ryuk/tar.gz/refs/tags/0.14.0 \
  && printf '%s\n' '8753af202acbfbd9c4f14b2fb85e2171c4cf053b836ccab8d78faa1a45d77fbb  /tmp/ryuk.tar.gz' | sha256sum -c - \
  && tar -xzf /tmp/ryuk.tar.gz --strip-components=1 -C /src

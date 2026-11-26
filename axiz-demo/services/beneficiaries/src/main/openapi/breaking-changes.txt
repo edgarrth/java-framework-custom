@@ -1,0 +1,8 @@
+# Cambios incompatibles del contrato aceptados de forma explícita; oasdiff los omite al compararlo
+# con la rama destino. Cada línea es el método, la ruta y el texto del cambio. Una vez fusionados,
+# las líneas dejan de aplicar y se pueden eliminar.
+GET /v1/customers/{customerId}/beneficiaries the endpoint no longer allows anonymous access and now only accepts `oauth2`
+POST /v1/customers/{customerId}/beneficiaries the endpoint no longer allows anonymous access and now only accepts `oauth2`
+DELETE /v1/customers/{customerId}/beneficiaries/{beneficiaryId} the endpoint no longer allows anonymous access and now only accepts `oauth2`
+GET /v1/customers/{customerId}/beneficiaries/{beneficiaryId} the endpoint no longer allows anonymous access and now only accepts `oauth2`
+PUT /v1/customers/{customerId}/beneficiaries/{beneficiaryId} the endpoint no longer allows anonymous access and now only accepts `oauth2`

@@ -1,0 +1,10 @@
+# Cambios incompatibles del contrato aceptados de forma explícita; oasdiff los omite al compararlo
+# con la rama destino. Cada línea es el método, la ruta y el texto del cambio. Una vez fusionados,
+# las líneas dejan de aplicar y se pueden eliminar.
+POST /v1/credits the endpoint no longer allows anonymous access and now only accepts `oauth2: [payments:process]`
+POST /v1/credits the `amount` request property's max was set to `10000000000000000.00`
+POST /v1/credits the `amount` request property's multipleOf was set to `0.01`
+POST /v1/debits the endpoint no longer allows anonymous access and now only accepts `oauth2: [payments:process]`
+POST /v1/debits the `amount` request property's max was set to `10000000000000000.00`
+POST /v1/debits the `amount` request property's multipleOf was set to `0.01`
+POST /v1/debits/{movementId}/reversal the endpoint no longer allows anonymous access and now only accepts `oauth2: [payments:process]`

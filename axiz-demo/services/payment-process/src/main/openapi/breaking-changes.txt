@@ -1,0 +1,12 @@
+# Cambios incompatibles del contrato aceptados de forma explícita; oasdiff los omite al compararlo
+# con la rama destino. Cada línea es el método, la ruta y el texto del cambio. Una vez fusionados,
+# las líneas dejan de aplicar y se pueden eliminar.
+POST /v1/payment-processes the endpoint no longer allows anonymous access and now only accepts `oauth2: [payments:process]`
+POST /v1/payment-processes the `customerId` request property's maxLength was set to `20`
+POST /v1/payment-processes the `operationNumber` request property's maxLength was set to `32`
+POST /v1/payment-processes the `paymentOrderId` request property's maxLength was set to `64`
+POST /v1/payment-processes the `amount` request property's max was set to `10000000000000000.00`
+POST /v1/payment-processes the `amount` request property's multipleOf was set to `0.01`
+POST /v1/payment-processes added the pattern `^[A-Z0-9-]{1,32}$` to the request property `operationNumber`
+POST /v1/payment-processes added the pattern `^[A-Za-z0-9-]{1,64}$` to the request property `paymentOrderId`
+GET /v1/payment-processes/{processId} the endpoint no longer allows anonymous access and now only accepts `oauth2`

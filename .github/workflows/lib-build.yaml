@@ -22,6 +22,10 @@ on:
         description: Argumentos adicionales para la verificación
         type: string
         default: ''
+      maven-artifact:
+        description: Artefacto del mismo run con un fragmento del repositorio Maven local, por ejemplo el framework del mismo commit
+        type: string
+        default: ''
       setup-command:
         description: Comando previo, por ejemplo instalar el framework del mismo commit
         type: string
@@ -60,6 +64,16 @@ jobs:
           server-id: github
           server-username: GITHUB_ACTOR
           server-password: GITHUB_TOKEN
+      - name: Artefactos Maven del mismo run
+        if: inputs.maven-artifact != ''
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ inputs.maven-artifact }}
+          path: ${{ runner.temp }}/maven-artifact
+      - name: Fragmento copiado al repositorio Maven local
+        if: inputs.maven-artifact != ''
+        working-directory: .
+        run: mkdir -p ~/.m2/repository && cp -r "$RUNNER_TEMP/maven-artifact/." ~/.m2/repository/
       - name: Preparación
         if: inputs.setup-command != ''
         working-directory: .
@@ -107,6 +121,16 @@ jobs:
           server-id: github
           server-username: GITHUB_ACTOR
           server-password: GITHUB_TOKEN
+      - name: Artefactos Maven del mismo run
+        if: inputs.maven-artifact != ''
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ inputs.maven-artifact }}
+          path: ${{ runner.temp }}/maven-artifact
+      - name: Fragmento copiado al repositorio Maven local
+        if: inputs.maven-artifact != ''
+        working-directory: .
+        run: mkdir -p ~/.m2/repository && cp -r "$RUNNER_TEMP/maven-artifact/." ~/.m2/repository/
       - name: Preparación
         if: inputs.setup-command != ''
         working-directory: .

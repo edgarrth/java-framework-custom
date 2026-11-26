@@ -26,8 +26,13 @@ NAME=$(basename "$URL" -bin.zip)
 HOME_DIR="${MAVEN_USER_HOME:-$HOME/.m2}/wrapper/dists/$NAME"
 MARKER="$HOME_DIR/.verified-checksum"
 
+# Reintenta los errores transitorios del repositorio (429 y 5xx) respetando Retry-After.
 fetch() {
-  if command -v curl >/dev/null 2>&1; then curl -fsSL -o "$2" "$1"; else wget -q -O "$2" "$1"; fi
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL --retry 5 --retry-connrefused -o "$2" "$1"
+  else
+    wget -q --tries=5 --retry-on-http-error=429,502,503,504 -O "$2" "$1"
+  fi
 }
 
 # sha256sum/sha512sum en Linux, shasum en macOS

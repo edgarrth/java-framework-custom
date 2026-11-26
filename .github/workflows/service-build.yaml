@@ -39,6 +39,10 @@ on:
         description: Imagen base fijada por digest; vacía usa la configurada en el POM
         type: string
         default: ''
+      maven-artifact:
+        description: Artefacto del mismo run con un fragmento del repositorio Maven local, por ejemplo el framework del mismo commit
+        type: string
+        default: ''
       setup-command:
         description: Comando previo, por ejemplo instalar el framework del mismo commit
         type: string
@@ -104,6 +108,16 @@ jobs:
       - uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
         with:
           version: v3.19.0
+      - name: Artefactos Maven del mismo run
+        if: inputs.maven-artifact != ''
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ inputs.maven-artifact }}
+          path: ${{ runner.temp }}/maven-artifact
+      - name: Fragmento copiado al repositorio Maven local
+        if: inputs.maven-artifact != ''
+        working-directory: .
+        run: mkdir -p ~/.m2/repository && cp -r "$RUNNER_TEMP/maven-artifact/." ~/.m2/repository/
       - name: Preparación
         if: inputs.setup-command != ''
         working-directory: .
@@ -122,13 +136,21 @@ jobs:
           contract="$MODULE/src/main/openapi/openapi.yaml"
           echo "chart=$chart" >> "$GITHUB_OUTPUT"
           echo "contract=$(realpath --relative-to="$GITHUB_WORKSPACE" "$contract")" >> "$GITHUB_OUTPUT"
+          # Cambios incompatibles aceptados de forma explícita, versionados junto al contrato.
+          accepted="$MODULE/src/main/openapi/breaking-changes.txt"
+          if [[ -f "$accepted" ]]; then
+            echo "accepted=$(realpath --relative-to="$GITHUB_WORKSPACE" "$accepted")" >> "$GITHUB_OUTPUT"
+          fi
       - name: Cambios incompatibles en el contrato OpenAPI
         if: github.event_name == 'pull_request' && hashFiles(steps.paths.outputs.contract) != ''
-        uses: oasdiff/oasdiff-action/breaking@1c611ffb1253a72924624aa4fb662e302b3565d3 # v0.0.21
+        uses: oasdiff/oasdiff-action/breaking@8a211b41745fcecdfa4a86531ffbf08934fb14f6 # v0.1.23
         with:
           base: origin/${{ github.base_ref }}:${{ steps.paths.outputs.contract }}
           revision: HEAD:${{ steps.paths.outputs.contract }}
           fail-on: ERR
+          err-ignore: ${{ steps.paths.outputs.accepted }}
+          # Sin subir los contratos a oasdiff.com: el reporte queda en el log del job.
+          review: 'false'
       - name: Chart válido para cada ambiente
         env:
           CHART_DIR: ${{ steps.paths.outputs.chart }}
@@ -143,11 +165,14 @@ jobs:
           done
       - name: SBOM del grafo de dependencias resuelto
         run: |
-          pom=pom.xml
-          [[ "$MODULE" == . ]] || pom="$MODULE/pom.xml"
-          ./mvnw -B -ntp -f "$pom" -DskipTests org.cyclonedx:cyclonedx-maven-plugin:2.9.2:makeAggregateBom \
+          # El wrapper de Axiz fija -f en la raíz del proyecto; el módulo se selecciona con -pl.
+          select=()
+          [[ "$MODULE" == . ]] || select=(-pl "$MODULE")
+          goal=makeAggregateBom
+          [[ "$MODULE" == . ]] || goal=makeBom
+          ./mvnw -B -ntp "${select[@]}" -DskipTests "org.cyclonedx:cyclonedx-maven-plugin:2.9.2:$goal" \
             -DoutputFormat=json -DincludeTestScope=true
-          cp "$(dirname "$pom")/target/bom.json" "$RUNNER_TEMP/bom.json"
+          cp "$MODULE/target/bom.json" "$RUNNER_TEMP/bom.json"
       - name: Vulnerabilidades MEDIUM, HIGH y CRITICAL bloquean
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -210,6 +235,16 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ github.token }}
+      - name: Artefactos Maven del mismo run
+        if: inputs.maven-artifact != ''
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ inputs.maven-artifact }}
+          path: ${{ runner.temp }}/maven-artifact
+      - name: Fragmento copiado al repositorio Maven local
+        if: inputs.maven-artifact != ''
+        working-directory: .
+        run: mkdir -p ~/.m2/repository && cp -r "$RUNNER_TEMP/maven-artifact/." ~/.m2/repository/
       - name: Preparación
         if: inputs.setup-command != ''
         working-directory: .
@@ -219,20 +254,21 @@ jobs:
         run: |
           owner=${GITHUB_REPOSITORY_OWNER,,}
           image="ghcr.io/$owner/$SERVICE"
-          pom=pom.xml
-          [[ "$MODULE" == . ]] || pom="$MODULE/pom.xml"
-          version=$(./mvnw -q -f "$pom" help:evaluate -Dexpression=project.version -DforceStdout)
+          # El wrapper de Axiz fija -f en la raíz del proyecto; el módulo se selecciona con -pl.
+          select=()
+          [[ "$MODULE" == . ]] || select=(-pl "$MODULE")
+          version=$(./mvnw -q "${select[@]}" help:evaluate -Dexpression=project.version -DforceStdout)
           version=${version%-SNAPSHOT}
           base=()
           [[ -z "$BASE_IMAGE" ]] || base=("-Djib.from.image=$BASE_IMAGE")
           build=(-pl "$MODULE" -am)
           [[ "$MODULE" == . ]] && build=()
           ./mvnw -B -ntp "-P$PROFILES" "${build[@]}" -DskipTests package
-          ./mvnw -B -ntp -f "$pom" "-P$PROFILES" jib:build "${base[@]}" \
+          ./mvnw -B -ntp "${select[@]}" "-P$PROFILES" jib:build "${base[@]}" \
             "-Djib.to.image=$image:$GITHUB_SHA" "-Djib.to.tags=$version" \
             "-Djib.from.platforms=$PLATFORMS" \
             "-Djib.container.labels=org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY,org.opencontainers.image.revision=$GITHUB_SHA"
-          digest=$(cat "$(dirname "$pom")/target/jib-image.digest")
+          digest=$(cat "$MODULE/target/jib-image.digest")
           {
             echo "image=$image"
             echo "digest=$digest"
@@ -251,10 +287,13 @@ jobs:
           exit-code: '1'
       - name: SBOM de la imagen
         run: |
-          pom=pom.xml
-          [[ "$MODULE" == . ]] || pom="$MODULE/pom.xml"
-          ./mvnw -B -ntp -f "$pom" -DskipTests org.cyclonedx:cyclonedx-maven-plugin:2.9.2:makeAggregateBom -DoutputFormat=json
-          cp "$(dirname "$pom")/target/bom.json" "$RUNNER_TEMP/bom.json"
+          # El wrapper de Axiz fija -f en la raíz del proyecto; el módulo se selecciona con -pl.
+          select=()
+          [[ "$MODULE" == . ]] || select=(-pl "$MODULE")
+          goal=makeAggregateBom
+          [[ "$MODULE" == . ]] || goal=makeBom
+          ./mvnw -B -ntp "${select[@]}" -DskipTests "org.cyclonedx:cyclonedx-maven-plugin:2.9.2:$goal" -DoutputFormat=json
+          cp "$MODULE/target/bom.json" "$RUNNER_TEMP/bom.json"
       - name: Procedencia de la imagen
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:

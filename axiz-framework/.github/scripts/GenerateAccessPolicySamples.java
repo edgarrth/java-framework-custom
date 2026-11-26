@@ -179,6 +179,7 @@ class GenerateAccessPolicySamples {
         + (reactive ? "@WebFluxTest" : "@WebMvcTest")
         + """
         (controllers = AccessController.class, properties = {
+          "axiz.config.environment=test",
           "axiz.security.issuers[0].issuer=https://issuer.test",
           "axiz.security.issuers[0].jwk-set-uri=https://issuer.test/jwks",
           "axiz.security.issuers[0].audiences[0]=test"

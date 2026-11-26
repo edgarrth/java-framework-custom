@@ -127,6 +127,9 @@ jobs:
           version: v0.76.2
           scan-type: image
           image-ref: ${{ matrix.image }}
+          # Las claves de prueba que traen las herramientas de terceros no son secretos del
+          # repositorio; el secret scanning de GitHub cubre el código propio.
+          scanners: vuln
           trivy-config: trivy.yaml
           severity: MEDIUM,HIGH,CRITICAL
           format: sarif

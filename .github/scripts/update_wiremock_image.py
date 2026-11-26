@@ -86,7 +86,7 @@ def render(lock):
 # Solo se extrae el launcher Run.class upstream; no se distribuye ningún JAR de dependencias sombreado.
 FROM wiremock/wiremock:3.13.2@sha256:0d4ecb3e4dc8213fd7a4d37d6a78f6e6b553a6d2e15bd51b0999781282ac61b3 AS distribution
 FROM eclipse-temurin:25-jre-alpine@sha256:e1898fd6a11fc965a994d8ace186fd3585aeb636cf8f05f47a723fcfee0b0918 AS patched-runtime
-RUN apk upgrade --no-cache && apk add --no-cache zlib=1.4-r0
+RUN apk upgrade --no-cache && apk add --no-cache zlib
 FROM patched-runtime AS launcher
 COPY --from=distribution /var/wiremock/lib/wiremock-standalone.jar /tmp/launcher-source.jar
 RUN printf '%s\\n' 'd097b19bd483c5038479b13a5c71e9faf8f2f5106584f0c120a7770ab0bdb367  /tmp/launcher-source.jar' | sha256sum -c - \\

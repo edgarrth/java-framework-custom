@@ -1,5 +1,5 @@
 FROM golang:1.27.4-alpine3.24@sha256:70bd7ddea8b6cbe5d6943cde279d6b67feb10cc924fb9100d1d8757c1575b280 AS builder
-RUN apk add --no-cache curl=8.23.0-r0 patch=2.8.1-r0 bash=5.3.9-r1
+RUN apk add --no-cache curl patch bash
 ENV CGO_ENABLED=0 GOMAXPROCS=2
 WORKDIR /src
 FROM builder AS grafana
@@ -46,7 +46,7 @@ COPY collector-go.sum /src/go.sum
 RUN go build -mod=readonly -trimpath -buildvcs=false -o /out/otelcol . && go mod verify
 FROM grafana/grafana@sha256:2894082f6cf7081aefdc1389265c04000812309208c190d75e8c65f7a30e4b7e AS frontend
 FROM cgr.dev/chainguard/wolfi-base@sha256:7135c6a5e9f29b2542aaefee63d474973312bfdea95555963aef0e648210e4d2
-RUN apk add --no-cache bash=5.3-r14 curl=8.23.0-r3 tzdata=2026f-r1 \
+RUN apk upgrade --no-cache && apk add --no-cache bash curl tzdata \
  && mkdir -p /data/grafana /data/loki /data/tempo /data/prometheus /otel-lgtm/grafana/conf/provisioning/datasources /otel-lgtm/grafana/conf/provisioning/dashboards /otel-lgtm/grafana/conf/provisioning/plugins /otel-lgtm/grafana/conf/provisioning/alerting /otel-lgtm/axiz-dashboards \
  && chown -R 10001:10001 /data /otel-lgtm
 COPY --from=frontend /usr/share/grafana/public /otel-lgtm/grafana/public

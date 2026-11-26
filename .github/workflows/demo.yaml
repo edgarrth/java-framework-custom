@@ -1,14 +1,16 @@
 # Demo: cada servicio se verifica con el workflow reutilizable service-build contra el framework del
-# mismo commit. En main se publican las imágenes con sus atestaciones y, si hay un repositorio
+# mismo commit, compilado una sola vez por framework-snapshot. En main se publican las imágenes con sus atestaciones y, si hay un repositorio
 # GitOps configurado, se despliegan en dev.
 name: demo
 
 on:
   pull_request:
-    paths: ['axiz-demo/**', 'axiz-framework/**', '.github/workflows/demo.yaml', '.github/workflows/service-build.yaml']
+    paths: ['axiz-demo/**', 'axiz-framework/**', '.github/workflows/demo.yaml', '.github/workflows/service-build.yaml',
+            '.github/workflows/framework-snapshot.yaml']
   push:
     branches: [main]
-    paths: ['axiz-demo/**', 'axiz-framework/**', '.github/workflows/demo.yaml', '.github/workflows/service-build.yaml']
+    paths: ['axiz-demo/**', 'axiz-framework/**', '.github/workflows/demo.yaml', '.github/workflows/service-build.yaml',
+            '.github/workflows/framework-snapshot.yaml']
   workflow_dispatch:
 
 permissions: {}
@@ -18,7 +20,13 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  framework:
+    uses: ./.github/workflows/framework-snapshot.yaml
+    permissions:
+      contents: read
+
   service:
+    needs: framework
     strategy:
       fail-fast: false
       matrix:
@@ -33,12 +41,13 @@ jobs:
     with:
       service: ${{ matrix.service }}
       working-directory: axiz-demo/services/${{ matrix.service }}
-      setup-command: cd axiz-framework && ./mvnw --bootstrap -B -ntp -q -DskipTests install
+      maven-artifact: ${{ needs.framework.outputs.artifact }}
       publish: ${{ github.event_name == 'push' }}
 
   coverage:
+    needs: framework
     runs-on: ubuntu-24.04
-    timeout-minutes: 120
+    timeout-minutes: 180
     permissions:
       contents: read
     steps:
@@ -51,15 +60,21 @@ jobs:
           java-version: '25'
           cache: maven
       - name: Framework del mismo commit
-        working-directory: axiz-framework
-        run: ./mvnw --bootstrap -B -ntp -q -DskipTests install
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ needs.framework.outputs.artifact }}
+          path: ${{ runner.temp }}/maven-artifact
+      - name: Framework copiado al repositorio Maven local
+        run: mkdir -p ~/.m2/repository && cp -r "$RUNNER_TEMP/maven-artifact/." ~/.m2/repository/
+      # El control exige los reportes JUnit recientes de cada servicio y ejemplo, así que corre el
+      # reactor completo de la demo (ver axiz-demo/coverage/README.md).
       - name: La demo usa todas las capacidades del catálogo
         working-directory: axiz-demo
-        run: ./mvnw -B -ntp -Pquality -Daxiz.it.requireDocker=true -pl examples/protected-data,coverage verify
+        run: ./mvnw -B -ntp -Pquality -Daxiz.it.requireDocker=true verify
 
   axiz-demo-pr:
     if: always()
-    needs: [service, coverage]
+    needs: [framework, service, coverage]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     permissions: {}

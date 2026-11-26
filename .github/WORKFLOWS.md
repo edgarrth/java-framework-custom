@@ -16,6 +16,7 @@ workflows (`axiz-workflows-vX.Y.Z`). El contrato completo está en [pipelines](d
 | `service-build.yaml` | Verifica un servicio, publica imagen y chart en GHCR y atestigua procedencia y SBOM |
 | `service-deploy.yaml` | Verifica la atestación de un digest y lo despliega en un ambiente por GitOps |
 | `release.yaml` | Pull request de release y tags con release-please |
+| `framework-snapshot.yaml` | Uso interno del monorepo: compila el framework una vez por run y lo comparte como artefacto |
 
 ## Workflows del monorepo
 
@@ -44,5 +45,5 @@ y `axiz-demo-pr` corren cuando el cambio toca su producto y pueden exigirse tamb
 - `gitops/`: plantillas de Argo CD y la política de admisión de Kyverno.
 - `security/`: datos de Trivy y declaraciones VEX revisadas.
 - `scripts/`: sincronización de las recetas de contenedores locales y generación de la receta de
-  WireMock desde su lock.
+  WireMock desde su lock; `requirements.txt` fija por hash sus dependencias.
 - `zizmor.yml`: configuración del auditor de workflows.

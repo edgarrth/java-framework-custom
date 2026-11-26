@@ -1,6 +1,6 @@
 FROM localstack/localstack@sha256:3ebc37595918b8accb852f8048fef2aff047d465167edd655528065b07bc364a AS distribution
 FROM cgr.dev/chainguard/wolfi-base@sha256:7135c6a5e9f29b2542aaefee63d474973312bfdea95555963aef0e648210e4d2
-RUN apk add --no-cache python-3.13=3.13.18_git20261115-r1 openjdk-25-jre=25.0.5.1-r1 bash=5.3-r14 curl=8.23.0-r3 libffi=3.8.1-r0 sqlite-libs=3.54.1-r1 libstdc++=16.2.0-r5 tzdata=2026f-r1 iproute2=7.3.0-r1 \
+RUN apk upgrade --no-cache && apk add --no-cache python-3.13 openjdk-25-jre bash curl libffi sqlite-libs libstdc++ tzdata iproute2 \
  && mkdir -p /usr/local/bin /usr/lib/localstack/java /var/lib/localstack /etc/localstack/init \
  && ln -s /usr/bin/python3.13 /usr/local/bin/python \
  && ln -s /usr/bin/python3.13 /usr/local/bin/python3

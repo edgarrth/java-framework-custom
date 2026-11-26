@@ -47,6 +47,8 @@ y volver atrás reutilizan la misma imagen, sin ejecutar Maven ni Jib.
   `.trivyignore.yaml` con justificación y fecha de vencimiento, y las revisa el code owner.
 - El wrapper de Maven verifica la distribución contra el SHA-512 fijado en
   `maven-wrapper.properties` antes de ejecutarla.
+- Un cambio incompatible en el contrato OpenAPI rompe el pull request, salvo que se acepte de forma
+  explícita en `src/main/openapi/breaking-changes.txt`, que revisa el code owner.
 - `security.yaml` ejecuta CodeQL, la revisión de dependencias, Trivy y las reglas Semgrep de axiz
   en cada pull request, en `main` y semanalmente; los resultados quedan en code scanning.
 
