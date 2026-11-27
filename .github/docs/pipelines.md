@@ -50,6 +50,13 @@ Maven local, y lo copia a `~/.m2/repository` antes de compilar. En el monorepo,
 la demo y las herramientas, en lugar de que cada job lo recompile y descargue de nuevo sus
 dependencias.
 
+## Dependencias de Maven Central
+
+Maven Central limita las descargas por IP y responde 429 a los runners compartidos. Cada job que
+ejecuta Maven declara, con un settings global (`-gs` en `MAVEN_ARGS`), el espejo oficial de Maven
+Central en Google Cloud Storage como primer repositorio; Central queda de respaldo para lo que
+todavía no llega al espejo. Las descargas se verifican con los mismos checksums en ambos casos.
+
 ## lib-build
 
 | Entrada | Por defecto | Descripción |
