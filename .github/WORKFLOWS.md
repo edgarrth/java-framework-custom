@@ -22,7 +22,7 @@ workflows (`axiz-workflows-vX.Y.Z`). El contrato completo está en [pipelines](d
 
 | Workflow | Cuándo corre | Qué hace |
 |---|---|---|
-| `framework.yaml` | Cambios en `axiz-framework`; tag `axiz-framework-v*` | Build con calidad, compatibilidad de API con japicmp, ejemplos generados; publica con el tag |
+| `framework.yaml` | Cambios en `axiz-framework`; tag `axiz-framework-v*` | Build con calidad repartido por capas en jobs paralelos, compatibilidad de API con japicmp, ejemplos generados; publica con el tag |
 | `framework-nightly.yaml` | Cada noche | Todas las combinaciones generadas, ejemplos nativos y aceptación reactiva nativa |
 | `tools.yaml` | Cambios en `axiz-tools` o el framework; tag `axiz-tools-v*` | CLI, Initializr y recetas; con el tag publica artefactos, imagen y binarios nativos |
 | `demo.yaml` | Cambios en `axiz-demo` o el framework | Cada servicio con `service-build`; cobertura de capacidades |

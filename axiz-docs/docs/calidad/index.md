@@ -98,8 +98,11 @@ reglas no cambian, y la anotación no se pone a mano sobre código escrito.
 El reporte agregado (`quality/axiz-coverage-report`, en `target/site/jacoco-aggregate`) reúne a
 todos los módulos con código del framework. Cada uno entra con alcance `provided`, porque
 `report-aggregate` de JaCoCo solo toma clases de dependencias `compile`, `runtime` o `provided`: con
-alcance `test` el reporte salía sin clases. `check-coverage-aggregate.py` (CI) falla si un módulo
-con código falta o cambia de alcance, y con `-Pquality` el build falla si el agregado sale vacío.
+alcance `test` el reporte salía sin clases. Con `-Pquality` el build falla si el agregado sale
+vacío. El reporte se genera en los builds locales completos; en CI el framework se verifica por
+capas en jobs paralelos y el umbral de cobertura se exige en cada módulo.
+
+PIT corre con `axiz.pit.threads` hilos por módulo (4 por defecto, los vCPU de un runner hospedado).
 
 Las ramas del código escrito se cubren con pruebas de comportamiento: adaptadores REST sobre los
 casos de uso reales, adaptadores de persistencia sobre el cliente real de DynamoDB o Spring Data

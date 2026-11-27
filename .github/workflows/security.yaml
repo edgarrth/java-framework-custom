@@ -115,12 +115,26 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
+      # Caché de capas en GitHub Actions con alcance semanal: las capas pesadas (por ejemplo las
+      # compilaciones de Go de otel-lgtm) se reutilizan, y cada semana se reconstruye todo para recoger
+      # los parches de apk upgrade. La ejecución programada siempre construye sin caché.
+      - name: Semana del caché de capas
+        if: matrix.recipe != ''
+        id: week
+        run: echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+        if: matrix.recipe != ''
       - name: Imagen local construida desde su receta
         if: matrix.recipe != ''
-        env:
-          RECIPE: ${{ matrix.recipe }}
-          IMAGE: ${{ matrix.image }}
-        run: docker build --pull --tag "$IMAGE" "axiz-demo/local/images/$RECIPE"
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: axiz-demo/local/images/${{ matrix.recipe }}
+          tags: ${{ matrix.image }}
+          load: true
+          pull: true
+          no-cache: ${{ github.event_name == 'schedule' }}
+          cache-from: type=gha,scope=${{ matrix.name }}-${{ steps.week.outputs.week }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}-${{ steps.week.outputs.week }}
       - name: Sin vulnerabilidades MEDIUM, HIGH ni CRITICAL en el sistema ni en las librerías
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:

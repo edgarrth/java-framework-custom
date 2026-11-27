@@ -60,9 +60,16 @@ dependencias.
 | `maven-args` | vacío | Argumentos adicionales de la verificación |
 | `setup-command` | vacío | Comando previo |
 | `maven-artifact` | vacío | Igual que en `service-build` |
+| `modules` | vacío | Directorios a construir, separados por espacios; vacío construye todo el proyecto |
+| `cache-key` | vacío | Distingue el caché de dependencias de varias llamadas sobre el mismo proyecto |
+| `maven-threads` | vacío | Módulos en paralelo (`-T`), por ejemplo `1C` |
+| `scan-dependencies` | `true` | Escanea el SBOM del proyecto completo |
+| `verify` | `true` | Ejecuta la verificación; se omite al publicar lo que ya verificó otra llamada |
 | `publish` | `false` | Despliega en GitHub Packages |
 
-`verify` compila con el perfil `quality` y escanea el SBOM con Trivy. `publish` ejecuta
+`verify` compila con el perfil `quality` y escanea el SBOM con Trivy. Con `modules`, varias llamadas
+en una matriz reparten un proyecto grande en jobs paralelos; los módulos que no forman parte de la
+selección se resuelven del repositorio local, por ejemplo desde `maven-artifact`. `publish` ejecuta
 `mvn -Prelease deploy` hacia GitHub Packages y atestigua la procedencia de cada jar.
 
 ## service-deploy

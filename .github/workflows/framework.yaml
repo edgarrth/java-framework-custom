@@ -6,11 +6,13 @@ name: framework
 on:
   pull_request:
     paths: ['axiz-framework/**', 'axiz-demo/local/images/**', '.github/scripts/**',
-            '.github/workflows/framework.yaml', '.github/workflows/lib-build.yaml']
+            '.github/workflows/framework.yaml', '.github/workflows/lib-build.yaml',
+            '.github/workflows/framework-snapshot.yaml']
   push:
     branches: [main]
     paths: ['axiz-framework/**', 'axiz-demo/local/images/**', '.github/scripts/**',
-            '.github/workflows/framework.yaml', '.github/workflows/lib-build.yaml']
+            '.github/workflows/framework.yaml', '.github/workflows/lib-build.yaml',
+            '.github/workflows/framework-snapshot.yaml']
     tags: ['axiz-framework-v*']
   workflow_dispatch:
 
@@ -29,7 +31,49 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  framework:
+    uses: ./.github/workflows/framework-snapshot.yaml
+    permissions:
+      contents: read
+
+  # La verificación se reparte por capas en jobs paralelos; cada uno resuelve el resto del framework
+  # desde el artefacto del mismo commit. La cobertura se exige por módulo; el reporte agregado
+  # (quality/axiz-coverage-report) queda para los builds locales completos.
   build:
+    needs: framework
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {group: core, modules: 'platform core', scan: true}
+          - {group: spring, modules: 'spring', scan: false}
+          - {group: integrations, modules: 'adapters kits structures extensions', scan: false}
+          - {group: codegen, modules: 'codegen', scan: false}
+          - group: quality
+            modules: >-
+              quality/axiz-architecture-tests quality/axiz-archunit-rules quality/axiz-code-standards
+              quality/axiz-store-contract-tests quality/axiz-store-integration-tests
+              quality/axiz-test-containers quality/axiz-test-support
+            scan: false
+    name: build (${{ matrix.group }})
+    uses: ./.github/workflows/lib-build.yaml
+    permissions:
+      contents: read
+      packages: read
+    with:
+      working-directory: axiz-framework
+      bootstrap: true
+      modules: ${{ matrix.modules }}
+      cache-key: ${{ matrix.group }}
+      maven-threads: 1C
+      # Con módulos en paralelo, PIT usa la mitad de los núcleos por módulo.
+      maven-args: -Daxiz.it.requireDocker=true -Daxiz.pit.threads=2
+      maven-artifact: ${{ needs.framework.outputs.artifact }}
+      scan-dependencies: ${{ matrix.scan }}
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/axiz-framework-v')
+    needs: [build, checks, samples]
     uses: ./.github/workflows/lib-build.yaml
     permissions:
       contents: read
@@ -39,8 +83,8 @@ jobs:
     with:
       working-directory: axiz-framework
       bootstrap: true
-      maven-args: -Daxiz.it.requireDocker=true
-      publish: ${{ startsWith(github.ref, 'refs/tags/axiz-framework-v') }}
+      verify: false
+      publish: true
 
   checks:
     runs-on: ubuntu-24.04
@@ -153,7 +197,7 @@ jobs:
 
   axiz-framework-pr:
     if: always()
-    needs: [build, checks, api-compat, samples]
+    needs: [framework, build, checks, api-compat, samples]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     permissions: {}

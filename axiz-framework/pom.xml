@@ -94,6 +94,8 @@
     <axiz.coverage.line>0.80</axiz.coverage.line>
     <axiz.coverage.branch>0.70</axiz.coverage.branch>
     <axiz.mutation.threshold>81</axiz.mutation.threshold>
+    <!-- hilos de PIT por módulo; 4 coincide con los vCPU de un runner hospedado de GitHub -->
+    <axiz.pit.threads>4</axiz.pit.threads>
     <axiz.errorprone.fqn.severity>WARN</axiz.errorprone.fqn.severity>
     <!-- valor por defecto vacío para que @{argLine} se resuelva cuando JaCoCo no está activo -->
     <argLine />
@@ -342,6 +344,7 @@
           <version>${pitest-maven.version}</version>
           <configuration>
             <mutationThreshold>${axiz.mutation.threshold}</mutationThreshold>
+            <threads>${axiz.pit.threads}</threads>
             <jvmArgs>
             </jvmArgs>
             <timestampedReports>false</timestampedReports>
