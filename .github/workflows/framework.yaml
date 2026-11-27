@@ -49,12 +49,13 @@ jobs:
         # por contención de CPU con módulos en paralelo.
         include:
           - {group: core, modules: 'platform core', scan: true, threads: 1C, pit: 2}
-          - {group: spring, modules: 'spring', scan: false, threads: '', pit: 4}
+          # axiz-architecture-tests lee los metadatos compilados en spring/**/target, así que corre con spring.
+          - {group: spring, modules: 'spring quality/axiz-architecture-tests', scan: false, threads: '', pit: 4}
           - {group: integrations, modules: 'adapters kits structures extensions', scan: false, threads: 1C, pit: 2}
           - {group: codegen, modules: 'codegen', scan: false, threads: 1C, pit: 2}
           - group: quality
             modules: >-
-              quality/axiz-architecture-tests quality/axiz-archunit-rules quality/axiz-code-standards
+              quality/axiz-archunit-rules quality/axiz-code-standards
               quality/axiz-store-contract-tests quality/axiz-store-integration-tests
               quality/axiz-test-containers quality/axiz-test-support
             scan: false

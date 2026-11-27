@@ -26,13 +26,25 @@ NAME=$(basename "$URL" -bin.zip)
 HOME_DIR="${MAVEN_USER_HOME:-$HOME/.m2}/wrapper/dists/$NAME"
 MARKER="$HOME_DIR/.verified-checksum"
 
-# Reintenta los errores transitorios del repositorio (429 y 5xx) respetando Retry-After.
-fetch() {
+# Reintenta los errores transitorios del repositorio (429 y 5xx) respetando Retry-After. Si Maven Central
+# sigue rechazando la descarga, usa su espejo oficial de Google; la distribución se verifica igual contra
+# su checksum antes de ejecutarla.
+download() {
   if command -v curl >/dev/null 2>&1; then
-    curl -fsSL --retry 5 --retry-connrefused -o "$2" "$1"
+    curl -fsSL --retry 5 --retry-delay 10 --retry-connrefused -o "$2" "$1"
   else
     wget -q --tries=5 --retry-on-http-error=429,502,503,504 -O "$2" "$1"
   fi
+}
+
+fetch() {
+  download "$1" "$2" && return 0
+  case "$1" in
+    https://repo.maven.apache.org/maven2/*)
+      download "https://maven-central.storage-download.googleapis.com/maven2/${1#https://repo.maven.apache.org/maven2/}" "$2"
+      ;;
+    *) return 1 ;;
+  esac
 }
 
 # sha256sum/sha512sum en Linux, shasum en macOS
