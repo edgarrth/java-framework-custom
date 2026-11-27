@@ -193,4 +193,4 @@ jobs:
         run: mkdir -p ~/.m2/repository && cp -r "$RUNNER_TEMP/maven-artifact/." ~/.m2/repository/
       - name: Imagen nativa y pruebas nativas
         working-directory: axiz-demo/services/${{ matrix.service }}
-        run: ./mvnw -B -ntp -Pnative package native:compile native:test
+        run: ./mvnw -B -ntp -Pnative package org.graalvm.buildtools:native-maven-plugin:compile org.graalvm.buildtools:native-maven-plugin:test

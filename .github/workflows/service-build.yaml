@@ -333,14 +333,14 @@ jobs:
           # El wrapper de Axiz fija -f en la raíz del proyecto; el módulo se selecciona con -pl.
           select=()
           [[ "$MODULE" == . ]] || select=(-pl "$MODULE")
-          version=$(./mvnw -q "${select[@]}" help:evaluate -Dexpression=project.version -DforceStdout)
+          version=$(./mvnw -q "${select[@]}" org.apache.maven.plugins:maven-help-plugin:3.6.0:evaluate -Dexpression=project.version -DforceStdout)
           version=${version%-SNAPSHOT}
           base=()
           [[ -z "$BASE_IMAGE" ]] || base=("-Djib.from.image=$BASE_IMAGE")
           build=(-pl "$MODULE" -am)
           [[ "$MODULE" == . ]] && build=()
           ./mvnw -B -ntp "-P$PROFILES" "${build[@]}" -DskipTests package
-          ./mvnw -B -ntp "${select[@]}" "-P$PROFILES" jib:build "${base[@]}" \
+          ./mvnw -B -ntp "${select[@]}" "-P$PROFILES" com.google.cloud.tools:jib-maven-plugin:build "${base[@]}" \
             "-Djib.to.image=$image:$GITHUB_SHA" "-Djib.to.tags=$version" \
             "-Djib.from.platforms=$PLATFORMS" \
             "-Djib.container.labels=org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY,org.opencontainers.image.revision=$GITHUB_SHA"

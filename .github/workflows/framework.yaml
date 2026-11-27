@@ -258,7 +258,7 @@ jobs:
           failed=()
           for dir in target/samples/*/ target/audit-samples/*/; do
             echo "::group::$dir"
-            (cd "$dir" && ./mvnw -B -ntp -Pquality spotless:check verify) || failed+=("$dir")
+            (cd "$dir" && ./mvnw -B -ntp -Pquality com.diffplug.spotless:spotless-maven-plugin:check verify) || failed+=("$dir")
             echo "::endgroup::"
           done
           if [[ "${#failed[@]}" -gt 0 ]]; then

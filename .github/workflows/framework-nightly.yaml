@@ -85,7 +85,7 @@ jobs:
             (cd "$dir" && env -u AWS_REGION -u AWS_DEFAULT_REGION -u AWS_PROFILE \
               -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY -u AWS_SESSION_TOKEN \
               AWS_CONFIG_FILE=/dev/null AWS_SHARED_CREDENTIALS_FILE=/dev/null \
-              ./mvnw -B -ntp -Pquality spotless:check verify) || failed+=("$dir")
+              ./mvnw -B -ntp -Pquality com.diffplug.spotless:spotless-maven-plugin:check verify) || failed+=("$dir")
             echo "::endgroup::"
           done
           if [[ "${#failed[@]}" -gt 0 ]]; then
@@ -154,7 +154,7 @@ jobs:
           for sample in sample-orders sample-core sample-gateway sample-ux sample-support \
                         sample-notifications-processor sample-settlement-batch; do
             echo "::group::$sample"
-            (cd "$sample" && ./mvnw -B -ntp -Pnative package native:compile native:test)
+            (cd "$sample" && ./mvnw -B -ntp -Pnative package org.graalvm.buildtools:native-maven-plugin:compile org.graalvm.buildtools:native-maven-plugin:test)
             echo "::endgroup::"
           done
 
