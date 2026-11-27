@@ -32,7 +32,14 @@ jobs:
         with:
           distribution: temurin
           java-version: '25'
-          cache: maven
+      # Caché propio de este job: la clave restaura el anterior aunque cambie un pom.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.m2/wrapper
+          key: maven-samples-matrix-${{ hashFiles('axiz-framework/**/pom.xml') }}
+          restore-keys: maven-samples-matrix-
       - name: Todas las combinaciones de arquetipo, estructura, stack y persistencia
         working-directory: axiz-framework
         env:
@@ -68,7 +75,14 @@ jobs:
         with:
           java-version: '25'
           distribution: graalvm-community
-          cache: maven
+      # Caché propio de este job: la clave restaura el anterior aunque cambie un pom.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.m2/wrapper
+          key: maven-native-samples-${{ hashFiles('axiz-framework/**/pom.xml') }}
+          restore-keys: maven-native-samples-
       - name: Ejemplos por defecto generados
         working-directory: axiz-framework
         run: .github/scripts/samples.sh
@@ -95,7 +109,14 @@ jobs:
         with:
           java-version: '25'
           distribution: graalvm-community
-          cache: maven
+      # Caché propio de este job: la clave restaura el anterior aunque cambie un pom.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.m2/wrapper
+          key: maven-native-reactive-${{ hashFiles('axiz-framework/**/pom.xml') }}
+          restore-keys: maven-native-reactive-
       - name: Servicio reactivo nativo de aceptación
         working-directory: axiz-framework
         run: bash .github/scripts/reactive-native-sample.sh

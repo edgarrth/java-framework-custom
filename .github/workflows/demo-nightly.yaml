@@ -31,7 +31,14 @@ jobs:
         with:
           distribution: temurin
           java-version: '25'
-          cache: maven
+      # Caché propio de este job: la clave restaura el anterior aunque cambie un pom.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.m2/wrapper
+          key: maven-demo-e2e-${{ hashFiles('axiz-demo/**/pom.xml') }}
+          restore-keys: maven-demo-e2e-
       - uses: helm/kind-action@ea822c7bf1874f08e5a491df991c228edffc3376 # v1.15.2
         with:
           install_only: true
@@ -107,7 +114,14 @@ jobs:
         with:
           java-version: '25'
           distribution: graalvm-community
-          cache: maven
+      # Caché propio de este job: la clave restaura el anterior aunque cambie un pom.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.m2/wrapper
+          key: maven-demo-native-${{ matrix.service }}-${{ hashFiles(format('axiz-demo/services/{0}/pom.xml', matrix.service)) }}
+          restore-keys: maven-demo-native-${{ matrix.service }}-
       - name: Framework del mismo commit
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:

@@ -3,7 +3,7 @@ RUN apk add --no-cache curl patch bash
 ENV CGO_ENABLED=0 GOMAXPROCS=2
 WORKDIR /src
 FROM builder AS grafana
-RUN curl -fLsS --retry 3 https://codeload.github.com/grafana/grafana/tar.gz/refs/tags/v12.4.15 -o /tmp/source.tar.gz \
+RUN curl -fLsS --retry 6 --retry-delay 30 https://codeload.github.com/grafana/grafana/tar.gz/refs/tags/v12.4.15 -o /tmp/source.tar.gz \
  && echo 'e4ec779cdda4c2cb9f8c550fde952f485440b751efeaf02159e7da25ace1bc07  /tmp/source.tar.gz' | sha256sum -c - \
  && tar -xzf /tmp/source.tar.gz --strip-components=1 -C /src
 COPY grafana-dependencies.patch /tmp/dependencies.patch
@@ -11,13 +11,13 @@ RUN patch -p1 < /tmp/dependencies.patch
 RUN go build -trimpath -buildvcs=false -tags oss -ldflags "-X main.version=12.4.15" -o /out/grafana ./pkg/cmd/grafana
 RUN go mod verify
 FROM builder AS loki
-RUN curl -fLsS --retry 3 https://codeload.github.com/grafana/loki/tar.gz/refs/tags/v3.7.10 -o /tmp/source.tar.gz \
+RUN curl -fLsS --retry 6 --retry-delay 30 https://codeload.github.com/grafana/loki/tar.gz/refs/tags/v3.7.10 -o /tmp/source.tar.gz \
  && echo '52e1a821de73d634a152e6737f7a4629dae830240015a2d6f244ccaaf3b13357  /tmp/source.tar.gz' | sha256sum -c - \
  && tar -xzf /tmp/source.tar.gz --strip-components=1 -C /src
 RUN go build -mod=readonly -trimpath -buildvcs=false -tags netgo -ldflags "-X github.com/grafana/loki/v3/pkg/util/build.Version=3.7.10" -o /out/loki ./cmd/loki
 RUN go mod verify
 FROM builder AS tempo
-RUN curl -fLsS --retry 3 https://codeload.github.com/grafana/tempo/tar.gz/refs/tags/v2.10.10 -o /tmp/source.tar.gz \
+RUN curl -fLsS --retry 6 --retry-delay 30 https://codeload.github.com/grafana/tempo/tar.gz/refs/tags/v2.10.10 -o /tmp/source.tar.gz \
  && echo '9a4ecf9f2d9c245704965b2844a35d6769e0ed97fdfc3d44663f90d307c5d466  /tmp/source.tar.gz' | sha256sum -c - \
  && tar -xzf /tmp/source.tar.gz --strip-components=1 -C /src
 COPY tempo-dependencies.patch /tmp/dependencies.patch
@@ -25,12 +25,12 @@ RUN patch -p1 < /tmp/dependencies.patch
 RUN go build -mod=readonly -trimpath -buildvcs=false -tags netgo -ldflags "-X main.Version=2.10.10" -o /out/tempo ./cmd/tempo
 RUN go mod verify
 FROM builder AS prometheus
-RUN curl -fLsS --retry 3 https://codeload.github.com/prometheus/prometheus/tar.gz/refs/tags/v3.16.0 -o /tmp/source.tar.gz \
+RUN curl -fLsS --retry 6 --retry-delay 30 https://codeload.github.com/prometheus/prometheus/tar.gz/refs/tags/v3.16.0 -o /tmp/source.tar.gz \
  && echo '2709a3bd43f9d15e0cecfc33ab473d011e2a69ab29265b91398cc1b8561403c0  /tmp/source.tar.gz' | sha256sum -c - \
  && tar -xzf /tmp/source.tar.gz --strip-components=1 -C /src
 COPY prometheus-dependencies.patch /tmp/dependencies.patch
 RUN patch -p1 < /tmp/dependencies.patch
-RUN curl -fLsS --retry 3 https://github.com/prometheus/prometheus/releases/download/v3.16.0/prometheus-web-ui-3.16.0.tar.gz -o /tmp/assets.tar.gz \
+RUN curl -fLsS --retry 6 --retry-delay 30 https://github.com/prometheus/prometheus/releases/download/v3.16.0/prometheus-web-ui-3.16.0.tar.gz -o /tmp/assets.tar.gz \
  && echo '000a45231f6dd22a5703218aad3ee11da125c8a44d1824a27670416c07531001  /tmp/assets.tar.gz' | sha256sum -c - \
  && tar -xzf /tmp/assets.tar.gz -C web/ui \
  && bash scripts/compress_assets.sh

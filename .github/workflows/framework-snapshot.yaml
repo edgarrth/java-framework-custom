@@ -32,12 +32,19 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
-      # Sin caché en los tags: lo que se compila ahí termina en artefactos publicados.
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: temurin
           java-version: '25'
-          cache: ${{ !startsWith(github.ref, 'refs/tags/') && 'maven' || '' }}
+      # Caché propio del job, nunca en los tags: lo que se compila ahí termina en artefactos publicados.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.m2/wrapper
+          key: maven-framework-snapshot-${{ hashFiles('axiz-framework/**/pom.xml') }}
+          restore-keys: maven-framework-snapshot-
       - name: Framework instalado en el repositorio Maven local
         working-directory: axiz-framework
         run: ./mvnw --bootstrap -B -ntp -q -DskipTests install

@@ -20,6 +20,15 @@ public class BlockHoundExtension implements BeforeAllCallback {
   private static final AtomicInteger RECORDED = new AtomicInteger();
 
   /**
+   * Registros que cargan sus proveedores con {@link java.util.ServiceLoader} en su inicialización
+   * estática, leyendo los JAR del classpath. Es un arranque único (en producción ocurre al iniciar
+   * la aplicación), así que se inicializan antes de instalar BlockHound en lugar de permitir
+   * lecturas de disco en los hilos reactivos.
+   */
+  private static final List<String> BOOTSTRAP_REGISTRIES =
+      List.of("io.micrometer.context.ContextRegistry");
+
+  /**
    * El diagnóstico acotado conserva el punto de bloqueo original incluso cuando un driver enmascara
    * el error.
    */
@@ -40,6 +49,7 @@ public class BlockHoundExtension implements BeforeAllCallback {
 
   static synchronized void install() {
     if (!installed) {
+      initializeBootstrapRegistries();
       BlockHound.builder()
           .loadIntegrations()
           .nonBlockingThreadPredicate(
@@ -75,6 +85,17 @@ public class BlockHoundExtension implements BeforeAllCallback {
               })
           .install();
       installed = true;
+    }
+  }
+
+  private static void initializeBootstrapRegistries() {
+    ClassLoader loader = BlockHoundExtension.class.getClassLoader();
+    for (String registry : BOOTSTRAP_REGISTRIES) {
+      try {
+        Class.forName(registry, true, loader);
+      } catch (ClassNotFoundException absent) {
+        // El registro no está en el classpath de esta prueba; no hay nada que inicializar.
+      }
     }
   }
 }
