@@ -44,17 +44,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # threads: módulos en paralelo (-T) y PIT con la mitad de los núcleos. spring y quality corren
+        # en secuencia con PIT en todos los núcleos: sus pruebas de tiempos y de Testcontainers fallan
+        # por contención de CPU con módulos en paralelo.
         include:
-          - {group: core, modules: 'platform core', scan: true}
-          - {group: spring, modules: 'spring', scan: false}
-          - {group: integrations, modules: 'adapters kits structures extensions', scan: false}
-          - {group: codegen, modules: 'codegen', scan: false}
+          - {group: core, modules: 'platform core', scan: true, threads: 1C, pit: 2}
+          - {group: spring, modules: 'spring', scan: false, threads: '', pit: 4}
+          - {group: integrations, modules: 'adapters kits structures extensions', scan: false, threads: 1C, pit: 2}
+          - {group: codegen, modules: 'codegen', scan: false, threads: 1C, pit: 2}
           - group: quality
             modules: >-
               quality/axiz-architecture-tests quality/axiz-archunit-rules quality/axiz-code-standards
               quality/axiz-store-contract-tests quality/axiz-store-integration-tests
               quality/axiz-test-containers quality/axiz-test-support
             scan: false
+            threads: ''
+            pit: 4
     name: build (${{ matrix.group }})
     uses: ./.github/workflows/lib-build.yaml
     # Techo de permisos que GitHub valida para todos los jobs del workflow reutilizable, incluido el de
@@ -69,9 +74,8 @@ jobs:
       bootstrap: true
       modules: ${{ matrix.modules }}
       cache-key: ${{ matrix.group }}
-      maven-threads: 1C
-      # Con módulos en paralelo, PIT usa la mitad de los núcleos por módulo.
-      maven-args: -Daxiz.it.requireDocker=true -Daxiz.pit.threads=2
+      maven-threads: ${{ matrix.threads }}
+      maven-args: -Daxiz.it.requireDocker=true -Daxiz.pit.threads=${{ matrix.pit }}
       maven-artifact: ${{ needs.framework.outputs.artifact }}
       scan-dependencies: ${{ matrix.scan }}
 

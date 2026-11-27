@@ -78,7 +78,7 @@ def render(lock):
             raise ValueError('The image bytecode libraries must match the platform')
         relative = f'{group.replace(".", "/")}/{name}/{version}/{filename}'
         target = f'/var/wiremock/lib/{filename}'
-        downloads.append(f"    fetch {target} https://repo.maven.apache.org/maven2/{relative}; \\\n"
+        downloads.append(f"    fetch {target} {relative}; \\\n"
                          f"    printf '%s\\n' '{digest}  {target}' | sha256sum -c -;")
     if wiremock != {'wiremock', 'wiremock-jetty12'}:
         raise ValueError('Both unshaded WireMock artifacts are required; standalone is prohibited')
@@ -97,10 +97,10 @@ RUN addgroup -g 1000 wiremock && adduser -D -u 1000 -G wiremock wiremock \\
     && mkdir -p /var/wiremock/lib /var/wiremock/extensions /home/wiremock/mappings /home/wiremock/__files \\
     && chown -R wiremock:wiremock /home/wiremock
 COPY --from=launcher /launcher /var/wiremock/launcher
-# Maven Central limita las descargas concurrentes (429): cada descarga se reintenta con espera creciente
-# y luego se verifica su checksum.
+# Las descargas fijadas por checksum se intentan en Maven Central y en su espejo oficial de Google
+# (Central limita por IP con 429); el checksum se verifica igual sea cual sea el origen.
 RUN set -eu; \\
-    fetch() { for attempt in 1 2 3 4 5 6; do wget -q -O "$1" "$2" && return 0; rm -f "$1"; [ "$attempt" -lt 6 ] || return 1; sleep $((attempt * 15)); done; }; \\
+    fetch() { for attempt in 1 2 3 4 5 6; do for repository in https://repo.maven.apache.org/maven2 https://maven-central.storage-download.googleapis.com/maven2; do wget -q -O "$1" "$repository/$2" && return 0; done; rm -f "$1"; [ "$attempt" -lt 6 ] || return 1; sleep $((attempt * 10)); done; }; \\
 '''
     # La versión del launcher upstream se fija por separado y cambia junto con la raíz de la biblioteca.
     if props['wiremock.version'] != '3.13.2':
