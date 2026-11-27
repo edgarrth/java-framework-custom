@@ -9,10 +9,13 @@ import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.audit.AuditChainVerifier;
@@ -208,5 +211,53 @@ class JdbcAuditChainStateTest {
       assertEquals(AuditChainVerifier.IntegrityStatus.INTACT, result.integrity());
       assertEquals(AuditChainVerifier.Completeness.COMPLETE_UP_TO, result.completeness());
     }
+  }
+
+  @Test
+  void concurrentInitializationOfANewChainRecoversFromTheDuplicateInsert() throws Exception {
+    var source = database();
+    try (var first = source.getConnection();
+        var second = source.getConnection();
+        var monitor = source.getConnection();
+        var executor = Executors.newSingleThreadExecutor()) {
+      first.setAutoCommit(false);
+      second.setAutoCommit(false);
+      var initial = new AuditSealer("new", AuditSealer.Mode.HASH, state(source, first), null, null);
+      assertEquals(1, initial.seal(event("first")).integrity().sequence());
+      // La segunda transacción inicializa la misma cadena mientras la primera no confirma su fila.
+      var competing =
+          executor.submit(
+              () ->
+                  new AuditSealer("new", AuditSealer.Mode.HASH, state(source, second), null, null)
+                      .seal(event("second")));
+      awaitBlockedSession(monitor);
+      first.commit();
+      assertEquals(2, competing.get(10, TimeUnit.SECONDS).integrity().sequence());
+      second.commit();
+      assertEquals(2, state(source, monitor).checkpoint("new").sequence());
+    }
+  }
+
+  /**
+   * H2 no expone la espera de un bloqueo de fila: la sesión bloqueada aparece ejecutando el MERGE
+   * de inicialización mucho más tiempo del que tarda en memoria cuando no compite.
+   */
+  private static void awaitBlockedSession(Connection monitor) throws Exception {
+    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+    try (var query =
+        monitor.prepareStatement(
+            "SELECT EXECUTING_STATEMENT_START FROM INFORMATION_SCHEMA.SESSIONS"
+                + " WHERE EXECUTING_STATEMENT LIKE 'MERGE INTO axiz_audit_chain %'")) {
+      while (System.nanoTime() < deadline) {
+        try (var rows = query.executeQuery()) {
+          if (rows.next()
+              && rows.getObject(1, OffsetDateTime.class)
+                  .toInstant()
+                  .isBefore(Instant.now().minusMillis(200))) return;
+        }
+        Thread.sleep(10);
+      }
+    }
+    throw new AssertionError("La segunda transacción nunca esperó el bloqueo de la primera");
   }
 }

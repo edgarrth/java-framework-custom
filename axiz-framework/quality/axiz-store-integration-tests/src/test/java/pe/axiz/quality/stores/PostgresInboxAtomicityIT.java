@@ -13,7 +13,7 @@ import io.r2dbc.spi.ConnectionFactoryMetadata;
 import io.r2dbc.spi.ConnectionFactoryOptions;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.List;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -252,12 +252,15 @@ class PostgresInboxAtomicityIT {
                           return dispatcher.dispatch(event, 1);
                         });
                 gate.countDown();
-                assertTrue(
-                    List.of(DeliveryDecision.ACK, DeliveryDecision.RETRY)
-                        .contains(first.get(10, TimeUnit.SECONDS)));
-                assertTrue(
-                    List.of(DeliveryDecision.ACK, DeliveryDecision.RETRY)
-                        .contains(second.get(10, TimeUnit.SECONDS)));
+                // La entrega que pierde la carrera choca con el registro del inbox (RETRY) o
+                // encuentra
+                // el lease vigente de la otra (DEFER); si llega cuando la otra ya terminó, es un
+                // duplicado (ACK).
+                var outcomes =
+                    EnumSet.of(
+                        DeliveryDecision.ACK, DeliveryDecision.RETRY, DeliveryDecision.DEFER);
+                assertTrue(outcomes.contains(first.get(10, TimeUnit.SECONDS)));
+                assertTrue(outcomes.contains(second.get(10, TimeUnit.SECONDS)));
               }
               assertEquals(1, count("inbox_effects"));
               assertEquals(DeliveryDecision.ACK, dispatcher.dispatch(event, 2));
