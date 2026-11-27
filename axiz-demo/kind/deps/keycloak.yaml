@@ -1,4 +1,4 @@
-# Local Keycloak start-dev rebuilds Quarkus runtime files; see the scoped Trivy exception.
+# start-dev local solo reconstruye su runtime de Quarkus copiado en un volumen efímero con escritura.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,12 +15,29 @@ spec:
       labels:
         app: keycloak
     spec:
-      containers:
-      - name: keycloak
-        image: quay.io/keycloak/keycloak:26.4
+      initContainers:
+      - name: prepare-keycloak-runtime
+        image: axiz-local/keycloak:26.8.2-r1
+        imagePullPolicy: Never
+        command: ["/bin/sh", "-ec", "cp -R /opt/keycloak/lib/quarkus/. /work/quarkus/"]
         securityContext:
           allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          capabilities:
+            drop: [ALL]
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - name: quarkus-runtime
+          mountPath: /work/quarkus
+      containers:
+      - name: keycloak
+        image: axiz-local/keycloak:26.8.2-r1
+        imagePullPolicy: Never
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
           runAsNonRoot: true
           capabilities:
             drop:
@@ -42,6 +59,8 @@ spec:
         - start-dev
         - --import-realm
         volumeMounts:
+        - name: quarkus-runtime
+          mountPath: /opt/keycloak/lib/quarkus
         - name: keycloak-realm
           mountPath: /opt/keycloak/data/import
           readOnly: true
@@ -50,6 +69,8 @@ spec:
         - name: writable-1
           mountPath: /tmp
       volumes:
+      - name: quarkus-runtime
+        emptyDir: {}
       - name: keycloak-realm
         configMap:
           name: keycloak-realm

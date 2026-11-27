@@ -2,6 +2,7 @@ package pe.axiz.core.security;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -20,6 +21,25 @@ import org.junit.jupiter.api.Test;
 import pe.axiz.core.errors.AccessException;
 
 class SecurityTest {
+  @Test
+  void anonymousBudgetsAreBoundedOpaqueAndIndependentAcrossConnectionsAndRoutes() {
+    assertEquals(
+        RateLimitKeys.forAnonymous("127.0.0.1", "read"),
+        RateLimitKeys.forAnonymous("127.0.0.1", "read"));
+    assertNotEquals(
+        RateLimitKeys.forAnonymous("127.0.0.1", "read"),
+        RateLimitKeys.forAnonymous("127.0.0.2", "read"));
+    assertNotEquals(
+        RateLimitKeys.forAnonymous("127.0.0.1", "read"),
+        RateLimitKeys.forAnonymous("127.0.0.1", "write"));
+    assertFalse(RateLimitKeys.forAnonymous("127.0.0.1", "read").contains("127.0.0.1"));
+    assertEquals(
+        "rl:read:anonymous:".length() + 64,
+        RateLimitKeys.forAnonymous("a".repeat(128), "read").length());
+    for (String invalid : List.of("", " ", "a".repeat(129)))
+      assertThrows(
+          IllegalArgumentException.class, () -> RateLimitKeys.forAnonymous(invalid, "read"));
+  }
 
   private final ClaimsMapper mapper = new ClaimsMapper(ClaimMapping.defaults());
 
@@ -36,7 +56,7 @@ class SecurityTest {
         assertThrows(AccessException.class, () -> mapper.map(claims), claim);
       }
     }
-    // A malformed primary claim cannot fall through to a valid alternative.
+    // Un claim primario mal formado no puede pasar a una alternativa válida.
     assertThrows(
         AccessException.class,
         () ->
@@ -133,7 +153,8 @@ class SecurityTest {
                 List.of("scope"),
                 List.of("groups"),
                 List.of(),
-                List.of("department")));
+                List.of("department"),
+                ClaimMapping.DEFAULT_MACHINE_MARKERS));
     AxizPrincipal c =
         custom.map(Map.of("iss", "i", "client_id", "c", "groups", "g1,g2", "department", "ops"));
     assertEquals(Set.of("g1", "g2"), c.roles());
@@ -268,7 +289,7 @@ class SecurityTest {
         IllegalArgumentException.class,
         () -> new TrustedIssuer("i", URI.create("https://idp.example/jwks"), List.of()));
     new TrustedIssuer("i", URI.create("http://keycloak.idp.svc.cluster.local/jwks"), List.of("a"));
-    // without a JWKS URI the keys are discovered from the issuer, which must then use https
+    // sin URI de JWKS las claves se descubren a partir del emisor, que entonces debe usar https
     assertTrue(
         new TrustedIssuer("https://sso.example/realms/axiz", null, List.of("a")).discovered());
     assertThrows(
@@ -292,6 +313,19 @@ class SecurityTest {
     clock.now = clock.now.plusSeconds(1);
     assertTrue(limiter.tryAcquire(key, 2, Duration.ofSeconds(1)).allowed());
     assertTrue(RateLimitKeys.forSubject(p, "g").endsWith(":u"));
+  }
+
+  @Test
+  void collidingJavaIssuerHashesDoNotShareAnyRateLimitBudget() {
+    String first = "https://idp.example/Aa";
+    String second = "https://idp.example/BB";
+    assertEquals(first.hashCode(), second.hashCode());
+    var a = mapper.map(Map.of("iss", first, "sub", "user", "azp", "app"));
+    var b = mapper.map(Map.of("iss", second, "sub", "user", "azp", "app"));
+    assertFalse(
+        RateLimitKeys.forClient(a, "payments").equals(RateLimitKeys.forClient(b, "payments")));
+    assertFalse(
+        RateLimitKeys.forSubject(a, "payments").equals(RateLimitKeys.forSubject(b, "payments")));
   }
 
   static final class MutableClock extends Clock {

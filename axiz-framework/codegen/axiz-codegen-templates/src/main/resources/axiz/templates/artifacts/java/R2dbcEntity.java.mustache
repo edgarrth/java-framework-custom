@@ -4,16 +4,16 @@ import org.springframework.data.relational.core.mapping.Table;
 import pe.axiz.spring.r2dbc.AuditableRow;
 
 /**
- * {{artifact.title}} stored in {@code {{artifact.table}}} (Spring Data R2DBC, reactive). Id
- * (UUIDv7), optimistic locking and audit columns come from {@link AuditableRow}; the table is
- * created by the Flyway migration generated with it.
+ * {{artifact.titleJavadoc}} almacenado en {@code {{artifact.table}}} (Spring Data R2DBC, reactivo).
+ * El id (UUIDv7), el bloqueo optimista y las columnas de auditoría provienen de
+ * {@link AuditableRow}; la tabla la crea la migración de Flyway generada junto con la entidad.
  */
 @Table("{{artifact.table}}")
 public class {{artifact.className}}Entity extends AuditableRow {
 
   private String name = "";
 
-  /** Used by Spring Data to read rows. */
+  /** Lo usa Spring Data para leer filas. */
   protected {{artifact.className}}Entity() {}
 
   public {{artifact.className}}Entity(String name) {

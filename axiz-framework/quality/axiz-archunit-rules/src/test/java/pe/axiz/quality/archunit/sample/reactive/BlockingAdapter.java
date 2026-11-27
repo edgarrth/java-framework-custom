@@ -5,7 +5,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-/** Blocks reactive pipelines: what NO_BLOCK_IN_REACTIVE_CODE reports. */
+/** Bloquea pipelines reactivos: lo que informa NO_BLOCK_IN_REACTIVE_CODE. */
 public class BlockingAdapter {
 
   public CompletableFuture<String> offload() {

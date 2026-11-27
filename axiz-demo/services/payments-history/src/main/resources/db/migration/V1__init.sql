@@ -1,8 +1,8 @@
--- payments-history: initial schema (Aurora PostgreSQL). Flyway owns the schema in every
--- environment: it runs over JDBC at startup, the service itself only uses R2DBC.
--- Add domain tables in new migrations (V2__..., never edit an applied one).
+-- payments-history: esquema inicial (Aurora PostgreSQL). Flyway es dueño del esquema en todos los
+-- ambientes: se ejecuta sobre JDBC al arrancar y el servicio solo usa R2DBC.
+-- Las tablas de dominio se agregan en migraciones nuevas (V2__...); una migración aplicada nunca se edita.
 
--- axiz inbox (Aurora PostgreSQL). Include it in the service Flyway migrations.
+-- Inbox de axiz (Aurora PostgreSQL), incluido en las migraciones Flyway del servicio.
 CREATE TABLE IF NOT EXISTS axiz_inbox (
   consumer     VARCHAR(100) NOT NULL,
   message_id   VARCHAR(128) NOT NULL,
@@ -16,8 +16,8 @@ CREATE TABLE IF NOT EXISTS axiz_inbox (
 );
 CREATE INDEX IF NOT EXISTS axiz_inbox_expires ON axiz_inbox (expires_at);
 
--- Read model of the payments of each customer, projected from the payment order events.
--- Columns map to PaymentHistoryRow (Spring Data R2DBC, snake_case names).
+-- Modelo de lectura de los pagos de cada cliente, proyectado desde los eventos de las órdenes de pago.
+-- Las columnas corresponden a PaymentHistoryRow (Spring Data R2DBC, nombres en snake_case).
 CREATE TABLE payment_history (
   id               UUID         PRIMARY KEY,
   version          BIGINT       NOT NULL,
@@ -37,6 +37,6 @@ CREATE TABLE payment_history (
   CONSTRAINT payment_history_payment UNIQUE (payment_id)
 );
 
--- GET /v1/customers/{customerId}/payments (optionally by status), latest change first
+-- GET /v1/customers/{customerId}/payments (opcionalmente por estado), del cambio más reciente al más antiguo
 CREATE INDEX payment_history_customer ON payment_history (customer_id, last_change_at DESC);
 CREATE INDEX payment_history_customer_status ON payment_history (customer_id, status, last_change_at DESC);

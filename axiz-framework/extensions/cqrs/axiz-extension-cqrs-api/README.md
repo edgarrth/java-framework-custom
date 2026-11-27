@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-extension-cqrs-api
 
-CQRS on top of hexagonal: commands, queries, buses with an ordered pipeline and projections (contracts, plain Java).
+CQRS sobre hexagonal: comandos, consultas, buses con un pipeline ordenado y proyecciones (contratos, Java simple).
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,33 +12,33 @@ CQRS on top of hexagonal: commands, queries, buses with an ordered pipeline and 
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `AccessPolicies` | The access policies of an application: runs the ones matching a request and reports request types that nothing protects. |
-| `AccessPolicy` | Object-level authorization of a command or query type: decides whether the caller may act on the resources the request names (customer, account, order), beyond the authorities of `RequiresAuthority`. |
-| `ReactiveAccessPolicy` | Non-blocking authorization through `Publisher<Void>`, independent of Spring and Reactor. |
-| `AuditedCommand` | Command recorded in the audit trail with its outcome. |
-| `Buses` | Plain-Java command and query buses. |
-| `Caller` | Who sends a command or query, as seen by an `AccessPolicy`. |
-| `CommandBus` | Sends commands through the pipeline to their handler. |
-| `CommandHandler` | Handles one command type. |
-| `HandlerNotFoundException` | No handler is registered for a request type: a configuration error, not a client error. |
-| `IdempotentCommand` | Command protected by an idempotency key: a repeated key returns the first result. |
-| `Invocation` | One request travelling through the pipeline. |
-| `OpenAccess` | Explicit, reviewed decision that this request needs no authority and no `AccessPolicy`: for example a command only sent by an event consumer and never exposed over HTTP, or a public catalog query. |
-| `PipelineBehavior` | Cross-cutting step around handlers. |
-| `Projection` | Keeps a read model up to date from events (domain events in process, or integration events through the EDA style). |
-| `QueryBus` | Sends queries through the pipeline to their handler. |
-| `QueryHandler` | Handles one query type; never changes state. |
-| `ReactiveCommandHandler` | Handles one command type without blocking (reactive services on WebFlux and R2DBC). |
-| `ReactiveQueryHandler` | Handles one query type without blocking; never changes state. |
-| `Request` | A message handled by exactly one handler. |
-| `RequiresAuthority` | Authorities (any of them) the caller needs to send a command or query. |
+| `AccessPolicies` | Políticas de acceso de una aplicación: ejecuta las que corresponden a una petición e informa los tipos de petición que nada protege. |
+| `AccessPolicy` | Autorización a nivel de objeto de un tipo de comando o consulta: decide si el llamador puede actuar sobre los recursos que nombra la petición (cliente, cuenta, orden), además de las autoridades de `RequiresAuthority`. |
+| `ReactiveAccessPolicy` | Autorización no bloqueante mediante `Publisher<Void>`, independiente de Spring y de Reactor. |
+| `AuditedCommand` | Comando registrado en la pista de auditoría con su resultado. |
+| `Buses` | Buses de comandos y consultas en Java simple. |
+| `Caller` | Quién envía un comando o una consulta, tal como lo ve una `AccessPolicy`. |
+| `CommandBus` | Envía los comandos a su handler a través del pipeline. |
+| `CommandHandler` | Atiende un tipo de comando. |
+| `HandlerNotFoundException` | No hay handler registrado para un tipo de petición: es un error de configuración, no del cliente. |
+| `IdempotentCommand` | Comando protegido por una clave de idempotencia: una clave repetida devuelve el primer resultado. |
+| `Invocation` | Una petición que recorre el pipeline. |
+| `OpenAccess` | Decisión explícita y revisada de que esta petición no necesita autoridad ni `AccessPolicy`: por ejemplo, un comando que solo envía un consumidor de eventos y nunca se expone por HTTP, o una consulta de catálogo público. |
+| `PipelineBehavior` | Paso transversal alrededor de los handlers. |
+| `Projection` | Mantiene actualizado un modelo de lectura a partir de eventos (eventos de dominio en proceso, o eventos de integración mediante el estilo EDA). |
+| `QueryBus` | Envía las consultas a su handler a través del pipeline. |
+| `QueryHandler` | Atiende un tipo de consulta; nunca cambia el estado. |
+| `ReactiveCommandHandler` | Atiende un tipo de comando sin bloquear (servicios reactivos sobre WebFlux y R2DBC). |
+| `ReactiveQueryHandler` | Atiende un tipo de consulta sin bloquear; nunca cambia el estado. |
+| `Request` | Mensaje que atiende exactamente un handler. |
+| `RequiresAuthority` | Autoridades (basta una de ellas) que el llamador necesita para enviar un comando o una consulta. |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl extensions/cqrs/axiz-extension-cqrs-api verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl extensions/cqrs/axiz-extension-cqrs-api verify`.

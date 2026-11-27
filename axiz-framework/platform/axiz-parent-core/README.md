@@ -1,5 +1,6 @@
 # axiz-parent-core
 
-Parent of layer 1 modules and of the plain Java libraries of the teams: Java 25, the quality gates
-of `axiz-parent` and `bannedDependencies` against Spring, Quarkus, AWS SDK v1, GCP libraries,
-OpenTelemetry agents and test libraries in compile scope. No Spring Boot plugin.
+Parent de los módulos de la capa 1 y de las librerías Java simples de los equipos: Java 25, los
+controles de calidad de `axiz-parent` y `bannedDependencies` contra Spring, Quarkus, AWS SDK v1,
+librerías de GCP, agentes de OpenTelemetry y librerías de pruebas en scope compile. Sin el plugin de
+Spring Boot.

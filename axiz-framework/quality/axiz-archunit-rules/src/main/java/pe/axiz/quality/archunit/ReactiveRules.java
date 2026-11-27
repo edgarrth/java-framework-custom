@@ -7,7 +7,7 @@ import com.tngtech.archunit.lang.ArchRule;
 import java.util.List;
 import java.util.Set;
 
-/** No synchronous I/O or scheduler escape hatch in reactive service code. */
+/** Sin E/S síncrona ni vías de escape mediante schedulers en el código de servicios reactivos. */
 public final class ReactiveRules {
   private ReactiveRules() {}
 
@@ -32,7 +32,7 @@ public final class ReactiveRules {
           "pe.axiz.core.audit.AuditTrail",
           "pe.axiz.core.audit.AsyncAuditPublisher",
           "pe.axiz.core.http.AccessTokenProvider",
-          "pe.axiz.core.http.ClientCredentialsTokenProvider",
+          "pe.axiz.adapter.http.jdk.ClientCredentialsTokenProvider",
           "pe.axiz.core.notification.NotificationSender",
           "pe.axiz.core.notification.EventNotificationSender",
           "pe.axiz.core.messaging.RoutingEventPublisher",

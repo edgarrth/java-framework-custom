@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  axiz demo: payment processor built with the axiz framework. Aggregator only: every service is an
-  independent project (own pipeline, chart and release); this POM lets `./mvnw verify` build them
-  all at once and runs the capability coverage check.
+  axiz demo: procesador de pagos construido con el framework axiz. Solo agregador: cada servicio es un
+  proyecto independiente (pipeline, chart y release propios); este POM permite que `./mvnw verify` los construya
+  todos a la vez y ejecuta la verificación de cobertura de capacidades.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -24,6 +24,9 @@
     <module>services/notifications-processor</module>
     <module>services/settlement-batch</module>
     <module>services/payment-network-gateway</module>
+    <module>examples/protected-data</module>
+    <module>examples/provider-recipes</module>
+    <module>examples/sqs-consumer</module>
     <module>coverage</module>
   </modules>
 </project>

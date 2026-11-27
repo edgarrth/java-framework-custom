@@ -8,29 +8,17 @@ import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
 
-/** Uses the real generator for an init spanning S3, DynamoDB, SQS, SNS and KMS. */
+/** Usa el generador real para un init que abarca S3, DynamoDB, SQS, SNS y KMS. */
 class GenerateLocalInfrastructureSample {
   public static void main(String[] args) throws Exception {
     var request =
-        new ProjectRequest(
-            "infra-orders",
-            "pe.axiz.samples",
-            "pe.axiz.samples.infra",
-            "Local resource initialization acceptance",
-            "business",
-            Structure.HEXAGONAL,
-            Stack.SERVLET,
-            "dynamodb",
-            List.of(
+        ProjectRequest.builder().name("infra-orders").groupId("pe.axiz.samples").basePackage("pe.axiz.samples.infra").description("Local resource initialization acceptance").archetype("business").structure(Structure.HEXAGONAL).stack(Stack.SERVLET).persistence("dynamodb").capabilities(List.of(
                 "storage-s3",
                 "crypto",
                 "messaging-sqs",
                 "messaging-sns",
                 "audit-sqs",
-                "idempotency-dynamodb"),
-            Files.readString(Path.of(args[1])),
-            null,
-            args[2]);
+                "idempotency-dynamodb")).openApi(Files.readString(Path.of(args[1]))).asyncApi(null).frameworkVersion(args[2]).extensions(List.of()).build();
     var project = ProjectGenerator.withDefaults().generate(request);
     Path output = Path.of(args[0]);
     Files.createDirectories(output);

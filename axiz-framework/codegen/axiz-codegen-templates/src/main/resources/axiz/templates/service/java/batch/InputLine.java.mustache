@@ -1,10 +1,10 @@
 package {{project.basePackage}}.job;
 
 /**
- * One record of the input file. Replace it with the layout of the real file (CSV, or fixed width
- * with {@code FixedWidthRecordReader}).
+ * Un registro del archivo de entrada. Se reemplaza por el formato del archivo real (CSV, o ancho
+ * fijo con {@code FixedWidthRecordReader}).
  *
- * @param reference unique reference of the record (makes reprocessing idempotent)
- * @param value record value
+ * @param reference referencia única del registro (hace idempotente el reprocesamiento)
+ * @param value valor del registro
  */
 public record InputLine(String reference, String value) {}

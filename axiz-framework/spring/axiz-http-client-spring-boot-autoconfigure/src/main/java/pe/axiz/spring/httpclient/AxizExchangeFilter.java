@@ -1,6 +1,5 @@
 package pe.axiz.spring.httpclient;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -17,9 +16,9 @@ import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
-import pe.axiz.core.commons.StandardHeaders;
+import pe.axiz.core.api.StandardHeaders;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.errors.ExternalErrorDetail;
 import pe.axiz.core.errors.ExternalServiceException;
@@ -31,26 +30,33 @@ import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
 /**
- * Reactive counterpart of {@link AxizRestClientInterceptor}, without blocking: credentials that
- * need I/O use native asynchronous ports, errors are translated from the response body and retries
- * use Reactor's backoff for idempotent calls only.
+ * Contraparte reactiva de {@link AxizRestClientInterceptor}, sin bloquear: las credenciales que
+ * necesitan E/S usan puertos asíncronos nativos, los errores se traducen desde el cuerpo de la
+ * respuesta y los reintentos usan el backoff de Reactor solo para llamadas idempotentes.
  */
 public final class AxizExchangeFilter implements ExchangeFilterFunction {
 
   private static final Logger LOG = LoggerFactory.getLogger("axiz.http.client");
 
-  @SuppressFBWarnings(
-      value = "EI_EXPOSE_REP2",
-      justification =
-          "ClientResilience is an injected collaborator whose identity and lifecycle must be "
-              + "shared, not copied.")
   private final ClientResilience resilience;
 
+  private final boolean translateErrors;
   private final OutboundAuth auth;
   private final @Nullable String tenantHeader;
 
   public AxizExchangeFilter(
       ClientResilience resilience, OutboundAuth auth, @Nullable String tenantHeader) {
+    this(resilience, auth, tenantHeader, true);
+  }
+
+  AxizExchangeFilter(
+      ClientResilience resilience,
+      OutboundAuth auth,
+      @Nullable String tenantHeader,
+      boolean translateErrors) {
+    if (!translateErrors && resilience.settings().retry() != ClientSettings.RetryMode.NONE)
+      throw new IllegalArgumentException("Raw HTTP exchanges require retry=NONE");
+    this.translateErrors = translateErrors;
     this.resilience = Objects.requireNonNull(resilience);
     this.auth = Objects.requireNonNull(auth);
     this.tenantHeader = tenantHeader;
@@ -66,8 +72,9 @@ public final class AxizExchangeFilter implements ExchangeFilterFunction {
             request.url(),
             settings.auth().type() != AuthType.NONE,
             "HTTP client " + settings.name());
-    // token relay: in a reactive service the inbound token lives in the Reactor context, not in a
-    // thread-local, so it is read here, on the subscriber's context, before switching threads
+    // token relay: en un servicio reactivo, el token entrante vive en el contexto de Reactor y no
+    // en un thread-local, por lo que se lee aquí, en el contexto del suscriptor, antes de cambiar
+    // de hilo
     Mono<Optional<String>> relayed =
         auth.relay() && OutboundAuth.SECURITY
             ? ReactiveRelay.token().map(Optional::of).defaultIfEmpty(Optional.empty())
@@ -118,11 +125,11 @@ public final class AxizExchangeFilter implements ExchangeFilterFunction {
     }
   }
 
-  /** Spring Security access, isolated so the dependency stays optional. */
+  /** Acceso a Spring Security, aislado para que la dependencia siga siendo opcional. */
   static final class ReactiveRelay {
     private ReactiveRelay() {}
 
-    /** Bearer token of the inbound request, from the reactive security context. */
+    /** Token bearer de la solicitud entrante, tomado del contexto de seguridad reactivo. */
     static Mono<String> token() {
       return ReactiveSecurityContextHolder.getContext()
           .mapNotNull(SecurityContext::getAuthentication)
@@ -166,10 +173,28 @@ public final class AxizExchangeFilter implements ExchangeFilterFunction {
                       res -> {
                         try {
                           int status = res.statusCode().value();
+                          if (!translateErrors) {
+                            log(settings, method, req, status, start, attempt[0]);
+                            return Mono.just(
+                                res.mutate()
+                                    .body(
+                                        body ->
+                                            body.doOnError(
+                                                    failure -> {
+                                                      if (released.compareAndSet(false, true))
+                                                        resilience.release(start, failure, status);
+                                                    })
+                                                .doFinally(
+                                                    signal -> {
+                                                      if (released.compareAndSet(false, true))
+                                                        resilience.release(start, null, status);
+                                                    }))
+                                    .build());
+                          }
                           if (released.compareAndSet(false, true))
                             resilience.release(start, null, status);
                           log(settings, method, req, status, start, attempt[0]);
-                          if (status >= 400) {
+                          if (translateErrors && status >= 400) {
                             return res.bodyToMono(String.class)
                                 .defaultIfEmpty("")
                                 .flatMap(
@@ -209,8 +234,9 @@ public final class AxizExchangeFilter implements ExchangeFilterFunction {
                               ? Mono.delay(resilience.delay((int) s.totalRetries() + 1))
                               : Mono.error(s.failure());
                         })))
-        // like the servlet client: a transport failure becomes a dependency error, so the service
-        // answers 504 (timeout) or 503 (refused or reset connection) instead of an unknown failure
+        // igual que el cliente servlet: un fallo de transporte se convierte en un error de
+        // dependencia, de modo que el servicio responde 504 (timeout) o 503 (conexión rechazada o
+        // reiniciada) en lugar de un fallo desconocido
         .onErrorMap(e -> !(e instanceof AxizException), e -> transport(settings, e));
   }
 

@@ -14,7 +14,7 @@ axiz:
         channels: [mobile]      # vacío: cualquier canal
         tenants: []             # vacío: cualquier tenant
         rules:
-          segment: [premium]    # atributo → valores permitidos
+          segment: [premium]    # atributo -> valores permitidos
 ```
 
 ```java

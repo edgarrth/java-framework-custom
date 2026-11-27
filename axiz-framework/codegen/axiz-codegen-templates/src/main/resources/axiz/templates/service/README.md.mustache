@@ -4,58 +4,69 @@
 
 | | |
 |---|---|
-| Archetype | `{{archetype.name}}`: {{archetype.role}} |
-| Style | `{{fw.id}}` |
+| Arquetipo | `{{archetype.name}}`: {{archetype.role}} |
+| Estilo | `{{fw.id}}` |
 | Stack | `{{stack.id}}` |
-| Persistence | `{{persistence.id}}` |
+| Persistencia | `{{persistence.id}}` |
 | axiz | `{{axizVersion}}` |
-| Base package | `{{project.basePackage}}` |
+| Paquete base | `{{project.basePackage}}` |
 
-## Requirements
+## Requisitos
 
-- JDK 25 (Maven comes with the wrapper `./mvnw`)
-- Docker, for `docker compose` and the Testcontainers tests
-- Access to the Nexus repository that publishes axiz
+- JDK 25 (Maven viene con el wrapper `./mvnw`)
+- Docker, para `docker compose` y las pruebas con Testcontainers
+- Acceso al repositorio de GitHub Packages que publica axiz
 
-## Build and test
+## Compilación y pruebas
 
 ```bash
-./mvnw verify                 # enforcer rules, tests and architecture rules
-./mvnw spotless:apply         # formats the code (run it before pushing)
-./mvnw -Pquality verify       # CI gate: + format check, Checkstyle, Error Prone + NullAway, SpotBugs/FindSecBugs,
-                              # dependency convergence and coverage thresholds
-./mvnw -Pnative native:compile  # GraalVM native image
+./mvnw verify                 # reglas de enforcer, pruebas y reglas de arquitectura
+./mvnw spotless:apply         # formatea el código (se ejecuta antes de hacer push)
+./mvnw -Pquality verify       # control de CI: además formato, Checkstyle, Error Prone con NullAway, SpotBugs/FindSecBugs,
+                              # convergencia de dependencias y umbrales de cobertura
+./mvnw -Pnative native:compile  # imagen nativa con GraalVM
 ```
 
-`ArchitectureTest` enforces the rules of the `{{fw.id}}` style and the general axiz rules;
-`{{project.className}}ApplicationTest` starts the service against real dependencies in containers.
+`ArchitectureTest` hace cumplir las reglas del estilo `{{fw.id}}` y las reglas generales de axiz;
+`{{project.className}}ApplicationTest` arranca el servicio contra dependencias reales en contenedores.
+`SensitiveDataCanaryTest` usa valores sintéticos de PAN, CVV y contraseña para comprobar el logging
+configurado, el saneamiento de la auditoría, el mapeo de errores y el convertidor o encoder de
+respuestas del servidor. Cubre los casos de éxito, fallo, timeout y rollback; los servicios JPA además
+provocan un fallo real de restricción en PostgreSQL y su rollback. Se amplía con los DTO y las
+integraciones propias del servicio. Nunca se ejecuta un canario con valores sensibles reales.
+{{#fw.batch}}
+La prueba de aplicación importa dos veces un CSV sintético desde LocalStack S3 en PostgreSQL y
+comprueba la normalización, las filas filtradas y la supresión de duplicados. Esta prueba de
+aceptación se amplía al cambiar el job; el arranque evita a propósito el main del CronJob, que termina
+la JVM.
+{{/fw.batch}}
 {{#hasExamples}}
-`ContractExamplesTest` checks that every request example of the contract is a valid request.
+`ContractExamplesTest` comprueba que cada ejemplo de petición del contrato sea una petición válida.
 {{/hasExamples}}
 
 {{#auditResources.required}}
-Audit tests create their own LocalStack resources before auto-configuration and register the returned URL/ARN.
-The framework creates the application clients; the test context owns and closes its container. They do not
-require `AXIZ_AUDIT_DESTINATION` or `AXIZ_AUDIT_QUEUE_URL` in the environment. The local profile
-uses the `{{project.name}}-audit` resource created by Compose init. Production must supply its
-configured audit destination; the local values are not production defaults.
+Las pruebas de auditoría crean sus propios recursos en LocalStack antes de la autoconfiguración y registran la URL o el ARN devueltos.
+El framework crea los clientes de la aplicación; el contexto de prueba es dueño de su contenedor y lo cierra. No
+requieren `AXIZ_AUDIT_DESTINATION` ni `AXIZ_AUDIT_QUEUE_URL` en el entorno. El perfil local
+usa el recurso `{{project.name}}-audit` que crea la inicialización de Compose. Producción debe entregar
+su destino de auditoría configurado; los valores locales no son valores por defecto de producción.
 {{/auditResources.required}}
 
-## Run locally
+## Ejecución local
 
 ```bash
 local/dev-secrets.sh       # random development-only secrets in local/secrets (git-ignored)
 docker compose up -d
 {{#infra.localstack}}
-export AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_REGION=us-east-1   # LocalStack, not real credentials
+export AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_REGION=us-east-1   # LocalStack, no son credenciales reales
 {{/infra.localstack}}
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-Or `axiz local up` / `axiz local down`. Traces, metrics and logs are in Grafana at
-<http://localhost:3000> (OpenTelemetry collector on ports 4317/4318).
+También `axiz local up` / `axiz local down`. Las trazas, métricas y logs están en Grafana en
+<http://localhost:3000> (colector OpenTelemetry en los puertos 4317/4318).
 {{#infra.keycloak}}
-Keycloak (<http://localhost:8180>, realm `axiz`) issues local tokens:
+Keycloak (<http://localhost:8180>, realm `axiz`) emite tokens locales:
 
 ```bash
 curl -s -d grant_type=client_credentials -d client_id=local-client -d client_secret=local-only \
@@ -64,22 +75,29 @@ curl -s -d grant_type=client_credentials -d client_id=local-client -d client_sec
 {{/infra.keycloak}}
 {{#api.present}}
 
-## Contract first
+## Contrato primero
 
-`src/main/openapi/openapi.yaml` is the source of truth. Request and response models are generated at
-build time into `{{project.basePackage}}.api.model` (never versioned). Controllers were generated once
-as skeletons that answer `501 Not Implemented` until each operation is implemented.
+`src/main/openapi/openapi.yaml` es la fuente de verdad. Los modelos de petición y de respuesta se generan
+en tiempo de build en `{{api.modelPackage}}` (nunca se versionan). Los controladores se generan una sola
+vez como esqueletos que responden `501 Not Implemented` hasta que se implementa cada operación.
+Las pruebas de aplicación generadas ejercitan ese resultado explícito con un llamador autorizado.
+Cada aserción 501 se reemplaza por la expectativa de negocio al implementar la operación.
+Las pruebas de respuesta de los controladores verifican por separado el estado exitoso y el mapeo del
+cuerpo, con los colaboradores de la aplicación reemplazados por dobles de prueba; las pruebas completas
+de aplicación usan los colaboradores reales. Las pruebas de modelos hexagonales comprueban las
+colecciones anulables y el acceso inmutable a las colecciones.
+Antes de enviar cambios se ejecuta `./mvnw -Pquality verify`: es el mismo perfil de calidad que usa CI.
 
-- `axiz contract sync` adds skeletons for new operations, reports removed ones and checks breaking
-  changes against the previous version (openapi-diff).
-- Lint the contract with the axiz Spectral ruleset before publishing it.
-- Declare access per operation or inherit root `security`: OAuth2/OpenID Connect scopes produce
-  a scope guard, an empty bearer/OAuth2 scope list requires authentication, and explicit
-  `security: []` declares public access. Missing or unsupported policies fail generation.
-- Review `axiz.security.public-paths` when merging a new public operation during contract sync.
-  Public paths must not overlap authenticated-only routes; use distinct paths or scoped guards.
+- `axiz contract sync` agrega esqueletos para las operaciones nuevas, informa las eliminadas y comprueba
+  los cambios incompatibles contra la versión anterior (openapi-diff).
+- El contrato se valida con el ruleset de Spectral de axiz antes de publicarlo.
+- El acceso se declara por operación o se hereda del `security` raíz: los scopes OAuth2/OpenID Connect
+  producen una guarda de scopes, una lista de scopes bearer/OAuth2 vacía exige autenticación y
+  `security: []` explícito declara acceso público. Las políticas ausentes o no admitidas hacen fallar la generación.
+- `axiz.security.public-paths` se revisa al fusionar una operación pública nueva durante la sincronización del contrato.
+  Las rutas públicas no deben superponerse con rutas solo autenticadas; se usan rutas distintas o guardas con scopes.
 
-| Operation | Method | Path |
+| Operación | Método | Ruta |
 |---|---|---|
 {{#operations}}
 | `{{operationId}}` | {{httpMethod}} | `{{path}}` |
@@ -87,86 +105,82 @@ as skeletons that answer `501 Not Implemented` until each operation is implement
 {{/api.present}}
 
 {{#api.hasAsyncapi}}
-## Event contracts
+## Contratos de eventos
 
-`src/main/asyncapi/asyncapi.yaml` declares the CloudEvents types this service sends and receives.
-Payload records use JDK types and retain the version in their class names. `axiz generate event
-<name-vN>` reads the declared payload. `axiz contract sync --type asyncapi` creates new records
-and `.axiz-new` proposals without replacing existing implementations. Review and merge proposals,
-then implement the subscribed handlers before consuming live messages. The generated typed
-skeletons reject messages until their business action is implemented; their Spring AOT binding
-metadata stays in `config`, outside the payload layer.
+`src/main/asyncapi/asyncapi.yaml` declara los tipos CloudEvents que este servicio envía y recibe.
+Los records de payload usan tipos del JDK y conservan la versión en el nombre de su clase. `axiz generate event
+<name-vN>` lee el payload declarado. `axiz contract sync --type asyncapi` crea los records nuevos
+y propuestas `.axiz-new` sin reemplazar las implementaciones existentes. Las propuestas se revisan y se
+fusionan, y luego se implementan los handlers suscritos antes de consumir mensajes reales. Los esqueletos
+tipados generados rechazan los mensajes hasta que se implementa su acción de negocio; sus metadatos de
+binding de Spring AOT quedan en `config`, fuera de la capa de payloads.
 
-`axiz doctor` checks receive subscriptions and the snapshot. `axiz contract diff --type asyncapi
-old.yaml new.yaml` rejects incompatible published types; optional fields can extend vN, while
-other changes require a new type in parallel. CI compares the contract with an earlier immutable
-Git revision even when the current snapshot was updated. Local lint checks structure; corporate
-Spectral rules run in CI. Business meaning still requires human review.
+`axiz doctor` comprueba las suscripciones de recepción y la instantánea. `axiz contract diff --type asyncapi
+old.yaml new.yaml` rechaza los tipos publicados incompatibles; los campos opcionales pueden extender vN,
+mientras que los demás cambios requieren un tipo nuevo en paralelo. CI compara el contrato con una
+revisión Git inmutable anterior incluso cuando la instantánea vigente se actualizó. El lint local
+comprueba la estructura; las reglas corporativas de Spectral se ejecutan en CI. El significado de
+negocio requiere revisión humana.
 {{/api.hasAsyncapi}}
 
-## Structure
+## Estructura
 
 {{#fw.packages}}
 - `{{project.basePackage}}.{{name}}`: {{description}}
 {{/fw.packages}}
 
-## Capabilities
+## Capacidades
 
-| Capability | Starter | What it brings |
+| Capacidad | Starter | Qué aporta |
 |---|---|---|
 {{#capabilities}}
 | `{{name}}` | `{{starter}}` | {{description}} |
 {{/capabilities}}
 
-Add more with `axiz add <capability>`: it adds the starter, its properties, the ConfigMap keys and a
-usage example.
+Se agregan más con `axiz add <capability>`: añade el starter, sus propiedades, las claves del ConfigMap
+y un ejemplo de uso.
 
-## Configuration
+## Configuración
 
-- `application.yaml` holds defaults only. Environment values live in the ConfigMaps `axiz-common`,
-  `{{project.name}}` and `{{project.name}}-errors`, mounted as files by the chart
-  (`deploy/helm/{{project.name}}/values-<env>.yaml`, keys `config` and `errors`).
-- Secrets never go to the repository nor to ConfigMaps: they come from AWS Secrets Manager through
-  the ExternalSecret and are mounted as files in `/var/run/secrets/axiz`.
-- AWS access uses the pod identity (IRSA or EKS Pod Identity); there are no AWS keys anywhere.
+- `application.yaml` contiene solo valores por defecto. Los valores de cada ambiente están en los ConfigMaps `axiz-common`,
+  `{{project.name}}` y `{{project.name}}-errors`, que el chart monta como archivos
+  (`deploy/helm/{{project.name}}/values-<env>.yaml`, claves `config` y `errors`).
+- Los secretos nunca van al repositorio ni a los ConfigMaps: provienen de AWS Secrets Manager mediante
+  el ExternalSecret y se montan como archivos en `/var/run/secrets/axiz`.
+- El acceso a AWS usa la identidad del pod (IRSA o EKS Pod Identity); no hay claves de AWS en ningún lugar.
 {{#config.hasConfigMapKeys}}
 
-Keys each environment must define:
+Claves que cada ambiente debe definir:
 
 {{#config.configMapKeys}}
 - `{{.}}`
 {{/config.configMapKeys}}
 {{/config.hasConfigMapKeys}}
 
-## Deployment
+## Despliegue
 
-`deploy/helm/{{project.name}}` contains the chart: {{#archetype.deployment}}Deployment with probes, Service, HPA, PDB{{/archetype.deployment}}{{#archetype.cronjob}}CronJob{{/archetype.cronjob}},
-ConfigMaps mounted as files, ExternalSecret, ServiceAccount and a NetworkPolicy. Pods do not
-require Kubernetes API permissions to read their mounted configuration.
-The workflows use the immutable Axiz 2.0.0 contracts:
+`deploy/helm/{{project.name}}` contiene el chart: {{#archetype.deployment}}Deployment con probes, Service, HPA, PDB{{/archetype.deployment}}{{#archetype.cronjob}}CronJob{{/archetype.cronjob}},
+ConfigMaps montados como archivos, ExternalSecret, ServiceAccount y una NetworkPolicy. Los pods no
+requieren permisos sobre la API de Kubernetes para leer su configuración montada.
 
-- `ci.yaml` builds and validates the product. It records the source commit, final version,
-  JVM/native variant, platforms and pinned base image in a signed build manifest. Set
-  `AXIZ_JVM_BASE_IMAGE` and `AXIZ_NATIVE_BASE_IMAGE` to registry references with SHA-256 digests;
-  a manual build can supply a specific `base-image`. Optional framework candidate inputs bind
-  the dependency to its producer run, attempt and signed manifest hash.
-- `deploy.yaml` also listens for completed `ci` runs and promotes a verified service build to dev
-  through a signed producer proof. It requires the source to be the current HEAD of protected
-  main and a repository secret `GITOPS_READ_TOKEN` with read-only access to GitOps. The resolver
-  reads the predecessor without using the GitHub App's write credential; the independent deploy
-  checks that predecessor again before writing. CI runs without a product proof do not deploy.
-- `deploy.yaml` promotes or rolls back a completed successful build. Supply its run id, attempt,
-  manifest SHA-256, environment, full values commit and previous deployed manifest hash
-  (`initial-deployment` for the first deployment). It reuses image/chart digests, updates GitOps
-  and waits for Argo CD; deployment never rebuilds. Protected environments provide approval.
-- `BUILD_DESTINATION` is the explicit platform JSON for registry authority, namespace, source and GitOps repositories and allowed services. GitOps uses the shared `main` branch and `environments/` root. Render GitOps from that same configuration.
-- Build credentials are `NEXUS_READ_USERNAME/PASSWORD` and
-  `REGISTRY_BUILD_USERNAME/PASSWORD`. Deploy uses registry read credentials plus the GitOps App
-  and Argo read token. Use the same `BUILD_DESTINATION` for build, automatic resolution and deploy; configure `ARGOCD_SERVER` as a repository variable.
-- `release.yaml`: release-please keeps a release pull request with the next version and the
-  changelog; merging it creates the tag. `version.txt` and `.release-please-manifest.json` hold
-  the last released version (`0.0.0`: nothing released yet); the pom holds the next one
-  (`0.1.0-SNAPSHOT`). The first release is `0.1.0` (`initial-version` in
-  `release-please-config.json`); later ones follow Conventional Commits.
+Los workflows de `.github/workflows` llaman a los workflows reutilizables de Axiz, fijados al tag
+inmutable de su release:
 
-## Decisions
+- `ci.yaml`: cada pull request compila con todos los controles de calidad, revisa la compatibilidad
+  del contrato OpenAPI, valida el chart y escanea las dependencias. En `main` y en los tags
+  publica la imagen (Jib) y el chart en GHCR con atestaciones de procedencia y SBOM; en `main`
+  despliega en dev cuando el repositorio define la variable `AXIZ_GITOPS_REPOSITORY`.
+- `deploy.yaml`: promueve a un ambiente un digest ya construido y atestiguado; las reglas de
+  protección del ambiente de GitHub aportan la aprobación. Volver atrás es desplegar el digest
+  anterior; el despliegue nunca recompila.
+- `release.yaml`: release-please mantiene un pull request de release con la siguiente versión y el
+  changelog; al fusionarlo se crea el tag. `version.txt` y `.release-please-manifest.json` guardan
+  la última versión publicada (`0.0.0`: nada publicado todavía); el pom guarda la siguiente
+  (`0.1.0-SNAPSHOT`). La primera release es `0.1.0` (`initial-version` en
+  `release-please-config.json`); las siguientes siguen Conventional Commits.
+
+Variables opcionales del repositorio: `AXIZ_BASE_IMAGE` (imagen base fijada por digest) y
+`AXIZ_NATIVE` (`true` para la imagen nativa). Secretos del despliegue: `GITOPS_APP_CLIENT_ID` y
+`GITOPS_APP_PRIVATE_KEY`, de una GitHub App que solo escribe en el repositorio GitOps.
+
+## Decisiones

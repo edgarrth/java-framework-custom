@@ -2,13 +2,13 @@ package pe.axiz.spring.web;
 
 import io.micrometer.context.ThreadLocalAccessor;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 
 /**
- * Bridges {@link RequestContext} with Micrometer context-propagation, so the metadata follows
- * Reactor operators, executors and virtual threads. Registered through {@code
- * META-INF/services/io.micrometer.context.ThreadLocalAccessor}.
+ * Conecta {@link RequestContext} con context-propagation de Micrometer, de modo que los metadatos
+ * siguen a los operadores de Reactor, los executors y los hilos virtuales. Se registra mediante
+ * {@code META-INF/services/io.micrometer.context.ThreadLocalAccessor}.
  */
 public class RequestContextAccessor implements ThreadLocalAccessor<RequestMetadata> {
 

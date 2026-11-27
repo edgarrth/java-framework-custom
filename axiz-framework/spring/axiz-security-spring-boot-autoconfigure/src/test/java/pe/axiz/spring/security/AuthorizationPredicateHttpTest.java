@@ -25,7 +25,10 @@ import org.springframework.web.bind.annotation.RestController;
 import pe.axiz.spring.errors.AxizErrorsAutoConfiguration;
 import reactor.core.publisher.Mono;
 
-/** Coverage categories are checked against the actual expression manager, in both HTTP stacks. */
+/**
+ * Las categorías de cobertura se comprueban contra el gestor de expresiones real, en ambas pilas
+ * HTTP.
+ */
 class AuthorizationPredicateHttpTest {
   static class Endpoint {
     @GetMapping("/policy")

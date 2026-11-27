@@ -6,13 +6,13 @@ import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Exponential backoff with full jitter: {@code random(0, min(maxDelay, initial * multiplier^n))}.
- * Jitter avoids synchronized retries from many replicas.
+ * Backoff exponencial con jitter completo: {@code random(0, min(maxDelay, initial *
+ * multiplier^n))}. El jitter evita reintentos sincronizados desde muchas réplicas.
  *
- * @param initialDelay delay before the first retry
- * @param multiplier growth factor (at least 1)
- * @param maxDelay cap
- * @param jitter whether to apply full jitter
+ * @param initialDelay retraso antes del primer reintento
+ * @param multiplier factor de crecimiento (al menos 1)
+ * @param maxDelay tope
+ * @param jitter indica si se aplica jitter completo
  */
 public record Backoff(Duration initialDelay, double multiplier, Duration maxDelay, boolean jitter) {
 
@@ -32,7 +32,7 @@ public record Backoff(Duration initialDelay, double multiplier, Duration maxDela
     return new Backoff(delay, 1.0, delay, false);
   }
 
-  /** Delay before retry number {@code retry} (1 = first retry). */
+  /** Retraso antes del reintento número {@code retry} (1 = primer reintento). */
   @SuppressFBWarnings(
       value = "PREDICTABLE_RANDOM",
       justification =

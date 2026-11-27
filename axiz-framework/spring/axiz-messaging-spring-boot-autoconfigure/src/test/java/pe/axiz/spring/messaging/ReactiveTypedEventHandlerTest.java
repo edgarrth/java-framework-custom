@@ -23,15 +23,16 @@ class ReactiveTypedEventHandlerTest {
   record PaymentCreated(String id) {}
 
   static final EventEnvelope ENVELOPE =
-      new EventEnvelope(
-          "e-1",
-          "urn:test",
-          "pe.axiz.payments.payment-created.v1",
-          Instant.EPOCH,
-          null,
-          "application/json",
-          new byte[0],
-          Map.of());
+      EventEnvelope.builder()
+          .id("e-1")
+          .source("urn:test")
+          .type("pe.axiz.payments.payment-created.v1")
+          .time(Instant.EPOCH)
+          .subject(null)
+          .dataContentType("application/json")
+          .data(new byte[0])
+          .extensions(Map.of())
+          .build();
 
   @HandlesEvent("pe.axiz.payments.payment-created.v1")
   static class Projection extends ReactiveTypedEventHandler<PaymentCreated> {

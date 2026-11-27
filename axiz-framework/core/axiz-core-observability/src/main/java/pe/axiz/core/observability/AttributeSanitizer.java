@@ -8,8 +8,9 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * Protects span attributes and structured events from personal data: denied keys are dropped and
- * values that look like card numbers or email addresses are redacted.
+ * Protege los atributos de span y los eventos estructurados frente a datos personales: las claves
+ * denegadas se descartan y los valores que parecen números de tarjeta o direcciones de correo se
+ * redactan.
  */
 public final class AttributeSanitizer {
 

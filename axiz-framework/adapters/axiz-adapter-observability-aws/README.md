@@ -1,21 +1,22 @@
 # axiz-adapter-observability-aws
 
-Micrometer instrumentation over `axiz-adapter-aws`; no credential or transport implementation is duplicated here.
+Instrumentación con Micrometer sobre `axiz-adapter-aws`; aquí no se duplica ninguna implementación de credenciales ni de transporte.
 
-| API | Responsibility |
+| API | Responsabilidad |
 |---|---|
-| `AwsObservability` | Composes synchronous/native clients with an SDK observation plugin; preserves builder settings and avoids duplicate interceptors. |
-| `ObservationExecutionInterceptor` | Records service/operation observations and propagates tracing headers before signing. |
-| `AwsCompletionMetrics` | Binds completion admission statistics to an explicitly supplied application `MeterRegistry`. |
+| `AwsObservability` | Compone clientes síncronos y nativos con un plugin de observación del SDK; conserva la configuración del builder y evita interceptores duplicados. |
+| `ObservationExecutionInterceptor` | Registra observaciones por servicio y operación y propaga las cabeceras de trazas antes de firmar. |
+| `AwsCompletionMetrics` | Vincula las estadísticas de admisión de finalizaciones a un `MeterRegistry` de aplicación entregado de forma explícita. |
 
-The AWS base has no dependency on this module or Micrometer. Spring composition supplies the context
-registry and owns the binding lifetime; without a registry it creates transport without a metrics
-binding. No global registry fallback or classpath-based instrumentation discovery is used.
-Closing/rebinding resources removes their meters, while equal names remain isolated between registries.
+La base AWS no depende de este módulo ni de Micrometer. La composición de Spring entrega el registro
+del contexto y es dueña de la vida de la vinculación; sin registro crea el transporte sin métricas.
+No se usa un registro global de respaldo ni se descubre instrumentación por el classpath. Cerrar o
+volver a vincular recursos elimina sus meters, y los nombres iguales quedan aislados entre registros.
 
-Framework consumers use the capability starters for composition. Standalone consumers can use
-`AwsObservability` with their registry, or the base factories directly without instrumentation.
-Credential resources and policy live in `pe.axiz.adapter.aws.identity`; client/worker ownership
-lives in `pe.axiz.adapter.aws.transport`. SDKs receive non-closing credential views.
+Quien usa el framework compone con los starters de cada capacidad. Fuera del framework se puede usar
+`AwsObservability` con un registro propio, o las fábricas base directamente sin instrumentación. Los
+recursos y la política de credenciales están en `pe.axiz.adapter.aws.identity`; la propiedad de
+clientes y workers está en `pe.axiz.adapter.aws.transport`. Los SDK reciben vistas de credenciales
+que no cierran.
 
-Run `./mvnw -pl adapters/axiz-adapter-observability-aws -am verify`.
+Se ejecuta `./mvnw -pl adapters/axiz-adapter-observability-aws -am verify`.

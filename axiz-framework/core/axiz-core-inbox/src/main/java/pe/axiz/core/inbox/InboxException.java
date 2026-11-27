@@ -1,6 +1,6 @@
 package pe.axiz.core.inbox;
 
-/** Inbox persistence failure. */
+/** Fallo de persistencia del inbox. */
 public class InboxException extends RuntimeException {
 
   private static final long serialVersionUID = 1L;

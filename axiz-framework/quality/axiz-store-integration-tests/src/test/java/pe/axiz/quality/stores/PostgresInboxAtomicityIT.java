@@ -13,7 +13,7 @@ import io.r2dbc.spi.ConnectionFactoryMetadata;
 import io.r2dbc.spi.ConnectionFactoryOptions;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.List;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -39,9 +39,10 @@ import pe.axiz.core.messaging.EventDispatcher;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.HandlesEvent;
 import pe.axiz.kit.r2dbc.ReactiveSql;
+import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.inbox.AxizInboxAutoConfiguration;
-import pe.axiz.spring.inbox.AxizInboxR2dbcAutoConfiguration;
+import pe.axiz.spring.inbox.r2dbc.AxizInboxR2dbcAutoConfiguration;
 import pe.axiz.spring.messaging.AxizMessagingAutoConfiguration;
 import pe.axiz.spring.messaging.ReactiveTypedEventHandler;
 import pe.axiz.spring.r2dbc.DatabaseClientReactiveSql;
@@ -50,11 +51,14 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 
-/** Business effects and inbox completion must share the actual Spring R2DBC resource. */
+/**
+ * Los efectos de negocio y la finalización del inbox deben compartir el recurso R2DBC real de
+ * Spring.
+ */
 @ExtendWith(BlockHoundExtension.class)
 @Timeout(60)
 class PostgresInboxAtomicityIT {
-  private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer(Docker.POSTGRES);
+  private static final PostgreSQLContainer POSTGRES = TestContainerImages.postgres();
   private static PGSimpleDataSource source;
   private static ConnectionFactory factory;
   private Handler handler;
@@ -97,7 +101,8 @@ class PostgresInboxAtomicityIT {
           new String(input.readAllBytes(), StandardCharsets.UTF_8)
               .replaceAll("(?m)--.*", "")
               .split(";")) if (!sql.isBlank()) statement.execute(sql);
-      // No unique business key: duplicate suppression is proven by the framework, not the fixture.
+      // Sin clave de negocio única: la supresión de duplicados la prueba el framework, no el
+      // fixture.
       statement.execute("CREATE TABLE inbox_effects(id VARCHAR(100))");
     }
     handler = new Handler(DatabaseClient.create(factory));
@@ -150,15 +155,16 @@ class PostgresInboxAtomicityIT {
   }
 
   private EventEnvelope event() {
-    return new EventEnvelope(
-        "one",
-        "urn:source",
-        "atomic.created",
-        Instant.now(),
-        null,
-        "application/json",
-        "\"value\"".getBytes(StandardCharsets.UTF_8),
-        Map.of());
+    return EventEnvelope.builder()
+        .id("one")
+        .source("urn:source")
+        .type("atomic.created")
+        .time(Instant.now())
+        .subject(null)
+        .dataContentType("application/json")
+        .data("\"value\"".getBytes(StandardCharsets.UTF_8))
+        .extensions(Map.of())
+        .build();
   }
 
   private int count(String table) throws Exception {
@@ -179,7 +185,8 @@ class PostgresInboxAtomicityIT {
               try (var connection = source.getConnection();
                   var statement = connection.createStatement()) {
                 statement.execute(
-                    "ALTER TABLE axiz_inbox ADD CONSTRAINT reject_processed CHECK(status <> 'PROCESSED')");
+                    "ALTER TABLE axiz_inbox ADD CONSTRAINT reject_processed CHECK(status <>"
+                        + " 'PROCESSED')");
               }
               assertEquals(
                   DeliveryDecision.RETRY, ctx.getBean(EventDispatcher.class).dispatch(event(), 1));
@@ -245,12 +252,15 @@ class PostgresInboxAtomicityIT {
                           return dispatcher.dispatch(event, 1);
                         });
                 gate.countDown();
-                assertTrue(
-                    List.of(DeliveryDecision.ACK, DeliveryDecision.RETRY)
-                        .contains(first.get(10, TimeUnit.SECONDS)));
-                assertTrue(
-                    List.of(DeliveryDecision.ACK, DeliveryDecision.RETRY)
-                        .contains(second.get(10, TimeUnit.SECONDS)));
+                // La entrega que pierde la carrera choca con el registro del inbox (RETRY) o
+                // encuentra
+                // el lease vigente de la otra (DEFER); si llega cuando la otra ya terminó, es un
+                // duplicado (ACK).
+                var outcomes =
+                    EnumSet.of(
+                        DeliveryDecision.ACK, DeliveryDecision.RETRY, DeliveryDecision.DEFER);
+                assertTrue(outcomes.contains(first.get(10, TimeUnit.SECONDS)));
+                assertTrue(outcomes.contains(second.get(10, TimeUnit.SECONDS)));
               }
               assertEquals(1, count("inbox_effects"));
               assertEquals(DeliveryDecision.ACK, dispatcher.dispatch(event, 2));

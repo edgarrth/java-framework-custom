@@ -20,17 +20,18 @@ import pe.axiz.payments.orders.domain.PaymentLimits;
 import pe.axiz.payments.orders.domain.PaymentOrder;
 
 /**
- * Registers a payment order: validates the creditor CCI, assigns the processing date (business
- * calendar and cut-off time), reserves the amount in the customer's daily limit, rejects probable
- * duplicates, numbers the operation and publishes {@code payment-order.created} through the outbox,
- * all in one transaction.
+ * Registra una orden de pago: valida el CCI del acreedor, asigna la fecha de procesamiento
+ * (calendario hábil y hora de corte), reserva el monto en el límite diario del cliente, rechaza
+ * probables duplicados, numera la operación y publica {@code payment-order.created} mediante el
+ * outbox, todo en una sola transacción.
  *
- * <p>Concurrency: the reservation is an atomic conditional update of the customer's row for that
- * day and currency, which stays locked until commit; the duplicate check runs after it, so two
- * concurrent orders of the same customer and day are serialized and can neither exceed the limit
- * together nor both pass as non-duplicates. The client's request key is unique per customer: a
- * retried request returns the order it already created (durable idempotency of the business
- * operation, independent of the HTTP idempotency store).
+ * <p>Concurrencia: la reserva es una actualización condicional atómica de la fila del cliente para
+ * ese día y esa moneda, que queda bloqueada hasta el commit; la verificación de duplicados se
+ * ejecuta después, de modo que dos órdenes concurrentes del mismo cliente y día se serializan y no
+ * pueden exceder juntas el límite ni pasar ambas como no duplicadas. La clave de solicitud del
+ * cliente es única por cliente: una solicitud reintentada devuelve la orden que ya creó
+ * (idempotencia durable de la operación de negocio, independiente del almacén de idempotencia
+ * HTTP).
  */
 public class CreatePaymentOrderHandler
     implements CommandHandler<CreatePaymentOrderCommand, PaymentOrder> {
@@ -71,7 +72,7 @@ public class CreatePaymentOrderHandler
     if (!identifiers.isValid("cci-strict", c.creditorCci())) {
       throw new BusinessException(PaymentErrors.INVALID_CREDITOR_ACCOUNT, "invalid cci", Map.of());
     }
-    // a requested amount is never rounded: more decimals than the currency is a 400
+    // un monto solicitado nunca se redondea: más decimales de los que admite la moneda es un 400
     Money amount = Money.of(c.amount(), c.currency());
     String requestKey = c.requestKey();
     if (requestKey != null) {
@@ -87,7 +88,8 @@ public class CreatePaymentOrderHandler
       throw limits.exceeded(
           limit, orders.reservedOn(c.customerId(), amount.currencyCode(), processingDate));
     }
-    // after the reservation: the customer's day row is locked, concurrent orders wait here
+    // tras la reserva: la fila del día del cliente está bloqueada y las órdenes concurrentes
+    // esperan aquí
     if (orders.exists(c.customerId(), c.creditorCci(), amount, processingDate)) {
       throw new BusinessException(PaymentErrors.POSSIBLE_DUPLICATE, "possible duplicate", Map.of());
     }
@@ -102,17 +104,17 @@ public class CreatePaymentOrderHandler
             c.description(),
             processingDate,
             clock.instant());
-    orders.create(order, requestKey);
-    events.created(order);
+    PaymentOrder persisted = orders.create(order, requestKey);
+    events.created(persisted);
     metrics.record(
         MetricEvent.of("payment.order.created")
             .amount(amount)
             .outcome(Outcome.SUCCESS)
             .stage(cutoff.isBeforeCutoff(clock.instant()) ? "same-day" : "next-day"));
-    return order;
+    return persisted;
   }
 
-  /** A retried request returns its order; the same key for another order is an error. */
+  /** Una solicitud reintentada devuelve su orden; la misma clave para otra orden es un error. */
   private static PaymentOrder sameRequest(
       PaymentOrder existing, CreatePaymentOrderCommand c, Money amount) {
     boolean same =

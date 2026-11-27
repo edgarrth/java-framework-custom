@@ -2,7 +2,7 @@ package pe.axiz.core.errors;
 
 import org.jspecify.annotations.Nullable;
 
-/** Unexpected failure inside the service. */
+/** Fallo inesperado dentro del servicio. */
 public class TechnicalException extends AxizException {
 
   private static final long serialVersionUID = 1L;

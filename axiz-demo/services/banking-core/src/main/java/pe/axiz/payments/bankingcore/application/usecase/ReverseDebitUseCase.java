@@ -6,17 +6,17 @@ import pe.axiz.payments.bankingcore.domain.Movement;
 import pe.axiz.structure.hexagonal.annotation.UseCase;
 
 /**
- * Reverses a debit: the compensation of the payment saga. Repeating it with the same key is safe.
+ * Revierte un débito: la compensación de la saga de pagos. Repetirlo con la misma clave es seguro.
  */
 @UseCase
 public class ReverseDebitUseCase
     implements pe.axiz.structure.hexagonal.UseCase<ReverseDebitUseCase.Input, Movement> {
 
   /**
-   * Input of the use case.
+   * Entrada del caso de uso.
    *
-   * @param movementId debit to reverse
-   * @param idempotencyKey caller key, forwarded to the core
+   * @param movementId débito que se revierte
+   * @param idempotencyKey clave del invocador, reenviada al core
    */
   public record Input(String movementId, String idempotencyKey) {}
 

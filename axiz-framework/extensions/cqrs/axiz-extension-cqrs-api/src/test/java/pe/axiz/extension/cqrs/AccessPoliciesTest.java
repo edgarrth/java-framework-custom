@@ -24,7 +24,10 @@ class AccessPoliciesTest {
 
   record Unprotected(String id) implements Command<String> {}
 
-  /** Customers act only on their own resources; services need an explicit scope. */
+  /**
+   * Los clientes actúan solo sobre sus propios recursos; los servicios necesitan un scope
+   * explícito.
+   */
   static final class DebitPolicy implements AccessPolicy<Debit> {
     @Override
     public Class<Debit> requestType() {

@@ -3,7 +3,7 @@ package pe.axiz.core.http;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.resilience.RetryDecider;
 
-/** Retry decision for an outbound HTTP call under a client's settings. */
+/** Decisión de reintento para una llamada HTTP saliente según la configuración de un cliente. */
 public final class HttpRetryRules {
 
   private HttpRetryRules() {}

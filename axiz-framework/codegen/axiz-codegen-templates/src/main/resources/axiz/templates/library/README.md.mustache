@@ -2,20 +2,20 @@
 
 {{project.description}}.
 
-Plain Java library for the axiz ecosystem (layer 1): it depends on no structure, so it can be used
-from Spring, Quarkus or plain Java. Build with `./mvnw verify` (enforcer rules and tests);
-`./mvnw -Pquality verify` adds the format check, Checkstyle, Error Prone + NullAway and coverage, as CI does.
-`ci.yaml` uses `lib-build@v2.0.0` to build and retain signed Maven staging bytes. It receives the
-version, source commit and optional framework candidate identity. `deploy.yaml` independently
-promotes a completed successful producer run using its attempt and external manifest SHA-256;
-it never executes Maven. Release-please prepares a draft; promotion retains the signed manifest
-before publishing that release. Use separate Nexus read credentials for builds and
-`NEXUS_PUBLISH_USERNAME/PASSWORD` for promotion. `version.txt` and `.release-please-manifest.json` hold the last released version (`0.0.0`:
-nothing released yet); the pom holds the next one (`0.1.0-SNAPSHOT`). The first release is `0.1.0` (`initial-version` in
-`release-please-config.json`); later ones follow Conventional Commits.
+Librería Java simple para el ecosistema axiz (capa 1): no depende de ninguna estructura, por lo que puede usarse
+desde Spring, Quarkus o Java simple. Se compila con `./mvnw verify` (reglas del enforcer y pruebas);
+`./mvnw -Pquality verify` añade la comprobación de formato, Checkstyle, Error Prone + NullAway y la cobertura, igual que CI.
+`ci.yaml` usa `lib-build@v2.0.0` para compilar y conservar los bytes firmados del staging de Maven. Recibe la
+versión, el commit de origen y la identidad opcional de un candidato del framework. `deploy.yaml` promueve de forma
+independiente una ejecución productora completada con éxito usando su intento y el SHA-256 del manifiesto externo;
+nunca ejecuta Maven. Release-please prepara un borrador; la promoción conserva el manifiesto firmado
+antes de publicar esa release. Los builds usan `GITHUB_TOKEN` con `packages: read`; la promoción aislada usa su propio token de job
+con `packages: write`. `PACKAGES_READ_USERNAME/TOKEN`, opcionales, permiten leer de otros repositorios. `version.txt` y `.release-please-manifest.json` guardan la última versión publicada (`0.0.0`:
+nada publicado todavía); el pom guarda la siguiente (`0.1.0-SNAPSHOT`). La primera release es `0.1.0` (`initial-version` en
+`release-please-config.json`); las siguientes siguen Conventional Commits.
 
-## Rules
+## Reglas
 
-- Public API documented with Javadoc; packages `@NullMarked` (JSpecify).
-- No Spring, Quarkus, AWS SDK v1 nor test libraries in compile scope (the parent enforces it).
-- Immutable values (records), no global state, no `System.out`.
+- API pública documentada con Javadoc; paquetes `@NullMarked` (JSpecify).
+- Sin Spring, Quarkus, AWS SDK v1 ni librerías de pruebas en scope compile (el parent lo hace cumplir).
+- Valores inmutables (records), sin estado global y sin `System.out`.

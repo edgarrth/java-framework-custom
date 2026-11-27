@@ -7,8 +7,9 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.money.Money;
 
 /**
- * Description of one occurrence of an event. One {@link EventMetrics#record(MetricEvent)} call
- * counts it and, depending on what is present, sums its amount and value and times its duration.
+ * Descripción de una ocurrencia de un evento. Una llamada a {@link
+ * EventMetrics#record(MetricEvent)} la cuenta y, según lo que esté presente, suma su monto y su
+ * valor y mide su duración.
  *
  * <pre>{@code
  * metrics.record(MetricEvent.of("payment").outcome(Outcome.SUCCESS).channel("web")
@@ -16,7 +17,7 @@ import pe.axiz.core.money.Money;
  *     .tag("card-brand", "visa"));
  * }</pre>
  *
- * <p>Mutable and not thread-safe: build one per occurrence.
+ * <p>Mutable y no thread-safe: se construye una por ocurrencia.
  */
 public final class MetricEvent {
 
@@ -91,7 +92,7 @@ public final class MetricEvent {
     return this;
   }
 
-  /** Custom tag; it must be declared in the metrics configuration or it is dropped. */
+  /** Tag personalizado; debe declararse en la configuración de métricas o se descarta. */
   public MetricEvent tag(String key, @Nullable String tagValue) {
     if (tagValue != null) {
       tags.put(key, tagValue);

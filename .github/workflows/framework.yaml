@@ -1,0 +1,278 @@
+# Framework: compilación, pruebas y calidad en cada cambio; publicación en GitHub Packages con el
+# tag axiz-framework-v* que crea release-please. Los proyectos de ejemplo generados se construyen
+# con el perfil quality de los consumidores.
+name: framework
+
+on:
+  pull_request:
+    paths: ['axiz-framework/**', 'axiz-demo/local/images/**', '.github/scripts/**',
+            '.github/workflows/framework.yaml', '.github/workflows/lib-build.yaml',
+            '.github/workflows/framework-snapshot.yaml']
+  push:
+    branches: [main]
+    paths: ['axiz-framework/**', 'axiz-demo/local/images/**', '.github/scripts/**',
+            '.github/workflows/framework.yaml', '.github/workflows/lib-build.yaml',
+            '.github/workflows/framework-snapshot.yaml']
+    tags: ['axiz-framework-v*']
+  workflow_dispatch:
+
+permissions: {}
+
+# Maven Central responde 429 cuando muchos jobs descargan a la vez: el resolver reintenta con espera
+# exponencial (respeta Retry-After). setup-java conserva este valor y le agrega -ntp.
+env:
+  MAVEN_ARGS: >-
+    -Daether.connector.http.retryHandler.count=8
+    -Daether.connector.http.retryHandler.interval=10000
+    -Daether.connector.http.retryHandler.intervalMax=120000
+
+concurrency:
+  group: framework-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  framework:
+    uses: ./.github/workflows/framework-snapshot.yaml
+    permissions:
+      contents: read
+
+  # La verificación se reparte por capas en jobs paralelos; cada uno resuelve el resto del framework
+  # desde el artefacto del mismo commit. La cobertura se exige por módulo; el reporte agregado
+  # (quality/axiz-coverage-report) queda para los builds locales completos.
+  build:
+    needs: framework
+    strategy:
+      fail-fast: false
+      matrix:
+        # threads: módulos en paralelo (-T) y PIT con la mitad de los núcleos. spring y quality corren
+        # en secuencia con PIT en todos los núcleos: sus pruebas de tiempos y de Testcontainers fallan
+        # por contención de CPU con módulos en paralelo.
+        include:
+          - {group: core, modules: 'platform core', scan: true, threads: 1C, pit: 2}
+          # axiz-architecture-tests lee los metadatos compilados en spring/**/target, así que corre con spring.
+          - {group: spring, modules: 'spring quality/axiz-architecture-tests', scan: false, threads: '', pit: 4}
+          - {group: integrations, modules: 'adapters kits structures extensions', scan: false, threads: 1C, pit: 2}
+          - {group: codegen, modules: 'codegen', scan: false, threads: 1C, pit: 2}
+          - group: quality
+            modules: >-
+              quality/axiz-archunit-rules quality/axiz-code-standards
+              quality/axiz-store-contract-tests quality/axiz-store-integration-tests
+              quality/axiz-test-containers quality/axiz-test-support
+            scan: false
+            threads: ''
+            pit: 4
+    name: build (${{ matrix.group }})
+    uses: ./.github/workflows/lib-build.yaml
+    # Techo de permisos que GitHub valida para todos los jobs del workflow reutilizable, incluido el de
+    # publicación, que aquí no corre; el job de verificación declara sus propios permisos de lectura.
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    with:
+      working-directory: axiz-framework
+      bootstrap: true
+      modules: ${{ matrix.modules }}
+      cache-key: ${{ matrix.group }}
+      maven-threads: ${{ matrix.threads }}
+      maven-args: -Daxiz.it.requireDocker=true -Daxiz.pit.threads=${{ matrix.pit }}
+      maven-artifact: ${{ needs.framework.outputs.artifact }}
+      scan-dependencies: ${{ matrix.scan }}
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/axiz-framework-v')
+    needs: [build, checks, samples]
+    uses: ./.github/workflows/lib-build.yaml
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    with:
+      working-directory: axiz-framework
+      bootstrap: true
+      verify: false
+      publish: true
+
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.13'
+      - name: Dependencias de los scripts, fijadas por hash
+        run: python -m pip install --require-hashes -r .github/scripts/requirements.txt
+      - name: Las recetas de contenedores locales coinciden en sus tres copias
+        run: python .github/scripts/sync_container_recipes.py --check
+      - name: La receta de WireMock coincide con su lock de librerías
+        run: python .github/scripts/update_wiremock_image.py --check
+      - name: El Maven wrapper fija el checksum de su distribución
+        run: |
+          for f in axiz-framework/.mvn/wrapper/maven-wrapper.properties \
+                   axiz-framework/codegen/axiz-codegen-templates/src/main/resources/axiz/templates/shared/mvn/wrapper/maven-wrapper.properties; do
+            grep -q '^distributionSha512Sum=' "$f" || { echo "::error::$f: ./mvnw --pin-checksum"; exit 1; }
+          done
+      - name: El wrapper nunca ejecuta una distribución sin verificar
+        run: bash axiz-framework/.github/scripts/test-mvnw.sh
+      - name: Reglas Spectral distribuidas a los contratos
+        run: node axiz-framework/.github/scripts/test-contracts.cjs
+
+  api-compat:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: read
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - name: Versión publicada que sirve de base
+        id: baseline
+        run: echo "version=$(jq -r '."axiz-framework" // empty' .release-please-manifest.json)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        if: steps.baseline.outputs.version != ''
+        with:
+          distribution: temurin
+          java-version: '25'
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
+      # Maven consulta primero el espejo oficial de Maven Central en Google Cloud Storage, que no limita
+      # por IP, y recurre a Central solo cuando un artefacto todavía no llega al espejo.
+      - name: Espejo oficial de Maven Central
+        run: |
+          cat > "$RUNNER_TEMP/maven-central-mirror.xml" <<'EOF'
+          <settings>
+            <profiles>
+              <profile>
+                <id>maven-central-mirror</id>
+                <repositories>
+                  <repository>
+                    <id>maven-central-mirror</id>
+                    <url>https://maven-central.storage-download.googleapis.com/maven2</url>
+                    <snapshots><enabled>false</enabled></snapshots>
+                  </repository>
+                </repositories>
+                <pluginRepositories>
+                  <pluginRepository>
+                    <id>maven-central-mirror</id>
+                    <url>https://maven-central.storage-download.googleapis.com/maven2</url>
+                    <snapshots><enabled>false</enabled></snapshots>
+                  </pluginRepository>
+                </pluginRepositories>
+              </profile>
+            </profiles>
+            <activeProfiles>
+              <activeProfile>maven-central-mirror</activeProfile>
+            </activeProfiles>
+          </settings>
+          EOF
+          echo "MAVEN_ARGS=$MAVEN_ARGS -gs $RUNNER_TEMP/maven-central-mirror.xml" >> "$GITHUB_ENV"
+      - name: Compatibilidad binaria y de código fuente con japicmp
+        if: steps.baseline.outputs.version != ''
+        working-directory: axiz-framework
+        env:
+          BASELINE: ${{ steps.baseline.outputs.version }}
+        run: ./mvnw --bootstrap -B -ntp -Papi-compat -DskipTests verify "-Daxiz.api.baseline=$BASELINE"
+
+  samples:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: '25'
+      # Maven consulta primero el espejo oficial de Maven Central en Google Cloud Storage, que no limita
+      # por IP, y recurre a Central solo cuando un artefacto todavía no llega al espejo.
+      - name: Espejo oficial de Maven Central
+        run: |
+          cat > "$RUNNER_TEMP/maven-central-mirror.xml" <<'EOF'
+          <settings>
+            <profiles>
+              <profile>
+                <id>maven-central-mirror</id>
+                <repositories>
+                  <repository>
+                    <id>maven-central-mirror</id>
+                    <url>https://maven-central.storage-download.googleapis.com/maven2</url>
+                    <snapshots><enabled>false</enabled></snapshots>
+                  </repository>
+                </repositories>
+                <pluginRepositories>
+                  <pluginRepository>
+                    <id>maven-central-mirror</id>
+                    <url>https://maven-central.storage-download.googleapis.com/maven2</url>
+                    <snapshots><enabled>false</enabled></snapshots>
+                  </pluginRepository>
+                </pluginRepositories>
+              </profile>
+            </profiles>
+            <activeProfiles>
+              <activeProfile>maven-central-mirror</activeProfile>
+            </activeProfiles>
+          </settings>
+          EOF
+          echo "MAVEN_ARGS=$MAVEN_ARGS -gs $RUNNER_TEMP/maven-central-mirror.xml" >> "$GITHUB_ENV"
+      # Caché propio del job, nunca en los tags: lo que se compila ahí termina en artefactos publicados.
+      # samples no publica nada y en los tags el paso se omite; la publicación corre en lib-build sin caché.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0 # zizmor: ignore[cache-poisoning]
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.m2/wrapper
+          key: maven-samples-${{ hashFiles('axiz-framework/**/pom.xml') }}
+          restore-keys: maven-samples-
+      - name: Framework instalado y proyectos de ejemplo generados
+        working-directory: axiz-framework
+        run: .github/scripts/samples.sh
+      - name: La autorización generada rechaza scopes faltantes antes del código de aplicación
+        working-directory: axiz-framework
+        run: bash .github/scripts/authorization-samples.sh
+      - name: La infraestructura local generada es repetible
+        working-directory: axiz-framework
+        run: bash .github/scripts/localstack-init-sample.sh
+      - name: Cada ejemplo compila con el perfil quality de los consumidores
+        working-directory: axiz-framework
+        run: |
+          failed=()
+          for dir in target/samples/*/ target/audit-samples/*/; do
+            echo "::group::$dir"
+            (cd "$dir" && ./mvnw -B -ntp -Pquality spotless:check verify) || failed+=("$dir")
+            echo "::endgroup::"
+          done
+          if [[ "${#failed[@]}" -gt 0 ]]; then
+            echo "::error::Ejemplos con fallas: ${failed[*]}"
+            exit 1
+          fi
+
+  axiz-framework-pr:
+    if: always()
+    needs: [framework, build, checks, api-compat, samples]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - name: Todos los jobs del framework terminaron bien
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1

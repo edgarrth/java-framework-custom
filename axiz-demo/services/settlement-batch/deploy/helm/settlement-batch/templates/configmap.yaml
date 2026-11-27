@@ -1,4 +1,4 @@
-# Environment configuration of the service, mounted in /etc/axiz/config/service (axiz-config)
+# Configuración de entorno del servicio, montada en /etc/axiz/config/service (axiz-config)
 apiVersion: v1
 kind: ConfigMap
 metadata:

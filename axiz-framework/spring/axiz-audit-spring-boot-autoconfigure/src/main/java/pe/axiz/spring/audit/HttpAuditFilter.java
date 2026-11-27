@@ -14,8 +14,8 @@ import org.springframework.web.servlet.HandlerMapping;
 import pe.axiz.core.audit.AuditTrail;
 
 /**
- * Audits mutating HTTP requests. The resource is the matched route pattern (bounded), never the raw
- * path; the outcome follows the response status.
+ * Audita las solicitudes HTTP que modifican estado. El recurso es el patrón de ruta coincidente
+ * (acotado), nunca la ruta sin procesar; el resultado sigue al estado de la respuesta.
  */
 public class HttpAuditFilter extends OncePerRequestFilter implements Ordered {
 
@@ -67,7 +67,8 @@ public class HttpAuditFilter extends OncePerRequestFilter implements Ordered {
             record.success();
           }
         } catch (RuntimeException e) {
-          logger.warn("Audit event could not be recorded", e);
+          logger.warn(
+              "Audit event could not be recorded; failureType=" + e.getClass().getSimpleName());
         }
       }
     }

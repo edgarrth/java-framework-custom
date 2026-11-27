@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-core-inbox
 
-Idempotent consumer: processed-message registry with JDBC store.
+Contratos y orquestación del consumidor idempotente; el almacenamiento pertenece a los adaptadores de proveedor.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,24 +12,67 @@ Idempotent consumer: processed-message registry with JDBC store.
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `InboxDeduplicator` | Connects the inbox to the event dispatcher: a message is processed once per consumer within the retention period. |
-| `InboxException` | Inbox persistence failure. |
-| `InboxStore` | Registry of consumed messages per consumer (idempotent consumer pattern). |
-| `AsyncInboxStore` | CompletionStage port with the same owner fencing, leases and retention semantics. |
+| `InboxDeduplicator` | Conecta el inbox con el despachador de eventos: un mensaje se procesa una vez por consumidor dentro del periodo de retención. |
+| `InboxException` | Fallo de persistencia del inbox. |
+| `InboxStore` | Registro de los mensajes consumidos por consumidor (patrón de consumidor idempotente). |
+| `AsyncInboxStore` | Puerto CompletionStage con la misma semántica de exclusión del propietario, leases y retención. |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-inbox verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl core/axiz-core-inbox verify`.
 
-## JDBC extraction in 2.0
+## JDBC
 
-The JDBC implementation and SQL resources now live in `axiz-adapter-inbox-jdbc`; this module contains
-framework-neutral contracts and orchestration. `TransactionRunner` remains in
-`pe.axiz.core.commons.tx`. Use the capability catalog/`axiz upgrade` to add JDBC adapters with
-`runtime` scope in a service. See [JDBC migration](../../docs/architecture/JDBC.md).
+La implementación JDBC y los recursos SQL están en `axiz-adapter-inbox-jdbc`; este módulo contiene contratos y
+orquestación neutrales respecto del framework, y `TransactionRunner` está en `pe.axiz.core.commons.tx`. Un servicio agrega el
+adaptador JDBC de una capacidad con `axiz add` (o con el Initializr); ver
+[límites JDBC](../../docs/architecture/JDBC.md).
+
+## Retención y recuperación
+
+Se exige `lease > 0` y `retention > lease`. El plazo del lease debe ser posterior a la adquisición y
+el de retención estrictamente posterior al del lease. Una toma de control renueva ambos plazos y
+excluye al propietario anterior. La purga elimina solo registros completados; un registro en curso
+se recupera mediante su lease y nunca lo borra la retención. Un handler termina dentro de su lease
+o aplica por sí mismo la exclusión o idempotencia del participante; el inbox no cancela un efecto
+externo tardío.
+
+DynamoDB conserva `expiresAt` en los registros en curso y agrega `ttl` solo cuando el procesamiento
+termina. Completar requiere `expiresAt`; un registro sin ese atributo falla de forma cerrada. Los
+registros en curso abandonados se monitorean y recuperan de forma explícita.
+
+El horizonte de retención se mide desde la adquisición o toma de control exitosa, no desde la
+finalización. La ventana de procesamiento soportada termina antes del plazo del lease, que es
+estrictamente anterior a la retención. Un handler que excede esa ventana necesita idempotencia o
+exclusión del participante y conciliación; no debe suponer que el inbox da efectos externos
+exactamente una vez. Los argumentos de tiempo del inbox son horas confiables del servidor: los nodos
+se sincronizan con NTP monitoreado y al elegir los leases se presupuesta el desfase máximo del reloj.
+Un lease por sí solo no prueba que un handler suspendido o aislado haya terminado.
+
+### Inventario de registros abandonados en DynamoDB
+
+Un `IN_PROGRESS` con lease vencido puede corresponder a un mensaje en DLQ. El operador debe
+inventariarlos por páginas y correlacionarlos con el consumidor, la DLQ y el estado del efecto
+externo; el vencimiento no demuestra que ese efecto haya terminado. Para una primera página
+local (sustituya `CUTOFF_EPOCH_MILLIS` por el instante de corte de su monitor):
+
+```bash
+aws --endpoint-url http://localhost:4566 dynamodb scan \
+  --table-name axiz-inbox --consistent-read --limit 100 --no-paginate \
+  --filter-expression '#state = :progress AND leaseUntil < :cutoff' \
+  --projection-expression 'pk, #state, #owner, leaseUntil, expiresAt' \
+  --expression-attribute-names '{"#state":"status","#owner":"owner"}' \
+  --expression-attribute-values '{":progress":{"S":"IN_PROGRESS"},":cutoff":{"N":"CUTOFF_EPOCH_MILLIS"}}'
+```
+
+Continúe con `--exclusive-start-key` usando `LastEvaluatedKey`, incluso si una página filtrada
+está vacía; limite la capacidad de lectura y la duración del sondeo. El monitor puede emitir un
+contador agregado y edad máxima, sin usar `pk`, owner o valores de negocio como etiquetas.
+Una alerta debe abrir conciliación operativa; nunca añada TTL ni borre registros automáticamente
+sólo porque el lease expiró. El relevo normal conserva la condición atómica de propietario/lease.

@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
 
-/** In-memory storage for tests and local runs. */
+/** Almacenamiento en memoria para pruebas y ejecuciones locales. */
 public final class InMemoryObjectStorage implements ObjectStorage {
 
   private final Map<String, Entry> objects = new ConcurrentSkipListMap<>();
@@ -91,7 +91,7 @@ public final class InMemoryObjectStorage implements ObjectStorage {
     }
   }
 
-  /** Internal holder; a class rather than a record because it holds an array. */
+  /** Contenedor interno; es una clase y no un record porque contiene un array. */
   private static final class Entry {
     private final byte[] bytes;
     private final ObjectMetadata metadata;

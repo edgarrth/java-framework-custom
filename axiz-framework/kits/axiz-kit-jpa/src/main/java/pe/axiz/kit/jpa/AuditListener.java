@@ -2,18 +2,31 @@ package pe.axiz.kit.jpa;
 
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
+import java.time.Clock;
 import java.time.Instant;
+import java.util.Objects;
 
-/** Fills the audit columns from the registered auditor provider and clock. */
+/** Completa las columnas de auditoría a partir del proveedor de auditor y el reloj inyectados. */
 public class AuditListener {
 
-  static final String SYSTEM = "system";
+  static final String UNATTRIBUTED = "unattributed";
+  private final AuditorProvider auditor;
+  private final Clock clock;
+
+  public AuditListener(AuditorProvider auditor, Clock clock) {
+    Objects.requireNonNull(auditor);
+    Objects.requireNonNull(clock);
+    super();
+    this.auditor = auditor;
+    this.clock = clock;
+  }
 
   @PrePersist
   public void onCreate(Object entity) {
     if (entity instanceof AuditableEntity e) {
-      Instant now = AuditingRegistry.clock().instant();
-      e.markCreated(now, AuditingRegistry.auditor().currentAuditor().orElse(SYSTEM));
+      Instant now = clock.instant();
+      e.markCreated(
+          now, auditor.currentAuditor().filter(value -> !value.isBlank()).orElse(UNATTRIBUTED));
     }
   }
 
@@ -21,8 +34,8 @@ public class AuditListener {
   public void onUpdate(Object entity) {
     if (entity instanceof AuditableEntity e) {
       e.markUpdated(
-          AuditingRegistry.clock().instant(),
-          AuditingRegistry.auditor().currentAuditor().orElse(SYSTEM));
+          clock.instant(),
+          auditor.currentAuditor().filter(value -> !value.isBlank()).orElse(UNATTRIBUTED));
     }
   }
 }

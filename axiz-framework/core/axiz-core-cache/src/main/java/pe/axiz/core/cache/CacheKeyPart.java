@@ -1,13 +1,13 @@
 package pe.axiz.core.cache;
 
 /**
- * A value that knows its own cache key: implement it on a value object that is not a record and is
- * used as an argument of a cached method. The key must identify the value completely (two values
- * with the same key are interchangeable for the cache) and must not change between releases unless
- * the cache can be emptied.
+ * Valor que conoce su propia clave de caché: se implementa en un objeto de valor que no es un
+ * record y se usa como argumento de un método en caché. La clave debe identificar el valor por
+ * completo (dos valores con la misma clave son intercambiables para la caché) y no debe cambiar
+ * entre versiones salvo que la caché pueda vaciarse.
  */
 public interface CacheKeyPart {
 
-  /** Stable identity of the value; separators are escaped by {@link CacheKeys}. */
+  /** Identidad estable del valor; {@link CacheKeys} escapa los separadores. */
   String cacheKey();
 }

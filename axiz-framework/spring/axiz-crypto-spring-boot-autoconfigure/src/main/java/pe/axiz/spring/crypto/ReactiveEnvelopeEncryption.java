@@ -5,7 +5,10 @@ import pe.axiz.core.crypto.AsyncEnvelopeEncryptor;
 import pe.axiz.spring.foundation.ReactiveStages;
 import reactor.core.publisher.Mono;
 
-/** Deferred Reactor facade for native KMS envelope encryption and its bounded key caches. */
+/**
+ * Fachada diferida de Reactor para el cifrado de sobre nativo con KMS y sus cachés de claves
+ * acotadas.
+ */
 public final class ReactiveEnvelopeEncryption {
   private final AsyncEnvelopeEncryptor encryptor;
 

@@ -71,7 +71,8 @@ class LockTest {
               attempted.countDown();
               return acquired;
             },
-            Duration.ofMillis(5));
+            Duration.ofMillis(5),
+            LockObserver.NONE);
     AtomicInteger concurrent = new AtomicInteger();
     AtomicInteger maxConcurrent = new AtomicInteger();
     try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
@@ -82,7 +83,7 @@ class LockTest {
                 () ->
                     template.withLock(
                         "account:9",
-                        Duration.ofMillis(300),
+                        Duration.ofSeconds(5),
                         Duration.ofSeconds(5),
                         () -> {
                           maxConcurrent.accumulateAndGet(concurrent.incrementAndGet(), Math::max);
@@ -99,7 +100,7 @@ class LockTest {
   @Test
   void busyResourceIs409AndLeaseIsRenewedDuringLongWork() throws Exception {
     InMemoryDistributedLock lock = new InMemoryDistributedLock(Clock.systemUTC());
-    LockTemplate template = new LockTemplate(lock, Duration.ofMillis(5));
+    LockTemplate template = new LockTemplate(lock, Duration.ofMillis(5), LockObserver.NONE);
     LockHandle held = lock.tryAcquire("r", Duration.ofSeconds(30)).orElseThrow();
     BusinessException e =
         assertThrows(
@@ -110,10 +111,10 @@ class LockTest {
     String result =
         template.withLock(
             "r",
-            Duration.ofMillis(60),
+            Duration.ofSeconds(1),
             Duration.ofSeconds(1),
             () -> {
-              Thread.sleep(200); // longer than the lease: the renewer keeps it
+              Thread.sleep(1500); // más largo que el lease: el renovador lo mantiene
               assertTrue(lock.tryAcquire("r", Duration.ofSeconds(1)).isEmpty());
               return "done";
             });

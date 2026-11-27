@@ -8,11 +8,14 @@ import java.util.Properties;
 import pe.axiz.core.commons.Environments;
 import pe.axiz.core.commons.net.DataTransportSecurityPolicy;
 
-/** Validates effective PostgreSQL options before constructing or starting a JDBC pool. */
+/** Valida las opciones efectivas de PostgreSQL antes de construir o iniciar un pool JDBC. */
 public final class JdbcTransportSecurity {
   private JdbcTransportSecurity() {}
 
-  /** URL options override Properties, matching pgJDBC and the AWS PostgreSQL wrapper. */
+  /**
+   * Las opciones de la URL prevalecen sobre las Properties, igual que en pgJDBC y en el wrapper de
+   * PostgreSQL de AWS.
+   */
   public static void validate(
       String url, Properties driverProperties, DataTransportSecurityPolicy policy) {
     if (url.startsWith("jdbc:h2:mem:") || url.startsWith("jdbc:hsqldb:mem:")) {

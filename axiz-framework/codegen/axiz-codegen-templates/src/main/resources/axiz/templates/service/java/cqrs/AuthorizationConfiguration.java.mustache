@@ -20,7 +20,10 @@ import pe.axiz.extension.cqrs.AccessPolicy;
 {{/publicEndpoint}}
 {{/operations}}
 
-/** Contract-level authorization; add object ownership policies for production business rules. */
+/**
+ * Autorización a nivel de contrato; para las reglas de negocio de producción se agregan políticas
+ * de propiedad de objetos.
+ */
 @Configuration(proxyBeanMethods = false)
 public class CqrsAuthorizationConfiguration {
 {{#operations}}

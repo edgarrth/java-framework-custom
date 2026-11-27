@@ -1,10 +1,10 @@
 package pe.axiz.adapter.outbox.jdbc;
 
-/** SQL differences between the supported databases. */
+/** Diferencias de SQL entre las bases de datos soportadas. */
 public enum Dialect {
-  /** Aurora PostgreSQL: concurrent relays skip rows locked by others. */
+  /** Aurora PostgreSQL: los relays concurrentes omiten las filas bloqueadas por otros. */
   POSTGRESQL(" FOR UPDATE SKIP LOCKED"),
-  /** H2 (tests and local runs). */
+  /** H2 (pruebas y ejecuciones locales). */
   H2(" FOR UPDATE");
 
   private final String lockClause;

@@ -1,0 +1,12 @@
+package {{project.basePackage}};
+
+import org.junit.jupiter.api.Test;
+import pe.axiz.quality.archunit.ArchitectureSelfCheck;
+
+/** Evalúa la configuración real del servicio contra un fixture prohibido. */
+class ArchitectureSelfCheckTest {
+  @Test
+  void rejectsProhibitedFixture() {
+    ArchitectureSelfCheck.verify(ArchitectureTest.architecture());
+  }
+}

@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.lock.AsyncDistributedLock;
 import pe.axiz.core.lock.AsyncLockHandle;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
@@ -22,8 +22,8 @@ import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 
 /**
- * Native asynchronous leases with identical keys, expiry and owner fencing as the synchronous
- * store.
+ * Leases asíncronos nativos con claves, expiración y fencing por propietario idénticos al almacén
+ * síncrono.
  */
 public final class DynamoDbAsyncDistributedLock implements AsyncDistributedLock {
   @SuppressFBWarnings(

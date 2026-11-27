@@ -11,19 +11,20 @@ import java.util.stream.Stream;
 import pe.axiz.codegen.output.SafePaths;
 
 /**
- * Flyway versions of new migrations: the next integer after the highest {@code V<n>__} file, so
- * generated migrations continue the project's own numbering ({@code V1__init}, {@code V2__...}).
+ * Versiones de Flyway de las migraciones nuevas: el siguiente entero después del archivo {@code
+ * V<n>__} más alto, de modo que las migraciones generadas continúan la numeración propia del
+ * proyecto ({@code V1__init}, {@code V2__...}).
  */
 public final class Migrations {
 
-  /** Folder of the Flyway migrations of a service. */
+  /** Carpeta de las migraciones de Flyway de un servicio. */
   public static final String DIR = "src/main/resources/db/migration";
 
   private static final Pattern VERSIONED = Pattern.compile("^V(\\d+)__.+\\.sql$");
 
   private Migrations() {}
 
-  /** Next version for the project at {@code projectDir} ({@code 1} when there is none). */
+  /** Siguiente versión para el proyecto de {@code projectDir} ({@code 1} cuando no hay ninguna). */
   public static String next(Path projectDir) {
     Path dir = projectDir.resolve(DIR);
     BigInteger max = BigInteger.ZERO;

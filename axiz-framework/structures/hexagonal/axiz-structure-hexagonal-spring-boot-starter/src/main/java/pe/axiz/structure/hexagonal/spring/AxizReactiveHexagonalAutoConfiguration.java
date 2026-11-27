@@ -13,7 +13,6 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
@@ -22,10 +21,9 @@ import pe.axiz.spring.outbox.ReactiveTransactionalEvents;
 import pe.axiz.structure.hexagonal.ReactiveDomainEventSink;
 import pe.axiz.structure.hexagonal.ReactiveUseCase;
 
-/** Reactive hexagonal use cases, selected by the service execution stack. */
+/** Casos de uso hexagonales reactivos, seleccionados según la pila de ejecución del servicio. */
 @AutoConfiguration(after = AxizHexagonalAutoConfiguration.class)
 @ConditionalOnClass(name = "reactor.core.publisher.Mono")
-@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
 public class AxizReactiveHexagonalAutoConfiguration {
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnClass(ReactiveTransactionalEvents.class)
@@ -45,7 +43,7 @@ public class AxizReactiveHexagonalAutoConfiguration {
 
   @Bean
   @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-  Advisor axizReactiveUseCaseAdvisor(
+  static Advisor axizReactiveUseCaseAdvisor(
       ObjectProvider<ReactiveTransactionManager> tx,
       ObjectProvider<ObservationRegistry> observations) {
     var pointcut =
@@ -62,7 +60,8 @@ public class AxizReactiveHexagonalAutoConfiguration {
         new DefaultPointcutAdvisor(
             pointcut,
             new ReactiveUseCaseInterceptor(
-                tx::getIfAvailable, observations.getIfAvailable(() -> ObservationRegistry.NOOP)));
+                tx::getIfAvailable,
+                () -> observations.getIfAvailable(() -> ObservationRegistry.NOOP)));
     advisor.setOrder(50);
     return advisor;
   }

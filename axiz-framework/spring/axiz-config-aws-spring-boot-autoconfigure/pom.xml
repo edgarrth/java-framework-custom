@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-spring</artifactId><version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-spring/pom.xml</relativePath></parent>
+  <artifactId>axiz-config-aws-spring-boot-autoconfigure</artifactId>
+  <name>axiz :: config :: aws :: spring :: boot :: autoconfigure</name>
+  <description>AWS Parameter Store bootstrap with owned credentials and immutable selectors</description>
+  <properties><axiz.module.name>pe.axiz.spring.config.aws</axiz.module.name><axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity></properties>
+  <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-commons</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>io.awspring.cloud</groupId><artifactId>spring-cloud-aws-autoconfigure</artifactId></dependency>
+    <dependency><groupId>io.awspring.cloud</groupId><artifactId>spring-cloud-aws-parameter-store</artifactId></dependency>
+    <dependency><groupId>io.awspring.cloud</groupId><artifactId>spring-cloud-aws-starter-parameter-store</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>sts</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-test-support</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-aws</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-aws-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-config-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
+</dependencies>
+</project>

@@ -10,7 +10,10 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.codegen.openapi.ContractDiff.Change;
 
-/** Conservative evolution of published types: preserve vN and add optional payload fields only. */
+/**
+ * Evolución conservadora de los tipos publicados: se preserva vN y solo se agregan campos
+ * opcionales al payload.
+ */
 public final class AsyncApiDiff {
   private static final Set<String> DOCUMENTATION =
       Set.of(

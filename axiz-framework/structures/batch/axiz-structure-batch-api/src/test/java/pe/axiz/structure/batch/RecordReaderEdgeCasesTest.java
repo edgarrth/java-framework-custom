@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 import pe.axiz.core.fileformats.FixedField;
 import pe.axiz.core.fileformats.FixedWidthLayout;
 
-/** Edge cases of the record readers and the job outcome. */
+/** Casos límite de los lectores de registros y del resultado del job. */
 class RecordReaderEdgeCasesTest {
 
   @Test

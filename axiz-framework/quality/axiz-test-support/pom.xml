@@ -21,11 +21,11 @@
   </properties>
 
   <dependencies>
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-commons</artifactId>
-      <version>${project.version}</version>
-    </dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-api</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-errors</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-money</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-structure-layered-api</artifactId><version>${project.version}</version><optional>true</optional></dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-core-messaging</artifactId>
@@ -40,7 +40,12 @@
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-core</artifactId>
     </dependency>
-    <!-- FakeR2dbc: only for modules that test R2DBC stores -->
+    <!-- FakeR2dbc: solo para módulos que prueban almacenes R2DBC -->
+    <dependency>
+      <groupId>org.reactivestreams</groupId>
+      <artifactId>reactive-streams</artifactId>
+      <optional>true</optional>
+    </dependency>
     <dependency>
       <groupId>io.r2dbc</groupId>
       <artifactId>r2dbc-spi</artifactId>
@@ -52,4 +57,5 @@
       <optional>true</optional>
     </dependency>
   </dependencies>
+<build><plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-enforcer-plugin</artifactId><executions><execution><id>axiz-core-layer-rules</id><configuration><rules><bannedDependencies><includes combine.children="append"><include>pe.axiz:axiz-structure-layered-api</include></includes></bannedDependencies></rules></configuration></execution></executions></plugin></plugins></build>
 </project>

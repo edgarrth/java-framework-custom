@@ -5,9 +5,9 @@ import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Minimal, formatting-preserving edits of a {@code pom.xml}: adds dependencies before the closing
- * {@code </dependencies>} of the project (never inside dependencyManagement or profiles) and
- * updates the parent version.
+ * Ediciones mínimas de un {@code pom.xml} que preservan el formato: agrega dependencias justo
+ * previo al cierre {@code </dependencies>} del proyecto (nunca dentro de dependencyManagement ni de
+ * perfiles) y actualiza la versión del padre.
  */
 public final class PomEditor {
 
@@ -16,7 +16,7 @@ public final class PomEditor {
 
   private PomEditor() {}
 
-  /** Whether the pom declares {@code groupId:artifactId} (in any scope). */
+  /** Indica si el pom declara {@code groupId:artifactId} (en cualquier scope). */
   public static boolean hasDependency(String pom, String groupId, String artifactId) {
     Pattern p =
         Pattern.compile(
@@ -30,9 +30,9 @@ public final class PomEditor {
   }
 
   /**
-   * Adds a dependency (version managed by the BOM) unless present.
+   * Agrega una dependencia (versión gestionada por el BOM) salvo que ya exista.
    *
-   * @param scope Maven scope, or null for compile
+   * @param scope scope de Maven, o null para compile
    */
   public static String addDependency(
       String pom, String groupId, String artifactId, @Nullable String scope) {
@@ -55,7 +55,10 @@ public final class PomEditor {
     return pom.substring(0, lineStart) + entry + pom.substring(lineStart);
   }
 
-  /** Replaces only the project artifact id, leaving parent and dependency coordinates intact. */
+  /**
+   * Reemplaza solo el artifact id del proyecto y deja intactas las coordenadas del padre y de las
+   * dependencias.
+   */
   public static String setArtifactId(String pom, String artifactId) {
     int parentEnd = pom.indexOf("</parent>");
     int start = parentEnd < 0 ? 0 : parentEnd + "</parent>".length();
@@ -64,7 +67,7 @@ public final class PomEditor {
     return pom.substring(0, matcher.start(1)) + artifactId + pom.substring(matcher.end(1));
   }
 
-  /** Replaces the version of the parent. */
+  /** Reemplaza la versión del padre. */
   public static String setParentVersion(String pom, String version) {
     Matcher m = PARENT_VERSION.matcher(pom);
     if (!m.find()) {
@@ -73,13 +76,16 @@ public final class PomEditor {
     return pom.substring(0, m.start(2)) + version + pom.substring(m.end(2));
   }
 
-  /** Version of the parent, or null. */
+  /** Versión del padre, o null. */
   public static @Nullable String parentVersion(String pom) {
     Matcher m = PARENT_VERSION.matcher(pom);
     return m.find() ? m.group(2).strip() : null;
   }
 
-  /** Index of the project's closing {@code </dependencies>} (outside management and profiles). */
+  /**
+   * Índice del cierre {@code </dependencies>} del proyecto (fuera de la gestión de dependencias y
+   * de los perfiles).
+   */
   static int projectDependenciesEnd(String pom) {
     String masked = mask(mask(mask(pom, "dependencyManagement"), "profiles"), "build");
     return masked.lastIndexOf("</dependencies>");

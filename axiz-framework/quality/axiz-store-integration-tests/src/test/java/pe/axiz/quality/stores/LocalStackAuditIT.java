@@ -24,20 +24,20 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.testcontainers.localstack.LocalStackContainer;
-import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
 import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.AuditTrail.Context;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
-import pe.axiz.core.commons.json.JsonReader;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
+import pe.axiz.core.json.JsonReader;
 import pe.axiz.core.observability.AxizObservations;
+import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.spring.audit.AxizAuditAutoConfiguration;
-import pe.axiz.spring.audit.AxizAuditSqsAutoConfiguration;
 import pe.axiz.spring.audit.AxizNativeAuditAutoConfiguration;
 import pe.axiz.spring.audit.ReactiveAuditTrail;
+import pe.axiz.spring.audit.sqs.AxizAuditSqsAutoConfiguration;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Flux;
@@ -53,13 +53,14 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 
 /**
- * Real native audit delivery, FIFO coexistence and reconnect/credential refresh under BlockHound.
+ * Entrega nativa real de auditoría, coexistencia FIFO y reconexión o renovación de credenciales
+ * bajo BlockHound.
  */
 @ExtendWith(BlockHoundExtension.class)
 class LocalStackAuditIT {
   private static final Duration T = Duration.ofSeconds(20);
   private static final LocalStackContainer LOCALSTACK =
-      new LocalStackContainer(DockerImageName.parse(Docker.LOCALSTACK)).withServices("sqs");
+      TestContainerImages.localstack().withServices("sqs");
   private static final ObservationRegistry OBSERVATIONS = ObservationRegistry.create();
   private static final List<Observation.Context> CONTEXTS = new CopyOnWriteArrayList<>();
   private static final AtomicInteger REFRESHES = new AtomicInteger();
@@ -151,6 +152,7 @@ class LocalStackAuditIT {
   void nativeSpringTrailDeliversColdThenReconnectsWithParentAndSanitization() {
     var parent = Observation.start("caller.audit", OBSERVATIONS);
     new ReactiveWebApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(
             AutoConfigurations.of(
                 AxizAuditSqsAutoConfiguration.class,

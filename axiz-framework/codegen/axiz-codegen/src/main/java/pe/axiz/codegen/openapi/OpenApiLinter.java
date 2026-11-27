@@ -8,14 +8,16 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * Corporate contract rules, the same as the Spectral ruleset in axiz-code-standards, applied by the
- * initializr and the CLI before generating code. CI runs Spectral with the full ruleset as well.
+ * Reglas corporativas de contratos, las mismas que el ruleset de Spectral de axiz-code-standards,
+ * que el initializr y la CLI aplican previo a generar código. La CI también ejecuta Spectral con el
+ * ruleset completo.
  */
 public final class OpenApiLinter {
 
+  private static final Pattern PARAMETER = Pattern.compile("^[A-Za-z][A-Za-z0-9_.-]{0,63}$");
   private static final Pattern CAMEL = Pattern.compile("^[a-z][a-zA-Z0-9]*$");
-  // One path segment: kebab-case or a {parameter}. Checked segment by segment, so the match is
-  // linear in the length of the path (no nested repetition).
+  // Un segmento de ruta: kebab-case o un {parameter}. Se verifica segmento por segmento, por lo que
+  // la coincidencia es lineal en la longitud de la ruta (sin repeticiones anidadas).
   private static final Pattern SEGMENT =
       Pattern.compile("^(?:[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9]))*|\\{[a-zA-Z0-9]+\\})$");
   private static final Pattern VERSIONED = Pattern.compile("^/v[0-9]+/.*");
@@ -64,6 +66,7 @@ public final class OpenApiLinter {
                 "$.paths['" + path + "']",
                 "Paths must start with /v<n>/"));
       }
+      checkParameters(doc.raw(), OpenApiDocument.map(p.getValue()), "$.paths['" + path + "']", out);
       for (Map.Entry<String, Object> m : OpenApiDocument.map(p.getValue()).entrySet()) {
         if (!METHODS.contains(m.getKey())) {
           continue;
@@ -94,7 +97,7 @@ public final class OpenApiLinter {
                   "Duplicate operationId " + id));
         }
         checkResponses(op, loc, out);
-        checkParameters(op, loc, out);
+        checkParameters(doc.raw(), op, loc, out);
         if ("post".equals(m.getKey()) && !declaresIdempotencyKey(op)) {
           out.add(
               new LintFinding(
@@ -105,7 +108,112 @@ public final class OpenApiLinter {
         }
       }
     }
+    checkAccess(doc, out);
+    checkSchemas(doc, out);
     return out;
+  }
+
+  private static final Pattern MONEY =
+      Pattern.compile("^(amount|[a-z]+Amount|price|total|balance|fee)$");
+
+  /**
+   * Esquemas de componentes: los números monetarios declaran su escala y su rango (error); los
+   * objetos deciden sobre los campos desconocidos y las cadenas están acotadas (advertencias). Los
+   * mismos ids que el ruleset de Spectral.
+   */
+  private static void checkSchemas(OpenApiDocument doc, List<LintFinding> out) {
+    Map<String, Object> schemas =
+        OpenApiDocument.map(OpenApiDocument.map(doc.raw().get("components")).get("schemas"));
+    for (Map.Entry<String, Object> s : schemas.entrySet()) {
+      String loc = "$.components.schemas." + s.getKey();
+      Map<String, Object> schema = OpenApiDocument.map(s.getValue());
+      if ("object".equals(schema.get("type")) && !schema.containsKey("additionalProperties")) {
+        out.add(
+            new LintFinding(
+                "axiz-closed-objects",
+                "warn",
+                loc,
+                "Object schemas declare additionalProperties (false for requests)"));
+      }
+      for (Map.Entry<String, Object> p : OpenApiDocument.map(schema.get("properties")).entrySet()) {
+        Map<String, Object> property = OpenApiDocument.map(p.getValue());
+        String where = loc + ".properties." + p.getKey();
+        Object type = property.get("type");
+        if ("number".equals(type)
+            && MONEY.matcher(p.getKey()).matches()
+            && !(property.containsKey("multipleOf") && property.containsKey("maximum"))) {
+          out.add(
+              new LintFinding(
+                  "axiz-exact-amounts",
+                  "error",
+                  where,
+                  "Monetary numbers declare multipleOf (their decimal scale) and maximum"));
+        }
+        if ("string".equals(type)
+            && !property.containsKey("maxLength")
+            && !property.containsKey("enum")
+            && !property.containsKey("format")
+            && !property.containsKey("pattern")
+            && !property.containsKey("const")) {
+          out.add(
+              new LintFinding(
+                  "axiz-bounded-strings",
+                  "warn",
+                  where,
+                  "String properties declare maxLength, an enum, a format or a pattern"));
+        }
+      }
+    }
+  }
+
+  /**
+   * Cada operación declara cómo se accede a ella: alcances de OAuth2/OpenID Connect o autenticación
+   * bearer, heredados del documento o propios, o {@code security: []} para acceso público
+   * explícito. El generador, {@code axiz contract lint}, {@code axiz doctor} y el Initializr
+   * aplican esta misma regla.
+   */
+  private static void checkAccess(OpenApiDocument doc, List<LintFinding> out) {
+    for (var operation : doc.operations()) {
+      if (operation.access() == ApiOperation.Access.UNDECLARED
+          || operation.access() == ApiOperation.Access.UNSUPPORTED)
+        out.add(
+            new LintFinding(
+                "axiz-explicit-http-access",
+                "error",
+                "$.paths['" + operation.path() + "']." + operation.method(),
+                "Operation "
+                    + operation.operationId()
+                    + " must declare a supported security requirement (OAuth2/OpenID Connect"
+                    + " scopes or bearer authentication), inherited or per operation; use"
+                    + " security: [] only for explicit public access"));
+    }
+    for (var publicOperation : doc.operations()) {
+      if (publicOperation.access() != ApiOperation.Access.PUBLIC) continue;
+      for (var authenticated : doc.operations()) {
+        if (authenticated.access() == ApiOperation.Access.AUTHENTICATED
+            && overlappingPaths(publicOperation.path(), authenticated.path()))
+          out.add(
+              new LintFinding(
+                  "axiz-explicit-http-access",
+                  "error",
+                  "$.paths['" + publicOperation.path() + "']." + publicOperation.method(),
+                  "Public operation "
+                      + publicOperation.operationId()
+                      + " overlaps authenticated-only operation "
+                      + authenticated.operationId()
+                      + "; public-paths are path based: use distinct paths or explicit scoped"
+                      + " authorization"));
+      }
+    }
+  }
+
+  private static boolean overlappingPaths(String left, String right) {
+    String[] a = left.split("/", -1);
+    String[] b = right.split("/", -1);
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++)
+      if (!a[i].equals(b[i]) && !a[i].startsWith("{") && !b[i].startsWith("{")) return false;
+    return true;
   }
 
   private static void checkResponses(Map<String, Object> op, String loc, List<LintFinding> out) {
@@ -151,10 +259,24 @@ public final class OpenApiLinter {
     }
   }
 
-  private static void checkParameters(Map<String, Object> op, String loc, List<LintFinding> out) {
+  public static boolean safeParameterName(String name) {
+    return PARAMETER.matcher(name).matches();
+  }
+
+  private static void checkParameters(
+      Map<String, Object> root, Map<String, Object> op, String loc, List<LintFinding> out) {
     if (op.get("parameters") instanceof List<?> params) {
       for (Object p : params) {
-        Map<String, Object> param = OpenApiDocument.map(p);
+        Map<String, Object> param = OpenApiDocument.deref(root, OpenApiDocument.map(p));
+        if (!param.isEmpty()
+            && !safeParameterName(String.valueOf(param.getOrDefault("name", "")))) {
+          out.add(
+              new LintFinding(
+                  "axiz-safe-parameter-names",
+                  "error",
+                  loc + ".parameters",
+                  "Parameter names must match [A-Za-z][A-Za-z0-9_.-]{0,63}"));
+        }
         if ("query".equals(param.get("in"))
             && SENSITIVE_QUERY.matcher(String.valueOf(param.get("name"))).matches()) {
           out.add(

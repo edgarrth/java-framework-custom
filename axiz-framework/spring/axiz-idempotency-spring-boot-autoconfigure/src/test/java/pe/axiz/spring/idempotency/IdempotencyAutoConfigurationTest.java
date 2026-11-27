@@ -7,24 +7,19 @@ import org.springframework.aop.Advisor;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
-import pe.axiz.adapter.idempotency.dynamodb.DynamoDbIdempotencyStore;
 import pe.axiz.core.idempotency.IdempotencyService;
 import pe.axiz.core.idempotency.IdempotencyStore;
 import pe.axiz.core.idempotency.InMemoryIdempotencyStore;
-import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-/** Which store and which filter a service gets, and where the in-memory store is refused. */
+/** Qué almacén y qué filtro recibe un servicio, y dónde se rechaza el almacén en memoria. */
 class IdempotencyAutoConfigurationTest {
 
   private final WebApplicationContextRunner servlet =
       new WebApplicationContextRunner()
-          .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
           .withConfiguration(AutoConfigurations.of(AxizIdempotencyAutoConfiguration.class));
 
   private final ReactiveWebApplicationContextRunner reactive =
       new ReactiveWebApplicationContextRunner()
-          .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
           .withConfiguration(AutoConfigurations.of(AxizIdempotencyAutoConfiguration.class));
 
   @Test
@@ -84,22 +79,6 @@ class IdempotencyAutoConfigurationTest {
                     .getFailure()
                     .rootCause()
                     .hasMessageContaining("axiz.idempotency.store=redis is not available"));
-  }
-
-  @Test
-  void theDynamoDbStoreIsUsedWhenChosen() {
-    servlet
-        .withConfiguration(AutoConfigurations.of(AxizIdempotencyDynamoDbAutoConfiguration.class))
-        .withPropertyValues(
-            "axiz.idempotency.store=dynamodb",
-            "axiz.aws.region=us-east-1",
-            "axiz.aws.endpoint=https://localhost:4566")
-        .run(
-            ctx -> {
-              assertThat(ctx.getBean(IdempotencyStore.class))
-                  .isInstanceOf(DynamoDbIdempotencyStore.class);
-              assertThat(ctx).hasSingleBean(DynamoDbClient.class);
-            });
   }
 
   @Test

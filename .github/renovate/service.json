@@ -1,6 +1,5 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "description": "axiz services: versions come from the axiz parent; only the parent is updated (axiz upgrade applies its recipes)",
   "extends": [
     "config:recommended",
     ":semanticCommits",
@@ -21,9 +20,22 @@
       "security"
     ]
   },
+  "description": "Servicios axiz: las versiones vienen del parent de axiz; solo se actualiza el parent (axiz upgrade aplica sus recetas)",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Imágenes base en propiedades del POM con comentario renovate: el tag y su digest se actualizan juntos",
+      "managerFilePatterns": [
+        "/(^|/)pom\\.xml$/"
+      ],
+      "matchStrings": [
+        "<!-- renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+) -->\\s*<[^>]+>[^:<]+:(?<currentValue>[^@<]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?</"
+      ]
+    }
+  ],
   "packageRules": [
     {
-      "description": "Minor and patch updates of build plugins and test libraries are grouped",
+      "description": "Las actualizaciones menores y de parche de plugins de build y librerías de prueba se agrupan",
       "matchDepTypes": [
         "build",
         "test"
@@ -35,72 +47,30 @@
       "groupName": "build and test dependencies"
     },
     {
-      "description": "GitHub Actions grouped",
+      "description": "Las GitHub Actions se agrupan y se fijan por SHA con el comentario de la versión",
       "matchManagers": [
         "github-actions"
       ],
       "groupName": "github actions"
     },
     {
-      "description": "Container images are pinned by digest (tag kept for readability)",
+      "description": "Las imágenes de contenedor se fijan por digest y conservan el tag para leerlas",
       "matchDatasources": [
         "docker"
       ],
       "pinDigests": true
     },
     {
-      "description": "Adopt a published Axiz workflow release in one pull request",
+      "description": "Una release nueva de los workflows de Axiz se adopta en un solo pull request",
       "matchPackageNames": [
-        "edgarrth/java-framework-custom",
-        "edgarrth/java-framework-custom/**"
+        "edgarrth/java-framework-custom"
       ],
       "groupName": "axiz workflows",
-      "versioning": "regex:^axiz-workflows-v(?<major>2)\\.(?<minor>0|[1-9][0-9]*)\\.(?<patch>0|[1-9][0-9]*)$",
+      "versioning": "regex:^axiz-workflows-v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$",
       "pinDigests": false
     },
     {
-      "description": "Update action registry sources and matching workflow/template pins together, with explicit review",
-      "matchManagers": [
-        "github-actions",
-        "custom.regex"
-      ],
-      "matchDatasources": [
-        "github-tags"
-      ],
-      "matchPackageNames": [
-        "actions/**",
-        "azure/setup-helm",
-        "github/codeql-action",
-        "googleapis/release-please-action",
-        "graalvm/setup-graalvm",
-        "helm/kind-action",
-        "oasdiff/oasdiff-action",
-        "sigstore/cosign-installer",
-        "aquasecurity/trivy-action"
-      ],
-      "groupName": "github actions",
-      "dependencyDashboardApproval": true,
-      "automerge": false
-    },
-    {
-      "description": "Review the release action and both development planners together; derive their exact version with release_action.py refresh",
-      "matchPackageNames": [
-        "googleapis/release-please-action",
-        "release-please"
-      ],
-      "matchFileNames": [
-        ".github/workflows/release.yaml",
-        ".github/workflows/release-self.yaml",
-        ".github/scripts/release-version/package.json",
-        "axiz-framework/.github/scripts/release-version/package.json",
-        ".github/policies/action-pins-v2.json"
-      ],
-      "groupName": "release planner toolchain",
-      "dependencyDashboardApproval": true,
-      "automerge": false
-    },
-    {
-      "description": "Versions are managed by the axiz BOM: do not bump them one by one",
+      "description": "Las versiones las gestiona el BOM de axiz: no se actualizan una por una",
       "matchManagers": [
         "maven"
       ],
@@ -110,7 +80,7 @@
       "enabled": false
     },
     {
-      "description": "New axiz versions: one PR, then run `axiz upgrade` locally for the recipes",
+      "description": "Versiones nuevas de axiz: un pull request y luego `axiz upgrade` local para las recetas",
       "matchPackageNames": [
         "pe.axiz:axiz-parent-service"
       ],
@@ -119,99 +89,15 @@
         "axiz-upgrade"
       ],
       "prBodyNotes": [
-        "Run `axiz upgrade --to {{newVersion}}` to update the Axiz parents and apply the current conventions."
+        "Ejecutar `axiz upgrade --to {{newVersion}}` para actualizar los parents de Axiz y aplicar las convenciones vigentes."
       ]
     },
     {
-      "description": "Container images of the local environment (compose.yaml)",
+      "description": "Imágenes del ambiente local (compose.yaml)",
       "matchManagers": [
         "docker-compose"
       ],
       "groupName": "local environment images"
     }
-  ],
-  "customManagers": [
-    {
-      "customType": "regex",
-      "description": "Container base images in pom properties annotated with a renovate comment: the tag and its digest are updated together",
-      "managerFilePatterns": [
-        "/(^|/)pom\\.xml$/"
-      ],
-      "matchStrings": [
-        "<!-- renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+) -->\\s*<[^>]+>[^:<]+:(?<currentValue>[^@<]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?</"
-      ]
-    },
-    {
-      "customType": "regex",
-      "description": "Keep the immutable release verification version aligned with internal action references",
-      "managerFilePatterns": [
-        "/(^|/)\\.github/workflows/[^/]+\\.ya?ml$/",
-        "/\\.ya?ml\\.mustache$/",
-        "/axiz-framework/codegen/axiz-codegen-templates/src/main/resources/axiz/templates/.+\\.ya?ml(?:\\.mustache)?$/"
-      ],
-      "matchStrings": [
-        "AXIZ_WORKFLOWS_VERSION: (?<currentValue>axiz-workflows-v2\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*))"
-      ],
-      "datasourceTemplate": "github-tags",
-      "depNameTemplate": "edgarrth/java-framework-custom",
-      "versioningTemplate": "regex:^axiz-workflows-v(?<major>2)\\.(?<minor>0|[1-9][0-9]*)\\.(?<patch>0|[1-9][0-9]*)$"
-    },
-    {
-      "customType": "regex",
-      "description": "Internal workflow contract checkouts track the adopted release",
-      "managerFilePatterns": [
-        "/(^|/)\\.github/(?:workflows|actions)/.+\\.ya?ml$/"
-      ],
-      "matchStrings": [
-        "repository: [\\\"']?edgarrth/java-framework-custom[\\\"']?\\s+ref: [\\\"']?(?<currentValue>axiz-workflows-v2\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*))"
-      ],
-      "datasourceTemplate": "github-tags",
-      "depNameTemplate": "edgarrth/java-framework-custom",
-      "versioningTemplate": "regex:^axiz-workflows-v(?<major>2)\\.(?<minor>0|[1-9][0-9]*)\\.(?<patch>0|[1-9][0-9]*)$"
-    },
-    {
-      "customType": "regex",
-      "description": "Generated Mustache callers adopt the same published workflow release",
-      "managerFilePatterns": [
-        "/\\.ya?ml\\.mustache$/",
-        "/axiz-framework/codegen/axiz-codegen-templates/src/main/resources/axiz/templates/.+\\.ya?ml(?:\\.mustache)?$/"
-      ],
-      "matchStrings": [
-        "uses: [\\\"']?edgarrth/java-framework-custom/[^\\s@]+@(?<currentValue>axiz-workflows-v2\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*))"
-      ],
-      "datasourceTemplate": "github-tags",
-      "depNameTemplate": "edgarrth/java-framework-custom",
-      "versioningTemplate": "regex:^axiz-workflows-v(?<major>2)\\.(?<minor>0|[1-9][0-9]*)\\.(?<patch>0|[1-9][0-9]*)$"
-    },
-    {
-      "customType": "regex",
-      "description": "Third-party SHA pins in generator templates use the published full version comment",
-      "depTypeTemplate": "action",
-      "managerFilePatterns": [
-        "/\\.ya?ml\\.mustache$/",
-        "/axiz-framework/codegen/axiz-codegen-templates/src/main/resources/axiz/templates/.+\\.ya?ml$/"
-      ],
-      "matchStrings": [
-        "uses: [\"']?(?<depName>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)(?:/[A-Za-z0-9_./-]+)?@(?<currentDigest>[a-f0-9]{40})[\"']?\\s+# (?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"
-      ],
-      "datasourceTemplate": "github-tags"
-    },
-    {
-      "customType": "regex",
-      "description": "The reviewed action registry is also the single source of generated documentation action pins",
-      "depTypeTemplate": "action",
-      "managerFilePatterns": [
-        "/^\\.github/policies/action-pins-v2\\.json$/"
-      ],
-      "matchStrings": [
-        "\"repository\": \"(?<depName>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)\",\\s*\"sha\": \"(?<currentDigest>[a-f0-9]{40})\",\\s*\"tag\": \"(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)\""
-      ],
-      "datasourceTemplate": "github-tags"
-    }
-  ],
-  "renovate-config": {
-    "managerFilePatterns": [
-      "/(^|/)renovate\\.json$/"
-    ]
-  }
+  ]
 }

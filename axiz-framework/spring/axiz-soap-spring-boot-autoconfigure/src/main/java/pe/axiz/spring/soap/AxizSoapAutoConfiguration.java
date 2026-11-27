@@ -6,13 +6,16 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.ssl.SslBundles;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.secrets.SecretResolver;
-import pe.axiz.core.sensitive.ObjectMasker;
 
-/** SOAP clients with safe XML parsing, WS-Security, fault mapping, masking and observations. */
+/**
+ * Clientes SOAP con parseo XML seguro, WS-Security, mapeo de faults, enmascaramiento y
+ * observaciones.
+ */
 @AutoConfiguration(
     afterName = {
       "pe.axiz.spring.secrets.AxizSecretsAutoConfiguration",
@@ -26,16 +29,16 @@ public class AxizSoapAutoConfiguration {
   SoapClients axizSoapClients(
       AxizSoapProperties p,
       ObjectProvider<SecretResolver> secrets,
-      ObjectProvider<ObjectMasker> masker,
       ObjectProvider<ObservationRegistry> observations,
       ObjectProvider<Clock> clock,
-      Environment env) {
+      Environment env,
+      ObjectProvider<SslBundles> ssl) {
     return new SoapClients(
         p,
         secrets.getIfAvailable(),
-        masker.getIfAvailable(ObjectMasker::defaults),
         observations.getIfAvailable(() -> ObservationRegistry.NOOP),
         clock.getIfAvailable(Clock::systemUTC),
-        TransportSecurityPolicy.from(env::getProperty));
+        TransportSecurityPolicy.from(env::getProperty),
+        ssl.getIfAvailable());
   }
 }

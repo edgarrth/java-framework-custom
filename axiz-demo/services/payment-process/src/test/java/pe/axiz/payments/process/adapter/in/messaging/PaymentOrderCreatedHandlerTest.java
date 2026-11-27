@@ -9,7 +9,7 @@ import pe.axiz.payments.process.application.usecase.GetPaymentProcessUseCase;
 import pe.axiz.payments.process.application.usecase.Processes;
 import pe.axiz.payments.process.domain.ProcessStatus;
 
-/** The process starts once per order, however many times the event is delivered. */
+/** El proceso se inicia una vez por orden, sin importar cuántas veces se entregue el evento. */
 class PaymentOrderCreatedHandlerTest {
 
   final Processes processes = new Processes();

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -21,8 +22,11 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.Ordered;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationManagerResolver;
@@ -31,6 +35,8 @@ import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.authorization.AuthorizationResult;
 import org.springframework.security.authorization.ReactiveAuthorizationManager;
+import org.springframework.security.authorization.method.PreAuthorizeAuthorizationManager;
+import org.springframework.security.authorization.method.PreAuthorizeReactiveAuthorizationManager;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -41,8 +47,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
 import org.springframework.security.oauth2.server.resource.authentication.JwtIssuerAuthenticationManagerResolver;
@@ -52,11 +58,16 @@ import org.springframework.security.oauth2.server.resource.authentication.Reacti
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.FilterChainProxy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
+import org.springframework.security.web.header.writers.CrossOriginResourcePolicyHeaderWriter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.authorization.AuthorizationContext;
+import org.springframework.security.web.server.header.CrossOriginResourcePolicyServerHttpHeadersWriter;
 import org.springframework.security.web.server.header.ReferrerPolicyServerHttpHeadersWriter;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.util.pattern.PathPattern;
 import pe.axiz.core.commons.Environments;
 import pe.axiz.core.errors.ProblemFactory;
@@ -69,12 +80,15 @@ import pe.axiz.core.security.RateLimiter;
 import pe.axiz.core.security.TrustedIssuer;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 /**
- * OAuth2 resource server for servlet and reactive services: issuer allow-list with per-issuer JWKS,
- * audience and algorithm checks, claims mapped to {@code AxizPrincipal}, method security, security
- * headers, protected actuator, problem responses for 401/403/429 and optional per-caller rate
- * limits. Services may declare their own {@code SecurityFilterChain} to take over.
+ * Resource server OAuth2 para servicios servlet y reactivos: lista de emisores permitidos con JWKS
+ * por emisor, comprobaciones de audiencia y algoritmo, claims asociados a {@code AxizPrincipal},
+ * seguridad de métodos, cabeceras de seguridad, actuator protegido, respuestas de problema para
+ * 401/403/429 y límites de tasa opcionales por invocante. Los servicios pueden declarar su propia
+ * {@code SecurityFilterChain} para tomar el control.
  */
 @AutoConfiguration(
     afterName = "pe.axiz.spring.errors.AxizErrorsAutoConfiguration",
@@ -98,7 +112,10 @@ public class AxizSecurityAutoConfiguration {
 
   static final String CSP = "default-src 'none'; frame-ancestors 'none'";
 
-  /** A token of an issuer outside the allow-list: rejected before any key lookup (401). */
+  /**
+   * Token de un emisor fuera de la lista permitida: se rechaza antes de cualquier búsqueda de
+   * claves (401).
+   */
   static final AuthenticationManager UNTRUSTED_ISSUER =
       authentication -> {
         throw new InvalidBearerTokenException("Invalid issuer");
@@ -110,7 +127,7 @@ public class AxizSecurityAutoConfiguration {
     return issuerPolicy(p.issuers());
   }
 
-  /** The allow-list of issuers; a resource server without one would reject every token. */
+  /** Lista de emisores permitidos; un resource server sin ella rechazaría todos los tokens. */
   static IssuerPolicy issuerPolicy(List<AxizSecurityProperties.Issuer> issuers) {
     if (issuers.isEmpty()) {
       throw new IllegalStateException(
@@ -134,10 +151,23 @@ public class AxizSecurityAutoConfiguration {
     return new ClaimsMapper(p.claims().toMapping(), p.claims().subjectAsClient());
   }
 
-  @Bean
+  @Bean(initMethod = "warmUp", destroyMethod = "close")
   @ConditionalOnMissingBean
-  TrustedIssuerDecoders axizTrustedIssuerDecoders(IssuerPolicy policy, AxizSecurityProperties p) {
-    return new TrustedIssuerDecoders(policy, p.algorithms(), p.clockSkew());
+  TrustedIssuerDecoders axizTrustedIssuerDecoders(
+      IssuerPolicy policy, AxizSecurityProperties p, Environment environment) {
+    boolean local =
+        Environments.allowsInMemoryState(environment.getProperty("axiz.config.environment"));
+    return new TrustedIssuerDecoders(
+        policy,
+        p.algorithms(),
+        p.clockSkew(),
+        p.jwks(),
+        local || p.allowHttpJwksInCluster(),
+        p.issuers().stream()
+            .collect(
+                Collectors.toUnmodifiableMap(
+                    AxizSecurityProperties.Issuer::issuer,
+                    AxizSecurityProperties.Issuer::profile)));
   }
 
   @Bean
@@ -152,7 +182,10 @@ public class AxizSecurityAutoConfiguration {
     return new SecurityProblems(factory.getIfAvailable());
   }
 
-  /** Explicit single-process rate limits, guarded independently of Spring profiles. */
+  /**
+   * Límites de tasa explícitos de un solo proceso, protegidos con independencia de los perfiles de
+   * Spring.
+   */
   @Bean
   @ConditionalOnMissingBean
   @ConditionalOnBooleanProperty(name = "axiz.security.rate-limit.enabled")
@@ -188,7 +221,8 @@ public class AxizSecurityAutoConfiguration {
     return () -> {
       if (limiter.getIfAvailable() == null)
         throw new IllegalStateException(
-            "Selected axiz.security.rate-limit.store is unavailable: add its adapter and connection factory");
+            "Selected axiz.security.rate-limit.store is unavailable: add its adapter and connection"
+                + " factory");
     };
   }
 
@@ -199,7 +233,8 @@ public class AxizSecurityAutoConfiguration {
     return () -> {
       if (limiter.getIfAvailable() == null)
         throw new IllegalStateException(
-            "Selected axiz.security.rate-limit.store is unavailable: add its async adapter and connection factory");
+            "Selected axiz.security.rate-limit.store is unavailable: add its async adapter and"
+                + " connection factory");
     };
   }
 
@@ -264,7 +299,7 @@ public class AxizSecurityAutoConfiguration {
         TrustedIssuerDecoders decoders, AxizJwtConverter converter) {
       AuthenticationManagerResolver<String> byIssuer =
           issuer -> {
-            NimbusJwtDecoder decoder = decoders.servlet(issuer);
+            JwtDecoder decoder = decoders.servlet(issuer);
             if (decoder == null) {
               return UNTRUSTED_ISSUER;
             }
@@ -274,6 +309,26 @@ public class AxizSecurityAutoConfiguration {
             return manager;
           };
       return new JwtIssuerAuthenticationManagerResolver(byIssuer);
+    }
+
+    /**
+     * Un {@code @PreAuthorize} sin argumentos decide antes de leer el cuerpo de la solicitud (403,
+     * no 400).
+     */
+    @Bean
+    WebMvcConfigurer axizPreBindingAuthorization(
+        ApplicationContext context,
+        ObjectProvider<MethodSecurityExpressionHandler> expressionHandlers) {
+      var manager = new PreAuthorizeAuthorizationManager();
+      manager.setExpressionHandler(expressionHandler(context, expressionHandlers));
+      manager.setApplicationContext(context);
+      var interceptor = new PreBindingAuthorizationInterceptor(manager);
+      return new WebMvcConfigurer() {
+        @Override
+        public void addInterceptors(InterceptorRegistry registry) {
+          registry.addInterceptor(interceptor).order(Ordered.HIGHEST_PRECEDENCE);
+        }
+      };
     }
 
     @Bean
@@ -296,6 +351,11 @@ public class AxizSecurityAutoConfiguration {
           .headers(
               h ->
                   h.contentSecurityPolicy(c -> c.policyDirectives(CSP))
+                      .crossOriginResourcePolicy(
+                          r ->
+                              r.policy(
+                                  CrossOriginResourcePolicyHeaderWriter.CrossOriginResourcePolicy
+                                      .SAME_ORIGIN))
                       .referrerPolicy(
                           r -> r.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER)))
           .authorizeHttpRequests(
@@ -334,7 +394,7 @@ public class AxizSecurityAutoConfiguration {
       if (p.rateLimit().enabled() && rl != null) {
         http.addFilterAfter(
             new RateLimitFilter(rl, new RateLimitRules(p.rateLimit().rules()), problems),
-            CallerContextFilter.class);
+            AuthorizationFilter.class);
       }
       return new VerifiedServletSecurityChain(http.build());
     }
@@ -346,6 +406,11 @@ public class AxizSecurityAutoConfiguration {
   @EnableWebFluxSecurity
   @EnableReactiveMethodSecurity
   static class ReactiveConfiguration {
+    @Bean(destroyMethod = "dispose", defaultCandidate = false)
+    @ConditionalOnMissingBean(name = "axizSecurityRenderingScheduler")
+    Scheduler axizSecurityRenderingScheduler() {
+      return Schedulers.newBoundedElastic(4, 64, "axiz-security-render", 60, true);
+    }
 
     @Bean
     ApplicationListener<ApplicationReadyEvent> axizReactiveAuthorizationCoverage(
@@ -384,7 +449,7 @@ public class AxizSecurityAutoConfiguration {
         TrustedIssuerDecoders decoders, AxizJwtConverter converter) {
       return new JwtIssuerReactiveAuthenticationManagerResolver(
           issuer -> {
-            NimbusReactiveJwtDecoder decoder = decoders.reactive(issuer);
+            ReactiveJwtDecoder decoder = decoders.reactive(issuer);
             if (decoder == null) {
               return Mono.empty();
             }
@@ -396,6 +461,27 @@ public class AxizSecurityAutoConfiguration {
           });
     }
 
+    /**
+     * Un {@code @PreAuthorize} sin argumentos decide antes de leer el cuerpo de la solicitud (403,
+     * no 400).
+     */
+    @Bean
+    PreBindingAuthorizationWebFilter axizPreBindingAuthorizationWebFilter(
+        ApplicationContext context,
+        ObjectProvider<MethodSecurityExpressionHandler> expressionHandlers) {
+      var manager =
+          new PreAuthorizeReactiveAuthorizationManager(
+              expressionHandler(context, expressionHandlers));
+      manager.setApplicationContext(context);
+      return new PreBindingAuthorizationWebFilter(
+          () ->
+              context.getBean(
+                  "requestMappingHandlerMapping",
+                  org.springframework.web.reactive.result.method.annotation
+                      .RequestMappingHandlerMapping.class),
+          manager);
+    }
+
     @Bean
     @ConditionalOnMissingBean(SecurityWebFilterChain.class)
     SecurityWebFilterChain axizSecurityWebFilterChain(
@@ -404,9 +490,10 @@ public class AxizSecurityAutoConfiguration {
         AxizSecurityProperties p,
         JwtIssuerReactiveAuthenticationManagerResolver resolver,
         SecurityProblems problems,
-        ObjectProvider<AsyncRateLimiter> limiter) {
+        ObjectProvider<AsyncRateLimiter> limiter,
+        @Qualifier("axizSecurityRenderingScheduler") Scheduler scheduler) {
       String actuator = actuatorBase(env);
-      ReactiveProblemHandlers handlers = new ReactiveProblemHandlers(problems);
+      ReactiveProblemHandlers handlers = new ReactiveProblemHandlers(problems, scheduler);
       http.csrf(ServerHttpSecurity.CsrfSpec::disable)
           .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
           .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
@@ -414,6 +501,11 @@ public class AxizSecurityAutoConfiguration {
           .headers(
               h ->
                   h.contentSecurityPolicy(c -> c.policyDirectives(CSP))
+                      .crossOriginResourcePolicy(
+                          r ->
+                              r.policy(
+                                  CrossOriginResourcePolicyServerHttpHeadersWriter
+                                      .CrossOriginResourcePolicy.SAME_ORIGIN))
                       .referrerPolicy(
                           r ->
                               r.policy(
@@ -459,10 +551,22 @@ public class AxizSecurityAutoConfiguration {
       AsyncRateLimiter rl = limiter.getIfAvailable();
       if (p.rateLimit().enabled() && rl != null) {
         http.addFilterAfter(
-            new RateLimitWebFilter(rl, new RateLimitRules(p.rateLimit().rules()), problems),
+            new RateLimitWebFilter(
+                rl, new RateLimitRules(p.rateLimit().rules()), problems, scheduler),
             SecurityWebFiltersOrder.AUTHORIZATION);
       }
       return new VerifiedReactiveSecurityChain(http.build());
     }
+  }
+
+  /** El manejador de expresiones de seguridad de métodos de la aplicación, o el de por defecto. */
+  static MethodSecurityExpressionHandler expressionHandler(
+      ApplicationContext context, ObjectProvider<MethodSecurityExpressionHandler> handlers) {
+    return handlers.getIfAvailable(
+        () -> {
+          var handler = new DefaultMethodSecurityExpressionHandler();
+          handler.setApplicationContext(context);
+          return handler;
+        });
   }
 }

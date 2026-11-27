@@ -5,20 +5,27 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import pe.axiz.codegen.ArtifactGenerator;
 import pe.axiz.codegen.ProjectGenerator;
 import pe.axiz.codegen.model.Archetype;
 import pe.axiz.codegen.model.Extension;
 import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
+import pe.axiz.codegen.output.SafePaths;
+import pe.axiz.codegen.project.PomEditor;
+import pe.axiz.codegen.project.ProjectLayout;
+import pe.axiz.codegen.project.ProjectManifest;
 
 /**
- * Generates sample projects so CI can build them as a team would: {@code defaults} creates one
- * project per archetype with its default style, stack and persistence; {@code all} creates every
- * valid combination. Writes {@code modules.json} (the project directories, for a CI matrix).
+ * Genera proyectos de muestra para que la CI los construya como lo haría un equipo: {@code
+ * defaults} crea un proyecto por arquetipo con su estilo, stack y persistencia por defecto; {@code
+ * all} crea todas las combinaciones válidas. Escribe {@code modules.json} (los directorios de los
+ * proyectos, para una matriz de CI).
  *
  * <pre>
  * java -cp axiz-codegen.jar pe.axiz.codegen.tools.SampleProjects target/samples contract.yaml 2.0.0 defaults
@@ -28,7 +35,7 @@ public final class SampleProjects {
 
   private SampleProjects() {}
 
-  /** Entry point: {@code <output> <openapi> <framework-version> [defaults|all|audit]}. */
+  /** Punto de entrada: {@code <output> <openapi> <framework-version> [defaults|all|audit]}. */
   public static void main(String[] args) throws IOException {
     if (args.length < 3) {
       throw new IllegalArgumentException(
@@ -65,20 +72,23 @@ public final class SampleProjects {
                 ? List.of("audit-sqs")
                 : List.of("outbox", "messaging-" + route.substring("outbox-".length()));
         var request =
-            new ProjectRequest(
-                name,
-                "pe.axiz.samples",
-                "pe.axiz.samples.audit." + stack.id() + route.replace("-", ""),
-                "Audit resource acceptance",
-                "business",
-                Structure.HEXAGONAL,
-                stack,
-                "aurora",
-                capabilities,
-                contract,
-                null,
-                version);
+            ProjectRequest.builder()
+                .name(name)
+                .groupId("pe.axiz.samples")
+                .basePackage("pe.axiz.samples.audit." + stack.id() + route.replace("-", ""))
+                .description("Audit resource acceptance")
+                .archetype("business")
+                .structure(Structure.HEXAGONAL)
+                .stack(stack)
+                .persistence("aurora")
+                .capabilities(capabilities)
+                .openApi(contract)
+                .asyncApi(null)
+                .frameworkVersion(version)
+                .extensions(List.of())
+                .build();
         generator.generate(request).writeTo(output.resolve(name), true);
+        persistenceArtifacts(output.resolve(name));
         names.add(name);
       }
     }
@@ -92,9 +102,9 @@ public final class SampleProjects {
   }
 
   /**
-   * Generates the samples into {@code output} and returns their directory names.
+   * Genera las muestras en {@code output} y devuelve los nombres de sus directorios.
    *
-   * @param all every valid combination instead of one project per archetype
+   * @param all todas las combinaciones válidas en lugar de un proyecto por arquetipo
    */
   public static List<String> generate(
       Path output, String openApi, boolean all, String frameworkVersion, PrintStream log)
@@ -109,6 +119,8 @@ public final class SampleProjects {
           continue;
         }
         generator.generate(request).writeTo(output.resolve(request.name()), true);
+        if (!request.persistence().equals("none"))
+          persistenceArtifacts(output.resolve(request.name()));
         names.add(request.name());
         log.println("ok   " + request.name());
       }
@@ -123,6 +135,28 @@ public final class SampleProjects {
             .orElse("[]"),
         StandardCharsets.UTF_8);
     return names;
+  }
+
+  /** Se ejercita la generación de persistencia además del esqueleto vacío en la matriz de CI. */
+  private static void persistenceArtifacts(Path directory) throws IOException {
+    var manifest = ProjectManifest.read(directory);
+    var layout = ProjectLayout.read(directory, manifest);
+    var artifacts = new ArtifactGenerator(Clock.systemUTC());
+    for (String type : List.of("entity", "repository")) {
+      var generated =
+          artifacts.generate(
+              manifest, type, "validation-record", ArtifactGenerator.Options.none(), null);
+      for (var entry : generated.created().entrySet())
+        SafePaths.write(directory, layout.relative(entry.getKey()), entry.getValue(), false);
+      String pom = Files.readString(layout.pom(), StandardCharsets.UTF_8);
+      for (String dependency : generated.dependencies()) {
+        String[] coordinates = dependency.split(":", -1);
+        pom = PomEditor.addDependency(pom, coordinates[0], coordinates[1], null);
+      }
+      Files.writeString(layout.pom(), pom, StandardCharsets.UTF_8);
+    }
+    for (var entry : artifacts.persistenceAcceptanceTest(manifest, "validation-record").entrySet())
+      SafePaths.write(directory, layout.relative(entry.getKey()), entry.getValue(), false);
   }
 
   private static List<ProjectRequest> requests(
@@ -144,20 +178,21 @@ public final class SampleProjects {
                   : List.of(false)) {
             String name = name(archetype, structure, stack, store, all, cqrs);
             out.add(
-                new ProjectRequest(
-                    name,
-                    "pe.axiz.samples",
-                    "pe.axiz.samples." + name.replace("-", ""),
-                    "Sample " + archetype.name() + " project generated by CI",
-                    archetype.name(),
-                    structure,
-                    stack,
-                    store,
-                    List.of(),
-                    archetype.rest() ? openApi : null,
-                    null,
-                    version,
-                    cqrs ? List.of(Extension.CQRS) : List.of()));
+                ProjectRequest.builder()
+                    .name(name)
+                    .groupId("pe.axiz.samples")
+                    .basePackage("pe.axiz.samples." + name.replace("-", ""))
+                    .description("Sample " + archetype.name() + " project generated by CI")
+                    .archetype(archetype.name())
+                    .structure(structure)
+                    .stack(stack)
+                    .persistence(store)
+                    .capabilities(List.of())
+                    .openApi(archetype.rest() ? openApi : null)
+                    .asyncApi(null)
+                    .frameworkVersion(version)
+                    .extensions(cqrs ? List.of(Extension.CQRS) : List.of())
+                    .build());
           }
         }
       }
@@ -182,8 +217,9 @@ public final class SampleProjects {
           case BATCH -> "bt";
           case NONE -> "na";
         };
-    // Technical layer names are reserved service nouns. Stable sample codes keep names valid
-    // without relying on enum declaration order; the manifest retains the full architecture.
+    // Los nombres de capas técnicas son sustantivos de servicio reservados. Los códigos de muestra
+    // estables mantienen los nombres válidos sin depender del orden de declaración del enum; el
+    // manifiesto conserva la arquitectura completa.
     String variant =
         all
             ? "-"

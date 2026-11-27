@@ -16,11 +16,11 @@ public record BeneficiaryView(
 |---|---|
 | `LOW` | datos de contacto parciales |
 | `MEDIUM` | cuentas, documentos, nombres |
-| `HIGH` | datos financieros completos |
-| `CRITICAL` | PAN completo, CVV, PIN, contraseñas, secretos: siempre enmascarado completo |
+| `HIGH` | PAN, cuentas y documentos: máscara específica que nunca muestra el valor completo |
+| `CRITICAL` | CVV, PIN, contraseñas, secretos: siempre enmascarado completo |
 
 Máscaras: `EMAIL`, `PHONE`, `DOCUMENT`, `CARD`, `PARTIAL`, `NAME` (inicial de cada palabra:
-`Ana Torres → A** T*****`), `FULL` y `NONE`.
+`Ana Torres -> A** T*****`), `FULL` y `NONE`.
 
 ## Dónde se enmascara
 
@@ -63,11 +63,42 @@ igual que un cuerpo que no es JSON válido.
 ## Logs
 
 - JSON estructurado con traza, span, correlación, tenant y headers de negocio del contexto.
-- Log HTTP de entrada y salida con **lista blanca de headers** (nunca `Authorization` ni `Cookie`) y
-  cuerpos enmascarados y truncados.
+- Log HTTP de entrada y salida con **lista blanca de headers** (nunca `Authorization` ni `Cookie`).
+  Los cuerpos (`axiz.logging.http.bodies=true`, enmascarados y truncados) solo se permiten en
+  `local`, `test` y `ci`: en cualquier otro ambiente el servicio no arranca, porque un cuerpo libre
+  puede llevar datos de autenticación que ningún enmascarador garantiza detectar.
 - `@LogOperation` registra entrada y salida de un método con duración, resultado y argumentos
-  enmascarados; `@NoLog` excluye un parámetro, un resultado o un método.
+  enmascarados cuando se solicitan; `logArguments=false` y `logResult=false` por defecto.
+  `@NoLog` excluye un parámetro, un resultado o un método.
 - Prohibido `System.out` y `printStackTrace` (ArchUnit y Checkstyle).
+
+La [clasificación de claves](../referencia/clasificacion-sensible.md) se genera desde el código.
+El reconocimiento separa camelCase, guiones y separadores y busca cada término sensible en
+**cualquier posición** del nombre, con o sin dígitos finales: cubre `customerPassword`,
+`billing_card_number`, `cvvCode`, `pinCode`, `passwordConfirmation` y `privateKeyPem`. Un término
+seguido de una palabra que describe metadatos suyos (`tokenCount`, `pinAttempts`, `passwordPolicy`,
+`tokenUrl`, `secretArn`) no se considera sensible; si coinciden varios términos decide el más
+sensible. No identifica cualquier abreviatura del negocio: amplía `axiz.sensitive.keys` para esos
+nombres. La regla ArchUnit de datos de tarjeta usa el mismo reconocimiento.
+
+La detección por valor de PAN complementa las claves y no se puede desactivar en ambientes
+desplegados. Reconoce 12 a 19 dígitos que cumplen Luhn, con dígitos Unicode (por ejemplo de ancho
+completo) y grupos separados por hasta dos espacios, tabuladores, espacios no separables, guiones o
+rayas, `.`, `/` o `_`. No identifica contraseñas arbitrarias.
+
+Hibernate puede imprimir el valor rechazado por una restricción. El starter JPA desactiva la
+impresión SQL directa y los loggers SQL/JDBC de Hibernate, incluidos errores, bindings y valores
+extraídos. Fuera de `local`, `test` y `ci`, una configuración que los habilite impide arrancar.
+Los fallos siguen disponibles mediante códigos, clases y métricas saneados de Axiz. No pases
+excepciones completas, parámetros SQL ni secretos a loggers propios, APM o appenders externos.
+
+Cada servicio generado incluye `SensitiveDataCanaryTest`: arranca su configuración real y
+comprueba logs, auditoría, problemas y el conversor/encoder de respuestas con PAN, CVV y contraseña
+sintéticos. Recorre éxito, fallo, timeout y evidencia de rollback. Los servicios JPA provocan
+además una violación UNIQUE en PostgreSQL y revierten la transacción, comprobando que el mensaje
+del driver no sale al log. Los workers sin HTTP prueban el canal de respuesta del enmascarador;
+su serializador de eventos conserva los datos. Este canario se amplía con los DTO, integraciones y
+appenders propios, sin datos reales. Se ejecuta `./mvnw -Dtest=SensitiveDataCanaryTest test` con Docker.
 
 ## Auditoría
 
@@ -81,8 +112,11 @@ resultado y, si se captura, argumentos y resultado saneados por sensibilidad). `
 registra siempre, solo en éxito o solo en fallo. También se puede auditar cada request HTTP
 (`axiz.audit.http`).
 
-Los eventos se publican **asíncronamente** (cola acotada drenada por un virtual thread; si se llena,
-van al log en lugar de perderse) a uno o varios destinos:
+Cada evento toma una instantánea profunda, acotada y saneada de sus detalles. Un cambio posterior
+en el objeto de origen no cambia la evidencia. El modo de entrega se elige explícitamente fuera
+de desarrollo: `ASYNC` usa una cola volátil; `DURABLE` incorpora el éxito a la transacción del
+negocio mediante outbox; `SYNC` espera acuse, sin atomicidad con el negocio. Un fallback al log
+no demuestra entrega ni persistencia durable. Los proveedores se seleccionan por separado:
 
 | Capacidad | Destino | Formato |
 |---|---|---|
@@ -92,3 +126,6 @@ van al log en lugar de perderse) a uno o varios destinos:
 
 El tipo CloudEvents es `pe.axiz.audit.event.v1`, así un `event-processor` puede consumirlos como
 cualquier otro evento (en el demo, `notifications-processor` los archiva en S3).
+
+Ver [Seguridad](seguridad.md#auditoria-durable) para fallos, sellado, publicación estricta,
+checkpoints y límites de las garantías.

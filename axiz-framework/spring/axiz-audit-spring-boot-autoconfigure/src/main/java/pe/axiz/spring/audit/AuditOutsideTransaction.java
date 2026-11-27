@@ -1,9 +1,11 @@
 package pe.axiz.spring.audit;
 
-/** What durable audit does with a successful action recorded outside a transaction. */
+/**
+ * Define qué hace la auditoría durable con una acción exitosa registrada fuera de una transacción.
+ */
 public enum AuditOutsideTransaction {
-  /** Publish it through the asynchronous publisher (not durable). */
+  /** Se publica mediante el publicador asíncrono (no durable). */
   ASYNC,
-  /** Refuse it: every audited success must be part of a business transaction. */
+  /** Se rechaza: todo éxito auditado debe formar parte de una transacción de negocio. */
   FAIL
 }

@@ -1,6 +1,9 @@
 package pe.axiz.quality.archunit.sample.beans;
 
-/** Auto-configurations are registered by fully qualified name: never part of the check. */
+/**
+ * Las autoconfiguraciones se registran por nombre totalmente calificado: nunca forman parte de la
+ * verificación.
+ */
 @AutoConfiguration
 public class JobsAutoConfiguration {
 

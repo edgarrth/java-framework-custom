@@ -1,6 +1,5 @@
 package pe.axiz.spring.idempotency;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 import java.util.Objects;
@@ -13,8 +12,10 @@ import org.springframework.util.ClassUtils;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.StandardHeaders;
+import pe.axiz.core.api.StandardHeaders;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.crypto.AsyncPayloadProtector;
+import pe.axiz.core.crypto.PayloadProtector;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.NoEffect;
 import pe.axiz.core.idempotency.AsyncIdempotencyService;
@@ -23,40 +24,42 @@ import pe.axiz.core.idempotency.IdempotencyService;
 import pe.axiz.core.idempotency.Idempotent;
 
 /**
- * Applies {@code @Idempotent} around the handler method, <b>inside</b> method security: it is
- * ordered after Spring Security's {@code @PreAuthorize}, {@code @Secured} and JSR-250 interceptors,
- * so a replay is only returned when the caller is still authorized for this request, with the
- * resolved arguments (path variables, body) the policies need. Then it rejects missing keys when
- * required, replays completed responses (through {@link IdempotentReplay}), answers 409 while the
- * first request runs and 422 when a key is reused with a different request.
+ * Aplica {@code @Idempotent} alrededor del método handler, <b>dentro</b> de la seguridad de
+ * métodos: se ordena después de los interceptores {@code @PreAuthorize}, {@code @Secured} y JSR-250
+ * de Spring Security, de modo que una reproducción solo se devuelve cuando el invocante sigue
+ * autorizado para esta solicitud, con los argumentos resueltos (variables de ruta, cuerpo) que
+ * necesitan las políticas. Luego rechaza las claves ausentes cuando son obligatorias, reproduce las
+ * respuestas completadas (mediante {@link IdempotentReplay}), responde 409 mientras se ejecuta la
+ * primera solicitud y 422 cuando se reutiliza una clave con una solicitud distinta.
  *
- * <p>Servlet requests take the fingerprint computed by {@link IdempotencyFilter}; reactive handlers
- * (returning {@code Mono} or {@code Flux}) take it from {@link IdempotencyWebFilter} through the
- * Reactor context.
+ * <p>Las solicitudes servlet toman la huella calculada por {@link IdempotencyFilter}; los handlers
+ * reactivos (que devuelven {@code Mono} o {@code Flux}) la toman de {@link IdempotencyWebFilter}
+ * mediante el contexto de Reactor.
  */
-public class IdempotencyMethodInterceptor implements MethodInterceptor {
+public final class IdempotencyMethodInterceptor implements MethodInterceptor {
 
-  /** After {@code AuthorizationInterceptorsOrder.JSR250} (400), before result authorization. */
+  /**
+   * Después de {@code AuthorizationInterceptorsOrder.JSR250} (400), antes de la autorización del
+   * resultado.
+   */
   public static final int ORDER = 440;
 
   private static final boolean REACTOR =
       ClassUtils.isPresent(
           "reactor.core.publisher.Mono", IdempotencyMethodInterceptor.class.getClassLoader());
 
-  // servlet types are only touched when the servlet API is present (reactive services lack it)
+  // los tipos de servlet solo se usan cuando la API de servlet está presente (los servicios
+  // reactivos no la tienen)
   private static final boolean SERVLET =
       ClassUtils.isPresent(
           "jakarta.servlet.http.HttpServletRequest",
           IdempotencyMethodInterceptor.class.getClassLoader());
 
   private final Supplier<IdempotencyService> service;
+  private final Supplier<PayloadProtector> protection;
+  private final Supplier<AsyncPayloadProtector> asyncProtection;
   private final Supplier<AsyncIdempotencyService> asyncService;
 
-  @SuppressFBWarnings(
-      value = "CT_CONSTRUCTOR_THROW",
-      justification =
-          "Rejects invalid construction; no finalizer or publication of this. The overridable "
-              + "Spring SPI remains extensible; this constructor acquires no external resource.")
   public IdempotencyMethodInterceptor(Supplier<IdempotencyService> service) {
     this(
         service,
@@ -65,13 +68,18 @@ public class IdempotencyMethodInterceptor implements MethodInterceptor {
         });
   }
 
-  @SuppressFBWarnings(
-      value = "CT_CONSTRUCTOR_THROW",
-      justification =
-          "Spring advice extension validates service suppliers; no external resource is "
-              + "acquired or this reference published.")
   public IdempotencyMethodInterceptor(
       Supplier<IdempotencyService> service, Supplier<AsyncIdempotencyService> asyncService) {
+    this(service, asyncService, () -> PayloadProtector.NONE, () -> AsyncPayloadProtector.NONE);
+  }
+
+  public IdempotencyMethodInterceptor(
+      Supplier<IdempotencyService> service,
+      Supplier<AsyncIdempotencyService> asyncService,
+      Supplier<PayloadProtector> protection,
+      Supplier<AsyncPayloadProtector> asyncProtection) {
+    this.protection = Objects.requireNonNull(protection);
+    this.asyncProtection = Objects.requireNonNull(asyncProtection);
     this.service = Objects.requireNonNull(service);
     this.asyncService = Objects.requireNonNull(asyncService);
   }
@@ -94,9 +102,9 @@ public class IdempotencyMethodInterceptor implements MethodInterceptor {
       }
     }
     if (REACTOR && ReactiveIdempotency.handles(method.getReturnType())) {
-      return ReactiveIdempotency.apply(invocation, rule, operation, asyncService);
+      return ReactiveIdempotency.apply(invocation, rule, operation, asyncService, asyncProtection);
     }
-    return invocation.proceed(); // not called from a web request
+    return invocation.proceed(); // no se invoca desde una solicitud web
   }
 
   private @Nullable Object servlet(
@@ -114,11 +122,14 @@ public class IdempotencyMethodInterceptor implements MethodInterceptor {
       }
       return invocation.proceed();
     }
-    IdempotencyService.Decision decision =
-        service.get().begin(IdempotencySupport.scope(operation, RequestContext.get()), key, fp);
+    String scope = IdempotencySupport.scope(operation, RequestContext.get());
+    var binding = IdempotencyPayloads.Binding.of(operation, scope, key);
+    IdempotencyService.Decision decision = service.get().begin(scope, key, fp);
     if (decision instanceof IdempotencyService.Replay replay) {
-      throw new IdempotentReplay(replay.response());
+      throw new IdempotentReplay(
+          IdempotencyPayloads.reveal(replay.response(), binding, protection.get()));
     }
+    request.setAttribute(IdempotencyPayloads.BINDING_ATTRIBUTE, binding);
     request.setAttribute(IdempotencySupport.KEY_ATTRIBUTE, decision);
     request.setAttribute(
         IdempotencyFilter.LEASE_ATTRIBUTE,
@@ -132,7 +143,7 @@ public class IdempotencyMethodInterceptor implements MethodInterceptor {
     }
   }
 
-  /** Current servlet request; only loaded when the servlet API is present. */
+  /** Solicitud servlet actual; solo se carga cuando la API de servlet está presente. */
   private static final class ServletRequests {
     private ServletRequests() {}
 

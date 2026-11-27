@@ -3,7 +3,9 @@ package pe.axiz.payments.process.application.model;
 import java.math.BigDecimal;
 import org.jspecify.annotations.Nullable;
 
-/** Application contract independent of HTTP serialization and validation annotations. */
+/**
+ * Contrato de aplicación independiente de la serialización HTTP y de las anotaciones de validación.
+ */
 public record ProcessRequest(
     String paymentOrderId,
     String operationNumber,

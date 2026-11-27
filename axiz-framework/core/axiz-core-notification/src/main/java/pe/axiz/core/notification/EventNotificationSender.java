@@ -5,8 +5,8 @@ import pe.axiz.core.messaging.EventFactory;
 import pe.axiz.core.messaging.EventPublisher;
 
 /**
- * Publishes notification requests as {@code notification.requested.v1} events to the delivering
- * service (typically through SNS for fan-out or SQS).
+ * Publica peticiones de notificación como eventos {@code notification.requested.v1} hacia el
+ * servicio que entrega (normalmente mediante SNS para fan-out, o SQS).
  */
 public final class EventNotificationSender implements NotificationSender {
 

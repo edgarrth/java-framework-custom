@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-observability-spring-boot-autoconfigure
 
-OpenTelemetry via Micrometer: framework spans, structured events, PII protection, health groups, AWS SDK tracing (auto-configuration).
+OpenTelemetry mediante Micrometer: spans del framework, eventos estructurados, protección de datos personales, grupos de salud y trazas del AWS SDK (autoconfiguración).
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,18 +12,18 @@ OpenTelemetry via Micrometer: framework spans, structured events, PII protection
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `AxizObservabilityAutoConfiguration` | Framework observations: architecture-point spans with business attributes, structured events, PII-safe attributes, request context on spans and no observations for probes. |
-| `AxizObservabilityEnvironmentPostProcessor` | OpenTelemetry defaults (lowest precedence): OTLP export of traces and metrics to the collector given by `OTEL_EXPORTER_OTLP_ENDPOINT`, liveness and readiness probes, and resource attributes. |
-| `AxizObservabilityProperties` | Observability conventions (`axiz.observability.*`). |
-| `IgnoredPathsObservationPredicate` | Skips server observations for infrastructure paths such as probes and metrics scraping. |
-| `RequestContextObservationFilter` | Adds request context to every observation as high-cardinality attributes: they reach spans but never become metric tags. |
+| `AxizObservabilityAutoConfiguration` | Observaciones del framework: spans en los puntos de arquitectura con atributos de negocio, eventos estructurados, atributos sin datos personales, contexto de la petición en los spans y sin observaciones para las sondas. |
+| `AxizObservabilityEnvironmentPostProcessor` | Valores por defecto de OpenTelemetry (precedencia más baja): exportación OTLP de trazas y métricas al collector indicado por `OTEL_EXPORTER_OTLP_ENDPOINT`, sondas de liveness y readiness y atributos del recurso. |
+| `AxizObservabilityProperties` | Convenciones de observabilidad (`axiz.observability.*`). |
+| `IgnoredPathsObservationPredicate` | Omite las observaciones de servidor para rutas de infraestructura, como las sondas y el scraping de métricas. |
+| `RequestContextObservationFilter` | Agrega el contexto de la petición a cada observación como atributos de alta cardinalidad: llegan a los spans, pero nunca se convierten en tags de métricas. |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-observability-spring-boot-autoconfigure verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl spring/axiz-observability-spring-boot-autoconfigure verify`.

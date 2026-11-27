@@ -12,6 +12,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
@@ -22,12 +24,17 @@ import pe.axiz.core.logging.LogOperation;
 import pe.axiz.core.logging.NoLog;
 import pe.axiz.core.logging.OperationLogger;
 import pe.axiz.core.logging.ScopedMdc;
+import pe.axiz.core.sensitive.Mask;
+import pe.axiz.core.sensitive.Sensitive;
+import pe.axiz.core.sensitive.SensitiveField;
 
 /**
- * Applies {@link LogOperation}: entry and exit lines with duration and outcome. Reactive return
- * types are logged when they complete, not when the method returns.
+ * Aplica {@link LogOperation}: líneas de entrada y salida con duración y resultado. Los tipos de
+ * retorno reactivos se registran cuando completan, no cuando el método retorna.
  */
 public final class LogOperationInterceptor implements MethodInterceptor {
+
+  private static final Logger LOG = LoggerFactory.getLogger(LogOperationInterceptor.class);
 
   private static final boolean REACTOR = ClassUtils.isPresent("reactor.core.publisher.Mono", null);
 
@@ -51,14 +58,18 @@ public final class LogOperationInterceptor implements MethodInterceptor {
     long start = System.nanoTime();
     try (ScopedMdc ignored = ScopedMdc.of(LogFields.OPERATION, d.operation())) {
       if (d.annotation().logArguments()) {
-        logger.entry(
-            d.operation(),
-            d.argumentNames(),
-            invocation.getArguments(),
-            d.excluded(),
-            d.annotation().level());
+        quietly(
+            d,
+            () ->
+                logger.entry(
+                    d.operation(),
+                    d.argumentNames(),
+                    invocation.getArguments(),
+                    d.excluded(),
+                    d.declared(),
+                    d.annotation().level()));
       } else {
-        logger.entry(d.operation(), d.annotation().level());
+        quietly(d, () -> logger.entry(d.operation(), d.annotation().level()));
       }
       Object result;
       try {
@@ -77,13 +88,42 @@ public final class LogOperationInterceptor implements MethodInterceptor {
   }
 
   private void succeed(Descriptor d, long start, @Nullable Object result) {
-    logger.success(
-        d.operation(), elapsed(start), result, d.annotation().logResult(), d.annotation().level());
+    quietly(
+        d,
+        () ->
+            logger.success(
+                d.operation(),
+                elapsed(start),
+                result,
+                d.annotation().logResult(),
+                d.annotation().level()));
   }
 
   private void fail(Descriptor d, long start, Throwable error) {
-    logger.failure(
-        d.operation(), elapsed(start), error, failures.isExpected(error), failures.code(error));
+    quietly(
+        d,
+        () ->
+            logger.failure(
+                d.operation(),
+                elapsed(start),
+                error,
+                failures.isExpected(error),
+                failures.code(error)));
+  }
+
+  private static void quietly(Descriptor descriptor, Runnable action) {
+    try {
+      action.run();
+    } catch (RuntimeException error) {
+      try {
+        LOG.warn(
+            "operation={} log entry skipped: {}",
+            descriptor.operation(),
+            error.getClass().getSimpleName());
+      } catch (RuntimeException ignored) {
+        // Un proveedor de logging defectuoso no debe reemplazar el resultado de negocio.
+      }
+    }
   }
 
   private static Duration elapsed(long start) {
@@ -109,25 +149,38 @@ public final class LogOperationInterceptor implements MethodInterceptor {
     }
     Annotation[][] params = method.getParameterAnnotations();
     boolean[] excluded = new boolean[params.length];
+    @Nullable SensitiveField[] declared = new SensitiveField[params.length];
     for (int i = 0; i < params.length; i++) {
       excluded[i] = Arrays.stream(params[i]).anyMatch(a -> a.annotationType() == NoLog.class);
+      for (Annotation a : params[i]) {
+        if (a instanceof Sensitive sensitive)
+          declared[i] = SensitiveField.of(argNames.get(i), sensitive);
+        else if (a instanceof Mask mask && declared[i] == null)
+          declared[i] = SensitiveField.of(argNames.get(i), mask);
+      }
     }
-    return new Descriptor(operation, annotation, argNames, excluded);
+    return new Descriptor(operation, annotation, argNames, excluded, declared);
   }
 
-  /** Internal holder; a class rather than a record because it holds an array. */
+  /** Contenedor interno; es una clase y no un record porque guarda un arreglo. */
   private static final class Descriptor {
     private final String operation;
     private final LogOperation annotation;
     private final List<String> argumentNames;
     private final boolean[] excluded;
+    private final @Nullable SensitiveField[] declared;
 
     Descriptor(
-        String operation, LogOperation annotation, List<String> argumentNames, boolean[] excluded) {
+        String operation,
+        LogOperation annotation,
+        List<String> argumentNames,
+        boolean[] excluded,
+        @Nullable SensitiveField[] declared) {
       this.operation = operation;
       this.annotation = annotation;
       this.argumentNames = argumentNames;
       this.excluded = excluded;
+      this.declared = declared;
     }
 
     String operation() {
@@ -144,6 +197,10 @@ public final class LogOperationInterceptor implements MethodInterceptor {
 
     boolean[] excluded() {
       return excluded;
+    }
+
+    @Nullable SensitiveField[] declared() {
+      return declared;
     }
   }
 }

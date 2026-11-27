@@ -11,8 +11,30 @@ import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 import pe.axiz.core.errors.ExternalServiceException;
 
-/** Reading SOAP answers without a server, and the credentials value type. */
+/** Lectura de respuestas SOAP sin servidor, y el tipo de valor de las credenciales. */
 class SoapResponseTest {
+  @Test
+  void qualifiedSoap11FaultsAndSoap12ReasonsRetainTheirCodesWithoutReturningAPayload() {
+    String eleven =
+        "<soap:Body><soap:Fault><soap:faultcode>soap:Server</soap:faultcode>"
+            + "<soap:faultstring> failed </soap:faultstring></soap:Fault></soap:Body>";
+    var failure =
+        assertThrows(
+            ExternalServiceException.class,
+            () -> SoapResponse.payload("core", 200, envelope(eleven)));
+    assertEquals("soap:Server", failure.detail().code());
+    assertEquals("failed", failure.detail().message());
+    String twelve =
+        "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\"><s:Body><s:Fault>"
+            + "<s:Code><s:Value>s:Receiver</s:Value></s:Code><s:Reason><s:Text> failed </s:Text></s:Reason>"
+            + "</s:Fault></s:Body></s:Envelope>";
+    var modern =
+        assertThrows(
+            ExternalServiceException.class, () -> SoapResponse.payload("core", 503, twelve));
+    assertEquals("s:Receiver", modern.detail().code());
+    assertEquals("failed", modern.detail().message());
+    assertEquals(503, modern.detail().status());
+  }
 
   private static final String SOAP11 = "http://schemas.xmlsoap.org/soap/envelope/";
 
@@ -73,6 +95,18 @@ class SoapResponseTest {
                 SoapResponse.payload(
                     "core", 500, envelope("<soap:Body><soap:Fault/></soap:Body>")));
     assertNull(bare.detail().code(), "a fault without code or reason");
+  }
+
+  @Test
+  void closedCredentialsAreErasedAndCannotBeReusedOrCompareEqualToAnotherSecret() {
+    var a = new SoapEnvelope.Credentials("ana", "secret".toCharArray(), WsSecurity.Mode.TEXT);
+    var b = new SoapEnvelope.Credentials("ana", "secret".toCharArray(), WsSecurity.Mode.TEXT);
+    a.close();
+    a.close();
+    assertThrows(IllegalStateException.class, a::password);
+    assertNotEquals(a, b);
+    b.close();
+    assertNotEquals(a, b);
   }
 
   @Test

@@ -5,6 +5,7 @@ info:
   description: Orchestrates the payment saga (reserve funds, send to the network, confirm or compensate).
 tags:
   - name: payment-processes
+security: [{oauth2: [payments:process]}]
 paths:
   /v1/payment-processes:
     post:
@@ -34,6 +35,8 @@ paths:
   /v1/payment-processes/{processId}:
     get:
       operationId: getPaymentProcess
+      # payments:process o payments:read; el servicio verifica cuál.
+      security: [{oauth2: []}]
       tags: [payment-processes]
       summary: State of a payment saga
       parameters:
@@ -51,26 +54,45 @@ paths:
             application/problem+json:
               schema: {$ref: '#/components/schemas/Problem'}
 components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      description: Bearer access token issued by the payments identity provider (Keycloak in the demo).
+      flows:
+        authorizationCode:
+          authorizationUrl: http://localhost:8180/realms/axiz/protocol/openid-connect/auth
+          tokenUrl: http://localhost:8180/realms/axiz/protocol/openid-connect/token
+          scopes:
+            payments:channel: Customer channel operations on the caller's own data
+        clientCredentials:
+          tokenUrl: http://localhost:8180/realms/axiz/protocol/openid-connect/token
+          scopes:
+            payments:channel: Channel applications acting for customers
+            payments:read: Read-only access to payment data
+            payments:process: Payment processing between internal services
   schemas:
     ProcessRequest:
       type: object
+      additionalProperties: false
       required: [paymentOrderId, operationNumber, debtorAccount, creditorCci, amount, currency]
       properties:
-        paymentOrderId: {type: string}
-        operationNumber: {type: string}
+        paymentOrderId: {type: string, maxLength: 64, pattern: '^[A-Za-z0-9-]{1,64}$'}
+        operationNumber: {type: string, maxLength: 32, pattern: '^[A-Z0-9-]{1,32}$'}
         debtorAccount: {type: string, pattern: '^[0-9]{10,20}$'}
         creditorCci: {type: string, pattern: '^[0-9]{20}$'}
-        amount: {type: number, minimum: 0.01}
+        amount: {type: number, minimum: 0.01, maximum: 9999999999999999.99, multipleOf: 0.01}
         currency: {type: string, pattern: '^(PEN|USD)$'}
-        customerId: {type: string, description: 'Holder of the debtor account (checked by the core)'}
+        customerId: {type: string, maxLength: 20, description: 'Holder of the debtor account (checked by the core)'}
     ProcessView:
       type: object
+      additionalProperties: true
       properties:
         processId: {type: string}
         status: {type: string}
         failedStep: {type: [string, "null"]}
     Problem:
       type: object
+      additionalProperties: true
       properties:
         type: {type: string}
         title: {type: string}

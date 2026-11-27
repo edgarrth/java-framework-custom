@@ -7,8 +7,8 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.errors.NoEffect;
 import pe.axiz.core.idempotency.IdempotencyService;
 import pe.axiz.core.idempotency.StoredResponse;
@@ -18,10 +18,10 @@ import pe.axiz.extension.cqrs.PipelineBehavior;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Idempotent commands: the first result is stored (JSON) and returned again for the same key, the
- * same command and the same caller; a different command with the same key is a 422 problem. It runs
- * after the authorization behavior, so a replay is only returned to a caller that is still allowed
- * to run the command.
+ * Comandos idempotentes: el primer resultado se almacena (JSON) y se devuelve de nuevo para la
+ * misma clave, el mismo comando y el mismo llamador; un comando distinto con la misma clave es un
+ * problema 422. Se ejecuta después del behavior de autorización, de modo que un replay solo se
+ * devuelve a un llamador que sigue autorizado a ejecutar el comando.
  */
 public final class IdempotencyBehavior implements PipelineBehavior {
 
@@ -61,7 +61,8 @@ public final class IdempotencyBehavior implements PipelineBehavior {
             scope(invocation.name(), RequestContext.get()), command.idempotencyKey(), fingerprint);
     if (decision instanceof IdempotencyService.Replay replay) {
       StoredResponse stored = replay.response();
-      // Blocking commands store JSON null; an empty body represents reactive empty completion.
+      // Los comandos bloqueantes almacenan JSON null; un cuerpo vacío representa una finalización
+      // reactiva vacía.
       byte[] json = stored.body().length == 0 ? JSON_NULL : stored.body();
       return (R) mapper.readValue(json, invocation.resultType());
     }
@@ -84,8 +85,9 @@ public final class IdempotencyBehavior implements PipelineBehavior {
   }
 
   /**
-   * Scope of a command key: the command name plus the caller (issuer, tenant, client, subject), so
-   * two callers sharing a key never receive each other's results.
+   * Alcance de la clave de un comando: el nombre del comando más el llamador (emisor, tenant,
+   * cliente, subject), de modo que dos llamadores que comparten una clave nunca reciben los
+   * resultados del otro.
    */
   static String scope(String commandName, @Nullable RequestMetadata caller) {
     String operation = "cqrs:" + commandName;

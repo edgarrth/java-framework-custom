@@ -6,7 +6,7 @@ import java.util.stream.Stream;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.commons.Environments;
 
-/** One startup policy for the servlet and reactive CORS registrations. */
+/** Una única política de arranque para los registros CORS servlet y reactivo. */
 final class CorsPolicy {
   private CorsPolicy() {}
 
@@ -52,7 +52,8 @@ final class CorsPolicy {
         || uri.getPort() == 0
         || uri.getRawAuthority().endsWith(":")) {
       throw new IllegalArgumentException(
-          "Credentialed CORS requires an exact HTTP(S) origin without credentials, path, query or fragment");
+          "Credentialed CORS requires an exact HTTP(S) origin without credentials, path, query or"
+              + " fragment");
     }
     if (!local && !scheme.equalsIgnoreCase("https")) {
       throw new IllegalArgumentException("CORS origins require HTTPS outside local, test or ci");

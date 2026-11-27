@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * CQRS on top of hexagonal: commands and queries are immutable records; query handlers never depend
- * on command handlers or write ports.
+ * CQRS sobre hexagonal: los comandos y las consultas son records inmutables; los handlers de
+ * consulta nunca dependen de los handlers de comando ni de los puertos de escritura.
  */
 public final class CqrsRules {
 
@@ -17,6 +17,12 @@ public final class CqrsRules {
 
   public static List<ArchRule> rules(String basePackage) {
     List<ArchRule> rules = new ArrayList<>(HexagonalRules.rules(basePackage));
+    rules.addAll(extensionRules());
+    return List.copyOf(rules);
+  }
+
+  static List<ArchRule> extensionRules() {
+    List<ArchRule> rules = new ArrayList<>();
     rules.add(
         classes()
             .that()
@@ -50,6 +56,6 @@ public final class CqrsRules {
             .dependOnClassesThat()
             .haveFullyQualifiedName("pe.axiz.extension.cqrs.spring.ReactiveCommandBus")
             .because("the read side never triggers writes"));
-    return rules;
+    return List.copyOf(rules);
   }
 }

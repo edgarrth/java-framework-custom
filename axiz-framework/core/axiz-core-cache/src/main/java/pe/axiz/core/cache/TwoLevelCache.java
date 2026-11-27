@@ -9,19 +9,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * L1 (local) + L2 (Redis) cache. Reads go L1 then L2; writes and evictions go to both. A failing L2
- * never fails the caller: the error is logged and the call continues as a cache miss (the source of
- * truth is used).
+ * Caché L1 (local) + L2 (Redis). Las lecturas van a L1 y luego a L2; las escrituras y los desalojos
+ * van a ambos. Un L2 que falla nunca hace fallar a quien llama: el error se registra en log y la
+ * llamada continúa como un fallo de caché (se usa la fuente de verdad).
  *
- * <p>Freshness: a local copy never outlives the entry it was taken from. It lives for the time L2
- * reported the entry still had, minus the whole duration of that read, capped by the L1 limit. The
- * read is timed with the monotonic clock and with the clock L1 expires entries by ({@link
- * ByteCache#ticks()}), and the longer of the two counts, so a slow answer cannot stretch the
- * expiration in either time base. An answer that arrives with no time left is returned but not
- * copied. An L2 entry without expiration is copied for the L1 limit; a tier that cannot tell the
- * expiration gets no local copy at all. What L1 may still serve after a change elsewhere is bounded
- * by the L1 limit: an eviction on another instance reaches this L1 only through the eviction of the
- * same key here, or when the copy expires.
+ * <p>Frescura: una copia local nunca sobrevive a la entrada de la que se tomó. Vive el tiempo que
+ * L2 informó que le quedaba a la entrada, menos la duración completa de esa lectura, limitado por
+ * el límite de L1. La lectura se mide con el reloj monotónico y con el reloj con el que L1 expira
+ * las entradas ({@link ByteCache#ticks()}), y cuenta la más larga de las dos, de modo que una
+ * respuesta lenta no puede estirar la expiración en ninguna de las dos bases de tiempo. Una
+ * respuesta que llega sin tiempo restante se devuelve pero no se copia. Una entrada de L2 sin
+ * expiración se copia por el límite de L1; un nivel que no puede saber la expiración no recibe
+ * copia local alguna. Lo que L1 aún puede servir tras un cambio en otro lugar está acotado por el
+ * límite de L1: un desalojo en otra instancia llega a este L1 solo mediante el desalojo de la misma
+ * clave aquí, o cuando la copia expira.
  */
 public final class TwoLevelCache implements ByteCache {
 
@@ -49,8 +50,8 @@ public final class TwoLevelCache implements ByteCache {
   }
 
   /**
-   * With the monotonic clock that times the L2 reads, in nanoseconds ({@code System::nanoTime} in
-   * production; a controlled one in tests).
+   * Con el reloj monotónico que mide las lecturas de L2, en nanosegundos ({@code System::nanoTime}
+   * en producción; uno controlado en pruebas).
    */
   public TwoLevelCache(ByteCache l1, ByteCache l2, Duration l1MaxTtl, LongSupplier nanoTime) {
     this.l1 = Objects.requireNonNull(l1);
@@ -80,15 +81,17 @@ public final class TwoLevelCache implements ByteCache {
       }
       return Optional.of(remote.get().value());
     } catch (RuntimeException e) {
-      LOG.warn("L2 cache read failed for a key; continuing without cache: {}", e.toString());
+      LOG.warn(
+          "L2 cache read failed for a key; continuing without cache: {}",
+          e.getClass().getSimpleName());
       return Optional.empty();
     }
   }
 
   /**
-   * How long the local copy may live: the time L2 had left minus the duration of the read (L2
-   * measured it at some point of that read, so the whole read is discounted), capped by the L1
-   * limit; zero when the expiration is unknown.
+   * Tiempo que puede vivir la copia local: el tiempo que le quedaba a L2 menos la duración de la
+   * lectura (L2 lo midió en algún punto de esa lectura, así que se descuenta la lectura completa),
+   * limitado por el límite de L1; cero cuando se desconoce la expiración.
    */
   private Duration localTtl(CachedValue remote, Duration readTook) {
     if (!remote.expiryKnown()) {
@@ -104,7 +107,7 @@ public final class TwoLevelCache implements ByteCache {
     return remaining.compareTo(l1MaxTtl) < 0 ? remaining : l1MaxTtl;
   }
 
-  /** Local copies expire by the L1 clock. */
+  /** Las copias locales expiran según el reloj de L1. */
   @Override
   public long ticks() {
     return l1.ticks();
@@ -116,7 +119,7 @@ public final class TwoLevelCache implements ByteCache {
     try {
       l2.put(key, value, ttl);
     } catch (RuntimeException e) {
-      LOG.warn("L2 cache write failed; value kept only locally: {}", e.toString());
+      LOG.warn("L2 cache write failed; value kept only locally: {}", e.getClass().getSimpleName());
     }
   }
 
@@ -126,7 +129,7 @@ public final class TwoLevelCache implements ByteCache {
     try {
       l2.evict(key);
     } catch (RuntimeException e) {
-      LOG.warn("L2 cache eviction failed: {}", e.toString());
+      LOG.warn("L2 cache eviction failed: {}", e.getClass().getSimpleName());
     }
   }
 
@@ -136,7 +139,7 @@ public final class TwoLevelCache implements ByteCache {
     try {
       n += l2.evictByPrefix(prefix);
     } catch (RuntimeException e) {
-      LOG.warn("L2 cache prefix eviction failed: {}", e.toString());
+      LOG.warn("L2 cache prefix eviction failed: {}", e.getClass().getSimpleName());
     }
     return n;
   }

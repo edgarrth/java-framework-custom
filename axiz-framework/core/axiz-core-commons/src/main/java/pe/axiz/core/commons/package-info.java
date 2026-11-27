@@ -1,4 +1,7 @@
-/** Package pe.axiz.core.commons. Types are non-null unless annotated {@code @Nullable}. */
+/**
+ * Paquete pe.axiz.core.commons. Los tipos no admiten null salvo que se anoten con
+ * {@code @Nullable}.
+ */
 @NullMarked
 package pe.axiz.core.commons;
 

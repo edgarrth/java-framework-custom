@@ -6,10 +6,10 @@ import pe.axiz.core.identifiers.CheckDigits;
 import pe.axiz.core.identifiers.IdentifierType;
 import pe.axiz.core.identifiers.IdentifierTypeProvider;
 
-/** Peruvian national documents: DNI, RUC and foreigner card (CE). */
+/** Documentos nacionales peruanos: DNI, RUC y carné de extranjería (CE). */
 public final class PeruIdentifiers implements IdentifierTypeProvider {
 
-  /** National identity document: 8 digits. */
+  /** Documento nacional de identidad: 8 dígitos. */
   public static final IdentifierType DNI =
       new IdentifierType() {
         @Override
@@ -23,7 +23,7 @@ public final class PeruIdentifiers implements IdentifierTypeProvider {
         }
       };
 
-  /** Taxpayer number: 11 digits, valid prefix and modulo-11 check digit. */
+  /** Número de contribuyente: 11 dígitos, prefijo válido y dígito verificador módulo 11. */
   public static final IdentifierType RUC =
       new IdentifierType() {
         private static final int[] WEIGHTS = {5, 4, 3, 2, 7, 6, 5, 4, 3, 2};
@@ -44,14 +44,9 @@ public final class PeruIdentifiers implements IdentifierTypeProvider {
           }
           return CheckDigits.mod11(v.substring(0, 10), WEIGHTS) == v.charAt(10) - '0';
         }
-
-        @Override
-        public String mask(String v) {
-          return v; // a taxpayer number is public information
-        }
       };
 
-  /** Foreigner card: 9 to 12 alphanumeric characters. */
+  /** Carné de extranjería: 9 a 12 caracteres alfanuméricos. */
   public static final IdentifierType CE =
       new IdentifierType() {
         private static final Pattern FORMAT = Pattern.compile("^[A-Z0-9]{9,12}$");

@@ -7,8 +7,9 @@ import java.lang.annotation.Target;
 import org.springframework.context.annotation.Conditional;
 
 /**
- * Presence condition for non-boolean settings. It does not interpret the literal "false" or resolve
- * placeholders before configuration binding; the owning properties validate their value.
+ * Condición de presencia para configuraciones no booleanas. No interpreta el literal "false" ni
+ * resuelve placeholders antes del binding de la configuración; las propiedades propietarias validan
+ * su valor.
  */
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)

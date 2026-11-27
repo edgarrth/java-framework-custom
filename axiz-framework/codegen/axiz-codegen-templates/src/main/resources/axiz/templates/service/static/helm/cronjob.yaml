@@ -27,5 +27,6 @@ spec:
             checksum/config-common: {{ .Values.sharedConfigMap | sha256sum }}
             {{- end }}
         spec:
+          terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
           restartPolicy: Never
           {{- include "service.podSpec" (dict "root" . "server" false) | nindent 10 }}

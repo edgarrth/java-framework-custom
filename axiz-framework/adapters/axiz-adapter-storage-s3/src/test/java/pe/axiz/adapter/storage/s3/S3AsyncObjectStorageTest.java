@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.storage.ObjectMetadata;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;

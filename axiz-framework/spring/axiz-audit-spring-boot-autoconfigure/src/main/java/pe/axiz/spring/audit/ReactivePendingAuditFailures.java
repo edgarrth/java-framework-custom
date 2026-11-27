@@ -8,7 +8,10 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.context.ContextView;
 
-/** A subscription-owned buffer; native failure writes run after its outer transaction completes. */
+/**
+ * Búfer propiedad de la suscripción; las escrituras nativas de fallos se ejecutan después de que
+ * termina su transacción externa.
+ */
 final class ReactivePendingAuditFailures {
   private static final Object KEY = ReactivePendingAuditFailures.class;
 

@@ -20,7 +20,7 @@ import pe.axiz.codegen.output.GeneratedProject;
 import pe.axiz.initializr.config.InitializrProperties;
 import pe.axiz.initializr.service.GenerationService;
 
-/** Generation API: validate, lint and generate (ZIP). */
+/** API de generación: validación, lint y generación (ZIP). */
 @RestController
 public class ProjectController {
 
@@ -34,7 +34,7 @@ public class ProjectController {
     this.properties = properties;
   }
 
-  /** Generates the project and returns it as a ZIP; 422 with every problem otherwise. */
+  /** Genera el proyecto y lo devuelve como ZIP; en otro caso, 422 con todos los problemas. */
   @PostMapping(
       path = "/v1/projects",
       produces = {"application/zip", "application/problem+json"})
@@ -58,7 +58,7 @@ public class ProjectController {
         .body(zip.toByteArray());
   }
 
-  /** Checks a request without generating it. */
+  /** Verifica una solicitud sin generarla. */
   @PostMapping("/v1/projects/validate")
   public Map<String, Object> validate(@Valid @RequestBody ProjectRequestBody body) {
     RequestValidator.Result r =
@@ -70,7 +70,7 @@ public class ProjectController {
     return out;
   }
 
-  /** Lints a contract with the corporate rules. */
+  /** Aplica lint a un contrato con las reglas corporativas. */
   @PostMapping(
       path = "/v1/contracts/lint",
       consumes = {"application/yaml", "application/json", "text/plain"})

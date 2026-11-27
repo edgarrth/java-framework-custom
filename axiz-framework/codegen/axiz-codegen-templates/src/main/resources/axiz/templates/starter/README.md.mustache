@@ -2,27 +2,28 @@
 
 {{project.description}}.
 
-A new axiz capability, built from a core library and Spring Boot wiring:
+Una capacidad nueva de axiz, construida con una librería core y el cableado de Spring Boot:
 
-| Module | Layer | Contents |
+| Módulo | Capa | Contenido |
 |---|---|---|
-| `{{platform.coreArtifact}}` | 1 | Plain Java API and implementation (no Spring) |
-| `{{platform.capabilityArtifact}}-spring-boot-autoconfigure` | 3 | `{{platform.autoConfigurationClass}}` and `{{platform.propertiesClass}}` (`{{platform.prefix}}.*`) |
-| `{{platform.capabilityArtifact}}-spring-boot-starter` | 3 | The dependency services add |
+| `{{platform.coreArtifact}}` | 1 | API e implementación en Java simple (sin Spring) |
+| `{{platform.capabilityArtifact}}-spring-boot-autoconfigure` | 3 | `{{platform.autoConfigurationClass}}` y `{{platform.propertiesClass}}` (`{{platform.prefix}}.*`) |
+| `{{platform.capabilityArtifact}}-spring-boot-starter` | 3 | La dependencia que agregan los servicios |
 
-The core types remain under `{{project.basePackage}}`; Spring wiring lives separately under
+Los tipos core permanecen bajo `{{project.basePackage}}`; el cableado de Spring está por separado bajo
 `{{platform.springPackage}}`.
 
-Rules: layer 1 never depends on Spring; the auto-configuration depends only on its own library
-(and the foundation starter if needed); every bean is `@ConditionalOnMissingBean`; properties are an
-immutable record with defaults; tests use `ApplicationContextRunner`. A capability that enters the
-structure arrives through an RFC and with its use case in the demo.
+Reglas: la capa 1 nunca depende de Spring; la autoconfiguración depende solo de su propia librería
+(y del starter base si hace falta); cada bean es `@ConditionalOnMissingBean`; las propiedades son un
+record inmutable con valores por defecto; las pruebas usan `ApplicationContextRunner`. Una capacidad que
+entra en la estructura llega mediante un RFC y con su caso de uso en la demo.
 
-The aggregator inherits `axiz-parent` to share the tool versions; each child keeps its own
-layer parent. `./mvnw verify` builds the three modules. `ci.yaml` uses the Axiz 2.0.0 `lib-build` contract to
-retain tested Maven bytes and a signed manifest. `deploy.yaml` independently promotes a completed
-successful run with its attempt, external manifest SHA-256, environment and predecessor hash.
-Builds use Nexus read credentials; promotion uses separate publish credentials. Release-please
-prepares a draft which promotion publishes after retaining the verified signed manifest. `version.txt` and `.release-please-manifest.json` hold the last released version (`0.0.0`:
-nothing released yet); the pom holds the next one (`0.1.0-SNAPSHOT`). The first release is `0.1.0` (`initial-version` in
-`release-please-config.json`); later ones follow Conventional Commits.
+El agregador hereda `axiz-parent` para compartir las versiones de las herramientas; cada hijo conserva el
+parent de su capa. `./mvnw verify` compila los tres módulos. `ci.yaml` usa el contrato `lib-build` de Axiz 2.0.0 para
+conservar los bytes de Maven probados y un manifiesto firmado. `deploy.yaml` promueve de forma independiente una
+ejecución completada con éxito con su intento, el SHA-256 del manifiesto externo, el ambiente y el hash del predecesor.
+Los builds usan `GITHUB_TOKEN` con `packages: read`; la promoción aislada usa su propio token de job
+con `packages: write`. `PACKAGES_READ_USERNAME/TOKEN`, opcionales, permiten leer de otros repositorios. Release-please
+prepara un borrador que la promoción publica después de conservar el manifiesto firmado verificado. `version.txt` y `.release-please-manifest.json` guardan la última versión publicada (`0.0.0`:
+nada publicado todavía); el pom guarda la siguiente (`0.1.0-SNAPSHOT`). La primera release es `0.1.0` (`initial-version` en
+`release-please-config.json`); las siguientes siguen Conventional Commits.

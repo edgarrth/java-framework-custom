@@ -7,6 +7,8 @@ info:
     projected from the payment order events. Eventually consistent with payment-orders.
 tags:
   - name: payment-history
+# Cualquier invocador autenticado con payments:channel o payments:read; el servicio verifica cuál.
+security: [{oauth2: []}]
 paths:
   /v1/customers/{customerId}/payments:
     parameters:
@@ -51,25 +53,43 @@ paths:
             application/problem+json:
               schema: {$ref: '#/components/schemas/Problem'}
 components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      description: Bearer access token issued by the payments identity provider (Keycloak in the demo).
+      flows:
+        authorizationCode:
+          authorizationUrl: http://localhost:8180/realms/axiz/protocol/openid-connect/auth
+          tokenUrl: http://localhost:8180/realms/axiz/protocol/openid-connect/token
+          scopes:
+            payments:channel: Customer channel operations on the caller's own data
+        clientCredentials:
+          tokenUrl: http://localhost:8180/realms/axiz/protocol/openid-connect/token
+          scopes:
+            payments:channel: Channel applications acting for customers
+            payments:read: Read-only access to payment data
+            payments:process: Payment processing between internal services
   schemas:
     PaymentStatus:
       type: string
       enum: [RECEIVED, PROCESSING, COMPLETED, REJECTED]
     PaymentHistoryItem:
       type: object
+      additionalProperties: true
       properties:
         paymentId: {type: string}
         operationNumber: {type: string}
         customerId: {type: string}
         status: {$ref: '#/components/schemas/PaymentStatus'}
         reason: {type: string}
-        amount: {type: number}
+        amount: {type: number, minimum: 0.01, maximum: 9999999999999999.99, multipleOf: 0.01}
         currency: {type: string}
         creditorCci: {type: string, description: masked}
         processingDate: {type: string, format: date}
         lastChangeAt: {type: string, format: date-time}
     PaymentHistoryPage:
       type: object
+      additionalProperties: true
       properties:
         items:
           type: array
@@ -79,6 +99,7 @@ components:
         totalElements: {type: integer, format: int64}
     Problem:
       type: object
+      additionalProperties: true
       properties:
         type: {type: string}
         title: {type: string}

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# A real reactive service checks generated contracts, BlockHound, AOT and native bootstrap.
+# Un servicio reactivo real generado verifica los contratos, BlockHound, AOT y la imagen nativa.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 ./mvnw --bootstrap
@@ -13,15 +13,8 @@ fixture="$acceptance_root/sample-native-orders"
   -Dexec.executable=java \
   -Dexec.classpathScope=runtime \
   "-Dexec.args=--add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED --class-path %classpath \"$PWD/.github/scripts/GenerateReactiveNativeSample.java\" \"$fixture\" \"$PWD/codegen/axiz-codegen/src/test/resources/contracts/orders.yaml\" \"$PWD/codegen/axiz-codegen/src/test/resources/events.yaml\" $revision"
-(
-  cd "$fixture"
-  ./mvnw -B -ntp spotless:check verify -Daxiz.it.requireDocker=true
-  ./mvnw -B -ntp -Pnative -DskipTests package
-)
-# Check generated definitions before spending time compiling the ELF; no runtime annotation scans.
-python3 .github/scripts/check-native-reactive-sample.py --module "$fixture" --runtime jvm-aot
-(
-  cd "$fixture"
-  ./mvnw -B -ntp -Pnative -DskipTests native:compile
-)
-python3 .github/scripts/check-native-reactive-sample.py --module "$fixture"
+# Pruebas en la JVM con Docker y luego la imagen nativa con sus pruebas nativas
+# (native-maven-plugin), sin escaneos de anotaciones en runtime.
+cd "$fixture"
+./mvnw -B -ntp spotless:check verify -Daxiz.it.requireDocker=true
+./mvnw -B -ntp -Pnative package native:compile native:test

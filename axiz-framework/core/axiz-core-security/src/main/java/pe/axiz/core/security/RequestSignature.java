@@ -19,46 +19,48 @@ import javax.crypto.spec.SecretKeySpec;
 import org.jspecify.annotations.Nullable;
 
 /**
- * HMAC-SHA256 signatures for partner callbacks and webhooks, with key rotation and replay
- * protection.
+ * Firmas HMAC-SHA256 para callbacks y webhooks de socios, con rotación de claves y protección
+ * contra replay.
  *
- * <p>Signed string (format {@value #VERSION}), one field per line:
+ * <p>Cadena firmada (formato {@value #VERSION}), un campo por línea:
  *
  * <pre>
  * AXIZ-HMAC-V2
- * &lt;key id&gt;
- * &lt;epoch seconds&gt;
+ * &lt;id de clave&gt;
+ * &lt;segundos epoch&gt;
  * &lt;nonce&gt;
  * &lt;METHOD&gt;
- * &lt;request target: raw path and query, exactly as sent&gt;
- * &lt;lowercase hex SHA-256 of the body bytes&gt;
+ * &lt;destino de la petición: ruta y query en bruto, exactamente como se enviaron&gt;
+ * &lt;SHA-256 en hexadecimal en minúsculas de los bytes del cuerpo&gt;
  * </pre>
  *
- * <p>The format is unambiguous: no field may contain a line break (each one is validated against a
- * strict alphabet) and the body is represented by its digest, so two different requests never
- * produce the same signed string. The request target is signed as raw bytes on the wire (path plus
- * {@code ?query}, percent-encoded): it is not normalized, so a proxy that rewrites it (reorders the
- * query, decodes characters) breaks the signature, which is the safe outcome. An empty body and a
- * missing body are the same thing (zero bytes).
+ * <p>El formato es inequívoco: ningún campo puede contener un salto de línea (cada uno se valida
+ * contra un alfabeto estricto) y el cuerpo se representa por su digest, de modo que dos peticiones
+ * distintas nunca producen la misma cadena firmada. El destino de la petición se firma como los
+ * bytes en bruto que viajan por la red (ruta más {@code ?query}, con codificación de porcentaje):
+ * no se normaliza, así que un proxy que lo reescribe (reordena la query, decodifica caracteres)
+ * rompe la firma, que es el resultado seguro. Un cuerpo vacío y un cuerpo ausente son lo mismo
+ * (cero bytes).
  *
- * <p>{@link #verify} checks, in this order: format, time window, key, signature (constant time) and
- * finally the nonce, which the {@link NonceStore} accepts only once while the signature could still
- * be valid. Only authentic messages consume nonces, so a forger cannot burn them. A store that
- * cannot answer makes the verification fail closed ({@link Outcome#REPLAY_CHECK_UNAVAILABLE}).
+ * <p>{@link #verify} verifica, en este orden: formato, ventana de tiempo, clave, firma (en tiempo
+ * constante) y por último el nonce, que el {@link NonceStore} acepta una sola vez mientras la firma
+ * aún podría ser válida. Solo los mensajes auténticos consumen nonces, de modo que un falsificador
+ * no puede agotarlos. Un almacén que no puede responder hace que la verificación falle en cerrado
+ * ({@link Outcome#REPLAY_CHECK_UNAVAILABLE}).
  *
- * <p>Headers: {@value #SIGNATURE_HEADER} ({@code keyId=<id>,v2=<hex>}), {@value #TIMESTAMP_HEADER}
- * (epoch seconds) and {@value #NONCE_HEADER}.
+ * <p>Cabeceras: {@value #SIGNATURE_HEADER} ({@code keyId=<id>,v2=<hex>}), {@value
+ * #TIMESTAMP_HEADER} (segundos epoch) y {@value #NONCE_HEADER}.
  */
 public final class RequestSignature {
 
-  /** Version of the signed string; part of what is signed. */
+  /** Versión de la cadena firmada; forma parte de lo que se firma. */
   public static final String VERSION = "AXIZ-HMAC-V2";
 
   public static final String SIGNATURE_HEADER = "X-Axiz-Signature";
   public static final String TIMESTAMP_HEADER = "X-Axiz-Timestamp";
   public static final String NONCE_HEADER = "X-Axiz-Nonce";
 
-  /** Longest request target accepted (bytes). */
+  /** Destino de petición más largo aceptado (bytes). */
   public static final int MAX_TARGET = 8192;
 
   private static final String ALGORITHM = "HmacSHA256";
@@ -70,19 +72,19 @@ public final class RequestSignature {
       Pattern.compile("keyId=([A-Za-z0-9._-]{1,64}),v2=([0-9a-f]{64})");
   private static final SecureRandom RANDOM = new SecureRandom();
 
-  /** Result of a verification; only {@link #VALID} accepts the request. */
+  /** Resultado de una verificación; solo {@link #VALID} acepta la petición. */
   public enum Outcome {
     VALID,
-    /** A field or the signature header is not in the expected format. */
+    /** Un campo o la cabecera de firma no tiene el formato esperado. */
     MALFORMED,
-    /** The timestamp is outside the tolerance window. */
+    /** La marca de tiempo está fuera de la ventana de tolerancia. */
     STALE,
-    /** The key id is not one of the configured keys. */
+    /** El id de clave no es una de las claves configuradas. */
     UNKNOWN_KEY,
     BAD_SIGNATURE,
-    /** An authentic message whose nonce was already used. */
+    /** Mensaje auténtico cuyo nonce ya se usó. */
     REPLAYED,
-    /** The nonce store could not answer: rejected (fail closed). */
+    /** El almacén de nonces no pudo responder: se rechaza (falla en cerrado). */
     REPLAY_CHECK_UNAVAILABLE;
 
     public boolean valid() {
@@ -90,7 +92,7 @@ public final class RequestSignature {
     }
   }
 
-  /** What is signed. Immutable: the body is copied on the way in and out. */
+  /** Lo que se firma. Inmutable: el cuerpo se copia a la entrada y a la salida. */
   public static final class Message {
     private final Instant timestamp;
     private final String nonce;
@@ -99,14 +101,15 @@ public final class RequestSignature {
     private final byte[] body;
 
     /**
-     * Creates a message.
+     * Crea un mensaje.
      *
-     * @param timestamp when it was signed (seconds precision)
-     * @param nonce unique value per message, 16 to 128 characters of {@code [A-Za-z0-9_-]}
-     * @param method upper-case HTTP method
-     * @param target raw request target (path and optional query) exactly as sent, starting with
-     *     {@code /}; only printable ASCII (non-ASCII characters must be percent-encoded)
-     * @param body body bytes (empty when there is none)
+     * @param timestamp momento de la firma (precisión de segundos)
+     * @param nonce valor único por mensaje, de 16 a 128 caracteres de {@code [A-Za-z0-9_-]}
+     * @param method método HTTP en mayúsculas
+     * @param target destino de la petición en bruto (ruta y query opcional) exactamente como se
+     *     envió, empezando con {@code /}; solo ASCII imprimible (los caracteres no ASCII deben ir
+     *     con codificación de porcentaje)
+     * @param body bytes del cuerpo (vacío cuando no hay)
      */
     public Message(Instant timestamp, String nonce, String method, String target, byte[] body) {
       this.timestamp = Objects.requireNonNull(timestamp, "timestamp");
@@ -116,7 +119,7 @@ public final class RequestSignature {
       this.body = Objects.requireNonNull(body, "body").clone();
     }
 
-    /** A message with a UTF-8 body. */
+    /** Mensaje con un cuerpo UTF-8. */
     public static Message of(
         Instant timestamp, String nonce, String method, String target, String body) {
       return new Message(timestamp, nonce, method, target, body.getBytes(StandardCharsets.UTF_8));
@@ -138,7 +141,7 @@ public final class RequestSignature {
       return target;
     }
 
-    /** A copy of the body. */
+    /** Copia del cuerpo. */
     public byte[] body() {
       return body.clone();
     }
@@ -179,13 +182,15 @@ public final class RequestSignature {
   private final NonceStore nonces;
 
   /**
-   * Creates a signer and verifier.
+   * Crea un firmante y verificador.
    *
-   * @param keys signing keys by id (at least 256 bits each); keep the previous key during a
-   *     rotation so messages signed with it still verify
-   * @param activeKeyId key used by {@link #sign}
-   * @param tolerance accepted clock difference in either direction (positive, at most 15 minutes)
-   * @param nonces where used nonces are remembered; shared by every instance of the receiver
+   * @param keys claves de firma por id (al menos 256 bits cada una); durante una rotación se
+   *     conserva la clave previa para que los mensajes firmados con ella sigan verificándose
+   * @param activeKeyId clave que usa {@link #sign}
+   * @param tolerance diferencia de reloj aceptada en cualquier dirección (positiva, como máximo 15
+   *     minutos)
+   * @param nonces donde se recuerdan los nonces usados; compartido por todas las instancias del
+   *     receptor
    */
   public RequestSignature(
       Map<String, byte[]> keys,
@@ -220,7 +225,7 @@ public final class RequestSignature {
     this.nonces = Objects.requireNonNull(nonces);
   }
 
-  /** A fresh random nonce (128 bits, URL-safe). */
+  /** Nonce aleatorio nuevo (128 bits, seguro para URL). */
   public static String newNonce() {
     byte[] bytes = new byte[16];
     RANDOM.nextBytes(bytes);
@@ -228,9 +233,9 @@ public final class RequestSignature {
   }
 
   /**
-   * Value of the {@value #SIGNATURE_HEADER} header for the message, with the active key.
+   * Valor de la cabecera {@value #SIGNATURE_HEADER} para el mensaje, con la clave activa.
    *
-   * @throws IllegalArgumentException if a field is not in the expected format
+   * @throws IllegalArgumentException si un campo no tiene el formato esperado
    */
   public String sign(Message message) {
     String problem = problem(message);
@@ -240,7 +245,7 @@ public final class RequestSignature {
     return "keyId=" + activeKeyId + ",v2=" + hmac(activeKeyId, message);
   }
 
-  /** Checks the message against the value of the {@value #SIGNATURE_HEADER} header. */
+  /** Verifica el mensaje contra el valor de la cabecera {@value #SIGNATURE_HEADER}. */
   public Outcome verify(Message message, @Nullable String signatureHeader) {
     if (signatureHeader == null || problem(message) != null) {
       return Outcome.MALFORMED;
@@ -263,7 +268,8 @@ public final class RequestSignature {
       return Outcome.BAD_SIGNATURE;
     }
     try {
-      // a signature stays acceptable for 2 x tolerance (timestamp anywhere in the window)
+      // una firma sigue siendo aceptable durante 2 x tolerancia (marca de tiempo en cualquier punto
+      // de la ventana)
       boolean first = nonces.markUsed(keyId + ":" + message.nonce(), tolerance.multipliedBy(2));
       return first ? Outcome.VALID : Outcome.REPLAYED;
     } catch (RuntimeException e) {
@@ -271,7 +277,7 @@ public final class RequestSignature {
     }
   }
 
-  /** The exact string that is signed (for interoperability tests with partners). */
+  /** Cadena exacta que se firma (para pruebas de interoperabilidad con socios). */
   public static String canonical(String keyId, Message message) {
     return VERSION
         + '\n'

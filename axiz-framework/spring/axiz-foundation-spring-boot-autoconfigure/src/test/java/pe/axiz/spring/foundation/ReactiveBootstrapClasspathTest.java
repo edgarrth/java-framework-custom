@@ -47,7 +47,7 @@ class ReactiveBootstrapClasspathTest {
     }
   }
 
-  /** Isolated JVM entry point, without any context-propagation types in its signatures. */
+  /** Punto de entrada de una JVM aislada, sin tipos de context-propagation en sus firmas. */
   public static final class WithoutContext {
     private WithoutContext() {}
 

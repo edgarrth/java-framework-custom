@@ -8,12 +8,12 @@ import java.util.Objects;
 import pe.axiz.core.errors.BusinessException;
 
 /**
- * Exchange rate valid at an instant: {@code 1 from = rate to}.
+ * Tipo de cambio vigente en un instante: {@code 1 from = rate to}.
  *
- * @param from source currency
- * @param to target currency
- * @param rate positive rate within Money's integer-digit and scale limits
- * @param validAt instant at which it applies
+ * @param from moneda de origen
+ * @param to moneda de destino
+ * @param rate tasa positiva dentro de los límites de dígitos enteros y escala de Money
+ * @param validAt instante en el que aplica
  */
 public record ExchangeRate(Currency from, Currency to, BigDecimal rate, Instant validAt) {
 
@@ -24,16 +24,17 @@ public record ExchangeRate(Currency from, Currency to, BigDecimal rate, Instant 
     if (rate == null || rate.signum() <= 0) {
       throw new IllegalArgumentException("rate must be positive");
     }
-    // Bound the rate before inverse division can expand an attacker-controlled exponent.
+    // Se acota la tasa antes de que la división inversa pueda expandir un exponente controlado por
+    // un atacante.
     Money.requireBounded(rate);
   }
 
   /**
-   * Converts an amount in the source currency.
+   * Convierte un monto en la moneda de origen.
    *
-   * @param money amount in {@link #from()}
-   * @param rounding caller-selected rounding mode
-   * @return the amount in {@link #to()}
+   * @param money monto en {@link #from()}
+   * @param rounding modo de redondeo elegido por quien llama
+   * @return el monto en {@link #to()}
    */
   public Money convert(Money money, RoundingMode rounding) {
     Objects.requireNonNull(rounding, "rounding");
@@ -44,8 +45,8 @@ public record ExchangeRate(Currency from, Currency to, BigDecimal rate, Instant 
   }
 
   /**
-   * Converts an amount in {@link #to()} to {@link #from()} with one division and one rounding. No
-   * approximate reciprocal rate is created.
+   * Convierte un monto en {@link #to()} a {@link #from()} con una división y un redondeo. No se
+   * crea ninguna tasa recíproca aproximada.
    */
   public Money convertInverse(Money money, RoundingMode rounding) {
     Objects.requireNonNull(rounding, "rounding");
@@ -56,8 +57,9 @@ public record ExchangeRate(Currency from, Currency to, BigDecimal rate, Instant 
   }
 
   /**
-   * Represents an approximate reciprocal rate at the caller-selected scale and rounding mode. Use
-   * {@link #convertInverse(Money, RoundingMode)} to convert amounts without double rounding.
+   * Representa una tasa recíproca aproximada con la escala y el modo de redondeo elegidos por quien
+   * llama. Para convertir montos sin doble redondeo se usa {@link #convertInverse(Money,
+   * RoundingMode)}.
    */
   public ExchangeRate inverse(int scale, RoundingMode rounding) {
     Objects.requireNonNull(rounding, "rounding");

@@ -32,7 +32,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.cache.redis.RedisAsyncByteCache;
 import pe.axiz.adapter.idempotency.redis.RedisAsyncIdempotencyStore;
 import pe.axiz.adapter.lock.redis.RedisAsyncDistributedLock;
@@ -41,6 +40,7 @@ import pe.axiz.adapter.security.redis.RedisAsyncRateLimiter;
 import pe.axiz.core.idempotency.IdempotencyRecord;
 import pe.axiz.core.idempotency.StoredResponse;
 import pe.axiz.core.security.RateLimitUnavailableException;
+import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Mono;
@@ -48,7 +48,8 @@ import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
 /**
- * Real Lua/TTL behavior and reconnect/timeout/cancellation on nonblocking callers and callbacks.
+ * Comportamiento real de Lua y TTL y reconexión, timeout y cancelación en invocadores y callbacks
+ * no bloqueantes.
  */
 @ExtendWith(BlockHoundExtension.class)
 class ValkeyReactiveStoresIT {
@@ -56,7 +57,7 @@ class ValkeyReactiveStoresIT {
 
   @SuppressWarnings("resource")
   private static final GenericContainer<?> VALKEY =
-      new GenericContainer<>(DockerImageName.parse(Docker.VALKEY)).withExposedPorts(6379);
+      TestContainerImages.valkey().withExposedPorts(6379);
 
   private static RedisClient client;
   private static StatefulRedisConnection<String, String> strings;
@@ -67,9 +68,10 @@ class ValkeyReactiveStoresIT {
   static void start() throws Exception {
     Docker.require();
     ReactiveInfrastructureBootstrap.initialize();
-    // Keep the endpoint stable across Docker restart: auto-assigned host ports may change.
-    // Owned local Valkey container without TLS; this fixture tests store contracts and
-    // cancellation.
+    // Se mantiene estable el endpoint tras un reinicio de Docker: los puertos de host asignados de
+    // forma automática pueden cambiar.
+    // Contenedor local propio de Valkey sin TLS; este fixture prueba los contratos de almacén y la
+    // cancelación.
     // nosemgrep: java.lang.security.audit.crypto.unencrypted-socket.unencrypted-socket
     try (var port = new ServerSocket(0)) {
       VALKEY.setPortBindings(List.of(port.getLocalPort() + ":6379"));
@@ -175,13 +177,13 @@ class ValkeyReactiveStoresIT {
         new RedisAsyncIdempotencyStore(strings.async(), "reactive:idem:", Clock.systemUTC());
     var now = Instant.now();
     var record =
-        new IdempotencyRecord(
-            "payment",
-            "hash",
-            IdempotencyRecord.Status.IN_PROGRESS,
-            "owner",
-            null,
-            now.plusSeconds(30));
+        IdempotencyRecord.builder("payment", "hash", now.plusSeconds(30), now.plusSeconds(30))
+            .status(IdempotencyRecord.Status.IN_PROGRESS)
+            .owner("owner")
+            .response(null)
+            .resolutionVersion(0)
+            .failure(null)
+            .build();
     var response = new StoredResponse(201, Map.of("Location", "/payments/1"), new byte[] {0, 127});
     StepVerifier.create(
             call(() -> store.tryStart(record))
@@ -275,7 +277,13 @@ class ValkeyReactiveStoresIT {
         .untilAsserted(
             () ->
                 StepVerifier.create(
-                        call(() -> cache.put("reconnected", new byte[] {4}, Duration.ofSeconds(30)))
+                        call(() -> strings.async().ping())
+                            .doOnNext(reply -> assertEquals("PONG", reply))
+                            .then(
+                                call(
+                                    () ->
+                                        cache.put(
+                                            "reconnected", new byte[] {4}, Duration.ofSeconds(30))))
                             .then(call(() -> cache.get("reconnected"))))
                     .assertNext(found -> assertArrayEquals(new byte[] {4}, found.orElseThrow()))
                     .expectComplete()

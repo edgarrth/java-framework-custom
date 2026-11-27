@@ -22,9 +22,10 @@ import reactor.core.publisher.Mono;
 import reactor.util.context.ContextView;
 
 /**
- * Deferred reactive advice: one record per subscription, awaiting delivery before completion.
- * Success delivery errors propagate so transactional audit cannot silently lose evidence;
- * failure/cancellation delivery never replaces the original business outcome.
+ * Advice reactivo diferido: un registro por suscripción, que espera la entrega antes de completar.
+ * Los errores al entregar un éxito se propagan para que la auditoría transaccional no pueda perder
+ * evidencia en silencio; la entrega de un fallo o una cancelación nunca reemplaza el resultado de
+ * negocio original.
  */
 public final class ReactiveAuditableInterceptor implements MethodInterceptor {
   static final Object STATE_KEY = ReactiveAuditableInterceptor.class;

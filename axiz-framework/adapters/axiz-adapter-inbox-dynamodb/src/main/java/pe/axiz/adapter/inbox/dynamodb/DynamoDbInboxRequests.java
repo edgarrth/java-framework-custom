@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 import pe.axiz.core.inbox.InboxException;
+import pe.axiz.core.inbox.InboxStore;
 import pe.axiz.core.inbox.InboxStore.Acquisition;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -13,7 +14,10 @@ import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.ReturnValuesOnConditionCheckFailure;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 
-/** Shared wire conditions: asynchronous and poll-thread boundaries cannot diverge in ownership. */
+/**
+ * Condiciones de red compartidas: las fronteras asíncrona y del hilo de sondeo no pueden divergir
+ * en propiedad.
+ */
 final class DynamoDbInboxRequests {
   private final String table;
 
@@ -28,6 +32,7 @@ final class DynamoDbInboxRequests {
       Instant now,
       Instant leaseUntil,
       Instant expiresAt) {
+    InboxStore.validateWindow(now, leaseUntil, expiresAt);
     return PutItemRequest.builder()
         .tableName(table)
         .item(
@@ -40,8 +45,8 @@ final class DynamoDbInboxRequests {
                 s(owner),
                 "leaseUntil",
                 n(leaseUntil.toEpochMilli()),
-                "ttl",
-                n(expiresAt.getEpochSecond())))
+                "expiresAt",
+                n(expiresAt.getEpochSecond() + (expiresAt.getNano() == 0 ? 0 : 1))))
         .conditionExpression(
             "attribute_not_exists(pk) OR (#st = :inProgress AND leaseUntil < :now)")
         .expressionAttributeNames(Map.of("#st", "status"))
@@ -55,9 +60,10 @@ final class DynamoDbInboxRequests {
     return UpdateItemRequest.builder()
         .tableName(table)
         .key(Map.of("pk", s(DynamoDbInboxStore.key(consumer, messageId))))
-        .updateExpression("SET #st = :processed, processedAt = :at")
-        .conditionExpression("#owner = :owner AND #st = :inProgress")
-        .expressionAttributeNames(Map.of("#st", "status", "#owner", "owner"))
+        .updateExpression("SET #st = :processed, processedAt = :at, #ttl = expiresAt")
+        .conditionExpression(
+            "#owner = :owner AND #st = :inProgress AND leaseUntil > :at AND attribute_exists(expiresAt)")
+        .expressionAttributeNames(Map.of("#st", "status", "#owner", "owner", "#ttl", "ttl"))
         .expressionAttributeValues(
             Map.of(
                 ":processed",

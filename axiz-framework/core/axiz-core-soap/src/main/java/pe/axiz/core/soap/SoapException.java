@@ -1,6 +1,6 @@
 package pe.axiz.core.soap;
 
-/** Technical SOAP failure (malformed XML, serialization). */
+/** Fallo técnico de SOAP (XML mal formado, serialización). */
 public class SoapException extends RuntimeException {
 
   private static final long serialVersionUID = 1L;

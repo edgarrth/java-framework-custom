@@ -12,21 +12,20 @@ import pe.axiz.codegen.model.Catalog;
 import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
-import pe.axiz.codegen.openapi.ApiOperation;
 import pe.axiz.codegen.openapi.LintFinding;
 import pe.axiz.codegen.openapi.OpenApiDocument;
 import pe.axiz.codegen.openapi.OpenApiLinter;
 
-/** Compatibility rules of archetype × structure × stack × persistence × capabilities. */
+/** Reglas de compatibilidad de arquetipo, estructura, stack, persistencia y capacidades. */
 public final class RequestValidator {
 
   /**
-   * Result of validating a request.
+   * Resultado de validar una solicitud.
    *
-   * @param archetype resolved archetype, when known
-   * @param contract parsed contract, when present and readable
-   * @param problems blocking problems
-   * @param findings contract lint findings (errors block, warnings do not)
+   * @param archetype arquetipo resuelto, cuando se conoce
+   * @param contract contrato analizado, cuando está presente y es legible
+   * @param problems problemas bloqueantes
+   * @param findings hallazgos de lint del contrato (los errores bloquean, las advertencias no)
    */
   public record Result(
       @Nullable Archetype archetype,
@@ -43,7 +42,7 @@ public final class RequestValidator {
     }
   }
 
-  /** Longest description accepted: one line in every generated file. */
+  /** Descripción más larga aceptada: una línea en cada archivo generado. */
   static final int MAX_DESCRIPTION = 200;
 
   @SuppressFBWarnings(
@@ -71,7 +70,7 @@ public final class RequestValidator {
     List<String> problems = new ArrayList<>();
     List<LintFinding> findings = new ArrayList<>();
     if (!Names.isArtifactId(r.name())) {
-      problems.add("name must be kebab-case (letters, digits and dashes), e.g. payments-business");
+      problems.add("name must be kebab-case (letters, digits and dashes), e.g. payment-orders");
     }
     if (!Names.isPackage(r.groupId())) {
       problems.add("groupId must be a valid Maven group, e.g. pe.axiz.payments");
@@ -81,7 +80,7 @@ public final class RequestValidator {
     }
     if (r.description().length() > MAX_DESCRIPTION
         || r.description().chars().anyMatch(Character::isISOControl)) {
-      // one line of text: it lands in POMs, Javadoc, YAML and Markdown (punctuation is fine)
+      // una línea de texto: termina en POM, Javadoc, YAML y Markdown (la puntuación está permitida)
       problems.add(
           "description must be a single line of at most " + MAX_DESCRIPTION + " characters");
     }
@@ -153,13 +152,15 @@ public final class RequestValidator {
       String store = Catalog.store(r.persistence(), r.stack());
       List<Capability> capabilities =
           catalog.resolve(ProjectGenerator.capabilityNames(catalog, r, a), store);
+      problems.addAll(catalog.missingAlternatives(capabilities));
       if (consumesEvents
           && capabilities.stream()
               .noneMatch(
-                  capability -> capability.starter().equals("axiz-messaging-spring-boot-starter")))
+                  capability ->
+                      Set.of("messaging-kafka", "messaging-sqs").contains(capability.name())))
         problems.add(
-            "Consuming AsyncAPI events requires a messaging capability: messaging, messaging-sqs or"
-                + " messaging-kafka");
+            "Consuming AsyncAPI events requires a messaging capability with consumers:"
+                + " messaging-kafka or messaging-sqs");
       List<String> resolved = capabilities.stream().map(Capability::name).toList();
       if (resolved.contains("jpa") && !"aurora".equals(r.persistence())) {
         problems.add("Capabilities " + needing(r, "jpa") + " need Aurora: use persistence aurora");
@@ -199,50 +200,11 @@ public final class RequestValidator {
         try {
           contract = OpenApiDocument.parse(openApi);
           findings.addAll(OpenApiLinter.lint(contract));
-          problems.addAll(accessProblems(contract));
         } catch (IllegalArgumentException e) {
           problems.add(e.getMessage());
         }
       }
     }
     return new Result(a, contract, problems, findings);
-  }
-
-  static List<String> accessProblems(OpenApiDocument contract) {
-    var problems = new ArrayList<String>();
-    for (var operation : contract.operations()) {
-      if (operation.access() == ApiOperation.Access.UNDECLARED
-          || operation.access() == ApiOperation.Access.UNSUPPORTED)
-        problems.add(
-            "Operation "
-                + operation.operationId()
-                + " must declare a supported security requirement (OAuth2/OpenID Connect"
-                + " scopes or bearer authentication), inherited or per operation; use"
-                + " security: [] only for explicit public access");
-    }
-    for (var publicOperation : contract.operations()) {
-      if (publicOperation.access() != ApiOperation.Access.PUBLIC) continue;
-      for (var authenticated : contract.operations()) {
-        if (authenticated.access() == ApiOperation.Access.AUTHENTICATED
-            && overlappingPaths(publicOperation.path(), authenticated.path()))
-          problems.add(
-              "Public operation "
-                  + publicOperation.operationId()
-                  + " overlaps authenticated-only operation "
-                  + authenticated.operationId()
-                  + "; public-paths are path based: use distinct paths or explicit scoped"
-                  + " authorization");
-      }
-    }
-    return problems;
-  }
-
-  private static boolean overlappingPaths(String left, String right) {
-    String[] a = left.split("/", -1);
-    String[] b = right.split("/", -1);
-    if (a.length != b.length) return false;
-    for (int i = 0; i < a.length; i++)
-      if (!a[i].equals(b[i]) && !a[i].startsWith("{") && !b[i].startsWith("{")) return false;
-    return true;
   }
 }

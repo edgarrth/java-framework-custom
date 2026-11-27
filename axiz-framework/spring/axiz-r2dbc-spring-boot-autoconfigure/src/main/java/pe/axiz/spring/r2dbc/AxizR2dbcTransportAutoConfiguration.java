@@ -11,7 +11,10 @@ import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import pe.axiz.core.commons.net.DataTransportSecurityPolicy;
 
-/** Guards completed R2DBC options before managed factory use, independently of IAM. */
+/**
+ * Protege las opciones R2DBC completadas antes del uso de la fábrica gestionada, con independencia
+ * de IAM.
+ */
 @AutoConfiguration(
     beforeName = "org.springframework.boot.r2dbc.autoconfigure.R2dbcAutoConfiguration")
 @ConditionalOnClass(name = "io.r2dbc.spi.ConnectionFactory")

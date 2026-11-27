@@ -14,24 +14,27 @@ import pe.axiz.core.lang.Strings;
 import pe.axiz.core.tenancy.InvalidTenantException;
 import pe.axiz.core.tenancy.TenantContext;
 
-/** Maps validated token claims to an {@link AxizPrincipal} according to a {@link ClaimMapping}. */
+/**
+ * Mapea los claims validados de un token a un {@link AxizPrincipal} según un {@link ClaimMapping}.
+ */
 public final class ClaimsMapper {
 
   private final ClaimMapping mapping;
   private final boolean subjectAsClient;
 
-  /** A mapper that requires a client claim; human subjects are never implicit clients. */
+  /** Mapper que exige un claim de cliente; los subjects humanos nunca son clientes implícitos. */
   public ClaimsMapper(ClaimMapping mapping) {
     this(mapping, false);
   }
 
   /**
-   * Creates a mapper.
+   * Crea un mapper.
    *
-   * @param mapping claim paths
-   * @param subjectAsClient opt-in for providers that put the client only in {@code sub}: a
-   *     configured issuer-owned machine marker must also match. Without that evidence a missing
-   *     client claim is always rejected, even when this option is enabled.
+   * @param mapping rutas de los claims
+   * @param subjectAsClient opción para proveedores que ponen el cliente solo en {@code sub}:
+   *     también debe coincidir un marcador de máquina configurado y propiedad del emisor. Sin esa
+   *     evidencia, un claim de cliente faltante siempre se rechaza, incluso con esta opción
+   *     habilitada.
    */
   public ClaimsMapper(ClaimMapping mapping, boolean subjectAsClient) {
     this.mapping = Objects.requireNonNull(mapping);
@@ -39,10 +42,10 @@ public final class ClaimsMapper {
   }
 
   /**
-   * Builds the principal; a token without issuer or client id is rejected.
+   * Construye el principal; se rechaza un token sin emisor o sin id de cliente.
    *
-   * @param claims validated claims
-   * @return the principal
+   * @param claims claims validados
+   * @return el principal
    */
   public AxizPrincipal map(Map<String, Object> claims) {
     String issuer = identityString("iss", claims.get("iss"));
@@ -59,14 +62,16 @@ public final class ClaimsMapper {
       throw AccessException.unauthenticated("token without client id");
     }
     String tenant = tenant(claims);
-    // identity claims key caches, idempotency scopes, audit and logs: a control character there
-    // could make two callers look alike once the values are joined
+    // los claims de identidad alimentan claves de caché, alcances de idempotencia, auditoría y
+    // logs: un carácter de control en ellos podría hacer que dos llamadores parezcan iguales al
+    // unir los valores
     requirePrintable("iss", issuer);
     requirePrintable("client", clientId);
     requirePrintable("sub", subject);
     requirePrintable("tenant", tenant);
     if (subject != null && !subject.equals(clientId) && machine) {
-      // a service account with its own user id: the caller is the application, not a person
+      // una cuenta de servicio con su propio id de usuario: quien llama es la aplicación, no una
+      // persona
       subject = clientId;
     }
     Map<String, Object> attributes = new LinkedHashMap<>();
@@ -76,15 +81,16 @@ public final class ClaimsMapper {
         attributes.put(path, v);
       }
     }
-    return new AxizPrincipal(
-        subject,
-        clientId,
-        issuer,
-        strings(claims.get("aud")),
-        firstSet(claims, mapping.scopes()),
-        firstSet(claims, mapping.roles()),
-        tenant,
-        attributes);
+    return AxizPrincipal.builder()
+        .subject(subject)
+        .clientId(clientId)
+        .issuer(issuer)
+        .audience(strings(claims.get("aud")))
+        .scopes(firstSet(claims, mapping.scopes()))
+        .roles(firstSet(claims, mapping.roles()))
+        .tenantId(tenant)
+        .attributes(attributes)
+        .build();
   }
 
   private @Nullable String tenant(Map<String, Object> claims) {
@@ -127,7 +133,10 @@ public final class ClaimsMapper {
     }
   }
 
-  /** Matches only exact string values from explicitly configured issuer-owned claims. */
+  /**
+   * Coincide solo con valores de cadena exactos de claims propiedad del emisor configurados de
+   * forma explícita.
+   */
   private boolean isMachineToken(Map<String, Object> claims) {
     for (String marker : mapping.machine()) {
       int equals = marker.indexOf('=');

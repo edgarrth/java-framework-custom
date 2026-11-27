@@ -6,12 +6,15 @@ combinaciones disponibles.
 
 ## Contrato y generación
 
-Los roles que exponen REST necesitan un contrato OpenAPI. Validarlo antes de generar:
+Los roles que exponen REST necesitan un contrato OpenAPI 3.1 en el que cada operación declare su
+acceso: `security` con un esquema OAuth2/OpenID Connect (con o sin scopes) o bearer, heredado de la
+raíz o propio, o `security: []` para un acceso público explícito. `axiz contract lint`, `axiz
+doctor`, el Initializr y `axiz new` aplican las mismas reglas. Validarlo antes de generar:
 
 ```bash
 axiz contract lint payments.yaml
 axiz new payment-orders --archetype business --structure hexagonal \
-  --persistence aurora --openapi payments.yaml -c outbox -c sequence
+  --persistence aurora --openapi payments.yaml -c outbox -c messaging-kafka -c sequence
 cd payment-orders
 axiz doctor
 ```

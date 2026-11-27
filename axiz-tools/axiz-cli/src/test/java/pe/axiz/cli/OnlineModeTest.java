@@ -23,10 +23,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import pe.axiz.codegen.openapi.Json;
 
 /**
- * {@code axiz new --server}: the request the CLI sends to the initializr (JSON body, the user's
- * token) and how it unpacks the answer or reports a refusal.
+ * {@code axiz new --server}: la solicitud que la CLI envía al initializr (cuerpo JSON, token del
+ * usuario) y cómo desempaqueta la respuesta o informa un rechazo.
  */
 class OnlineModeTest {
 
@@ -122,12 +123,12 @@ class OnlineModeTest {
     assertEquals(ExitCodes.PROBLEMS, h.run(newCommand(tmp)));
 
     assertEquals(List.of("none"), authorizations, "a blank token is not sent");
-    assertTrue(
-        h.output().contains("initializr answered 403: {\"title\":\"Forbidden\"}"), h.output());
+    assertTrue(h.output().contains("initializr answered 403"), h.output());
+    assertFalse(h.output().contains("{\"title\""));
   }
 
   @Test
-  void longRefusalsAreCut() throws Exception {
+  void remoteRefusalsCannotExposeResponsePayloads() throws Exception {
     status = 500;
     answer = "e".repeat(5_000).getBytes(StandardCharsets.UTF_8);
 
@@ -136,8 +137,16 @@ class OnlineModeTest {
             IOException.class,
             () -> new InitializrClient(URI.create(url()), null).generate(Map.of("name", "x")));
 
-    assertTrue(e.getMessage().endsWith("e".repeat(2000)));
-    assertFalse(e.getMessage().contains("e".repeat(2001)));
+    assertEquals("initializr answered 500", e.getMessage());
+    assertFalse(e.getMessage().contains("e".repeat(10)));
+  }
+
+  @Test
+  void downloadsAreBoundedBeforeZipExpansion() {
+    answer = new byte[Math.toIntExact(ZipExtractor.MAX_TOTAL) + 1];
+    assertThrows(
+        IOException.class,
+        () -> new InitializrClient(URI.create(url()), null).generate(Map.of("name", "x")));
   }
 
   @Test
@@ -154,15 +163,14 @@ class OnlineModeTest {
 
   @Test
   void entriesWithoutRootFolderAndEmptyNamesAreHandled(@TempDir Path tmp) throws Exception {
-    assertEquals(2, ZipExtractor.extract(zip(Map.of("README.md", "hi", "svc/", "")), tmp, false));
+    assertEquals(1, ZipExtractor.extract(zip(Map.of("README.md", "hi", "svc/", "")), tmp, false));
     assertTrue(Files.exists(tmp.resolve("README.md")));
     assertNull(tmp.resolve("svc").toFile().list(), "directory entries are not written");
   }
 
   @Test
   void escapesEveryControlCharacter() {
-    assertEquals("\"q\\\"b\\\\s\\nn\\rr\\tt\\u0001\"", JsonWriter.write("q\"b\\s\nn\rr\tt\u0001"));
-    assertEquals(
-        "[1.5,false,\"x\"]", JsonWriter.write(List.of(1.5, false, new StringBuilder("x"))));
+    assertEquals("\"q\\\"b\\\\s\\nn\\rr\\tt\\u0001\"", Json.write("q\"b\\s\nn\rr\tt\u0001"));
+    assertEquals("[1.5,false,\"x\"]", Json.write(List.of(1.5, false, new StringBuilder("x"))));
   }
 }

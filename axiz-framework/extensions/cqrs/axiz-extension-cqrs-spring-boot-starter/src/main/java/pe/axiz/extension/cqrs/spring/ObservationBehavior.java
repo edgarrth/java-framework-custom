@@ -7,7 +7,10 @@ import pe.axiz.core.observability.AxizObservations;
 import pe.axiz.extension.cqrs.Invocation;
 import pe.axiz.extension.cqrs.PipelineBehavior;
 
-/** Outermost step: a span {@code axiz.command} or {@code axiz.query} around the whole pipeline. */
+/**
+ * Paso más externo: un span {@code axiz.command} o {@code axiz.query} alrededor de todo el
+ * pipeline.
+ */
 public final class ObservationBehavior implements PipelineBehavior {
 
   private final ArchitectureObservation observation;

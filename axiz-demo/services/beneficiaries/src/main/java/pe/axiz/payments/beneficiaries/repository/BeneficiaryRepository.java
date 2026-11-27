@@ -3,28 +3,31 @@ package pe.axiz.payments.beneficiaries.repository;
 import java.util.List;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.Page;
+import pe.axiz.core.api.Page;
 import pe.axiz.payments.beneficiaries.model.Beneficiary;
 
-/** Storage of beneficiaries; only active (not removed) items are returned. */
+/** Almacenamiento de beneficiarios; solo se devuelven los elementos activos (no eliminados). */
 public interface BeneficiaryRepository {
 
-  /** The active beneficiary, if any. */
+  /** El beneficiario activo, si existe. */
   Optional<Beneficiary> findActive(String customerId, String beneficiaryId);
 
   /**
-   * One page of active beneficiaries of a customer.
+   * Una página de beneficiarios activos de un cliente.
    *
-   * @param cursor opaque cursor of the previous page, or null for the first one
+   * @param cursor cursor opaco de la página previa, o null para la primera
    */
   Page<Beneficiary> listActive(String customerId, int size, @Nullable String cursor);
 
-  /** Every active beneficiary of a customer (bounded by the per-customer limit). */
+  /** Todos los beneficiarios activos de un cliente (acotados por el límite por cliente). */
   List<Beneficiary> allActive(String customerId);
 
-  /** Inserts a new beneficiary; fails if the key already exists. */
-  void insert(Beneficiary beneficiary);
+  /**
+   * Garantiza de forma atómica la unicidad de la cuenta y el límite del cliente al insertar una
+   * clave nueva.
+   */
+  void insert(Beneficiary beneficiary, int maxPerCustomer);
 
-  /** Writes a change with optimistic locking. */
+  /** Escribe un cambio con bloqueo optimista. */
   Beneficiary update(Beneficiary beneficiary);
 }

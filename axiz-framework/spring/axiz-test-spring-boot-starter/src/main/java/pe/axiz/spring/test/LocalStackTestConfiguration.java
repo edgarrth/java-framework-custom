@@ -9,9 +9,9 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 
 /**
- * LocalStack for the AWS adapters. The framework clients read {@code axiz.aws.endpoint} and {@code
- * axiz.aws.region}; LocalStack credentials are scoped to the Spring test context through a provider
- * bean.
+ * LocalStack para los adaptadores de AWS. Los clientes del framework leen {@code axiz.aws.endpoint}
+ * y {@code axiz.aws.region}; las credenciales de LocalStack se limitan al contexto de prueba de
+ * Spring mediante un bean de proveedor.
  */
 @TestConfiguration(proxyBeanMethods = false)
 public class LocalStackTestConfiguration {
@@ -34,7 +34,8 @@ public class LocalStackTestConfiguration {
       registry.add("axiz.transport.allow-plain-http", () -> "true");
       registry.add("axiz.aws.endpoint", () -> localstack.getEndpoint().toString());
       registry.add("axiz.aws.region", localstack::getRegion);
-      // The Cloud AWS Parameter Store integration borrows the explicit context-global bean.
+      // La integración de Parameter Store de Cloud AWS toma prestado el bean global explícito del
+      // contexto.
       registry.add("spring.cloud.aws.endpoint", () -> localstack.getEndpoint().toString());
       registry.add("spring.cloud.aws.region.static", localstack::getRegion);
     };

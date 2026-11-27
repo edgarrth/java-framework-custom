@@ -4,16 +4,16 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import pe.axiz.core.commons.RequestContext;
+import pe.axiz.core.context.RequestContext;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventFactory;
 import pe.axiz.core.outbox.OutboxWriter;
 
 /**
- * Records events in the outbox inside the caller's transaction; the relay publishes them after
- * commit. Calling it outside a transaction is an error, because the event could be stored without
- * the business change (or the opposite). The writer keeps the trace of the caller with the event
- * ({@link pe.axiz.core.outbox.OutboxWriteTracing}).
+ * Registra eventos en el outbox dentro de la transacción del invocante; el relay los publica
+ * después del commit. Invocarlo fuera de una transacción es un error, porque el evento podría
+ * almacenarse sin el cambio de negocio (o al revés). El writer conserva la traza del invocante
+ * junto con el evento ({@link pe.axiz.core.outbox.OutboxWriteTracing}).
  */
 public class TransactionalEvents {
 
@@ -37,15 +37,16 @@ public class TransactionalEvents {
   }
 
   /**
-   * Enqueues an event.
+   * Encola un evento.
    *
-   * @param destination logical destination
-   * @param eventId domain event id (becomes the CloudEvents id and the FIFO deduplication id)
-   * @param type event type without prefix
-   * @param aggregateType aggregate type, e.g. {@code payment}
-   * @param aggregateId aggregate id (CloudEvents subject and partition key)
+   * @param destination destino lógico
+   * @param eventId id del evento de dominio (se convierte en el id de CloudEvents y en el id de
+   *     deduplicación FIFO)
+   * @param type tipo de evento sin prefijo
+   * @param aggregateType tipo de agregado, p. ej. {@code payment}
+   * @param aggregateId id del agregado (subject de CloudEvents y clave de partición)
    * @param payload payload
-   * @return the stored envelope
+   * @return el sobre almacenado
    */
   public EventEnvelope enqueue(
       String destination,

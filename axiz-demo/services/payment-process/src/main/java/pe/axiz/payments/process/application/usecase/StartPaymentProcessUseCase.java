@@ -17,8 +17,8 @@ import pe.axiz.payments.process.domain.PaymentProcess;
 import pe.axiz.structure.hexagonal.annotation.UseCase;
 
 /**
- * Starts (or reports) the payment process of an order. One process per order: starting it again, as
- * a redelivered event or a retried request does, returns the existing process.
+ * Inicia (o informa) el proceso de pago de una orden. Un proceso por orden: iniciarlo de nuevo,
+ * como ocurre con un evento reentregado o una solicitud reintentada, devuelve el proceso existente.
  */
 @UseCase
 public class StartPaymentProcessUseCase
@@ -26,9 +26,9 @@ public class StartPaymentProcessUseCase
         StartPaymentProcessUseCase.Input, PaymentProcess> {
 
   /**
-   * Input of the use case.
+   * Entrada del caso de uso.
    *
-   * @param instruction what to pay
+   * @param instruction qué se paga
    */
   public record Input(PaymentInstruction instruction) {}
 

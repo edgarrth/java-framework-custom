@@ -1,14 +1,14 @@
-# gitleaks configuration shared by all axiz repositories
+# Configuración de gitleaks compartida por todos los repositorios de axiz
 title = "axiz gitleaks config"
 
 [extend]
 useDefault = true
 
 [[rules]]
-id = "axiz-nexus-token"
-description = "Nexus user token"
-regex = '''(?i)nexus[_-]?(token|password)\s*[:=]\s*['"][A-Za-z0-9+/=_-]{12,}['"]'''
-tags = ["nexus", "credential"]
+id = "axiz-package-credential"
+description = "Package registry credential"
+regex = '''(?i)(?:packages|github|ghcr|nexus)[_-]?(?:read[_-]?|publish[_-]?)?(token|password)\s*[:=]\s*['"][A-Za-z0-9+/=_-]{12,}['"]'''
+tags = ["registry", "credential"]
 
 [[rules]]
 id = "axiz-jdbc-password"
@@ -16,7 +16,7 @@ description = "Password embedded in a JDBC URL"
 regex = '''jdbc:[a-z0-9]+://[^\s'"]*password=[^\s&'"]{4,}'''
 tags = ["database", "credential"]
 
-# Only a reviewed false positive of this rule, at these exact paths and on a digest-only line.
+# Solo un falso positivo revisado de esta regla, en estas rutas exactas y en una línea con únicamente un digest.
 [[rules]]
 id = "generic-api-key"
 [[rules.allowlists]]

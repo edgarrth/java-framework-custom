@@ -26,7 +26,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.localstack.LocalStackContainer;
-import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
 import pe.axiz.adapter.idempotency.dynamodb.DynamoDbAsyncIdempotencyStore;
@@ -45,6 +44,7 @@ import pe.axiz.core.inbox.InboxStore;
 import pe.axiz.core.sequence.AsyncSequenceGenerator;
 import pe.axiz.core.sequence.ResetPolicy;
 import pe.axiz.core.sequence.SequenceFormat;
+import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.test.BlockHoundExtension;
 import pe.axiz.test.contracts.AsyncInboxStoreContract;
@@ -65,18 +65,22 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.BillingMode;
 import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
 import software.amazon.awssdk.services.dynamodb.model.KeyType;
 import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 
-/** Idempotency and inbox contracts on DynamoDB (LocalStack): conditional writes and ALL_OLD. */
+/**
+ * Contratos de idempotencia e inbox sobre DynamoDB (LocalStack): escrituras condicionales y
+ * ALL_OLD.
+ */
 @ExtendWith(BlockHoundExtension.class)
 class LocalStackDynamoDbStoresIT {
 
   private static final LocalStackContainer LOCALSTACK =
-      new LocalStackContainer(DockerImageName.parse(Docker.LOCALSTACK)).withServices("dynamodb");
+      TestContainerImages.localstack().withServices("dynamodb");
 
   private static DynamoDbClient dynamo;
   private static AsyncAwsClients inboxResources;
@@ -160,12 +164,79 @@ class LocalStackDynamoDbStoresIT {
     dynamo.waiter().waitUntilTableExists(b -> b.tableName(name));
   }
 
+  @Test
+  void protectedReplayAndConcurrentCasKeepTheSameCiphertext() {
+    ProtectedReplayChecks.verify(
+        new DynamoDbIdempotencyStore(dynamo, "axiz-idempotency"),
+        new DynamoDbAsyncIdempotencyStore(nativeDynamo, "axiz-idempotency", Clock.systemUTC()),
+        key ->
+            dynamo
+                .getItem(
+                    b ->
+                        b.tableName("axiz-idempotency")
+                            .key(Map.of("pk", AttributeValue.fromS(key)))
+                            .consistentRead(true))
+                .item()
+                .get("data")
+                .s());
+  }
+
   @TestFactory
   Stream<DynamicTest> idempotencyContract() {
     return IdempotencyStoreContract.checks(
             clock -> new DynamoDbIdempotencyStore(dynamo, "axiz-idempotency", clock))
         .stream()
         .map(c -> DynamicTest.dynamicTest(c.name(), c::run));
+  }
+
+  @Test
+  void inboxCompletionEnablesTtlAndRejectsRowsWithoutMigratedRetention() throws Exception {
+    for (boolean nativeMode : new boolean[] {false, true}) {
+      String event = UUID.randomUUID().toString();
+      String consumer = "ttl-contract";
+      Instant now = Instant.now();
+      Instant expiration = now.plusSeconds(3600);
+      var sync = new DynamoDbInboxStore(dynamo, "axiz-inbox");
+      var async = new DynamoDbAsyncInboxStore(nativeDynamo, "axiz-inbox");
+      if (nativeMode)
+        async
+            .tryAcquire(consumer, event, "owner", now, now.plusSeconds(60), expiration)
+            .toCompletableFuture()
+            .get(15, TimeUnit.SECONDS);
+      else sync.tryAcquire(consumer, event, "owner", now, now.plusSeconds(60), expiration);
+      var key = Map.of("pk", AttributeValue.fromS(consumer + "#" + event));
+      var acquired =
+          dynamo.getItem(b -> b.tableName("axiz-inbox").key(key).consistentRead(true)).item();
+      Assertions.assertFalse(acquired.containsKey("ttl"));
+      dynamo.updateItem(
+          b -> b.tableName("axiz-inbox").key(key).updateExpression("REMOVE expiresAt"));
+      boolean rejected =
+          nativeMode
+              ? async
+                  .markProcessed(consumer, event, "owner", now.plusSeconds(1))
+                  .toCompletableFuture()
+                  .get(15, TimeUnit.SECONDS)
+              : sync.markProcessed(consumer, event, "owner", now.plusSeconds(1));
+      Assertions.assertFalse(rejected);
+      dynamo.updateItem(
+          b ->
+              b.tableName("axiz-inbox")
+                  .key(key)
+                  .updateExpression("SET expiresAt = :expiry")
+                  .expressionAttributeValues(Map.of(":expiry", acquired.get("expiresAt"))));
+      boolean completed =
+          nativeMode
+              ? async
+                  .markProcessed(consumer, event, "owner", now.plusSeconds(1))
+                  .toCompletableFuture()
+                  .get(15, TimeUnit.SECONDS)
+              : sync.markProcessed(consumer, event, "owner", now.plusSeconds(1));
+      Assertions.assertTrue(completed);
+      var processed =
+          dynamo.getItem(b -> b.tableName("axiz-inbox").key(key).consistentRead(true)).item();
+      Assertions.assertEquals(acquired.get("expiresAt"), processed.get("ttl"));
+      Assertions.assertEquals("PROCESSED", processed.get("status").s());
+    }
   }
 
   @TestFactory
@@ -179,7 +250,7 @@ class LocalStackDynamoDbStoresIT {
 
           @Override
           public boolean purgesOnDemand() {
-            return false; // table TTL
+            return false; // TTL de la tabla
           }
         };
     return InboxStoreContract.checks(backend).stream()
@@ -269,7 +340,7 @@ class LocalStackDynamoDbStoresIT {
           .verify(Duration.ofSeconds(20));
       long last = new DynamoDbSequenceStore(dynamo, "axiz-sequence").increment(name, "", 1);
       Assertions.assertTrue(last > greatest.get());
-      // Force expiry of the short-lived native pool before allocating again.
+      // Se fuerza la expiración del pool nativo de vida corta previo a asignar de nuevo.
       LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(150));
       StepVerifier.create(
               Mono.fromCompletionStage(() -> store.increment(name, "", 1))
@@ -304,7 +375,13 @@ class LocalStackDynamoDbStoresIT {
         new DynamoDbAsyncIdempotencyStore(nativeDynamo, "axiz-idempotency", Clock.systemUTC());
     var key = "native-" + UUID.randomUUID();
     var record =
-        new IdempotencyRecord(key, "hash", Status.IN_PROGRESS, "owner", null, now.plusSeconds(60));
+        IdempotencyRecord.builder(key, "hash", now.plusSeconds(60), now.plusSeconds(60))
+            .status(Status.IN_PROGRESS)
+            .owner("owner")
+            .response(null)
+            .resolutionVersion(0)
+            .failure(null)
+            .build();
     var response = new StoredResponse(201, Map.of("Location", "/payments/1"), new byte[] {0, 127});
     StepVerifier.create(nativeCall(() -> store.tryStart(record)))
         .expectNext(true)

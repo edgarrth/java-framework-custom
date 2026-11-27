@@ -12,7 +12,7 @@ import pe.axiz.core.notification.NotificationSender;
 import pe.axiz.core.secrets.SecretResolver;
 import pe.axiz.core.secrets.SecretValue;
 
-/** Synchronous capabilities must not enter a reactive application flow. */
+/** Las capacidades síncronas no deben entrar en un flujo de aplicación reactivo. */
 public class BlockingCapabilities {
   public SecretValue secret(SecretResolver resolver) {
     return resolver.require("key");

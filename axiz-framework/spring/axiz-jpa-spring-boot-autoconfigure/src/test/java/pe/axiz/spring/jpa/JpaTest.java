@@ -3,25 +3,53 @@ package pe.axiz.spring.jpa;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import org.springframework.core.Ordered;
 import org.springframework.mock.env.MockEnvironment;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
+import pe.axiz.kit.jpa.AuditListener;
 import pe.axiz.kit.jpa.AuditorProvider;
-import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 
 class JpaTest {
 
   private final AxizJpaEnvironmentPostProcessor epp = new AxizJpaEnvironmentPostProcessor();
+
+  @Test
+  void sqlAndConstraintDiagnosticsCannotLeakValuesInDeployedEnvironments() {
+    var defaults = new MockEnvironment();
+    epp.postProcessEnvironment(defaults, new SpringApplication());
+    assertEquals("false", defaults.getProperty("spring.jpa.show-sql"));
+    assertEquals("OFF", defaults.getProperty("logging.level.org.hibernate.orm.jdbc.error"));
+    for (String property :
+        java.util.List.of(
+            "spring.jpa.show-sql",
+            "spring.jpa.properties.hibernate.show_sql",
+            "logging.level.org.hibernate.SQL",
+            "logging.level.org.hibernate.orm.jdbc",
+            "logging.level.org.hibernate.orm.jdbc.error",
+            "logging.level.org.hibernate.orm.jdbc.bind")) {
+      String value = property.startsWith("logging.") ? "ERROR" : "true";
+      var deployed = new MockEnvironment().withProperty(property, value);
+      assertThrows(
+          IllegalStateException.class,
+          () -> epp.postProcessEnvironment(deployed, new SpringApplication()),
+          property);
+      var synthetic =
+          new MockEnvironment()
+              .withProperty(property, value)
+              .withProperty("axiz.config.environment", "test");
+      epp.postProcessEnvironment(synthetic, new SpringApplication());
+      assertEquals(value, synthetic.getProperty(property));
+    }
+  }
 
   @Test
   void schemaChangesOnlyLocally() {
@@ -42,22 +70,9 @@ class JpaTest {
   }
 
   @Test
-  void awsWrapperPlugins() {
-    MockEnvironment env =
-        new MockEnvironment()
-            .withProperty("axiz.jpa.aws-wrapper.enabled", "true")
-            .withProperty("axiz.jpa.aws-wrapper.iam", "true")
-            .withProperty("axiz.jpa.aws-wrapper.read-write-splitting", "true");
-    epp.postProcessEnvironment(env, new SpringApplication());
-    assertEquals(
-        "axiz-jpa-iam-split",
-        env.getProperty("spring.datasource.hikari.data-source-properties.wrapperProfileName"));
-  }
-
-  @Test
   void auditorFromCaller() {
     RequestAuditorProvider p = new RequestAuditorProvider();
-    assertEquals("system", p.currentAuditor().orElseThrow());
+    assertTrue(p.currentAuditor().isEmpty());
     try (RequestContext.Scope s =
         RequestContext.open(
             RequestMetadata.builder("corr-12345678", "req-12345678")
@@ -90,26 +105,6 @@ class JpaTest {
   }
 
   @Test
-  void theAwsWrapperIsOptInAndKeepsServiceSettings() {
-    MockEnvironment plain = new MockEnvironment();
-    epp.postProcessEnvironment(plain, new SpringApplication());
-    assertNull(plain.getProperty("spring.datasource.driver-class-name"));
-
-    MockEnvironment aurora =
-        new MockEnvironment()
-            .withProperty("axiz.jpa.aws-wrapper.enabled", "true")
-            .withProperty("spring.datasource.hikari.maximum-pool-size", "8");
-    epp.postProcessEnvironment(aurora, new SpringApplication());
-    assertEquals(
-        "software.amazon.jdbc.Driver", aurora.getProperty("spring.datasource.driver-class-name"));
-    assertEquals(
-        "failover2,efm2",
-        aurora.getProperty("spring.datasource.hikari.data-source-properties.wrapperPlugins"));
-    assertEquals("8", aurora.getProperty("spring.datasource.hikari.maximum-pool-size"));
-    assertEquals(Ordered.LOWEST_PRECEDENCE, epp.getOrder());
-  }
-
-  @Test
   void machineCallersAreAuditedByClientId() {
     RequestAuditorProvider p = new RequestAuditorProvider();
     try (RequestContext.Scope s =
@@ -121,25 +116,44 @@ class JpaTest {
     }
     try (RequestContext.Scope s =
         RequestContext.open(RequestMetadata.builder("corr-12345678", "req-12345678").build())) {
-      assertEquals("system", p.currentAuditor().orElseThrow());
+      assertTrue(p.currentAuditor().isEmpty());
+    }
+  }
+
+  @Test
+  void blankIdentitiesAreNotRecordedAsAuditors() {
+    RequestAuditorProvider provider = new RequestAuditorProvider();
+    try (RequestContext.Scope scope =
+        RequestContext.open(
+            RequestMetadata.builder("corr-12345678", "req-12345678")
+                .subject(" ")
+                .clientId("batch-app")
+                .build())) {
+      assertEquals("batch-app", provider.currentAuditor().orElseThrow());
+    }
+    try (RequestContext.Scope scope =
+        RequestContext.open(
+            RequestMetadata.builder("corr-12345678", "req-12345678")
+                .subject(" ")
+                .clientId("\t")
+                .build())) {
+      assertTrue(provider.currentAuditor().isEmpty());
     }
   }
 
   @Test
   void theAuditorIsPublishedToTheEntityListener() {
     new ApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizJpaAutoConfiguration.class))
         .run(
             ctx -> {
               assertThat(ctx)
                   .hasSingleBean(AuditorProvider.class)
-                  .hasSingleBean(AuditingRegistrar.class);
+                  .hasSingleBean(AuditListener.class);
               assertInstanceOf(RequestAuditorProvider.class, ctx.getBean(AuditorProvider.class));
             });
     AuditorProvider fixed = () -> Optional.of("migration");
     new ApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizJpaAutoConfiguration.class))
         .withBean(AuditorProvider.class, () -> fixed)
         .run(ctx -> assertSame(fixed, ctx.getBean(AuditorProvider.class)));

@@ -5,15 +5,15 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.StringJoiner;
 
-/** R2DBC URL helpers (Flyway still migrates over JDBC; IAM tokens need host and port). */
+/** Utilidades de URL de R2DBC (Flyway migra sobre JDBC; los tokens IAM necesitan host y puerto). */
 public final class R2dbcUrls {
 
   /**
-   * Host, port and database of an R2DBC URL.
+   * Host, puerto y base de datos de una URL de R2DBC.
    *
-   * @param host host name
-   * @param port port (5432 when absent)
-   * @param database database name, or empty
+   * @param host nombre del host
+   * @param port puerto (5432 cuando falta)
+   * @param database nombre de la base de datos, o vacío
    */
   public record Endpoint(String host, int port, String database) {}
 
@@ -35,11 +35,11 @@ public final class R2dbcUrls {
   private R2dbcUrls() {}
 
   /**
-   * The JDBC URL of the same PostgreSQL database: {@code r2dbc:postgresql://h:5432/db} and {@code
-   * r2dbc:pool:postgresql://...} become {@code jdbc:postgresql://h:5432/db}. Of the query
-   * parameters only the ones with a JDBC equivalent are kept ({@code sslMode}/{@code sslmode} as
-   * {@code sslmode}, {@code applicationName} as {@code ApplicationName}); driver and pool options
-   * are dropped.
+   * URL JDBC de la misma base de datos PostgreSQL: {@code r2dbc:postgresql://h:5432/db} y {@code
+   * r2dbc:pool:postgresql://...} se convierten en {@code jdbc:postgresql://h:5432/db}. De los
+   * parámetros de la query se conservan solo los que tienen equivalente en JDBC ({@code
+   * sslMode}/{@code sslmode} como {@code sslmode}, {@code applicationName} como {@code
+   * ApplicationName}); se descartan las opciones del driver y del pool.
    */
   public static String toJdbc(String r2dbcUrl) {
     String rest = stripScheme(r2dbcUrl);

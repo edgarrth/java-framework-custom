@@ -2,9 +2,9 @@ package pe.axiz.core.audit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pe.axiz.core.commons.json.JsonWriter;
+import pe.axiz.core.json.JsonWriter;
 
-/** Writes audit events as JSON lines to the {@code axiz.audit} logger. */
+/** Escribe eventos de auditoría como líneas JSON en el logger {@code axiz.audit}. */
 public final class LoggingAuditPublisher implements AuditPublisher {
 
   private static final Logger LOG = LoggerFactory.getLogger("axiz.audit");
@@ -12,7 +12,7 @@ public final class LoggingAuditPublisher implements AuditPublisher {
   @Override
   public void publish(AuditEvent event) {
     if (LOG.isInfoEnabled()) {
-      LOG.info(JsonWriter.write(event.toMap()));
+      LOG.info(JsonWriter.writeCanonical(event.toMap()));
     }
   }
 }

@@ -9,8 +9,9 @@ import software.amazon.awssdk.services.kms.KmsClient;
 import software.amazon.awssdk.services.kms.model.GenerateDataKeyResponse;
 
 /**
- * Data keys from AWS KMS. The context is sent as KMS encryption context, so a data key can only be
- * decrypted for the same context, and appears in CloudTrail for auditing.
+ * Claves de datos de AWS KMS. El contexto se envía como contexto de cifrado de KMS, de modo que una
+ * clave de datos solo puede descifrarse para el mismo contexto, y aparece en CloudTrail para
+ * auditoría.
  */
 public final class KmsDataKeyProvider implements DataKeyProvider {
 
@@ -34,7 +35,7 @@ public final class KmsDataKeyProvider implements DataKeyProvider {
   public DataKey generate(String context) {
     try {
       GenerateDataKeyResponse r = kms.generateDataKey(requests.generate(context));
-      return new DataKey(r.plaintext().asByteArray(), r.ciphertextBlob().asByteArray());
+      return KmsRequests.dataKey(r);
     } catch (SdkException e) {
       throw new CryptoException("KMS GenerateDataKey failed", e);
     }

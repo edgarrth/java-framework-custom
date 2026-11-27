@@ -4,12 +4,12 @@ import java.io.Serializable;
 import org.jspecify.annotations.Nullable;
 
 /**
- * A validation failure on a single field.
+ * Fallo de validación en un único campo.
  *
- * @param field field path, e.g. {@code beneficiary.account}
- * @param code constraint code, e.g. {@code NotBlank}
- * @param message human readable message (already localized)
- * @param rejectedValue masked rejected value, if safe to show
+ * @param field ruta del campo, por ejemplo {@code beneficiary.account}
+ * @param code código de la restricción, por ejemplo {@code NotBlank}
+ * @param message mensaje legible (ya localizado)
+ * @param rejectedValue valor rechazado enmascarado, si es seguro mostrarlo
  */
 public record FieldViolation(
     String field, String code, String message, @Nullable String rejectedValue)

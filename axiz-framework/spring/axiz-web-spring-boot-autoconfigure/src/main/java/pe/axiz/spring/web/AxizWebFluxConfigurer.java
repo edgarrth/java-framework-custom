@@ -8,7 +8,7 @@ import org.springframework.web.reactive.config.CorsRegistry;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
 import org.springframework.web.reactive.result.method.annotation.ArgumentResolverConfigurer;
 
-/** WebFlux wiring: paging parameters, CORS and native API versioning. */
+/** Cableado de WebFlux: parámetros de paginación, CORS y versionado nativo de la API. */
 public class AxizWebFluxConfigurer implements WebFluxConfigurer {
 
   private final AxizWebProperties properties;

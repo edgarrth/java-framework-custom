@@ -50,15 +50,16 @@ class SqsMessagingTest {
   }
 
   private static EventEnvelope event() {
-    return new EventEnvelope(
-        "e-1",
-        "urn:s",
-        "t.v1",
-        Instant.parse("2026-01-01T00:00:00Z"),
-        "agg-1",
-        "application/json",
-        "{\"a\":1}".getBytes(StandardCharsets.UTF_8),
-        Map.of());
+    return EventEnvelope.builder()
+        .id("e-1")
+        .source("urn:s")
+        .type("t.v1")
+        .time(Instant.parse("2026-01-01T00:00:00Z"))
+        .subject("agg-1")
+        .dataContentType("application/json")
+        .data("{\"a\":1}".getBytes(StandardCharsets.UTF_8))
+        .extensions(Map.of())
+        .build();
   }
 
   @Test

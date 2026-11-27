@@ -12,10 +12,10 @@ import pe.axiz.core.audit.AuditPublishException;
 import pe.axiz.core.audit.AuditPublisher;
 
 /**
- * Publishes audit events to an Amazon MSK (Kafka) topic. The record key is the resource so the
- * history of a resource stays ordered in one partition. Every send waits for the broker
- * acknowledgement (bounded by a timeout) so failures are visible; wrap it with the asynchronous
- * publisher to keep callers non-blocking.
+ * Publica eventos de auditoría en un tópico de Amazon MSK (Kafka). La clave del registro es el
+ * recurso, de modo que la historia de un recurso se mantiene ordenada en una partición. Cada envío
+ * espera la confirmación del broker (acotada por un timeout) para que los fallos sean visibles; se
+ * envuelve con el publicador asíncrono para no bloquear a quien llama.
  */
 public final class KafkaAuditPublisher implements AuditPublisher {
 

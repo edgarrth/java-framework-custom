@@ -8,8 +8,8 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Base exception of the framework. It carries an error definition and parameters for the localized
- * detail. {@link #getMessage()} is for logs only and is never sent to clients.
+ * Excepción base del framework. Lleva una definición de error y parámetros para el detalle
+ * localizado. {@link #getMessage()} es solo para logs y nunca se envía a los clientes.
  */
 public class AxizException extends RuntimeException {
 
@@ -73,7 +73,7 @@ public class AxizException extends RuntimeException {
     return definition.type();
   }
 
-  /** Parameters used to render the localized detail, e.g. {@code {limit=5000}}. */
+  /** Parámetros usados para generar el detalle localizado, por ejemplo {@code {limit=5000}}. */
   public Map<String, Object> parameters() {
     return parameters;
   }

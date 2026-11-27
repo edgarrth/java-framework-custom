@@ -8,7 +8,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 
-/** Registry of identifier types: built-in packs, ServiceLoader providers and custom types. */
+/**
+ * Registro de tipos de identificador: paquetes integrados, proveedores de ServiceLoader y tipos
+ * personalizados.
+ */
 public final class IdentifierRegistry {
 
   private final Map<String, IdentifierType> types;
@@ -17,7 +20,7 @@ public final class IdentifierRegistry {
     this.types = Map.copyOf(types);
   }
 
-  /** Registry with every pack discovered through {@link ServiceLoader}. */
+  /** Registro con todos los paquetes descubiertos mediante {@link ServiceLoader}. */
   public static IdentifierRegistry withDiscoveredTypes() {
     return builder().discover().build();
   }
@@ -44,12 +47,12 @@ public final class IdentifierRegistry {
   }
 
   /**
-   * Normalizes and validates a raw value.
+   * Normaliza y valida un valor en bruto.
    *
-   * @param type type name
-   * @param raw user input
-   * @return the identifier
-   * @throws InvalidIdentifierException when invalid
+   * @param type nombre del tipo
+   * @param raw entrada del usuario
+   * @return el identificador
+   * @throws InvalidIdentifierException cuando no es válido
    */
   public Identifier parse(String type, String raw) {
     IdentifierType t = require(type);

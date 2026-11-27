@@ -9,16 +9,17 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import pe.axiz.core.money.Money;
-import pe.axiz.payments.process.api.model.ProcessRequest;
-import pe.axiz.payments.process.api.model.ProcessView;
+import pe.axiz.payments.process.adapter.in.rest.model.ProcessRequest;
+import pe.axiz.payments.process.adapter.in.rest.model.ProcessView;
 import pe.axiz.payments.process.application.usecase.GetPaymentProcessUseCase;
 import pe.axiz.payments.process.application.usecase.StartPaymentProcessUseCase;
 import pe.axiz.payments.process.domain.PaymentInstruction;
 import pe.axiz.payments.process.domain.PaymentProcess;
 
 /**
- * REST adapter of the {@code payment-processes} operations (src/main/openapi). Processes normally
- * start from the {@code payment-order.created} event; this endpoint serves operations and tests.
+ * Adaptador REST de las operaciones {@code payment-processes} (src/main/openapi). Los procesos
+ * normalmente se inician a partir del evento {@code payment-order.created}; este endpoint sirve
+ * para operaciones y pruebas.
  */
 @RestController
 public class PaymentProcessesController {
@@ -34,8 +35,9 @@ public class PaymentProcessesController {
   }
 
   /**
-   * Starts the payment saga of an order (POST /v1/payment-processes). An operations action: only
-   * callers with {@code payments:process}; channels never start processes directly.
+   * Inicia la saga de pago de una orden (POST /v1/payment-processes). Es una acción de operaciones:
+   * solo invocadores con {@code payments:process}; los canales nunca inician procesos de forma
+   * directa.
    */
   @PostMapping("/v1/payment-processes")
   @PreAuthorize("hasAuthority('SCOPE_payments:process')")
@@ -53,7 +55,7 @@ public class PaymentProcessesController {
     return ResponseEntity.status(201).body(toApi(process));
   }
 
-  /** State of a payment saga (GET /v1/payment-processes/{processId}). */
+  /** Estado de una saga de pago (GET /v1/payment-processes/{processId}). */
   @GetMapping("/v1/payment-processes/{processId}")
   @PreAuthorize("hasAnyAuthority('SCOPE_payments:process', 'SCOPE_payments:read')")
   public ResponseEntity<ProcessView> getPaymentProcess(

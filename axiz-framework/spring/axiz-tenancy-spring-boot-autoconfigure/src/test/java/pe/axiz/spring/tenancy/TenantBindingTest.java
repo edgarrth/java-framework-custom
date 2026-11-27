@@ -23,13 +23,13 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.server.WebFilterChain;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.errors.ValidationException;
 import pe.axiz.core.tenancy.TenantContext;
 import reactor.core.publisher.Mono;
 
-/** How the tenant is bound, cleaned up and propagated on both web stacks. */
+/** Cómo se vincula, se limpia y se propaga el tenant en ambas pilas web. */
 class TenantBindingTest {
 
   private static TenantFilterSupport support(boolean trustHeader, boolean required) {
@@ -57,7 +57,7 @@ class TenantBindingTest {
           });
     }
     assertEquals("bank-a", contextTenant.get());
-    if (mdc.get() != null) { // MDC is a no-op without an SLF4J binding
+    if (mdc.get() != null) { // MDC no hace nada sin un binding de SLF4J
       assertEquals("bank-a", mdc.get());
     }
     assertNull(MDC.get("tenant"));

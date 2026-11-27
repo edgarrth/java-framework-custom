@@ -5,11 +5,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 
 /**
- * Delivers to each sink in order without waiting on a thread. Every sink is attempted after a
- * failure; acceptance fails if any sink fails. Cancellation stops the active and later deliveries.
+ * Entrega a cada sink en orden sin esperar en un hilo. Tras un fallo se intenta igualmente cada
+ * sink; la aceptación falla si falla cualquier sink. La cancelación detiene la entrega activa y las
+ * posteriores.
  */
 public final class CompositeAsyncAuditPublisher implements AsyncAuditEventPublisher {
   private final List<AsyncAuditEventPublisher> delegates;

@@ -3,8 +3,8 @@ package pe.axiz.core.errors;
 import java.util.Optional;
 
 /**
- * Translates third-party exceptions (persistence, serialization, ...) into axiz exceptions.
- * Registered mappers are consulted in order for every exception in the cause chain.
+ * Traduce excepciones de terceros (persistencia, serialización, etc.) a excepciones de axiz. Los
+ * mappers registrados se consultan en orden para cada excepción de la cadena de causas.
  */
 @FunctionalInterface
 public interface ExceptionMapper {
@@ -12,11 +12,12 @@ public interface ExceptionMapper {
   Optional<AxizException> map(Throwable throwable);
 
   /**
-   * Mapper for an exception type, by class name so optional libraries are not required.
+   * Mapper para un tipo de excepción, por nombre de clase para no requerir las librerías
+   * opcionales.
    *
-   * @param className fully qualified exception class name
-   * @param definition definition to use
-   * @return the mapper
+   * @param className nombre de clase de la excepción completamente calificado
+   * @param definition definición a usar
+   * @return el mapper
    */
   static ExceptionMapper byClassName(String className, ErrorDefinition definition) {
     return t -> {

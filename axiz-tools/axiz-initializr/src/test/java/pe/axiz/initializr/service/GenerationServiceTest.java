@@ -19,7 +19,7 @@ public class GenerationServiceTest {
   private final SimpleMeterRegistry meters = new SimpleMeterRegistry();
   private final GenerationService service = new GenerationService(meters);
 
-  /** The sample contract of the tests. */
+  /** El contrato de muestra de las pruebas. */
   public static String contract() throws IOException {
     try (InputStream in = GenerationServiceTest.class.getResourceAsStream("/orders.yaml")) {
       return new String(in.readAllBytes(), StandardCharsets.UTF_8);
@@ -27,19 +27,21 @@ public class GenerationServiceTest {
   }
 
   private static ProjectRequest request(String contract) {
-    return new ProjectRequest(
-        "orders",
-        "pe.axiz.orders",
-        "pe.axiz.orders",
-        "",
-        "business",
-        Structure.HEXAGONAL,
-        Stack.SERVLET,
-        "aurora",
-        List.of(),
-        contract,
-        null,
-        "2.0.0");
+    return ProjectRequest.builder()
+        .name("orders")
+        .groupId("pe.axiz.orders")
+        .basePackage("pe.axiz.orders")
+        .description("")
+        .archetype("business")
+        .structure(Structure.HEXAGONAL)
+        .stack(Stack.SERVLET)
+        .persistence("aurora")
+        .capabilities(List.of())
+        .openApi(contract)
+        .asyncApi(null)
+        .frameworkVersion("2.0.0")
+        .extensions(List.of())
+        .build();
   }
 
   @Test

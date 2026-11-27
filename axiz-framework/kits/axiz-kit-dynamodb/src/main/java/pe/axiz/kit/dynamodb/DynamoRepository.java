@@ -8,9 +8,9 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.Page;
-import pe.axiz.core.commons.PageMetadata;
-import pe.axiz.core.commons.json.JsonWriter;
+import pe.axiz.core.api.Page;
+import pe.axiz.core.api.PageMetadata;
+import pe.axiz.core.json.JsonWriter;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
@@ -25,11 +25,12 @@ import software.amazon.awssdk.enhanced.dynamodb.model.TransactWriteItemsEnhanced
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
- * Generic repository over the DynamoDB Enhanced Client: get by partition key (and sort key),
- * conditional and plain writes, deletes, queries on the table, GSIs and LSIs with cursor
- * pagination, and transactions. Optimistic locking uses {@code @DynamoDbVersionAttribute}.
+ * Repositorio genérico sobre el DynamoDB Enhanced Client: obtención por clave de partición (y clave
+ * de ordenamiento), escrituras condicionales y simples, borrados, consultas sobre la tabla, GSI y
+ * LSI con paginación por cursor, y transacciones. El bloqueo optimista usa
+ * {@code @DynamoDbVersionAttribute}.
  *
- * @param <T> item type (annotated bean or immutable)
+ * @param <T> tipo del ítem (bean anotado o inmutable)
  */
 public class DynamoRepository<T> {
 
@@ -96,7 +97,7 @@ public class DynamoRepository<T> {
     table.putItem(item);
   }
 
-  /** Inserts only if no item with the same key exists (conditional write). */
+  /** Inserta solo si no existe un ítem con la misma clave (escritura condicional). */
   public void insert(T item, String partitionKeyAttribute) {
     table.putItem(
         PutItemEnhancedRequest.builder(table.tableSchema().itemType().rawClass())
@@ -121,7 +122,7 @@ public class DynamoRepository<T> {
     table.deleteItem(Key.builder().partitionValue(partitionKey).sortValue(sortKey).build());
   }
 
-  /** Query by partition key with cursor pagination. */
+  /** Consulta por clave de partición con paginación por cursor. */
   public Page<T> query(String partitionKey, int limit, @Nullable String cursor) {
     String binding = binding("primary", "equal", partitionKey, "");
     QueryEnhancedRequest request =
@@ -133,7 +134,7 @@ public class DynamoRepository<T> {
     return firstPage(table.query(request), limit, binding);
   }
 
-  /** Query by partition key and sort key prefix. */
+  /** Consulta por clave de partición y prefijo de la clave de ordenamiento. */
   public Page<T> queryBeginsWith(
       String partitionKey, String sortKeyPrefix, int limit, @Nullable String cursor) {
     String binding = binding("primary", "prefix", partitionKey, sortKeyPrefix);
@@ -147,7 +148,7 @@ public class DynamoRepository<T> {
     return firstPage(table.query(request), limit, binding);
   }
 
-  /** Query a global or local secondary index. */
+  /** Consulta un índice secundario global o local. */
   public Page<T> queryIndex(
       String indexName, String partitionKey, int limit, @Nullable String cursor) {
     String binding = binding(indexName, "equal", partitionKey, "");
@@ -163,7 +164,7 @@ public class DynamoRepository<T> {
     return toPage(first.items(), first.lastEvaluatedKey(), limit, binding);
   }
 
-  /** Runs a transaction with the given builder customization. */
+  /** Ejecuta una transacción con la personalización del builder indicada. */
   public void transact(Consumer<TransactWriteItemsEnhancedRequest.Builder> builder) {
     TransactWriteItemsEnhancedRequest.Builder b = TransactWriteItemsEnhancedRequest.builder();
     builder.accept(b);

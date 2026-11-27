@@ -5,6 +5,8 @@ info:
   description: Frequent beneficiaries of each customer (DynamoDB, soft delete).
 tags:
   - name: beneficiaries
+# Los clientes gestionan solo sus propios beneficiarios; el servicio verifica el cliente de la ruta.
+security: [{oauth2: []}]
 paths:
   /v1/customers/{customerId}/beneficiaries:
     parameters:
@@ -107,9 +109,26 @@ paths:
             application/problem+json:
               schema: {$ref: '#/components/schemas/Problem'}
 components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      description: Bearer access token issued by the payments identity provider (Keycloak in the demo).
+      flows:
+        authorizationCode:
+          authorizationUrl: http://localhost:8180/realms/axiz/protocol/openid-connect/auth
+          tokenUrl: http://localhost:8180/realms/axiz/protocol/openid-connect/token
+          scopes:
+            payments:channel: Customer channel operations on the caller's own data
+        clientCredentials:
+          tokenUrl: http://localhost:8180/realms/axiz/protocol/openid-connect/token
+          scopes:
+            payments:channel: Channel applications acting for customers
+            payments:read: Read-only access to payment data
+            payments:process: Payment processing between internal services
   schemas:
     BeneficiaryRequest:
       type: object
+      additionalProperties: false
       required: [alias, holderName, cci, currency]
       properties:
         alias: {type: string, maxLength: 40}
@@ -118,11 +137,13 @@ components:
         currency: {type: string, pattern: '^(PEN|USD)$'}
     BeneficiaryUpdate:
       type: object
+      additionalProperties: false
       required: [alias]
       properties:
         alias: {type: string, maxLength: 40}
     Beneficiary:
       type: object
+      additionalProperties: true
       properties:
         id: {type: string}
         customerId: {type: string}
@@ -132,6 +153,7 @@ components:
         currency: {type: string}
     BeneficiaryPage:
       type: object
+      additionalProperties: true
       properties:
         items:
           type: array
@@ -139,6 +161,7 @@ components:
         nextCursor: {type: [string, "null"]}
     Problem:
       type: object
+      additionalProperties: true
       properties:
         type: {type: string}
         title: {type: string}

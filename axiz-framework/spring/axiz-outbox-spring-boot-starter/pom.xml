@@ -15,7 +15,7 @@
   <description>Transactional outbox on Aurora PostgreSQL with background relay</description>
 
   <properties>
-    <!-- dependencies only: the jar holds just the manifest, by design (no "JAR will be empty" warning) -->
+    <!-- solo dependencias: el jar contiene únicamente el manifiesto, por diseño (sin la advertencia "JAR will be empty") -->
     <maven.jar.forceCreation>true</maven.jar.forceCreation>
     <axiz.module.name>pe.axiz.spring.outbox.starter</axiz.module.name>
   </properties>
@@ -25,10 +25,6 @@
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-outbox-spring-boot-autoconfigure</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-jdbc</artifactId>
     </dependency>
   </dependencies>
 </project>

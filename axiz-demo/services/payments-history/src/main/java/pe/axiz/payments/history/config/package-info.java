@@ -1,4 +1,4 @@
-/** Wiring of handlers, ports and adapters. */
+/** Cableado de handlers, puertos y adaptadores. */
 @NullMarked
 package pe.axiz.payments.history.config;
 

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-technology</artifactId><version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-technology/pom.xml</relativePath></parent>
+  <artifactId>axiz-adapter-http-jdk</artifactId>
+  <name>axiz :: adapter :: http :: jdk</name>
+  <description>JDK HTTP transports for OAuth and SOAP</description>
+  <properties><axiz.module.name>pe.axiz.adapter.http.jdk</axiz.module.name><axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity></properties>
+  <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-resilience</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-concurrent</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-errors</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-commons</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-soap</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-http</artifactId><version>${project.version}</version></dependency>
+</dependencies>
+</project>

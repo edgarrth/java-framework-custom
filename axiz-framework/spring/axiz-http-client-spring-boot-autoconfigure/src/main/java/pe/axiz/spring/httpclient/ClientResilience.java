@@ -14,7 +14,7 @@ import pe.axiz.core.http.ExternalErrorTranslator;
 import pe.axiz.core.http.HttpRetryRules;
 import pe.axiz.core.resilience.Backoff;
 
-/** Circuit breaker, bulkhead and retry decisions of one client. */
+/** Decisiones de circuit breaker, bulkhead y reintento de un cliente. */
 public final class ClientResilience {
 
   private final ClientSettings settings;
@@ -43,7 +43,10 @@ public final class ClientResilience {
             : null;
   }
 
-  /** Acquires bulkhead and circuit permissions or fails fast with a 503-category error. */
+  /**
+   * Adquiere los permisos del bulkhead y del circuito o falla de inmediato con un error de
+   * categoría 503.
+   */
   public void acquire() {
     if (bulkhead != null && !bulkhead.tryAcquirePermission()) {
       throw unavailable("bulkhead-full");
@@ -95,7 +98,8 @@ public final class ClientResilience {
   }
 
   /**
-   * Whether another attempt is allowed for this failure (or retryable status) within the budget.
+   * Indica si se permite otro intento para este fallo (o estado reintentable) dentro del
+   * presupuesto.
    */
   public boolean retry(
       String method,

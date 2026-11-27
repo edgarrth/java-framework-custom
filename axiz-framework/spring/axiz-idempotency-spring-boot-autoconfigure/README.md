@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-idempotency-spring-boot-autoconfigure
 
-@Idempotent endpoints with Idempotency-Key, stored responses in Redis or DynamoDB (auto-configuration).
+Endpoints @Idempotent con Idempotency-Key y respuestas guardadas en Redis o DynamoDB (autoconfiguración).
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,22 +12,30 @@
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `AxizIdempotencyAutoConfiguration` | `@Idempotent` operations with the `Idempotency-Key` header: responses stored in ElastiCache (Redis) or DynamoDB and replayed; 400, 409 and 422 on misuse. |
-| `AxizIdempotencyDynamoDbAutoConfiguration` | DynamoDB idempotency store with conditional writes and TTL. |
-| `AxizIdempotencyProperties` | API idempotency (`axiz.idempotency.*`) for operations annotated with `@Idempotent`. |
-| `AxizIdempotencyRedisAutoConfiguration` | ElastiCache (Redis/Valkey) idempotency store on Boot's Lettuce connection settings. |
-| `IdempotencyFilter` | Buffers the body of unsafe requests carrying `Idempotency-Key` (up to `maxBodySize`) so it can be fingerprinted (method, path, query string as sent and body), and stores the response once the handler finished. |
-| `IdempotencyMethodInterceptor` | Applies `@Idempotent` around the handler method, **inside** method security: it is ordered after Spring Security's `@PreAuthorize`, `@Secured` and JSR-250 interceptors, so a replay is only returned when the caller is still authorized for this request, with the resolved arguments (path variables, body) the policies need. |
-| `IdempotencyReplayHandler` | Writes a stored response for an `IdempotentReplay` (servlet and reactive stacks): stored status, replayed headers and the original bytes, plus `Idempotent-Replayed: true`. |
-| `IdempotencyWebFilter` | Reactive counterpart of `IdempotencyFilter`: for unsafe requests it fingerprints the buffered body (method, path, query string as sent and body) and hands it to the advice through the Reactor context; the advice decides after method authorization. |
-| `IdempotentReplay` | Control-flow signal: the request repeats a completed one and its stored response must be returned. |
+| `AxizIdempotencyAutoConfiguration` | Operaciones `@Idempotent` con la cabecera `Idempotency-Key`: respuestas guardadas en ElastiCache (Redis) o DynamoDB y repetidas; 400, 409 y 422 ante un uso indebido. |
+| `AxizIdempotencyProperties` | Idempotencia de API (`axiz.idempotency.*`) para operaciones anotadas con `@Idempotent`. |
+| `IdempotencyFilter` | Almacena en buffer el cuerpo de las peticiones no seguras que llevan `Idempotency-Key` (hasta `maxBodySize`) para calcular su huella (método, ruta, query string tal como se envió y cuerpo), y guarda la respuesta cuando el handler termina. |
+| `IdempotencyMethodInterceptor` | Aplica `@Idempotent` alrededor del método handler, **dentro** de la seguridad de métodos: se ordena después de los interceptores `@PreAuthorize`, `@Secured` y JSR-250 de Spring Security, de modo que una repetición solo se devuelve cuando el llamador sigue autorizado para esta petición, con los argumentos resueltos (variables de ruta, cuerpo) que necesitan las políticas. |
+| `IdempotencyReplayHandler` | Escribe una respuesta guardada para un `IdempotentReplay` (pilas servlet y reactiva): estado guardado, cabeceras repetidas y los bytes originales, más `Idempotent-Replayed: true`. |
+| `IdempotencyWebFilter` | Equivalente reactivo de `IdempotencyFilter`: para peticiones no seguras calcula la huella del cuerpo en buffer (método, ruta, query string tal como se envió y cuerpo) y la entrega al advice mediante el contexto de Reactor; el advice decide después de la autorización del método. |
+| `IdempotentReplay` | Señal de control de flujo: la petición repite una ya completada y se debe devolver su respuesta guardada. |
 
-## Tests
+Tipos relacionados: `AxizIdempotencyDynamoDbAutoConfiguration` están en `axiz-idempotency-dynamodb-spring-boot-autoconfigure`; `AxizIdempotencyRedisAutoConfiguration` están en `axiz-idempotency-redis-spring-boot-autoconfigure`.
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-idempotency-spring-boot-autoconfigure verify`.
+## Pruebas
+
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl spring/axiz-idempotency-spring-boot-autoconfigure verify`.
+
+## Protección técnica del payload
+
+`axiz.idempotency.response-protection=envelope` activa el cifrado autenticado del payload;
+`none` es el valor por defecto. El modo envelope requiere el `EnvelopeEncryptor` síncrono o nativo
+correspondiente y hace fallar el arranque cuando falta. Los registros protegidos no se pueden
+leer en modo `none`; la migración de datos y las claves de lectura retenidas se planifican antes
+de cambiar el modo. Se recomienda revisar la [protección de almacenes técnicos](../../../axiz-docs/docs/guias/proteccion-de-almacenes-tecnicos.md).

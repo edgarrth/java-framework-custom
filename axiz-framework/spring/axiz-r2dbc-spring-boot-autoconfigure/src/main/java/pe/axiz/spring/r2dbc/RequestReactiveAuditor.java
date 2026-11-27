@@ -2,15 +2,15 @@ package pe.axiz.spring.r2dbc;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.ReactiveAuditorAware;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import reactor.core.publisher.Mono;
 
 /**
- * Auditor of {@code createdBy}/{@code updatedBy} for reactive code: the end user, or the calling
- * application for machine-to-machine requests, read from the request metadata that the web and
- * security starters put in the Reactor context (or the thread-local of a consumer thread); {@code
- * system} otherwise.
+ * Auditor de {@code createdBy}/{@code updatedBy} para código reactivo: el usuario final, o la
+ * aplicación invocante en solicitudes de máquina a máquina, leído de los metadatos de la solicitud
+ * que los starters web y de seguridad colocan en el contexto de Reactor (o el thread-local de un
+ * hilo consumidor); {@code unattributed} en otro caso.
  */
 public class RequestReactiveAuditor implements ReactiveAuditorAware<String> {
 
@@ -25,11 +25,13 @@ public class RequestReactiveAuditor implements ReactiveAuditorAware<String> {
 
   static String auditor(@Nullable RequestMetadata m) {
     if (m == null) {
-      return "system";
+      return "unattributed";
     }
-    if (m.subject() != null) {
-      return m.subject();
+    String subject = m.subject();
+    if (subject != null && !subject.isBlank()) {
+      return subject;
     }
-    return m.clientId() != null ? m.clientId() : "system";
+    String clientId = m.clientId();
+    return clientId != null && !clientId.isBlank() ? clientId : "unattributed";
   }
 }

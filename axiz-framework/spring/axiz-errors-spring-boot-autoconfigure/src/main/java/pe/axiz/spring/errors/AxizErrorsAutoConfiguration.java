@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -19,10 +20,12 @@ import pe.axiz.core.errors.ErrorDefinition;
 import pe.axiz.core.errors.ErrorMessageResolver;
 import pe.axiz.core.errors.ExceptionMapper;
 import pe.axiz.core.errors.ProblemFactory;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 /**
- * RFC 9457 error responses for servlet and reactive applications, backed by the error catalog.
- * Internal exception messages are never returned to clients.
+ * Respuestas de error RFC 9457 para aplicaciones servlet y reactivas, respaldadas por el catálogo
+ * de errores. Los mensajes internos de las excepciones nunca se devuelven a los clientes.
  */
 @AutoConfiguration(
     beforeName = {
@@ -76,7 +79,8 @@ public class AxizErrorsAutoConfiguration {
   }
 
   /**
-   * Spring MVC: controller advice and the error controller used for filter and container errors.
+   * Spring MVC: controller advice y el controlador de errores usado para los errores de filtros y
+   * del contenedor.
    */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
@@ -96,17 +100,24 @@ public class AxizErrorsAutoConfiguration {
     }
   }
 
-  /** WebFlux: exception handler that runs before Boot's default one. */
+  /** WebFlux: manejador de excepciones que se ejecuta antes del de Boot por defecto. */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
   @ConditionalOnClass(name = "org.springframework.web.reactive.DispatcherHandler")
   static class ReactiveConfiguration {
 
+    @Bean(destroyMethod = "dispose", defaultCandidate = false)
+    @ConditionalOnMissingBean(name = "axizErrorRenderingScheduler")
+    Scheduler axizErrorRenderingScheduler() {
+      return Schedulers.newBoundedElastic(4, 64, "axiz-error-render", 60, true);
+    }
+
     @Bean
     @Order(-2)
     @ConditionalOnMissingBean
-    ProblemWebExceptionHandler axizProblemWebExceptionHandler(ProblemResponder responder) {
-      return new ProblemWebExceptionHandler(responder);
+    ProblemWebExceptionHandler axizProblemWebExceptionHandler(
+        ProblemResponder responder, @Qualifier("axizErrorRenderingScheduler") Scheduler scheduler) {
+      return new ProblemWebExceptionHandler(responder, scheduler);
     }
   }
 }

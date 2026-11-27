@@ -1,6 +1,6 @@
 package pe.axiz.quality.archunit.sample.beans;
 
-/** The startup failure of the settlement batch: the class and its job share "settlementJob". */
+/** La falla de arranque del batch de liquidación: la clase y su job comparten "settlementJob". */
 @Configuration
 public class SettlementJob {
 

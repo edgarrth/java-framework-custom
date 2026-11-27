@@ -1,5 +1,7 @@
 package pe.axiz.spring.idempotency;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
@@ -14,8 +16,12 @@ import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
-import pe.axiz.core.commons.StandardHeaders;
+import pe.axiz.core.api.HttpPayloadPolicy;
+import pe.axiz.core.api.StandardHeaders;
+import pe.axiz.core.crypto.AsyncPayloadProtector;
+import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.idempotency.AsyncIdempotencyService;
+import pe.axiz.core.idempotency.IdempotencyErrors;
 import pe.axiz.core.idempotency.IdempotencyService;
 import pe.axiz.core.idempotency.StoredResponse;
 import pe.axiz.spring.foundation.ReactiveStages;
@@ -25,15 +31,16 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.SignalType;
 
 /**
- * Reactive counterpart of {@link IdempotencyFilter}: for unsafe requests it fingerprints the
- * buffered body (method, path, query string as sent and body) and hands it to the advice through
- * the Reactor context; the advice decides after method authorization. When the handler proceeded,
- * the captured response (up to {@code maxResponseSize}) is stored; a larger body still streams to
- * the client and only its status and headers are stored.
+ * Contraparte reactiva de {@link IdempotencyFilter}: para las solicitudes no seguras calcula la
+ * huella del cuerpo en búfer (método, ruta, query string tal como se envió y cuerpo) y la entrega
+ * al advice mediante el contexto de Reactor; el advice decide después de la autorización de
+ * métodos. Cuando el handler continuó, se almacena la respuesta capturada (hasta {@code
+ * maxResponseSize}); un cuerpo mayor igualmente se transmite al cliente y solo se almacenan su
+ * estado y sus cabeceras.
  */
 public final class IdempotencyWebFilter implements WebFilter, Ordered {
 
-  /** After Spring Security's {@code WebFilterChainProxy} (order -100). */
+  /** Después del {@code WebFilterChainProxy} de Spring Security (orden -100). */
   public static final int ORDER = Ordered.LOWEST_PRECEDENCE - 100;
 
   private static final Logger LOG = LoggerFactory.getLogger(IdempotencyWebFilter.class);
@@ -41,12 +48,28 @@ public final class IdempotencyWebFilter implements WebFilter, Ordered {
   private final AsyncIdempotencyService service;
   private final int maxBodySize;
   private final int maxResponseSize;
+  private final List<HttpPayloadPolicy> payloadPolicies;
+  private final AsyncPayloadProtector protection;
 
   public IdempotencyWebFilter(
-      AsyncIdempotencyService service, int maxBodySize, int maxResponseSize) {
+      AsyncIdempotencyService service,
+      int maxBodySize,
+      int maxResponseSize,
+      List<HttpPayloadPolicy> payloadPolicies) {
+    this(service, maxBodySize, maxResponseSize, payloadPolicies, AsyncPayloadProtector.NONE);
+  }
+
+  public IdempotencyWebFilter(
+      AsyncIdempotencyService service,
+      int maxBodySize,
+      int maxResponseSize,
+      List<HttpPayloadPolicy> payloadPolicies,
+      AsyncPayloadProtector protection) {
+    this.protection = Objects.requireNonNull(protection);
     this.service = Objects.requireNonNull(service);
     this.maxBodySize = maxBodySize;
     this.maxResponseSize = maxResponseSize;
+    this.payloadPolicies = List.copyOf(payloadPolicies);
   }
 
   @Override
@@ -57,7 +80,12 @@ public final class IdempotencyWebFilter implements WebFilter, Ordered {
   @Override
   public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
     String method = exchange.getRequest().getMethod().name();
-    if (!IdempotencySupport.unsafe(method)) {
+    if (!IdempotencySupport.unsafe(method)
+        || payloadPolicies.stream()
+            .anyMatch(
+                p ->
+                    !p.permitsCapture(
+                        exchange.getRequest().getPath().pathWithinApplication().value()))) {
       return chain.filter(exchange);
     }
     String key = exchange.getRequest().getHeaders().getFirst(StandardHeaders.IDEMPOTENCY_KEY);
@@ -122,8 +150,8 @@ public final class IdempotencyWebFilter implements WebFilter, Ordered {
           @Override
           public Mono<Void> writeAndFlushWith(
               Publisher<? extends Publisher<? extends DataBuffer>> body) {
-            // streamed (flushed) responses are stored without body: replaying a stream is not
-            // supported, its status and headers are
+            // las respuestas transmitidas (con flush) se almacenan sin cuerpo: no se admite
+            // reproducir un stream, sí su estado y sus cabeceras
             captured.markOverflowed();
             return super.writeAndFlushWith(body)
                 .doFinally(
@@ -143,48 +171,74 @@ public final class IdempotencyWebFilter implements WebFilter, Ordered {
         };
     ServerWebExchange mutated = exchange.mutate().request(request).response(response).build();
     return Mono.usingWhen(
-        Mono.just(state),
-        resource ->
-            chain
-                .filter(mutated)
-                .contextWrite(c -> c.put(ReactiveIdempotency.CONTEXT_KEY, resource)),
-        resource -> finish(resource, response, captured),
-        (resource, error) -> release(resource),
-        resource -> release(resource));
+            Mono.just(state),
+            resource ->
+                chain
+                    .filter(mutated)
+                    .contextWrite(c -> c.put(ReactiveIdempotency.CONTEXT_KEY, resource)),
+            resource -> finish(resource, response, captured),
+            (resource, error) -> release(resource),
+            resource -> release(resource))
+        .doFinally(
+            signal -> {
+              captured.close();
+              Arrays.fill(body, (byte) 0);
+            });
   }
 
   private Mono<Void> finish(
       IdempotencyExchange state, ServerHttpResponseDecorator response, BoundedCapture captured) {
     IdempotencyService.Proceed execution = state.execution();
     if (execution == null) {
-      return Mono.empty(); // not idempotent, rejected before deciding, or a replay
+      return Mono.empty(); // no idempotente, rechazada antes de decidir, o una reproducción
     }
-    state.closeLease();
     if (state.noEffect)
-      return ReactiveStages.from(() -> service.releaseWithoutEffect(execution)).then();
+      return ReactiveStages.from(() -> service.releaseWithoutEffect(execution))
+          .then()
+          .doFinally(signal -> state.closeLease());
     HttpStatusCode status = response.getStatusCode();
     int code = status != null ? status.value() : HttpStatus.OK.value();
     if (code >= 500) {
       return release(state);
     }
-    StoredResponse stored =
-        captured.overflowed()
-            ? StoredResponse.withoutBody(
-                code, IdempotencySupport.replayedHeaders(response.getHeaders()::getFirst))
-            : new StoredResponse(
-                code,
-                IdempotencySupport.replayedHeaders(response.getHeaders()::getFirst),
-                captured.bytes());
-    return ReactiveStages.from(() -> service.complete(execution, stored))
+    Mono<StoredResponse> stored =
+        ReactiveStages.from(
+            () -> {
+              byte[] body = captured.body();
+              return IdempotencyPayloads.store(
+                  code,
+                  body == null
+                      ? StoredResponse.withoutBody(
+                              code,
+                              IdempotencySupport.replayedHeaders(response.getHeaders()::getFirst))
+                          .headers()
+                      : IdempotencySupport.replayedHeaders(response.getHeaders()::getFirst),
+                  body == null ? new byte[0] : body,
+                  Objects.requireNonNull(state.binding, "Missing idempotency record binding"),
+                  protection);
+            });
+    return stored
+        .flatMap(value -> ReactiveStages.from(() -> service.complete(execution, value)))
         .doOnNext(
             saved -> {
-              if (!saved) LOG.warn("Idempotency key lost before completion: {}", execution.key());
+              if (!saved) LOG.warn("Idempotency lease lost before completion");
             })
         .doOnError(
             error ->
                 LOG.error(
-                    "Idempotency store unavailable while finishing {}", execution.key(), error))
-        .then();
+                    "Idempotency completion failed; failureType={}",
+                    error.getClass().getSimpleName()))
+        .onErrorResume(
+            failure ->
+                ReactiveStages.from(() -> service.fail(execution))
+                    .onErrorComplete()
+                    .then(
+                        Mono.error(
+                            new BusinessException(
+                                IdempotencyErrors.OUTCOME_UNKNOWN,
+                                "Idempotency completion outcome unknown"))))
+        .then()
+        .doFinally(signal -> state.closeLease());
   }
 
   private Mono<Void> release(IdempotencyExchange state) {
@@ -197,7 +251,7 @@ public final class IdempotencyWebFilter implements WebFilter, Ordered {
         .doOnError(
             error ->
                 LOG.error(
-                    "Idempotency store unavailable while releasing {}", execution.key(), error))
+                    "Idempotency release failed; failureType={}", error.getClass().getSimpleName()))
         .then();
   }
 }

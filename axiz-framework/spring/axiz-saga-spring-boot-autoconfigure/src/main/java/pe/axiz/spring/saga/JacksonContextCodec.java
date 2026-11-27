@@ -6,10 +6,11 @@ import pe.axiz.core.saga.ContextCodec;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * JSON saga contexts with the service's {@link JsonMapper}: contexts should be records with plain
- * values (ids, amounts, flags), never secrets, since they are persisted with the saga state.
+ * Contextos de saga en JSON con el {@link JsonMapper} del servicio: los contextos deberían ser
+ * records con valores simples (ids, montos, flags), nunca secretos, ya que se persisten con el
+ * estado de la saga.
  *
- * @param <C> context type
+ * @param <C> tipo del contexto
  */
 public final class JacksonContextCodec<C> implements ContextCodec<C> {
 

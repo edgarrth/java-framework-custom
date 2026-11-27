@@ -7,7 +7,7 @@ import java.util.HexFormat;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-/** SHA-2 hashes and HMAC with constant-time verification. */
+/** Hashes SHA-2 y HMAC con verificación en tiempo constante. */
 public final class Hashing {
 
   private Hashing() {}
@@ -32,7 +32,7 @@ public final class Hashing {
     return mac("HmacSHA512", key, data);
   }
 
-  /** Constant-time comparison of a received MAC. */
+  /** Comparación en tiempo constante de un MAC recibido. */
   public static boolean verifyHmacSha256(byte[] key, byte[] data, byte[] received) {
     return MessageDigest.isEqual(hmacSha256(key, data), received);
   }

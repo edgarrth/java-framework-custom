@@ -6,14 +6,14 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.MDC;
 
 /**
- * Puts values in the MDC for a scope and restores the previous values on close:
+ * Coloca valores en el MDC durante un scope y restaura los valores previos al cerrar. Ejemplo:
  *
  * <pre>{@code
  * try (var mdc = ScopedMdc.of(LogFields.OPERATION, "create-order")) { ... }
  * }</pre>
  *
- * <p>Values with CR/LF are sanitized to prevent log injection. Null values remove the key for the
- * scope.
+ * <p>Los valores con CR/LF se sanean para evitar la inyección en logs. Los valores null eliminan la
+ * clave durante el scope.
  */
 public final class ScopedMdc implements AutoCloseable {
 
@@ -33,7 +33,7 @@ public final class ScopedMdc implements AutoCloseable {
     return scope;
   }
 
-  /** Adds another value to the same scope. */
+  /** Agrega otro valor al mismo scope. */
   public ScopedMdc with(String key, @Nullable String value) {
     if (!previous.containsKey(key)) {
       previous.put(key, MDC.get(key));

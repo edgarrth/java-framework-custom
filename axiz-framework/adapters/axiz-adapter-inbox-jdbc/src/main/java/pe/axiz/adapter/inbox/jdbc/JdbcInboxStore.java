@@ -9,16 +9,17 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.SqlIdentifiers;
 import pe.axiz.core.inbox.InboxException;
 import pe.axiz.core.inbox.InboxStore;
 import pe.axiz.kit.jdbc.ConnectionProvider;
 import pe.axiz.kit.jdbc.SqlStates;
+import pe.axiz.kit.sql.SqlIdentifiers;
 
 /**
- * JDBC inbox (Aurora PostgreSQL). Acquisition is an INSERT on the primary key; a duplicate key
- * means the message was seen, unless the previous attempt left an expired in-progress lease, which
- * is taken over with a new owner. Completion and release are conditioned on the owner.
+ * Inbox JDBC (Aurora PostgreSQL). La adquisición es un INSERT sobre la clave primaria; una clave
+ * duplicada significa que el mensaje ya se vio, salvo que el intento previo dejara un lease en
+ * curso expirado, que se toma con un propietario nuevo. La finalización y la liberación se
+ * condicionan al propietario.
  */
 public final class JdbcInboxStore implements InboxStore {
 
@@ -48,6 +49,7 @@ public final class JdbcInboxStore implements InboxStore {
       Instant now,
       Instant leaseUntil,
       Instant expiresAt) {
+    InboxStore.validateWindow(now, leaseUntil, expiresAt);
     Connection c = null;
     try {
       c = connections.get();
@@ -67,19 +69,20 @@ public final class JdbcInboxStore implements InboxStore {
           return Acquisition.acquired();
         }
       }
-      // take over an expired in-progress registration (its delivery died)
+      // se toma un registro en curso expirado (su entrega murió)
       try (PreparedStatement ps =
           c.prepareStatement(
               "UPDATE "
                   + table
-                  + " SET owner = ?, lease_until = ?, received_at = ? WHERE consumer = ? AND"
+                  + " SET owner = ?, lease_until = ?, received_at = ?, expires_at = ? WHERE consumer = ? AND"
                   + " message_id = ? AND status = 'IN_PROGRESS' AND lease_until < ?")) {
         ps.setString(1, owner);
         ps.setTimestamp(2, Timestamp.from(leaseUntil));
         ps.setTimestamp(3, Timestamp.from(now));
-        ps.setString(4, consumer);
-        ps.setString(5, messageId);
-        ps.setTimestamp(6, Timestamp.from(now));
+        ps.setTimestamp(4, Timestamp.from(expiresAt));
+        ps.setString(5, consumer);
+        ps.setString(6, messageId);
+        ps.setTimestamp(7, Timestamp.from(now));
         if (ps.executeUpdate() == 1) {
           return Acquisition.acquired();
         }
@@ -93,7 +96,7 @@ public final class JdbcInboxStore implements InboxStore {
         ps.setString(2, messageId);
         try (ResultSet rs = ps.executeQuery()) {
           if (!rs.next()) {
-            return Acquisition.busy(now); // released meanwhile: redeliver right away
+            return Acquisition.busy(now); // liberado entretanto: se reentrega de inmediato
           }
           if ("PROCESSED".equals(rs.getString(1))) {
             return Acquisition.processed();
@@ -115,11 +118,15 @@ public final class JdbcInboxStore implements InboxStore {
             "UPDATE "
                 + table
                 + " SET status = 'PROCESSED', processed_at = ? WHERE consumer = ? AND message_id ="
-                + " ? AND owner = ? AND status = 'IN_PROGRESS'",
-            at,
-            consumer,
-            messageId,
-            owner)
+                + " ? AND owner = ? AND status = 'IN_PROGRESS' AND lease_until > ? AND expires_at > ?",
+            ps -> {
+              ps.setTimestamp(1, Timestamp.from(at));
+              ps.setString(2, consumer);
+              ps.setString(3, messageId);
+              ps.setString(4, owner);
+              ps.setTimestamp(5, Timestamp.from(at));
+              ps.setTimestamp(6, Timestamp.from(at));
+            })
         == 1;
   }
 
@@ -129,16 +136,19 @@ public final class JdbcInboxStore implements InboxStore {
             "DELETE FROM "
                 + table
                 + " WHERE consumer = ? AND message_id = ? AND owner = ? AND status = 'IN_PROGRESS'",
-            null,
-            consumer,
-            messageId,
-            owner)
+            ps -> {
+              ps.setString(1, consumer);
+              ps.setString(2, messageId);
+              ps.setString(3, owner);
+            })
         == 1;
   }
 
   @Override
   public int purgeExpired(Instant now) {
-    return update("DELETE FROM " + table + " WHERE expires_at < ?", now, null, null, null);
+    return update(
+        "DELETE FROM " + table + " WHERE expires_at < ? AND status <> 'IN_PROGRESS'",
+        ps -> ps.setTimestamp(1, Timestamp.from(now)));
   }
 
   @SuppressFBWarnings(
@@ -147,25 +157,12 @@ public final class JdbcInboxStore implements InboxStore {
           "Only table identifiers validated by SqlIdentifiers.require enter SQL text; row "
               + "values use PreparedStatement bindings. This private SQL path accepts no "
               + "caller-provided SQL.")
-  private int update(
-      String sql,
-      @Nullable Instant at,
-      @Nullable String consumer,
-      @Nullable String messageId,
-      @Nullable String owner) {
+  private int update(String sql, StatementBindings bindings) {
     Connection c = null;
     try {
       c = connections.get();
       try (PreparedStatement ps = c.prepareStatement(sql)) {
-        int i = 1;
-        if (at != null) {
-          ps.setTimestamp(i++, Timestamp.from(at));
-        }
-        if (consumer != null) {
-          ps.setString(i++, consumer);
-          ps.setString(i++, messageId);
-          ps.setString(i, owner);
-        }
+        bindings.apply(ps);
         return ps.executeUpdate();
       }
     } catch (SQLException e) {
@@ -200,7 +197,12 @@ public final class JdbcInboxStore implements InboxStore {
     }
   }
 
-  /** Message of a missing or outdated inbox table. */
+  @FunctionalInterface
+  private interface StatementBindings {
+    void apply(PreparedStatement statement) throws SQLException;
+  }
+
+  /** Mensaje de una tabla de inbox ausente o desactualizada. */
   static final String SCHEMA_HINT =
       "Inbox table %s does not match the current v2 schema (owner required): "
           + "see axiz/sql/inbox-postgresql.sql and manage schema with reviewed migrations";
@@ -210,7 +212,7 @@ public final class JdbcInboxStore implements InboxStore {
       try {
         connections.release(c);
       } catch (SQLException ignored) {
-        // not actionable
+        // no accionable
       }
     }
   }

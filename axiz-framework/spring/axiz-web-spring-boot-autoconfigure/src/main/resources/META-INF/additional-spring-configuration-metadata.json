@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {
+      "name": "axiz.web.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "Enables web auto-configuration."
+    }
+  ]
+}

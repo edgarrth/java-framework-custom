@@ -10,7 +10,7 @@ import java.time.format.DateTimeParseException;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
 
-/** Date helpers. The framework stores and exchanges instants in UTC (ISO-8601). */
+/** Utilidades de fechas. El framework almacena e intercambia instantes en UTC (ISO-8601). */
 public final class Dates {
 
   private static final DateTimeFormatter ISO_UTC = DateTimeFormatter.ISO_INSTANT;
@@ -22,10 +22,10 @@ public final class Dates {
   }
 
   /**
-   * Parses ISO-8601 instants with or without offset ("2026-01-31T10:00:00Z" or with "-05:00").
+   * Parsea instantes ISO-8601 con o sin offset ("2026-01-31T10:00:00Z" o con "-05:00").
    *
-   * @param value text to parse
-   * @return the instant, empty when the value is blank or invalid
+   * @param value texto a parsear
+   * @return el instante, vacío cuando el valor está en blanco o no es válido
    */
   public static Optional<Instant> parseInstant(@Nullable String value) {
     if (Strings.isBlank(value)) {

@@ -40,8 +40,8 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.messaging.AsyncEventPublisher;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventFactory;
@@ -49,12 +49,9 @@ import pe.axiz.core.messaging.PublishResult;
 import pe.axiz.core.messaging.RoutingAsyncEventPublisher;
 import pe.axiz.core.observability.AxizObservations;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
-import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
-import software.amazon.awssdk.services.sns.SnsAsyncClient;
-import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 import tools.jackson.databind.json.JsonMapper;
 
 @ExtendWith(BlockHoundExtension.class)
@@ -79,15 +76,16 @@ class NativeMessagingTest {
   }
 
   private static EventEnvelope event() {
-    return new EventEnvelope(
-        "id",
-        "urn:service",
-        "event.v1",
-        Instant.EPOCH,
-        "subject",
-        "application/json",
-        new byte[0],
-        Map.of());
+    return EventEnvelope.builder()
+        .id("id")
+        .source("urn:service")
+        .type("event.v1")
+        .time(Instant.EPOCH)
+        .subject("subject")
+        .dataContentType("application/json")
+        .data(new byte[0])
+        .extensions(Map.of())
+        .build();
   }
 
   @Test
@@ -326,24 +324,14 @@ class NativeMessagingTest {
 
   private static ReactiveWebApplicationContextRunner runner() {
     return new ReactiveWebApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
             AutoConfigurations.of(
-                AxizMessagingAutoConfiguration.class,
-                AxizNativeMessagingAwsAutoConfiguration.class,
-                AxizNativeMessagingAutoConfiguration.class));
+                AxizMessagingAutoConfiguration.class, AxizNativeMessagingAutoConfiguration.class));
   }
 
   @Test
   void nativeWiringHonorsOverridesDisableAndRejectsUnsupportedConfiguredDestinations() {
-    runner()
-        .run(
-            ctx ->
-                assertThat(ctx)
-                    .hasNotFailed()
-                    .hasSingleBean(ReactiveEvents.class)
-                    .doesNotHaveBean(SqsAsyncClient.class)
-                    .doesNotHaveBean(SnsAsyncClient.class));
+    runner().run(ctx -> assertThat(ctx).hasNotFailed().hasSingleBean(ReactiveEvents.class));
     runner()
         .withPropertyValues("axiz.messaging.enabled=false")
         .run(ctx -> assertThat(ctx).doesNotHaveBean(ReactiveEvents.class));
@@ -359,72 +347,6 @@ class NativeMessagingTest {
                         new PublishResult(event.id(), destination, null)))
         .withPropertyValues("axiz.messaging.destinations.orders=kafka:orders")
         .run(ctx -> assertThat(ctx).hasNotFailed());
-  }
-
-  @Test
-  void configuredAwsDestinationsOwnAndCloseTheirStartupResources() {
-    runner()
-        .withSystemProperties("aws.accessKeyId=local-test", "aws.secretAccessKey=local-test")
-        .withPropertyValues(
-            "axiz.aws.region=us-east-1",
-            "axiz.messaging.aws.api-call-timeout=7s",
-            "axiz.messaging.destinations.queue=http://localhost:4566/000000000000/queue",
-            "axiz.messaging.destinations.topic=arn:aws:sns:us-east-1:000000000000:topic")
-        .run(
-            ctx -> {
-              assertThat(ctx)
-                  .hasNotFailed()
-                  .hasSingleBean(SqsAsyncClient.class)
-                  .hasSingleBean(SnsAsyncClient.class)
-                  .hasBean("axizMessagingSqsAsyncResources")
-                  .hasBean("axizMessagingSnsAsyncResources");
-              assertThat(
-                      ctx.getBean(SqsAsyncClient.class)
-                          .serviceClientConfiguration()
-                          .overrideConfiguration()
-                          .apiCallTimeout())
-                  .contains(Duration.ofSeconds(7));
-              assertThat(
-                      ctx.getBean(SnsAsyncClient.class)
-                          .serviceClientConfiguration()
-                          .overrideConfiguration()
-                          .apiCallTimeout())
-                  .contains(Duration.ofSeconds(7));
-            });
-  }
-
-  @Test
-  void suppliedAwsClientsAreBorrowedAndNoOwnerIsCreated() {
-    SqsAsyncClient sqs =
-        new SqsAsyncClient() {
-          public String serviceName() {
-            return "sqs";
-          }
-
-          public void close() {}
-        };
-    SnsAsyncClient sns =
-        new SnsAsyncClient() {
-          public String serviceName() {
-            return "sns";
-          }
-
-          public void close() {}
-        };
-    runner()
-        .withBean(SqsAsyncClient.class, () -> sqs)
-        .withBean(SnsAsyncClient.class, () -> sns)
-        .run(
-            ctx -> {
-              assertThat(ctx)
-                  .hasNotFailed()
-                  .doesNotHaveBean("axizMessagingSqsAsyncResources")
-                  .doesNotHaveBean("axizMessagingSnsAsyncResources");
-              assertThat(
-                      ctx.getBeansOfType(AsyncEventPublisherAdapter.class).values().stream()
-                          .map(AsyncEventPublisherAdapter::name))
-                  .containsExactlyInAnyOrder("sqs", "sns");
-            });
   }
 
   private static EventFactory factory() {

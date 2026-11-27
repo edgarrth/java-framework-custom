@@ -6,7 +6,10 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
-/** Object storage port (Amazon S3 in production). Content is always streamed. */
+/**
+ * Puerto de almacenamiento de objetos (Amazon S3 en producción). El contenido siempre se transmite
+ * en streaming.
+ */
 public interface ObjectStorage {
 
   void put(String key, InputStream content, ObjectMetadata metadata);
@@ -17,12 +20,15 @@ public interface ObjectStorage {
 
   void delete(String key);
 
-  /** Keys under a prefix (bounded by {@code max}). */
+  /** Claves bajo un prefijo (acotadas por {@code max}). */
   List<String> list(String prefix, int max);
 
-  /** Time-limited download URL; never longer than the configured maximum. */
+  /** URL de descarga de tiempo limitado; nunca más larga que el máximo configurado. */
   URL presignGet(String key, Duration ttl);
 
-  /** Complete upload instructions, including content type and backend-specific signed headers. */
+  /**
+   * Instrucciones de subida completas, incluidos el content type y las cabeceras firmadas
+   * específicas del backend.
+   */
   PresignedUpload presignUpload(String key, String contentType, Duration ttl);
 }

@@ -7,7 +7,10 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.core.Ordered;
 import org.springframework.transaction.interceptor.TransactionInterceptor;
 
-/** Proves the actual proxy order; an unexpected tie can never silently remove atomic evidence. */
+/**
+ * Comprueba el orden real de los proxies; un empate inesperado nunca puede eliminar en silencio la
+ * evidencia atómica.
+ */
 final class AuditAdvisorOrderValidator
     implements BeanPostProcessor, SmartInitializingSingleton, Ordered {
   private final ConfigurableListableBeanFactory beans;

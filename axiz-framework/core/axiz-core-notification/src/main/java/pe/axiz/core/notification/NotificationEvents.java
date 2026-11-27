@@ -5,7 +5,7 @@ import java.util.Map;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventFactory;
 
-/** One wire policy and identity for both notification senders. */
+/** Una única política de red e identidad para ambos emisores de notificaciones. */
 final class NotificationEvents {
   private NotificationEvents() {}
 

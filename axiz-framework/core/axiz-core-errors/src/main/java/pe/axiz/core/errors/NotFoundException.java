@@ -3,7 +3,7 @@ package pe.axiz.core.errors;
 import java.util.List;
 import java.util.Map;
 
-/** The requested resource does not exist. */
+/** El recurso solicitado no existe. */
 public class NotFoundException extends AxizException {
 
   private static final long serialVersionUID = 1L;

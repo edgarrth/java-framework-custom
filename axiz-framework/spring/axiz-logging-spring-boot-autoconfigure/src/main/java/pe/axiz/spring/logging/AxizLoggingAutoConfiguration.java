@@ -15,14 +15,17 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
+import org.springframework.core.env.Environment;
+import pe.axiz.core.api.HttpPayloadPolicy;
+import pe.axiz.core.commons.Environments;
 import pe.axiz.core.logging.HttpLogFormatter;
 import pe.axiz.core.logging.LogOperation;
 import pe.axiz.core.logging.OperationLogger;
 import pe.axiz.core.sensitive.ObjectMasker;
 
 /**
- * {@link LogOperation} through an infrastructure advisor (AOT and native friendly, no AspectJ) and
- * the HTTP access log for servlet and reactive applications.
+ * {@link LogOperation} mediante un advisor de infraestructura (compatible con AOT y nativo, sin
+ * AspectJ) y el log de acceso HTTP para aplicaciones servlet y reactivas.
  */
 @AutoConfiguration(afterName = "pe.axiz.spring.sensitive.AxizSensitiveAutoConfiguration")
 @ConditionalOnBooleanProperty(name = "axiz.logging.enabled", matchIfMissing = true)
@@ -72,8 +75,21 @@ public class AxizLoggingAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     HttpLoggingFilter axizHttpLoggingFilter(
-        HttpLogFormatter formatter, AxizLoggingProperties properties) {
-      return new HttpLoggingFilter(formatter, properties.http());
+        HttpLogFormatter formatter,
+        AxizLoggingProperties properties,
+        ObjectProvider<HttpPayloadPolicy> policies,
+        Environment environment) {
+      if (properties.http().bodies()) {
+        // el enmascaramiento por nombre de clave y por patrón de número de tarjeta es una red de
+        // seguridad, no una garantía: los cuerpos de forma libre pueden contener datos de
+        // autenticación que nunca deben escribirse (PCI DSS 3.3.1)
+        Environments.requireSingleProcess(
+            environment.getProperty("axiz.config.environment"),
+            "axiz.logging.http.bodies=true",
+            "@LogOperation with masked arguments or audit events",
+            "request and response bodies may carry cardholder or authentication data");
+      }
+      return new HttpLoggingFilter(formatter, properties.http(), policies.orderedStream().toList());
     }
   }
 

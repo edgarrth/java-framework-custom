@@ -1,5 +1,8 @@
-# Each monorepo component publishes an exact <component>-v<x.y.z> immutable tag.
+# Versionado del monorepo: release-please mantiene un pull request de release por componente
+# (framework, herramientas, documentación y workflows) y, al fusionarlo, crea su tag. Cada tag
+# dispara la publicación de su producto en framework.yaml, tools.yaml o docs.yaml.
 name: release-self
+
 on:
   push:
     branches: [main]
@@ -13,38 +16,21 @@ concurrency:
 
 jobs:
   release:
-    if: github.ref == 'refs/heads/main'
-    permissions:
-      contents: write
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
-      - name: Check release App configuration
-        env:
-          RELEASE_APP_CLIENT_ID: ${{ vars.RELEASE_APP_CLIENT_ID || secrets.RELEASE_APP_CLIENT_ID }}
-          RELEASE_APP_PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ -z "$RELEASE_APP_CLIENT_ID" || -z "$RELEASE_APP_PRIVATE_KEY" ]]; then
-            echo "::error::Configure RELEASE_APP_CLIENT_ID as a repository variable (or secret) and RELEASE_APP_PRIVATE_KEY as a repository secret. Install the App with Contents, Pull requests and Workflows write permissions."
-            exit 1
-          fi
-      - name: Token (monorepo release role)
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         id: token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          client-id: ${{ vars.RELEASE_APP_CLIENT_ID || secrets.RELEASE_APP_CLIENT_ID }}
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
           permission-workflows: write
-      - name: Release pull request or release
-        id: please
-        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
           token: ${{ steps.token.outputs.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
-      - name: Summary
-        if: steps.please.outputs.releases_created == 'true'
-        run: echo "Released components are recorded in the Release Please outputs" >> "$GITHUB_STEP_SUMMARY"

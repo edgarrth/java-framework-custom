@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  OpenRewrite recipes that `axiz upgrade` applies when a project moves to another axiz version:
-  rewrite-maven-plugin with -Drewrite.recipeArtifactCoordinates=pe.axiz:axiz-rewrite-recipes:<version>
-  -Drewrite.activeRecipes=pe.axiz.UpgradeToAxiz. No pre-v2 Axiz migration is distributed.
+  Recetas de OpenRewrite que `axiz upgrade` aplica cuando un proyecto pasa a otra versión de axiz:
+  rewrite-maven-plugin con -Drewrite.recipeArtifactCoordinates=pe.axiz:axiz-rewrite-recipes:<version>
+  -Drewrite.activeRecipes=pe.axiz.UpgradeToAxiz. Solo se distribuyen recetas entre versiones de Axiz 2.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -10,7 +10,7 @@
 
   <parent>
     <groupId>pe.axiz</groupId>
-    <artifactId>axiz-parent</artifactId>
+    <artifactId>axiz-parent-tooling</artifactId>
     <version>2.0.0</version>
     <relativePath/>
   </parent>
@@ -23,22 +23,12 @@
   <properties>
     <axiz.module.name>pe.axiz.rewrite</axiz.module.name>
     <rewrite-recipe-bom.version>3.20.0</rewrite-recipe-bom.version>
-    <!-- versions the OpenRewrite modules disagree on, aligned on the newest one they request -->
-    <asm.version>9.9</asm.version>
   </properties>
 
   <dependencyManagement>
     <dependencies>
-      <!-- rewrite-java asks for ASM 9.9; gizmo (rewrite-core) still for 9.3 -->
-      <dependency>
-        <groupId>org.ow2.asm</groupId>
-        <artifactId>asm-bom</artifactId>
-        <version>${asm.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      <!-- error_prone_annotations and org.jetbrains:annotations, which the OpenRewrite modules
-           request in different versions, are managed by axiz-dependencies -->
+      <!-- error_prone_annotations y org.jetbrains:annotations, que los módulos de OpenRewrite
+           solicitan en versiones distintas, los gestiona axiz-dependencies -->
       <dependency>
         <groupId>org.openrewrite.recipe</groupId>
         <artifactId>rewrite-recipe-bom</artifactId>
@@ -92,15 +82,15 @@
       <artifactId>rewrite-test</artifactId>
       <scope>test</scope>
     </dependency>
-    <!-- recipes referenced by the declarative ones; resolved by rewrite-maven-plugin with this artifact -->
+    <!-- recetas referenciadas por las declarativas; las resuelve rewrite-maven-plugin con este artefacto -->
     <dependency>
       <groupId>org.openrewrite.recipe</groupId>
       <artifactId>rewrite-spring</artifactId>
       <scope>runtime</scope>
       <exclusions>
-        <!-- rewrite-jackson asks for the AssertJ 4.0.0-M1 milestone: the platform only ships
-             releases, so the jar its recipes look up on the classpath is the managed release
-             (declared below) -->
+        <!-- rewrite-jackson solicita el milestone 4.0.0-M1 de AssertJ: la plataforma solo incluye
+             releases, así que el jar que sus recetas buscan en el classpath es la release gestionada
+             (declarada más abajo) -->
         <exclusion>
           <groupId>org.assertj</groupId>
           <artifactId>assertj-core</artifactId>
@@ -125,13 +115,6 @@
 
   <build>
     <plugins>
-      <!-- This tool owns a module identity while deliberately inheriting the general parent. -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId><artifactId>maven-jar-plugin</artifactId>
-        <configuration><archive><manifestEntries>
-          <Automatic-Module-Name>${axiz.module.name}</Automatic-Module-Name>
-        </manifestEntries></archive></configuration>
-      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
@@ -152,11 +135,11 @@
                     <ignoreClass>META-INF.versions.*</ignoreClass>
                   </ignoreClasses>
                   <dependencies>
-                    <!-- The per-Java-version parsers of OpenRewrite ship the package-info of the
-                         packages they share with rewrite-java (org.openrewrite.java) and with each
-                         other (org.openrewrite.java.isolated). A package-info holds only package
-                         annotations (nullness defaults), no code: only those two entries are
-                         ignored, every other class of these jars is still checked. -->
+                    <!-- Los parsers por versión de Java de OpenRewrite incluyen el package-info de los
+                         paquetes que comparten con rewrite-java (org.openrewrite.java) y entre sí
+                         (org.openrewrite.java.isolated). Un package-info solo contiene anotaciones de
+                         paquete (nulabilidad por defecto), sin código: solo esas dos entradas se
+                         ignoran, y toda otra clase de estos jars se sigue verificando. -->
                     <dependency>
                       <groupId>org.openrewrite</groupId>
                       <artifactId>rewrite-java-8</artifactId>

@@ -1,6 +1,6 @@
 package pe.axiz.core.cache;
 
-/** Serializes cached values (JSON with the service mapper in the starter). */
+/** Serializa los valores en caché (JSON con el mapper del servicio en el starter). */
 public interface ValueCodec {
 
   byte[] encode(Object value);

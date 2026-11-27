@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  axiz-parent-technology: parent of layer 2 technology adapters and persistence kits.
-  Allows SDKs, excludes Spring/Quarkus runtime wiring and limits direct Reactor to native R2DBC.
+  axiz-parent-technology: parent de los adaptadores tecnológicos y kits de persistencia de la capa 2.
+  Permite SDK, excluye el cableado de runtime de Spring y Quarkus y limita el uso directo de Reactor a R2DBC nativo.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">

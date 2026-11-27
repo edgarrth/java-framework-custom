@@ -1,4 +1,4 @@
-# Artifacts of `axiz generate <type> <name>`; the generator sets type.<type> = true.
+# Artefactos de `axiz generate <type> <name>`; el generador asigna type.<type> = true.
 files:
   - {template: java/UseCase.java.mustache, path: "src/main/java/{{project.packagePath}}/application/usecase/{{artifact.className}}UseCase.java", when: type.usecase}
   - {template: test/UseCaseTest.java.mustache, path: "src/test/java/{{project.packagePath}}/application/usecase/{{artifact.className}}UseCaseTest.java", when: type.usecase}

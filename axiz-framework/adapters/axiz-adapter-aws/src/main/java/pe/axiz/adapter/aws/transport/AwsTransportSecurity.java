@@ -14,7 +14,8 @@ import software.amazon.awssdk.profiles.ProfileFile;
 import software.amazon.awssdk.profiles.ProfileFileSystemSetting;
 
 /**
- * Checks SDK-configured endpoints at startup and effective destinations before signing/transmit.
+ * Verifica los endpoints configurados en el SDK al arrancar y los destinos efectivos antes de
+ * firmar o transmitir.
  */
 public final class AwsTransportSecurity implements ExecutionInterceptor {
   private final TransportSecurityPolicy policy;

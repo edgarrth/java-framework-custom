@@ -9,8 +9,9 @@ import org.springframework.stereotype.Component;
 import pe.axiz.core.identifiers.IdentifierRegistry;
 
 /**
- * Normalizes settlement lines and filters those whose destination account fails the CCI check
- * digits (counted as filtered in the step metrics; the network should never send them).
+ * Normaliza las líneas de liquidación y filtra aquellas cuya cuenta de destino no supera los
+ * dígitos de control del CCI (se cuentan como filtradas en las métricas del paso; la red nunca
+ * debería enviarlas).
  */
 @Component
 public class SettlementLineProcessor implements ItemProcessor<SettlementLine, SettlementLine> {

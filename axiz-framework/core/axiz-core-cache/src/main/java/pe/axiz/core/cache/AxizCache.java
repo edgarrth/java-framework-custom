@@ -14,10 +14,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Typed cache facade over a {@link ByteCache}: prefixes keys ({@code <service>:<cache>:<key>}),
- * serializes with a {@link ValueCodec} and loads missing values once per key at a time (single
- * flight) to prevent stampedes. Null results are not cached; empty and single-element collections
- * are cached like any other value.
+ * Fachada de caché tipada sobre un {@link ByteCache}: antepone un prefijo a las claves ({@code
+ * <service>:<cache>:<key>}), serializa con un {@link ValueCodec} y carga los valores faltantes una
+ * sola vez por clave a la vez (single flight) para evitar estampidas. Los resultados null no se
+ * guardan en caché; las colecciones vacías y de un solo elemento se guardan como cualquier otro
+ * valor.
  */
 public final class AxizCache {
 
@@ -63,7 +64,7 @@ public final class AxizCache {
     try {
       return Optional.of(codec.decode(bytes.get(), type));
     } catch (RuntimeException e) {
-      LOG.warn("Discarding undecodable cache entry: {}", e.toString());
+      LOG.warn("Discarding undecodable cache entry: {}", e.getClass().getSimpleName());
       cache.evict(fullKey(key));
       return Optional.empty();
     }
@@ -81,18 +82,19 @@ public final class AxizCache {
     cache.evict(fullKey(key));
   }
 
-  /** Evicts every entry of this cache. */
+  /** Desaloja todas las entradas de esta caché. */
   public long clear() {
     return cache.evictByPrefix(prefix);
   }
 
   /**
-   * Returns the cached value or loads, caches and returns it.
+   * Devuelve el valor en caché, o lo carga, lo guarda en caché y lo devuelve.
    *
-   * @param key key within this cache
-   * @param type value type
-   * @param loader loads the value from the source of truth (may return null: not cached)
-   * @return the value or null
+   * @param key clave dentro de esta caché
+   * @param type tipo del valor
+   * @param loader carga el valor desde la fuente de verdad (puede devolver null: no se guarda en
+   *     caché)
+   * @return el valor o null
    */
   @SuppressWarnings("unchecked")
   public <T> @Nullable T getOrLoad(String key, Class<T> type, Supplier<@Nullable T> loader) {
@@ -113,8 +115,9 @@ public final class AxizCache {
       }
     }
     try {
-      // A miss may have started before the preceding owner published its value and retired
-      // its flight. Recheck after becoming the owner without extending an existing entry's TTL.
+      // Un fallo de caché puede haber empezado antes de que el propietario previo publicara su
+      // valor y retirara su vuelo. Se vuelve a verificar tras convertirse en propietario sin
+      // extender el TTL de una entrada existente.
       Optional<T> published = get(key, type);
       if (published.isPresent()) {
         T value = published.get();

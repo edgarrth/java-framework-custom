@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-storage-spring-boot-starter
 
-Object storage on Amazon S3 with SSE-KMS and presigned URLs.
+Almacenamiento de objetos en Amazon S3 con SSE-KMS y URLs prefirmadas.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,4 +12,4 @@ Object storage on Amazon S3 with SSE-KMS and presigned URLs.
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).

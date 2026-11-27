@@ -3,7 +3,7 @@ package pe.axiz.core.errors;
 import java.util.List;
 import java.util.Map;
 
-/** A business rule rejected the operation. */
+/** Una regla de negocio rechazó la operación. */
 public class BusinessException extends AxizException {
 
   private static final long serialVersionUID = 1L;

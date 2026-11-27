@@ -13,6 +13,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.mock.env.MockEnvironment;
@@ -85,5 +86,31 @@ class LoggingTest {
     assertEquals("logstash", pod.getProperty("logging.structured.format.console"));
     assertEquals("trace_id", pod.getProperty("logging.structured.json.rename.traceId"));
     assertEquals("payments", pod.getProperty("logging.structured.json.add.service"));
+  }
+
+  @Test
+  void httpBodiesAreOnlyLoggedWhereOneProcessRunsOnSyntheticData() {
+    var runner =
+        new WebApplicationContextRunner()
+            .withConfiguration(AutoConfigurations.of(AxizLoggingAutoConfiguration.class))
+            .withPropertyValues("axiz.logging.http.bodies=true");
+    runner
+        .withPropertyValues("axiz.config.environment=prod")
+        .run(
+            ctx -> {
+              assertTrue(ctx.getStartupFailure() != null);
+              assertTrue(
+                  rootMessage(ctx.getStartupFailure()).contains("axiz.logging.http.bodies=true"));
+            });
+    runner.run(ctx -> assertTrue(ctx.getStartupFailure() != null));
+    runner
+        .withPropertyValues("axiz.config.environment=local")
+        .run(ctx -> assertTrue(ctx.containsBean("axizHttpLoggingFilter")));
+  }
+
+  private static String rootMessage(Throwable failure) {
+    Throwable t = failure;
+    while (t.getCause() != null) t = t.getCause();
+    return String.valueOf(t.getMessage());
   }
 }

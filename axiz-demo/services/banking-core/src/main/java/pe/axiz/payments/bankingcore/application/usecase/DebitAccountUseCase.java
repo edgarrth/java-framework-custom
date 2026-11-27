@@ -10,16 +10,16 @@ import pe.axiz.payments.bankingcore.domain.Movement;
 import pe.axiz.payments.bankingcore.domain.MovementOrder;
 import pe.axiz.structure.hexagonal.annotation.UseCase;
 
-/** Holds and debits funds of an account in the core, one movement per account at a time. */
+/** Retiene y debita fondos de una cuenta en el core, con un solo movimiento por cuenta a la vez. */
 @UseCase
 public class DebitAccountUseCase
     implements pe.axiz.structure.hexagonal.UseCase<DebitAccountUseCase.Input, Movement> {
 
   /**
-   * Input of the use case.
+   * Entrada del caso de uso.
    *
-   * @param order what to debit
-   * @param idempotencyKey caller key, forwarded to the core
+   * @param order qué se debita
+   * @param idempotencyKey clave del invocador, reenviada al core
    */
   public record Input(MovementOrder order, String idempotencyKey) {}
 

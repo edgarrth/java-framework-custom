@@ -3,17 +3,21 @@ package pe.axiz.core.saga;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import pe.axiz.core.lock.DistributedLock;
 
-/** Persistence of saga state with optimistic locking. */
-public interface SagaStateStore {
+/** Persistencia del estado de la saga con bloqueo optimista. */
+public interface SagaStateStore extends DistributedLock {
 
   void create(SagaState state);
 
-  /** Saves the new state only if the stored version is {@code state.version() - 1}. */
-  void update(SagaState state);
+  /**
+   * Verifica de forma atómica la versión, el propietario de la ejecución y que el lease no haya
+   * expirado antes de guardar el progreso.
+   */
+  void update(SagaState state, String owner);
 
   Optional<SagaState> find(String sagaId);
 
-  /** Non-terminal sagas not updated since the instant (for resumption after crashes). */
+  /** Sagas no terminales sin actualizar desde el instante (para reanudarlas tras caídas). */
   List<SagaState> findStale(Instant updatedBefore, int max);
 }

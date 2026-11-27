@@ -10,7 +10,7 @@ import pe.axiz.core.time.BusinessCalendar;
 import pe.axiz.core.time.CutoffTime;
 import pe.axiz.payments.orders.domain.PaymentLimits;
 
-/** Domain policies built from configuration. */
+/** Políticas de dominio construidas a partir de la configuración. */
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(PaymentsProperties.class)
 public class PaymentsConfiguration {

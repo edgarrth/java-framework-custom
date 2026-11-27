@@ -1,18 +1,18 @@
 package pe.axiz.extension.cqrs;
 
 /**
- * Object-level authorization of a command or query type: decides whether the caller may act on the
- * resources the request names (customer, account, order), beyond the authorities of {@link
- * RequiresAuthority}. Policies are beans; the pipeline runs every policy whose {@link
- * #requestType()} matches the request, in the authorization stage, before idempotency replays,
- * transactions and handlers.
+ * Autorización a nivel de objeto de un tipo de comando o consulta: decide si quien llama puede
+ * actuar sobre los recursos que nombra la petición (cliente, cuenta, orden), más allá de las
+ * autoridades de {@link RequiresAuthority}. Las políticas son beans; el pipeline ejecuta cada
+ * política cuyo {@link #requestType()} coincide con la petición, en la etapa de autorización, antes
+ * de los replays de idempotencia, las transacciones y los handlers.
  *
- * <p>Deny with {@code AccessException} (403), or with {@code NotFoundException} (404) when the
- * existence of another caller's resource must not be revealed. Imperative policies may read state
- * (for example the owner of an order). Reactive buses require {@link ReactiveAccessPolicy} and
- * reject this imperative contract.
+ * <p>Se deniega con {@code AccessException} (403), o con {@code NotFoundException} (404) cuando no
+ * debe revelarse la existencia del recurso de otro llamador. Las políticas imperativas pueden leer
+ * estado (por ejemplo, el dueño de una orden). Los buses reactivos requieren {@link
+ * ReactiveAccessPolicy} y rechazan este contrato imperativo.
  *
- * @param <R> request type (or a supertype shared by several requests)
+ * @param <R> tipo de petición (o un supertipo compartido por varias peticiones)
  */
 public interface AccessPolicy<R> {
 

@@ -28,12 +28,12 @@ import org.slf4j.LoggerFactory;
 import pe.axiz.core.money.Money;
 
 /**
- * Generic event metrics: seven instruments parameterized by the {@code event} tag. A new event
- * needs no code in the library; Grafana filters by {@code event}.
+ * Métricas de eventos genéricas: siete instrumentos parametrizados por el tag {@code event}. Un
+ * evento nuevo no necesita código en la librería; Grafana filtra por {@code event}.
  *
- * <p>Every series of an instrument carries the same tag keys ({@code none} when a tag does not
- * apply) so Prometheus accepts them. Recording never throws: metrics must not break business
- * operations.
+ * <p>Cada serie de un instrumento lleva las mismas claves de tag ({@code none} cuando un tag no
+ * aplica) para que Prometheus las acepte. El registro nunca lanza excepciones: las métricas no
+ * deben romper las operaciones de negocio.
  */
 public final class EventMetrics {
 
@@ -67,7 +67,7 @@ public final class EventMetrics {
     this(registry, settings, List.of());
   }
 
-  /** Counts the occurrence and records amount, value and duration when present. */
+  /** Cuenta la ocurrencia y registra el monto, el valor y la duración cuando están presentes. */
   public void record(MetricEvent e) {
     safely(
         () -> {
@@ -123,17 +123,17 @@ public final class EventMetrics {
     record(configure(event, tags).amount(amount));
   }
 
-  /** Starts timing an operation; call {@link Sample#stop(Outcome)} when it ends. */
+  /** Empieza a medir una operación; se llama a {@link Sample#stop(Outcome)} cuando termina. */
   public Sample start(String event) {
     return new Sample(event, registry.config().clock().monotonicTime());
   }
 
   /**
-   * Level that goes up and down (active sessions, pending requests).
+   * Nivel que sube y baja (sesiones activas, peticiones pendientes).
    *
-   * @param event event name
-   * @param tags optional tags
-   * @return the counter for these tags
+   * @param event nombre del evento
+   * @param tags tags opcionales
+   * @return el contador para estos tags
    */
   public ActiveCounter active(String event, Consumer<MetricEvent> tags) {
     try {
@@ -152,7 +152,7 @@ public final class EventMetrics {
               });
       return new ActiveCounter(level);
     } catch (RuntimeException ex) {
-      LOG.warn("Could not register active counter", ex);
+      LOG.warn("Could not register active counter; failureType={}", ex.getClass().getSimpleName());
       return new ActiveCounter(new AtomicLong());
     }
   }
@@ -161,7 +161,7 @@ public final class EventMetrics {
     return active(event, t -> {});
   }
 
-  /** Long running process in flight (reconciliations, batches, sagas). */
+  /** Proceso de larga duración en curso (reconciliaciones, lotes, sagas). */
   public InflightTask inflight(String event, Consumer<MetricEvent> tags) {
     try {
       LongTaskTimer timer =
@@ -171,20 +171,20 @@ public final class EventMetrics {
               .register(registry);
       return new InflightTask(timer.start());
     } catch (RuntimeException ex) {
-      LOG.warn("Could not start inflight timer", ex);
+      LOG.warn("Could not start inflight timer; failureType={}", ex.getClass().getSimpleName());
       return new InflightTask(null);
     }
   }
 
   /**
-   * Observed value read on each scrape (queue size, current rate, available quota). The object is
-   * held with a strong reference.
+   * Valor observado que se lee en cada scrape (tamaño de cola, tasa actual, cuota disponible). El
+   * objeto se mantiene con una referencia fuerte.
    *
-   * @param event event name
-   * @param target observed object
-   * @param fn function reading the value
-   * @param tags optional tags
-   * @param <T> target type
+   * @param event nombre del evento
+   * @param target objeto observado
+   * @param fn función que lee el valor
+   * @param tags tags opcionales
+   * @param <T> tipo del objetivo
    */
   public <T> void gauge(
       String event, T target, ToDoubleFunction<T> fn, Consumer<MetricEvent> tags) {
@@ -202,16 +202,17 @@ public final class EventMetrics {
   }
 
   /**
-   * Runs an operation counting it and timing it, deriving outcome and reason from the failure.
-   * Arguments and results implementing {@link MetricSource} add amount, value and tags.
+   * Ejecuta una operación contándola y midiendo su duración, y deriva el resultado y el motivo a
+   * partir del fallo. Los argumentos y resultados que implementan {@link MetricSource} agregan
+   * monto, valor y tags.
    *
-   * @param event event name
-   * @param category category or null
-   * @param recordDuration whether to record the timer
-   * @param sources arguments that may implement {@link MetricSource}
-   * @param operation the operation
-   * @return the operation result
-   * @throws Throwable whatever the operation throws
+   * @param event nombre del evento
+   * @param category categoría o null
+   * @param recordDuration indica si se registra el timer
+   * @param sources argumentos que pueden implementar {@link MetricSource}
+   * @param operation la operación
+   * @return el resultado de la operación
+   * @throws Throwable lo que lance la operación
    */
   public <T extends @Nullable Object> T observe(
       String event,
@@ -232,13 +233,14 @@ public final class EventMetrics {
   }
 
   /**
-   * Starts measuring an operation whose end is signalled later (reactive pipelines): call {@link
-   * Observed#succeed} or {@link Observed#fail} exactly once; later calls are ignored.
+   * Empieza a medir una operación cuyo fin se señala más tarde (pipelines reactivos): se llama a
+   * {@link Observed#succeed} o a {@link Observed#fail} exactamente una vez; las llamadas
+   * posteriores se ignoran.
    *
-   * @param event event name
-   * @param category category or null
-   * @param recordDuration whether to record the timer
-   * @param sources arguments that may implement {@link MetricSource}
+   * @param event nombre del evento
+   * @param category categoría o null
+   * @param recordDuration indica si se registra el timer
+   * @param sources argumentos que pueden implementar {@link MetricSource}
    */
   public Observed begin(
       String event, @Nullable String category, boolean recordDuration, List<?> sources) {
@@ -251,7 +253,7 @@ public final class EventMetrics {
     return new Observed(metric, recordDuration, registry.config().clock().monotonicTime());
   }
 
-  /** An operation being measured, see {@link #begin}. */
+  /** Operación en medición, ver {@link #begin}. */
   public final class Observed {
     private final MetricEvent metric;
     private final boolean recordDuration;
@@ -264,7 +266,9 @@ public final class EventMetrics {
       this.start = start;
     }
 
-    /** The operation succeeded; a result implementing {@link MetricSource} adds its data. */
+    /**
+     * La operación tuvo éxito; un resultado que implementa {@link MetricSource} agrega sus datos.
+     */
     public void succeed(@Nullable Object result) {
       if (!done.compareAndSet(false, true)) {
         return;
@@ -276,7 +280,7 @@ public final class EventMetrics {
       finish();
     }
 
-    /** The operation failed; outcome and reason come from the failure classifiers. */
+    /** La operación falló; el resultado y el motivo provienen de los clasificadores de fallos. */
     public void fail(Throwable failure) {
       if (!done.compareAndSet(false, true)) {
         return;
@@ -294,7 +298,7 @@ public final class EventMetrics {
     }
   }
 
-  /** Classification used for a failure. */
+  /** Clasificación usada para un fallo. */
   public FailureClassifier.Classification classify(Throwable failure) {
     for (FailureClassifier c : classifiers) {
       try {
@@ -303,7 +307,7 @@ public final class EventMetrics {
           return r.get();
         }
       } catch (RuntimeException ex) {
-        LOG.debug("Failure classifier error", ex);
+        LOG.debug("Failure classifier error; failureType={}", ex.getClass().getSimpleName());
       }
     }
     return new FailureClassifier.Classification(Outcome.ERROR, "error");
@@ -313,7 +317,7 @@ public final class EventMetrics {
     try {
       source.describe(metric);
     } catch (RuntimeException ex) {
-      LOG.debug("MetricSource failed", ex);
+      LOG.debug("MetricSource failed; failureType={}", ex.getClass().getSimpleName());
     }
   }
 
@@ -345,7 +349,7 @@ public final class EventMetrics {
     }
     for (Map.Entry<String, String> tag : custom.entrySet()) {
       if (!settings.customTags().containsKey(tag.getKey())) {
-        guard.custom(tag.getKey(), tag.getValue()); // logs the undeclared tag once
+        guard.custom(tag.getKey(), tag.getValue()); // registra una vez el tag no declarado
       }
     }
     return Tags.of(tags);
@@ -372,17 +376,17 @@ public final class EventMetrics {
     try {
       action.run();
     } catch (RuntimeException ex) {
-      LOG.warn("Metric recording failed: {}", ex.toString());
+      LOG.warn("Metric recording failed: {}", ex.getClass().getSimpleName());
     }
   }
 
-  /** Supplier that may throw. */
+  /** Supplier que puede lanzar excepciones. */
   @FunctionalInterface
   public interface ThrowingSupplier<T extends @Nullable Object> {
     T get() throws Throwable;
   }
 
-  /** Timing of an operation started with {@link #start(String)}. */
+  /** Medición de una operación iniciada con {@link #start(String)}. */
   public final class Sample {
     private final String event;
     private final long startNanos;
@@ -396,14 +400,14 @@ public final class EventMetrics {
       stop(outcome, t -> {});
     }
 
-    /** Stops the sample, counting the event and recording its duration. */
+    /** Detiene la muestra, contando el evento y registrando su duración. */
     public void stop(Outcome outcome, Consumer<MetricEvent> tags) {
       long elapsed = registry.config().clock().monotonicTime() - startNanos;
       record(configure(event, tags).outcome(outcome).duration(Duration.ofNanos(elapsed)));
     }
   }
 
-  /** Up-down level. */
+  /** Nivel que sube y baja. */
   public static final class ActiveCounter {
     private final AtomicLong level;
 
@@ -415,7 +419,7 @@ public final class EventMetrics {
       level.incrementAndGet();
     }
 
-    /** Decrements without going below zero. */
+    /** Decrementa sin bajar de cero. */
     public void decrement() {
       level.updateAndGet(v -> v > 0 ? v - 1 : 0);
     }
@@ -429,7 +433,7 @@ public final class EventMetrics {
     }
   }
 
-  /** A running long task; call {@link #stop()} exactly once. */
+  /** Tarea larga en ejecución; se llama a {@link #stop()} exactamente una vez. */
   public static final class InflightTask implements AutoCloseable {
     private final LongTaskTimer.@Nullable Sample sample;
     private boolean stopped;

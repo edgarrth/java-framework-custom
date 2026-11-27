@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import pe.axiz.core.cache.LocalByteCache;
 
-/** L1 on Caffeine when it is on the classpath (the starter brings it). */
+/** L1 sobre Caffeine cuando está en el classpath (el starter lo incluye). */
 @AutoConfiguration
 @ConditionalOnClass(name = "com.github.benmanes.caffeine.cache.Caffeine")
 @EnableConfigurationProperties(AxizCacheProperties.class)

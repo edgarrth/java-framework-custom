@@ -12,10 +12,10 @@ import org.springframework.core.env.MapPropertySource;
 import org.springframework.util.StringUtils;
 
 /**
- * Structured logging defaults, applied before the logging system starts. Inside Kubernetes (or with
- * {@code axiz.logging.json=true}) the console writes Boot's native JSON (logstash layout) with
- * {@code trace_id}, {@code span_id} and {@code service}; locally it stays human readable. Every
- * value can be overridden by the service.
+ * Valores por defecto de logging estructurado, aplicados antes de que arranque el sistema de
+ * logging. Dentro de Kubernetes (o con {@code axiz.logging.json=true}) la consola escribe el JSON
+ * nativo de Boot (layout logstash) con {@code trace_id}, {@code span_id} y {@code service}; en
+ * local se mantiene legible para personas. El servicio puede sobrescribir cada valor.
  */
 public class AxizLoggingEnvironmentPostProcessor implements EnvironmentPostProcessor, Ordered {
 

@@ -3,6 +3,8 @@ package pe.axiz.kit.jdbc;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
+import java.sql.SQLTransactionRollbackException;
 import java.util.IdentityHashMap;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -12,15 +14,24 @@ import org.slf4j.LoggerFactory;
 import pe.axiz.core.commons.tx.TransactionRunner;
 
 /**
- * Plain JDBC transactions for technology adapters and tests: binds a connection to the current
- * thread for the duration of {@link #inTransaction(Callable)} and hands it out through {@link
- * #get()}.
+ * Transacciones JDBC simples para adaptadores tecnológicos y pruebas: liga una conexión al hilo
+ * actual durante {@link #inTransaction(Callable)} y la entrega mediante {@link #get()}.
  */
 public final class JdbcTransactions implements TransactionRunner, ConnectionProvider {
 
+  private static boolean rejectedCommit(SQLException failure) {
+    String state = failure.getSQLState();
+    if ("40003".equals(state)) return false;
+    return failure instanceof SQLTransactionRollbackException
+        || failure instanceof SQLIntegrityConstraintViolationException
+        || "40001".equals(state)
+        || "40P01".equals(state)
+        || (state != null && state.startsWith("23"));
+  }
+
   /**
-   * Connections bound to the current thread, per data source (identity): every instance working on
-   * the same data source joins the same transaction.
+   * Conexiones ligadas al hilo actual, por data source (identidad): todas las instancias que
+   * trabajan sobre el mismo data source se unen a la misma transacción.
    */
   private static final ThreadLocal<@Nullable IdentityHashMap<DataSource, Connection>> BOUND =
       new ThreadLocal<>();
@@ -39,7 +50,7 @@ public final class JdbcTransactions implements TransactionRunner, ConnectionProv
   @Override
   public <T> T inTransaction(Callable<T> work) throws Exception {
     if (bound() != null) {
-      return work.call(); // join the running transaction
+      return work.call(); // se une a la transacción en curso
     }
     Connection connection = dataSource.getConnection();
     boolean autoCommit = true;
@@ -67,6 +78,7 @@ public final class JdbcTransactions implements TransactionRunner, ConnectionProv
         connection.commit();
       } catch (SQLException | RuntimeException commit) {
         poisoned = true;
+        if (commit instanceof SQLException sql && rejectedCommit(sql)) throw sql;
         throw new TransactionOutcomeUnknownException(commit);
       }
       return result;
@@ -110,10 +122,12 @@ public final class JdbcTransactions implements TransactionRunner, ConnectionProv
 
   private static void cleanupFailure(@Nullable Throwable primary, Throwable failure) {
     if (primary != null && primary != failure) primary.addSuppressed(failure);
-    // Driver exception messages can contain SQL and values; log only the cleanup event.
+    // Los mensajes de excepción del driver pueden contener SQL y valores; solo se registra en log
+    // el evento de limpieza.
     LoggerFactory.getLogger(JdbcTransactions.class)
         .warn(
-            "JDBC transaction cleanup failed; discard the connection; do not retry confirmed commits");
+            "JDBC transaction cleanup failed; discard the connection; do not retry confirmed"
+                + " commits");
   }
 
   @Override

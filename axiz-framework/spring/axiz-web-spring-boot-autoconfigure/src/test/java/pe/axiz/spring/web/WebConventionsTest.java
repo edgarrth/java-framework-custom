@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.lang.reflect.Method;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,17 +33,17 @@ import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.servlet.config.annotation.ApiVersionConfigurer;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import pe.axiz.core.commons.HeaderCatalog;
-import pe.axiz.core.commons.HeaderDefinition;
-import pe.axiz.core.commons.PageRequest;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
-import pe.axiz.core.commons.Sort;
+import pe.axiz.core.api.HeaderCatalog;
+import pe.axiz.core.api.HeaderDefinition;
+import pe.axiz.core.api.PageRequest;
+import pe.axiz.core.api.Sort;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.errors.ValidationException;
 import reactor.core.publisher.Mono;
 import tools.jackson.databind.json.JsonMapper;
 
-/** Paging rules, CORS, API versions, JSON and the reactive request context. */
+/** Reglas de paginación, CORS, versiones de la API, JSON y el contexto de solicitud reactivo. */
 class WebConventionsTest {
 
   private static AxizWebProperties properties(String... pairs) {
@@ -99,7 +100,7 @@ class WebConventionsTest {
             .size());
   }
 
-  /** Exposes the configured mappings (protected in Spring). */
+  /** Expone los mapeos configurados (protegidos en Spring). */
   static final class InspectableCors extends CorsRegistry {
     Map<String, CorsConfiguration> configurations() {
       return getCorsConfigurations();
@@ -131,7 +132,47 @@ class WebConventionsTest {
     assertNull(c.checkOrigin("https://evil.example"));
   }
 
-  /** Exposes the resulting strategy (protected in Spring). */
+  @Test
+  void programmaticCorsSnapshotsItsInputsAndAppliesOnlyTheDeclaredOriginsAndMethods() {
+    var defaults = properties();
+    var origins = new ArrayList<>(List.of("https://app.example.test"));
+    var corsBuilder =
+        AxizWebProperties.Cors.builder()
+            .enabled(true)
+            .pathPattern("/v1/**")
+            .allowedOrigins(origins)
+            .allowedOriginPatterns(List.of())
+            .allowedMethods(List.of("GET"))
+            .allowedHeaders(List.of("X-Trace"))
+            .exposedHeaders(List.of("X-Correlation-Id"))
+            .allowCredentials(true)
+            .maxAge(Duration.ofSeconds(90));
+    origins.clear();
+    var declared =
+        AxizWebProperties.builder()
+            .headers(defaults.headers())
+            .excludedPaths(defaults.excludedPaths())
+            .channelHeader(defaults.channelHeader())
+            .pagination(defaults.pagination())
+            .apiVersion(defaults.apiVersion())
+            .cors(corsBuilder.build())
+            .json(defaults.json())
+            .maxRequestBody(defaults.maxRequestBody())
+            .bodyLimits(defaults.bodyLimits())
+            .build();
+    var registry = new InspectableCors();
+    new AxizWebMvcConfigurer(declared, new PageRequestParser(20, 100)).addCorsMappings(registry);
+    var effective = registry.configurations().get("/v1/**");
+    assertEquals("https://app.example.test", effective.checkOrigin("https://app.example.test"));
+    assertNull(effective.checkOrigin("https://evil.example.test"));
+    assertEquals(List.of("GET"), effective.getAllowedMethods());
+    assertEquals(List.of("X-Trace"), effective.getAllowedHeaders());
+    assertEquals(List.of("X-Correlation-Id"), effective.getExposedHeaders());
+    assertEquals(Boolean.TRUE, effective.getAllowCredentials());
+    assertEquals(90L, effective.getMaxAge());
+  }
+
+  /** Expone la estrategia resultante (protegida en Spring). */
   static final class InspectableVersions extends ApiVersionConfigurer {
     org.springframework.web.accept.ApiVersionStrategy strategy() {
       return getApiVersionStrategy();
@@ -269,6 +310,31 @@ class WebConventionsTest {
               assertEquals(
                   "{\"id\":\"1\",\"note\":null}",
                   builder.build().writeValueAsString(new Body("1", null)));
+            });
+  }
+
+  @Test
+  void requestBodiesWithUndeclaredPropertiesAreRejectedUnlessConfigured() {
+    String massAssignment = "{\"id\":\"1\",\"note\":\"n\",\"status\":\"APPROVED\"}";
+    new WebApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizWebAutoConfiguration.class))
+        .run(
+            ctx -> {
+              JsonMapper.Builder builder = JsonMapper.builder();
+              ctx.getBean(JsonMapperBuilderCustomizer.class).customize(builder);
+              JsonMapper mapper = builder.build();
+              org.junit.jupiter.api.Assertions.assertThrows(
+                  tools.jackson.databind.exc.UnrecognizedPropertyException.class,
+                  () -> mapper.readValue(massAssignment, Body.class));
+            });
+    new WebApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizWebAutoConfiguration.class))
+        .withPropertyValues("axiz.web.json.reject-unknown-properties=false")
+        .run(
+            ctx -> {
+              JsonMapper.Builder builder = JsonMapper.builder();
+              ctx.getBean(JsonMapperBuilderCustomizer.class).customize(builder);
+              assertEquals("1", builder.build().readValue(massAssignment, Body.class).id());
             });
   }
 

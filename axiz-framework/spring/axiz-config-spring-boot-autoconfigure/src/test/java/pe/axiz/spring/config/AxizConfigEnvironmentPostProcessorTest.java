@@ -27,35 +27,9 @@ class AxizConfigEnvironmentPostProcessorTest {
           + "file:/etc/axiz/config/errors/application.yaml";
 
   @Test
-  void incompleteWebIdentityFailsBeforeConfigBootstrapWhileCompleteDeclarationsAreAllowed() {
-    for (String key :
-        List.of(
-            "AWS_ROLE_ARN",
-            "AWS_WEB_IDENTITY_TOKEN_FILE",
-            "aws.roleArn",
-            "aws.webIdentityTokenFile")) {
-      var env = new MockEnvironment().withProperty(key, "fixture");
-      assertThrows(
-          IllegalStateException.class,
-          () -> epp.postProcessEnvironment(env, new SpringApplication()));
-    }
-    var complete =
-        new MockEnvironment()
-            .withProperty("AWS_ROLE_ARN", "role")
-            .withProperty("AWS_WEB_IDENTITY_TOKEN_FILE", "token");
-    epp.postProcessEnvironment(complete, new SpringApplication());
-    var blank =
-        new MockEnvironment()
-            .withProperty("aws.roleArn", " ")
-            .withProperty("aws.webIdentityTokenFile", "token");
-    assertThrows(
-        IllegalStateException.class,
-        () -> epp.postProcessEnvironment(blank, new SpringApplication()));
-  }
-
-  @Test
   void insideClusterImportsTheMountedConfigMaps() {
-    // shared (optional), then the service and its error catalog (required): later files win
+    // compartido (opcional), luego el servicio y su catálogo de errores (obligatorios): los
+    // archivos posteriores prevalecen
     MockEnvironment env =
         cluster().withProperty("spring.config.import", "optional:file:./extra.yaml");
     epp.postProcessEnvironment(env, new SpringApplication());
@@ -118,19 +92,6 @@ class AxizConfigEnvironmentPostProcessorTest {
   }
 
   @Test
-  void parameterStoreGoesBeforeConfigMaps() {
-    MockEnvironment env =
-        cluster()
-            .withProperty("axiz.config.parameter-store.enabled", "true")
-            .withProperty("axiz.config.parameter-store.application", "payments-business")
-            .withProperty("axiz.config.environment", "QA");
-    epp.postProcessEnvironment(env, new SpringApplication());
-    assertEquals(
-        "optional:aws-parameterstore:/axiz/qa/payments-business/," + MOUNTED,
-        env.getProperty("spring.config.import"));
-  }
-
-  @Test
   void requiredPropertiesAreVerified() {
     MockEnvironment env = new MockEnvironment().withProperty("a", "1").withProperty("b", " ");
     new RequiredPropertiesVerifier(env, List.of("a")).afterPropertiesSet();
@@ -139,41 +100,5 @@ class AxizConfigEnvironmentPostProcessorTest {
             IllegalStateException.class,
             () -> new RequiredPropertiesVerifier(env, List.of("a", "b", "c")).afterPropertiesSet());
     assertEquals(true, e.getMessage().contains("b, c"));
-  }
-
-  @Test
-  void parameterStoreClientsExistOnlyWhenParameterStoreIsUsed() {
-    // no SsmClient (and no AWS region needed) unless the service turns Parameter Store on
-    MockEnvironment laptop = new MockEnvironment();
-    epp.postProcessEnvironment(laptop, new SpringApplication());
-    assertEquals("false", laptop.getProperty("spring.cloud.aws.parameterstore.enabled"));
-
-    // the switch may come from the service's own configuration, read when it is bound
-    MockEnvironment enabled = cluster();
-    epp.postProcessEnvironment(enabled, new SpringApplication());
-    enabled.setProperty("axiz.config.parameter-store.enabled", "true");
-    assertThrows(
-        IllegalStateException.class,
-        () ->
-            new AxizConfigValidationEnvironmentPostProcessor()
-                .postProcessEnvironment(enabled, new SpringApplication()));
-
-    MockEnvironment explicit =
-        new MockEnvironment().withProperty("spring.cloud.aws.parameterstore.enabled", "true");
-    epp.postProcessEnvironment(explicit, new SpringApplication());
-    assertEquals("true", explicit.getProperty("spring.cloud.aws.parameterstore.enabled"));
-  }
-
-  @Test
-  void theSecretsManagerConfigIntegrationIsOffUnlessTheServiceTurnsItOn() {
-    // the SDK on the classpath (axiz.secrets) must not build a second client that needs a region
-    MockEnvironment laptop = new MockEnvironment();
-    epp.postProcessEnvironment(laptop, new SpringApplication());
-    assertEquals("false", laptop.getProperty("spring.cloud.aws.secretsmanager.enabled"));
-
-    MockEnvironment explicit =
-        new MockEnvironment().withProperty("spring.cloud.aws.secretsmanager.enabled", "true");
-    epp.postProcessEnvironment(explicit, new SpringApplication());
-    assertEquals("true", explicit.getProperty("spring.cloud.aws.secretsmanager.enabled"));
   }
 }

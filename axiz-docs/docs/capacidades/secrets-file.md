@@ -1,0 +1,34 @@
+<!-- GENERADO por scripts/sync_reference.py desde axiz-framework: no editar -->
+# secrets-file
+
+Archivos de secretos montados y variables de entorno, con instantáneas nativas refrescadas
+
+```bash
+axiz add secrets-file
+```
+
+|  |  |
+|---|---|
+| Starter | `pe.axiz:axiz-secrets-file-spring-boot-starter` |
+| Stacks del catálogo | servlet, reactive |
+| Agrega también | [`secrets`](secrets.md) |
+| Incluida por defecto en | ningún arquetipo |
+
+## Propiedades que agrega
+
+Valores por defecto seguros en `application.yaml`; los valores de cada ambiente van en el ConfigMap del servicio y los secretos en el secret store.
+
+```yaml
+axiz.secrets.directory: /var/run/secrets/axiz
+```
+
+Perfil `local` (`application-local.yaml`):
+
+```yaml
+axiz.secrets.directory: ./local/secrets
+```
+
+## Módulos
+
+- [`axiz-secrets-file-spring-boot-autoconfigure`](../referencia/spring/axiz-secrets-file-spring-boot-autoconfigure.md)
+- [`axiz-core-secrets`](../referencia/core/axiz-core-secrets.md)

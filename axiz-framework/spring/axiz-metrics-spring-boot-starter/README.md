@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-metrics-spring-boot-starter
 
-Generic event metrics with @Metered, catalog, common tags and cardinality protection.
+Métricas genéricas de eventos con @Metered, catálogo, tags comunes y protección de cardinalidad.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,4 +12,4 @@ Generic event metrics with @Metered, catalog, common tags and cardinality protec
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).

@@ -8,11 +8,12 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.StandardHeaders;
+import pe.axiz.core.api.StandardHeaders;
 
 /**
- * Computes the headers forwarded to a dependency: correlation id and Accept-Language always, plus
- * the client's allow-list. Credentials are never propagated (token relay is an explicit auth mode).
+ * Calcula las cabeceras reenviadas a una dependencia: siempre el id de correlación y
+ * Accept-Language, más la lista de permitidas del cliente. Las credenciales nunca se propagan (el
+ * relay de tokens es un modo de autenticación explícito).
  */
 public final class HeaderPropagation {
 
@@ -30,11 +31,11 @@ public final class HeaderPropagation {
   }
 
   /**
-   * Headers to add to the outbound request.
+   * Cabeceras a agregar a la petición saliente.
    *
-   * @param inboundNames names of the inbound headers
-   * @param lookup inbound header lookup
-   * @return header name to value
+   * @param inboundNames nombres de las cabeceras entrantes
+   * @param lookup búsqueda de cabeceras entrantes
+   * @return nombre de cabecera a valor
    */
   public Map<String, String> outbound(
       Collection<String> inboundNames, Function<String, @Nullable String> lookup) {

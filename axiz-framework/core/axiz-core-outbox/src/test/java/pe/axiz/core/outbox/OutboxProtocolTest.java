@@ -15,15 +15,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import org.junit.jupiter.api.Test;
-import pe.axiz.core.commons.json.JsonReader;
 import pe.axiz.core.commons.tx.TransactionRunner;
+import pe.axiz.core.json.JsonReader;
 import pe.axiz.core.messaging.CloudEventJson;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.messaging.PublishResult;
 import pe.axiz.core.resilience.Backoff;
 
-/** Pure orchestration tests; adapters independently prove database fencing and atomicity. */
+/**
+ * Pruebas de orquestación pura; los adaptadores prueban de forma independiente el fencing y la
+ * atomicidad de la base de datos.
+ */
 class OutboxProtocolTest {
   private static final Instant NOW = Instant.parse("2026-11-04T00:00:00Z");
   private static final Clock CLOCK = Clock.fixed(NOW, ZoneOffset.UTC);
@@ -44,15 +47,16 @@ class OutboxProtocolTest {
   }
 
   private static EventEnvelope event() {
-    return new EventEnvelope(
-        "event",
-        "urn:service",
-        "changed.v1",
-        NOW,
-        "aggregate",
-        "application/json",
-        new byte[] {'{', '}'},
-        Map.of());
+    return EventEnvelope.builder()
+        .id("event")
+        .source("urn:service")
+        .type("changed.v1")
+        .time(NOW)
+        .subject("aggregate")
+        .dataContentType("application/json")
+        .data(new byte[] {'{', '}'})
+        .extensions(Map.of())
+        .build();
   }
 
   static class Store implements OutboxStore {
@@ -84,21 +88,15 @@ class OutboxProtocolTest {
       claimed = true;
       claimOwner = owner;
       return List.of(
-          new OutboxRecord(
-              "event",
-              "topic",
-              "order",
-              "aggregate",
-              "changed.v1",
-              CloudEventJson.write(event()),
-              OutboxRecord.Status.IN_FLIGHT,
-              0,
-              NOW,
-              NOW,
-              null,
-              7,
-              owner,
-              expired ? NOW : NOW.plus(lease)));
+          OutboxRecord.builder("event", "topic", "changed.v1", CloudEventJson.write(event()), NOW)
+              .aggregate("order", "aggregate")
+              .status(OutboxRecord.Status.IN_FLIGHT)
+              .attempts(0)
+              .nextAttemptAt(NOW)
+              .lastError(null)
+              .aggregateSequence(7)
+              .lease(owner, expired ? NOW : NOW.plus(lease))
+              .build());
     }
 
     @Override
@@ -160,16 +158,13 @@ class OutboxProtocolTest {
   }
 
   private OutboxRelay relay(Store store, EventPublisher publisher, int maxAttempts) {
-    return new OutboxRelay(
-        store,
-        publisher,
-        store.tx,
-        CLOCK,
-        10,
-        maxAttempts,
-        Backoff.fixed(Duration.ofSeconds(3)),
-        Duration.ofMinutes(3),
-        Duration.ofMillis(1));
+    return OutboxRelay.builder(store, publisher, store.tx, CLOCK)
+        .batchSize(10)
+        .maxAttempts(maxAttempts)
+        .backoff(Backoff.fixed(Duration.ofSeconds(3)))
+        .lease(Duration.ofMinutes(3))
+        .publishBudget(Duration.ofMillis(1))
+        .build();
   }
 
   @Test
@@ -295,30 +290,30 @@ class OutboxProtocolTest {
                     .limit(size)
                     .map(
                         id ->
-                            new OutboxRecord(
-                                id,
-                                "topic",
-                                "order",
-                                id,
-                                "changed.v1",
-                                CloudEventJson.write(
-                                    new EventEnvelope(
-                                        id,
-                                        "urn:service",
-                                        "changed.v1",
-                                        NOW,
-                                        id,
-                                        "application/json",
-                                        new byte[0],
-                                        Map.of())),
-                                OutboxRecord.Status.IN_FLIGHT,
-                                id.equals("failed") ? 1 : 0,
-                                NOW,
-                                NOW,
-                                null,
-                                1,
-                                owner,
-                                NOW.plus(lease)))
+                            OutboxRecord.builder(
+                                    id,
+                                    "topic",
+                                    "changed.v1",
+                                    CloudEventJson.write(
+                                        EventEnvelope.builder()
+                                            .id(id)
+                                            .source("urn:service")
+                                            .type("changed.v1")
+                                            .time(NOW)
+                                            .subject(id)
+                                            .dataContentType("application/json")
+                                            .data(new byte[0])
+                                            .extensions(Map.of())
+                                            .build()),
+                                    NOW)
+                                .aggregate("order", id)
+                                .status(OutboxRecord.Status.IN_FLIGHT)
+                                .attempts(id.equals("failed") ? 1 : 0)
+                                .nextAttemptAt(NOW)
+                                .lastError(null)
+                                .aggregateSequence(1)
+                                .lease(owner, NOW.plus(lease))
+                                .build())
                     .toList();
           }
 
@@ -339,21 +334,22 @@ class OutboxProtocolTest {
           }
         };
     var relay =
-        new OutboxRelay(
-            store,
-            (destination, event) -> {
-              sent.add(event.id());
-              if (List.of("retry", "failed").contains(event.id()))
-                throw new IllegalStateException("broker rejected publication");
-              return new PublishResult(event.id(), destination, null);
-            },
-            store.tx,
-            CLOCK,
-            4,
-            2,
-            Backoff.fixed(Duration.ZERO),
-            Duration.ofMinutes(3),
-            Duration.ofMillis(1));
+        OutboxRelay.builder(
+                store,
+                (destination, event) -> {
+                  sent.add(event.id());
+                  if (List.of("retry", "failed").contains(event.id()))
+                    throw new IllegalStateException("broker rejected publication");
+                  return new PublishResult(event.id(), destination, null);
+                },
+                store.tx,
+                CLOCK)
+            .batchSize(4)
+            .maxAttempts(2)
+            .backoff(Backoff.fixed(Duration.ZERO))
+            .lease(Duration.ofMinutes(3))
+            .publishBudget(Duration.ofMillis(1))
+            .build();
     assertEquals(new OutboxRelay.RunResult(2, 1, 1), relay.relayOnce());
     assertEquals(List.of(4, 1), limits);
     assertEquals(List.of("sent", "retry", "failed", "last"), sent);
@@ -375,16 +371,17 @@ class OutboxProtocolTest {
           }
         };
     var relay =
-        new OutboxRelay(
-            store,
-            (destination, event) -> new PublishResult(event.id(), destination, null),
-            store.tx,
-            CLOCK,
-            1,
-            1,
-            Backoff.fixed(Duration.ZERO),
-            Duration.ofMinutes(3),
-            Duration.ofMillis(1));
+        OutboxRelay.builder(
+                store,
+                (destination, event) -> new PublishResult(event.id(), destination, null),
+                store.tx,
+                CLOCK)
+            .batchSize(1)
+            .maxAttempts(1)
+            .backoff(Backoff.fixed(Duration.ZERO))
+            .lease(Duration.ofMinutes(3))
+            .publishBudget(Duration.ofMillis(1))
+            .build();
     assertEquals(3, relay.drain());
     assertEquals(List.of(1, 1, 1, 1), limits);
   }

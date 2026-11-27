@@ -6,19 +6,19 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** Audits a method: actor, action, resource, outcome and (sanitized) arguments and result. */
+/** Audita un método: actor, acción, recurso, resultado y argumentos y resultado (saneados). */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface Auditable {
 
-  /** Action name, e.g. {@code order.create}. */
+  /** Nombre de la acción, por ejemplo {@code order.create}. */
   String action();
 
-  /** Resource type, e.g. {@code order}. */
+  /** Tipo de recurso, por ejemplo {@code order}. */
   String resource();
 
-  /** Name of the argument holding the resource id, if any. */
+  /** Nombre del argumento que contiene el id del recurso, si existe. */
   String resourceIdArgument() default "";
 
   boolean captureArguments() default true;

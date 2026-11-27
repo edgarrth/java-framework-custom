@@ -8,7 +8,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
-import pe.axiz.core.commons.Page;
+import pe.axiz.core.api.Page;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.payments.beneficiaries.model.Beneficiary;
@@ -58,7 +58,7 @@ class BeneficiariesServiceTest {
             e -> assertThat(e.definition()).isEqualTo(BeneficiaryErrors.DUPLICATE_ACCOUNT));
 
     service.remove("C-1", first.getBeneficiaryId());
-    assertThat(service.create("C-1", beneficiary(VALID_CCI)).getBeneficiaryId()).isEqualTo("B-2");
+    assertThat(service.create("C-1", beneficiary(VALID_CCI)).getBeneficiaryId()).isEqualTo("B-3");
     assertThat(service.create("C-2", beneficiary(VALID_CCI)).getCustomerId()).isEqualTo("C-2");
   }
 
@@ -87,16 +87,20 @@ class BeneficiariesServiceTest {
   }
 
   @Test
-  void readsAreCachedAndChangesEvictTheEntry() {
+  void readsConsultTheAuthorityEvenAfterAnotherReplicaChangesTheRecord() {
     Beneficiary created = service.create("C-1", beneficiary(VALID_CCI));
 
     service.get("C-1", created.getBeneficiaryId());
     service.get("C-1", created.getBeneficiaryId());
-    assertThat(repository.reads).isEqualTo(1);
+    assertThat(repository.reads).isEqualTo(2);
 
-    service.rename("C-1", created.getBeneficiaryId(), "Home rent");
+    var other = Services.beneficiaries(repository, clock, meters, 2);
+    other.rename("C-1", created.getBeneficiaryId(), "Home rent");
     assertThat(service.get("C-1", created.getBeneficiaryId()).getAlias()).isEqualTo("Home rent");
-    assertThat(repository.reads).isEqualTo(3);
+    assertThat(repository.reads).isEqualTo(4);
+    other.remove("C-1", created.getBeneficiaryId());
+    assertThatThrownBy(() -> service.get("C-1", created.getBeneficiaryId()))
+        .isInstanceOf(NotFoundException.class);
   }
 
   @Test

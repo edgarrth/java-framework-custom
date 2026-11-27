@@ -1,4 +1,6 @@
-/** Package pe.axiz.spring.inbox. Types are non-null unless annotated {@code @Nullable}. */
+/**
+ * Paquete pe.axiz.spring.inbox. Los tipos son no nulos salvo que se anoten con {@code @Nullable}.
+ */
 @NullMarked
 package pe.axiz.spring.inbox;
 

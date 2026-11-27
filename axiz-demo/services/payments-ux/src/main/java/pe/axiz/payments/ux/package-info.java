@@ -1,6 +1,6 @@
 /**
- * Payments UX: Payments API for the channels. Archetype ux, bff structure, reactive stack. Types
- * are non-null unless annotated {@code @Nullable}.
+ * Payments UX: API de pagos para los canales. Arquetipo ux, estructura bff, stack reactive. Los
+ * tipos no son nulos salvo que se anoten con {@code @Nullable}.
  */
 @NullMarked
 package pe.axiz.payments.ux;

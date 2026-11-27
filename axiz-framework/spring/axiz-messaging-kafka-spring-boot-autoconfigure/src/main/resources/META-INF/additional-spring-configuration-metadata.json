@@ -1,0 +1,16 @@
+{
+  "properties": [
+    {
+      "name": "axiz.messaging.kafka.send-workers",
+      "type": "java.lang.Integer",
+      "defaultValue": 2,
+      "description": "Dedicated Kafka send workers; positive. Send admission never runs on the reactive caller."
+    },
+    {
+      "name": "axiz.messaging.kafka.send-queue-capacity",
+      "type": "java.lang.Integer",
+      "defaultValue": 256,
+      "description": "Additional admission capacity beyond workers. Total pending submissions plus unacknowledged sends is bounded by workers plus queue capacity; saturation rejects immediately."
+    }
+  ]
+}

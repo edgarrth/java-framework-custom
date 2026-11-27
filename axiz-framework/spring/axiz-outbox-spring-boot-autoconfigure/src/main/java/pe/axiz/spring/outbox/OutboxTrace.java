@@ -13,18 +13,17 @@ import pe.axiz.core.observability.AxizObservations;
 import pe.axiz.core.outbox.OutboxWriteTracing;
 
 /**
- * Keeps the trace of the request that writes an event to the outbox. The write runs in an {@code
- * axiz.outbox.write} observation whose context the tracer injects into a carrier; the W3C {@code
- * traceparent} and {@code tracestate} are stored with the event ({@link
- * EventEnvelope#OUTBOX_TRACEPARENT}), and the relay continues that trace when it publishes the
- * event later, outside the request. Without a tracer the observation is a no-op and nothing is
- * stored.
+ * Conserva la traza de la solicitud que escribe un evento en el outbox. La escritura se ejecuta en
+ * una observación {@code axiz.outbox.write} cuyo contexto el tracer inyecta en un portador; el
+ * {@code traceparent} y el {@code tracestate} de W3C se almacenan con el evento ({@link
+ * EventEnvelope#OUTBOX_TRACEPARENT}), y el relay continúa esa traza cuando publica el evento más
+ * tarde, fuera de la solicitud. Sin tracer, la observación no hace nada y no se almacena nada.
  */
 final class OutboxTrace {
 
   private OutboxTrace() {}
 
-  /** Tracing of the blocking {@link pe.axiz.core.outbox.OutboxWriter}. */
+  /** Tracing del {@link pe.axiz.core.outbox.OutboxWriter} bloqueante. */
   static OutboxWriteTracing tracing(ObservationRegistry registry) {
     return (destination, event, write) -> {
       Write w = start(registry, destination, event, null);
@@ -39,10 +38,10 @@ final class OutboxTrace {
     };
   }
 
-  /** A started write observation; {@link #carrier()} holds the injected context. */
+  /** Observación de escritura iniciada; {@link #carrier()} contiene el contexto inyectado. */
   record Write(Observation observation, Map<String, String> carrier) {
 
-    /** The envelope with the trace context of this write, when there is one. */
+    /** El sobre con el contexto de traza de esta escritura, cuando existe. */
     EventEnvelope stamp(EventEnvelope envelope) {
       EventEnvelope e = envelope;
       String parent = carrier.get(EventEnvelope.TRACEPARENT);
@@ -58,8 +57,8 @@ final class OutboxTrace {
   }
 
   /**
-   * Starts the write observation of an event, child of {@code parent} (or of the current
-   * observation when {@code parent} is null).
+   * Inicia la observación de escritura de un evento, hija de {@code parent} (o de la observación
+   * actual cuando {@code parent} es null).
    */
   static Write start(
       ObservationRegistry registry,

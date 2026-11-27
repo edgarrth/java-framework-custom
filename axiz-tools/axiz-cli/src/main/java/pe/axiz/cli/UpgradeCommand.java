@@ -20,9 +20,9 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
 /**
- * {@code axiz upgrade}: stages the OpenRewrite recipes, parents and manifest in an isolated working
- * copy before applying the migration. The recipes ({@code pe.axiz:axiz-rewrite-recipes}), which
- * migrate properties, APIs and configuration.
+ * {@code axiz upgrade}: prepara las recetas de OpenRewrite, los padres y el manifiesto en una copia
+ * de trabajo aislada previo a aplicar la migración. Las recetas ({@code
+ * pe.axiz:axiz-rewrite-recipes}) migran propiedades, API y configuración.
  */
 @Command(
     mixinStandardHelpOptions = true,
@@ -71,7 +71,7 @@ class UpgradeCommand extends BaseCommand implements Callable<Integer> {
     out().println("Upgrading to axiz " + target);
     try (WorkingProject isolated = WorkingProject.create(dir)) {
       Path working = isolated.directory();
-      // Stage changes in isolation; apply only after validation.
+      // Los cambios se preparan de forma aislada y solo se aplican tras la validación.
       manifest.write(working);
       if (rename != null) ProjectRename.apply(working, manifest, rename, true);
       if (skipRewrite) {

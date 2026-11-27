@@ -1,4 +1,4 @@
-/** HTTP clients of downstream services. */
+/** Clientes HTTP de los servicios aguas abajo. */
 @NullMarked
 package pe.axiz.payments.ux.client;
 

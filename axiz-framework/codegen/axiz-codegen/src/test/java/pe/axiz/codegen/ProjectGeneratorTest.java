@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -30,10 +31,45 @@ import pe.axiz.codegen.output.GeneratedProject;
 import pe.axiz.codegen.render.TemplateSet;
 
 class ProjectGeneratorTest {
+  /** Release de los workflows reutilizables de Axiz que usan los proyectos generados. */
+  private static final String WORKFLOWS = "axiz-workflows-v2.0.0";
 
   private static final Pattern UNRENDERED = Pattern.compile("(?<!\\$)\\{\\{");
   private static final Pattern PACKAGE = Pattern.compile("^package ([\\w.]+);", Pattern.MULTILINE);
   private final ProjectGenerator generator = ProjectGenerator.withDefaults();
+
+  @Test
+  void tokenArchitectureScopeFollowsTheResolvedCapabilities() {
+    for (Stack stack : List.of(Stack.SERVLET, Stack.REACTIVE)) {
+      for (boolean server : List.of(false, true)) {
+        var capabilities =
+            server
+                ? List.of(
+                    "tokenization-vault-dynamodb",
+                    "tokenization-vault-redis",
+                    "audit-kafka",
+                    "tokenization-pan")
+                : List.of("tokenization", "carddata");
+        var project =
+            generator.generate(
+                Fixtures.request("business", Structure.HEXAGONAL, stack, "dynamodb", capabilities));
+        var architecture =
+            project.files().entrySet().stream()
+                .filter(e -> e.getKey().endsWith("/ArchitectureTest.java"))
+                .map(e -> new String(e.getValue(), StandardCharsets.UTF_8))
+                .findFirst()
+                .orElseThrow();
+        assertTrue(architecture.contains("TokenizationScope." + (server ? "VAULT" : "CLIENT")));
+        assertTrue(architecture.contains("CardDataScope." + (server ? "VAULT" : "EDGE")));
+        if (!server) {
+          assertFalse(project.text("pom.xml").contains("axiz-tokenization-vault"));
+          assertTrue(
+              project.text("src/main/resources/application-local.yaml").contains("mode: local"));
+          assertTrue(project.text("src/main/resources/application.yaml").contains("retry: NONE"));
+        }
+      }
+    }
+  }
 
   @Test
   void eventProcessorsDeclareSecurityForTheirManagementEndpoints() {
@@ -65,8 +101,8 @@ class ProjectGeneratorTest {
                     List.of("outbox", "messaging-" + transport)));
         String config = project.text("src/main/resources/application.yaml");
         assertTrue(config.contains("mode: DURABLE"), config);
-        assertTrue(config.contains("Audit convention:"));
-        assertTrue(config.contains("same transactional resource"));
+        assertTrue(config.contains("Convención de auditoría:"));
+        assertTrue(config.contains("mismo recurso transaccional"));
         assertTrue(
             config.contains(
                 transport.equals("kafka")
@@ -104,10 +140,22 @@ class ProjectGeneratorTest {
       }
       assertEquals(cqrs, text.contains("import pe.axiz.quality.archunit.Extension;"));
       assertEquals(cqrs, text.contains(".extensions(Extension.CQRS)"));
+      assertTrue(text.contains("static AxizArchitecture architecture()"));
+      assertTrue(text.contains("architecture().verify()"));
+      assertTrue(text.contains(".cardData(CardDataScope.NONE)"));
+      assertTrue(text.contains(".tokenization(TokenizationScope.NONE)"));
+      String selfCheck =
+          files.entrySet().stream()
+              .filter(e -> e.getKey().endsWith("/ArchitectureSelfCheckTest.java"))
+              .map(e -> new String(e.getValue(), StandardCharsets.UTF_8))
+              .findFirst()
+              .orElseThrow();
+      assertTrue(
+          selfCheck.contains("ArchitectureSelfCheck.verify(ArchitectureTest.architecture())"));
     }
   }
 
-  /** Every valid archetype x structure x stack x persistence combination. */
+  /** Cada combinación válida de arquetipo x estructura x stack x persistencia. */
   private List<ProjectRequest> combinations() {
     List<ProjectRequest> out = new ArrayList<>();
     for (Archetype a : generator.catalog().archetypes()) {
@@ -138,7 +186,8 @@ class ProjectGeneratorTest {
         String path = e.getKey();
         String text = new String(e.getValue(), StandardCharsets.UTF_8);
         if (!path.contains("/templates/")) {
-          // GitHub expressions (${{ ... }}) are legitimate; any other {{ is an unrendered tag
+          // Las expresiones de GitHub (${{ ... }}) son legítimas; cualquier otro {{ es una etiqueta
+          // sin renderizar
           assertFalse(UNRENDERED.matcher(text).find(), where + " unrendered mustache in " + path);
         }
         if (path.endsWith(".java")) {
@@ -149,7 +198,7 @@ class ProjectGeneratorTest {
         }
         if ((path.endsWith(".yaml") || path.endsWith(".yml")) && !path.contains("/templates/")) {
           for (Object ignored : yaml.loadAll(text)) {
-            // parses
+            // se analiza
           }
         }
       }
@@ -160,11 +209,50 @@ class ProjectGeneratorTest {
   }
 
   @Test
+  void hexagonalApplicationModelsIncludeSharedEnumSchemas() {
+    var base =
+        Fixtures.request("business", Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of());
+    String contract =
+        Fixtures.orders()
+            .replace(
+                "\n  schemas:\n",
+                "\n  schemas:\n    OrderStatus:\n      type: string\n      enum: [OPEN, CLOSED]\n");
+    var request =
+        ProjectRequest.builder()
+            .name(base.name())
+            .groupId(base.groupId())
+            .basePackage(base.basePackage())
+            .description(base.description())
+            .archetype(base.archetype())
+            .structure(base.structure())
+            .stack(base.stack())
+            .persistence(base.persistence())
+            .capabilities(base.capabilities())
+            .openApi(contract)
+            .asyncApi(null)
+            .frameworkVersion("2.0.0")
+            .extensions(List.of())
+            .build();
+    GeneratedProject p = generator.generate(request);
+    String status =
+        p.text("src/main/java/pe/axiz/orders/orders/application/model/OrderStatus.java");
+    assertTrue(status.contains("public enum OrderStatus"), status);
+    assertFalse(status.contains("import org.jspecify"), status);
+    assertFalse(
+        p.files().keySet().stream()
+            .anyMatch(f -> f.endsWith("OrderStatusApplicationModelTest.java")));
+  }
+
+  @Test
   void hexagonalServiceHasUseCasesControllersAndDeployment() {
     GeneratedProject p =
         generator.generate(
             Fixtures.request(
-                "business", Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of("outbox")));
+                "business",
+                Structure.HEXAGONAL,
+                Stack.SERVLET,
+                "aurora",
+                List.of("outbox", "messaging-kafka")));
     String base = "src/main/java/pe/axiz/orders/orders/";
     for (String f :
         List.of(
@@ -183,7 +271,7 @@ class ProjectGeneratorTest {
         controller.contains("createOrderUseCase.execute(new CreateOrderUseCase.Input(")
             && controller.contains("mapper.convertValue(body,")
             && !p.text(base + "application/usecase/CreateOrderUseCase.java")
-                .contains(".api.model"));
+                .contains(".adapter.in.rest.model"));
     assertTrue(controller.contains("ResponseEntity.status(201)"));
     assertTrue(
         p.text(base + "application/usecase/ListOrdersUseCase.java")
@@ -195,37 +283,20 @@ class ProjectGeneratorTest {
     assertTrue(p.text(".mvn/jvm.config").contains("jdk.compiler"), "Error Prone needs the exports");
     String ci = p.text(".github/workflows/ci.yaml");
     assertTrue(ci.contains("service: orders"), ci);
-    Map<?, ?> workflow = new Yaml(new SafeConstructor(new LoaderOptions())).load(ci);
-    Map<?, ?> jobs = (Map<?, ?>) workflow.get("jobs");
-    assertTrue(
-        jobs.values().stream()
-            .map(job -> (Map<?, ?>) job)
-            .noneMatch(
-                job -> {
-                  String ref = String.valueOf(job.get("uses"));
-                  return List.of(
-                          "/service-deploy.yaml@",
-                          "/service-cd.yaml@",
-                          "/lib-deploy.yaml@",
-                          "/lib-promote.yaml@")
-                      .stream()
-                      .anyMatch(ref::contains);
-                }),
-        "the producer run must never invoke deployment");
-    assertTrue(ci.contains("service-build.yaml@" + WorkflowRelease.expected()), ci);
-    assertTrue(ci.contains("source-sha: ${{ github.sha }}"), ci);
-    assertTrue(ci.contains("version: ${{ needs.parameters.outputs.version }}"), ci);
-    assertTrue(ci.contains("base-image:"), ci);
+    assertTrue(ci.contains("service-build.yaml@" + WORKFLOWS), ci);
+    assertTrue(ci.contains("publish: ${{ github.event_name == 'push' }}"), ci);
+    // dev recibe el digest que acaba de atestiguar el build; nunca se recompila para desplegar
+    assertTrue(ci.contains("service-deploy.yaml@" + WORKFLOWS), ci);
+    assertTrue(ci.contains("digest: ${{ needs.build.outputs.digest }}"), ci);
     assertFalse(ci.contains("<%"), "delimiters fully rendered");
-    assertSeparatedDeployment(p, "service-deploy");
-    assertFalse(p.files().containsKey(".github/workflows/cd.yaml"));
-    assertTrue(
-        p.text(".github/workflows/release.yaml")
-            .contains("release.yaml@" + WorkflowRelease.expected()));
+    Map<?, ?> workflow = new Yaml(new SafeConstructor(new LoaderOptions())).load(ci);
+    assertEquals(Set.of("build", "deploy-dev"), ((Map<?, ?>) workflow.get("jobs")).keySet());
+    assertManualPromotion(p);
+    assertTrue(p.text(".github/workflows/release.yaml").contains("release.yaml@" + WORKFLOWS));
     assertTrue(p.files().containsKey("release-please-config.json"));
     assertTrue(p.files().containsKey(".release-please-manifest.json"));
-    // nothing released yet; the first release is the version the pom targets (release-please
-    // would propose 1.0.0 without initial-version; .github/scripts/release-version computes it)
+    // sin releases publicadas: la primera release es la versión a la que apunta el pom
+    // (release-please propondría 1.0.0 sin initial-version)
     assertTrue(p.text(".release-please-manifest.json").contains("\"0.0.0\""));
     assertEquals("0.0.0", p.text("version.txt").strip());
     assertTrue(
@@ -278,7 +349,7 @@ class ProjectGeneratorTest {
                 Structure.HEXAGONAL,
                 Stack.REACTIVE,
                 "aurora",
-                List.of("outbox", "inbox", "scheduling"),
+                List.of("outbox", "inbox", "scheduling", "messaging-kafka"),
                 Extension.CQRS));
     String base = "src/main/java/pe/axiz/orders/orders/";
     String controller = p.text(base + "adapter/in/rest/OrdersController.java");
@@ -287,7 +358,7 @@ class ProjectGeneratorTest {
         controller.contains("return commandBus.send(new CreateOrderCommand(")
             && controller.contains("mapper.convertValue(body,")
             && !p.text(base + "application/command/CreateOrderCommand.java")
-                .contains(".api.model"));
+                .contains(".adapter.in.rest.model"));
     assertFalse(controller.contains("Schedulers"), "no offloading: the pipeline is reactive");
     String handler = p.text(base + "application/command/CreateOrderHandler.java");
     assertTrue(handler.contains("implements ReactiveCommandHandler<CreateOrderCommand, Order>"));
@@ -296,16 +367,12 @@ class ProjectGeneratorTest {
         p.text(base + "application/query/GetOrderHandler.java").contains("ReactiveQueryHandler"));
     String pom = p.text("pom.xml");
     assertTrue(pom.contains("<artifactId>axiz-r2dbc-spring-boot-starter</artifactId>"));
-    assertTrue(
-        Pattern.compile(
-                "<artifactId>axiz-adapter-database-auth-aws</artifactId>\\s*<scope>runtime</scope>")
-            .matcher(pom)
-            .find(),
-        "Generated IAM support must be a runtime adapter: " + pom);
+    assertFalse(pom.contains("axiz-adapter-database-auth-aws"));
+    assertFalse(pom.contains("axiz-r2dbc-aws"), "IAM is an explicit capability");
     assertFalse(pom.contains("axiz-jpa-spring-boot-starter"), "JPA blocks: never on reactive");
-    assertTrue(pom.contains("<artifactId>axiz-adapter-outbox-r2dbc</artifactId>"));
-    assertTrue(pom.contains("<artifactId>axiz-adapter-inbox-r2dbc</artifactId>"));
-    assertTrue(pom.contains("<artifactId>shedlock-provider-r2dbc</artifactId>"));
+    assertTrue(pom.contains("<artifactId>axiz-outbox-r2dbc-spring-boot-starter</artifactId>"));
+    assertTrue(pom.contains("<artifactId>axiz-inbox-r2dbc-spring-boot-starter</artifactId>"));
+    assertTrue(pom.contains("<artifactId>axiz-scheduling-r2dbc-spring-boot-starter</artifactId>"));
     String app = p.text("src/main/resources/application.yaml");
     assertTrue(app.contains("r2dbc:postgresql://"), app);
     assertTrue(app.contains("DB_SSL_MODE:verify-full"), app);
@@ -314,11 +381,11 @@ class ProjectGeneratorTest {
     String local = p.text("src/main/resources/application-local.yaml");
     assertTrue(local.contains("url: r2dbc:postgresql://localhost:5432/orders"), local);
     String migration = p.text("src/main/resources/db/migration/V1__init.sql");
-    assertTrue(migration.contains("only uses R2DBC"));
+    assertTrue(migration.contains("solo usa R2DBC"));
     assertTrue(migration.contains("CREATE TABLE IF NOT EXISTS axiz_outbox"));
     assertTrue(p.text("compose.yaml").contains("postgres:"));
     assertTrue(
-        p.text("src/test/java/pe/axiz/orders/orders/OrdersApplicationTest.java")
+        p.text("src/test/java/pe/axiz/orders/orders/OrdersApplicationTestSupport.java")
             .contains("PostgresTestConfiguration"));
     assertTrue(p.text(".axiz/project.yaml").contains("r2dbc"));
   }
@@ -337,7 +404,7 @@ class ProjectGeneratorTest {
             .orElseThrow();
     assertTrue(handler.contains("extends ReactiveTypedEventHandler<ExampleCreated>"), handler);
     assertTrue(handler.contains("protected Publisher<Void> on("));
-    assertTrue(p.text("pom.xml").contains("axiz-adapter-inbox-r2dbc"));
+    assertTrue(p.text("pom.xml").contains("axiz-inbox-r2dbc-spring-boot-starter"));
   }
 
   @Test
@@ -347,20 +414,21 @@ class ProjectGeneratorTest {
     String contract = "asyncapi: 3.0.0\ninfo: {title: Orders, version: 1.0.0}\nchannels: {}\n";
     GeneratedProject project =
         generator.generate(
-            new ProjectRequest(
-                base.name(),
-                base.groupId(),
-                base.basePackage(),
-                base.description(),
-                base.archetype(),
-                base.structure(),
-                base.stack(),
-                base.persistence(),
-                base.capabilities(),
-                base.openApi(),
-                contract,
-                base.frameworkVersion(),
-                base.extensions()));
+            ProjectRequest.builder()
+                .name(base.name())
+                .groupId(base.groupId())
+                .basePackage(base.basePackage())
+                .description(base.description())
+                .archetype(base.archetype())
+                .structure(base.structure())
+                .stack(base.stack())
+                .persistence(base.persistence())
+                .capabilities(base.capabilities())
+                .openApi(base.openApi())
+                .asyncApi(contract)
+                .frameworkVersion(base.frameworkVersion())
+                .extensions(base.extensions())
+                .build());
     assertEquals(
         project.text("src/main/asyncapi/asyncapi.yaml"),
         project.text(".axiz/asyncapi.snapshot.yaml"));
@@ -375,19 +443,21 @@ class ProjectGeneratorTest {
         Fixtures.request(
             "business", Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of(), Extension.CQRS);
     ProjectRequest r =
-        new ProjectRequest(
-            base.name(),
-            base.groupId(),
-            base.basePackage(),
-            "History: read model <R2DBC> & \"events\" -- see */ docs",
-            base.archetype(),
-            base.structure(),
-            base.stack(),
-            base.persistence(),
-            base.capabilities(),
-            base.openApi(),
-            null,
-            base.frameworkVersion());
+        ProjectRequest.builder()
+            .name(base.name())
+            .groupId(base.groupId())
+            .basePackage(base.basePackage())
+            .description("History: read model <R2DBC> & \"events\" -- see */ docs")
+            .archetype(base.archetype())
+            .structure(base.structure())
+            .stack(base.stack())
+            .persistence(base.persistence())
+            .capabilities(base.capabilities())
+            .openApi(base.openApi())
+            .asyncApi(null)
+            .frameworkVersion(base.frameworkVersion())
+            .extensions(List.of())
+            .build();
     GeneratedProject p = generator.generate(r);
     Object chart =
         new Yaml(new SafeConstructor(new LoaderOptions()))
@@ -403,7 +473,10 @@ class ProjectGeneratorTest {
     assertTrue(application.contains("read model &lt;R2DBC&gt; &amp;"), "doclint-safe HTML");
   }
 
-  /** Every run of hyphens, a trailing one and markup still give well-formed POMs and Javadoc. */
+  /**
+   * Cualquier secuencia de guiones, uno al final y el marcado siguen produciendo POM y Javadoc bien
+   * formados.
+   */
   @Test
   void ordinaryPunctuationAlwaysProducesWellFormedFiles() throws Exception {
     DocumentBuilderFactory xml = DocumentBuilderFactory.newInstance();
@@ -431,19 +504,21 @@ class ProjectGeneratorTest {
                     List.of(),
                     Extension.CQRS);
         ProjectRequest r =
-            new ProjectRequest(
-                base.name(),
-                base.groupId(),
-                base.basePackage(),
-                description,
-                base.archetype(),
-                base.structure(),
-                base.stack(),
-                base.persistence(),
-                base.capabilities(),
-                base.openApi(),
-                null,
-                base.frameworkVersion());
+            ProjectRequest.builder()
+                .name(base.name())
+                .groupId(base.groupId())
+                .basePackage(base.basePackage())
+                .description(description)
+                .archetype(base.archetype())
+                .structure(base.structure())
+                .stack(base.stack())
+                .persistence(base.persistence())
+                .capabilities(base.capabilities())
+                .openApi(base.openApi())
+                .asyncApi(null)
+                .frameworkVersion(base.frameworkVersion())
+                .extensions(List.of())
+                .build();
         GeneratedProject p = generator.generate(r);
         Document pom =
             xml.newDocumentBuilder().parse(new ByteArrayInputStream(p.files().get("pom.xml")));
@@ -501,7 +576,7 @@ class ProjectGeneratorTest {
             .anyMatch(f -> f.endsWith("handler/ExampleCreatedHandler.java")));
     assertTrue(p.files().keySet().stream().noneMatch(f -> f.endsWith("Controller.java")));
     assertTrue(
-        p.text("pom.xml").contains("axiz-adapter-inbox-dynamodb"),
+        p.text("pom.xml").contains("axiz-inbox-dynamodb-spring-boot-starter"),
         "inbox store follows the persistence");
     assertTrue(p.text("src/main/resources/application.yaml").contains("store: dynamodb"));
     assertTrue(p.text("compose.yaml").contains("kafka:"));
@@ -529,8 +604,8 @@ class ProjectGeneratorTest {
     assertFalse(app.contains("password:"));
     String values = p.text("deploy/helm/orders-core/values.yaml");
     assertTrue(values.contains("- field-key-v1"), "secrets come from the ExternalSecret");
-    assertTrue(
-        p.text("deploy/helm/orders-core/values-prod.yaml").contains("# axiz.crypto.kms.key-id:"));
+    assertFalse(
+        p.text("deploy/helm/orders-core/values-prod.yaml").contains("axiz.crypto.kms.key-id"));
   }
 
   @Test
@@ -539,10 +614,11 @@ class ProjectGeneratorTest {
         generator.generate(
             Fixtures.request("library", Structure.NONE, Stack.SERVLET, "none", List.of()));
     assertTrue(lib.text("pom.xml").contains("<artifactId>axiz-parent-core</artifactId>"));
-    assertSeparatedDeployment(lib, "lib-deploy");
-    assertTrue(
-        lib.text(".github/workflows/ci.yaml")
-            .contains("lib-build.yaml@" + WorkflowRelease.expected()));
+    String libCi = lib.text(".github/workflows/ci.yaml");
+    assertTrue(libCi.contains("lib-build.yaml@" + WORKFLOWS), libCi);
+    assertTrue(libCi.contains("publish: ${{ startsWith(github.ref, 'refs/tags/v') }}"), libCi);
+    // una librería se publica con su tag; no tiene workflow de despliegue
+    assertFalse(lib.files().containsKey(".github/workflows/deploy.yaml"));
     assertEquals(
         Boolean.TRUE,
         new Yaml(new SafeConstructor(new LoaderOptions()))
@@ -552,21 +628,25 @@ class ProjectGeneratorTest {
     assertTrue(
         lib.files().containsKey("src/main/java/pe/axiz/orders/orderslibrary/OrdersLibrary.java"));
     ProjectRequest starter =
-        new ProjectRequest(
-            "axiz-geo",
-            "pe.axiz",
-            "pe.axiz.core.geo",
-            "",
-            "starter",
-            Structure.NONE,
-            Stack.SERVLET,
-            "none",
-            List.of(),
-            null,
-            null,
-            "2.0.0");
+        ProjectRequest.builder()
+            .name("axiz-geo")
+            .groupId("pe.axiz")
+            .basePackage("pe.axiz.core.geo")
+            .description("")
+            .archetype("starter")
+            .structure(Structure.NONE)
+            .stack(Stack.SERVLET)
+            .persistence("none")
+            .capabilities(List.of())
+            .openApi(null)
+            .asyncApi(null)
+            .frameworkVersion("2.0.0")
+            .extensions(List.of())
+            .build();
     GeneratedProject s = generator.generate(starter);
-    assertSeparatedDeployment(s, "lib-deploy");
+    // un starter se publica con su tag, igual que una librería
+    assertTrue(s.text(".github/workflows/ci.yaml").contains("lib-build.yaml@" + WORKFLOWS));
+    assertFalse(s.files().containsKey(".github/workflows/deploy.yaml"));
     assertEquals(
         Boolean.TRUE,
         new Yaml(new SafeConstructor(new LoaderOptions()))
@@ -602,19 +682,21 @@ class ProjectGeneratorTest {
   void starterWithExplicitCorePrefixKeepsItsCapabilityNameAndSiblingSpringPackage() {
     GeneratedProject project =
         generator.generate(
-            new ProjectRequest(
-                "axiz-core-geo",
-                "pe.axiz",
-                "pe.axiz.core.geo",
-                "",
-                "starter",
-                Structure.NONE,
-                Stack.SERVLET,
-                "none",
-                List.of(),
-                null,
-                null,
-                "2.0.0"));
+            ProjectRequest.builder()
+                .name("axiz-core-geo")
+                .groupId("pe.axiz")
+                .basePackage("pe.axiz.core.geo")
+                .description("")
+                .archetype("starter")
+                .structure(Structure.NONE)
+                .stack(Stack.SERVLET)
+                .persistence("none")
+                .capabilities(List.of())
+                .openApi(null)
+                .asyncApi(null)
+                .frameworkVersion("2.0.0")
+                .extensions(List.of())
+                .build());
     assertTrue(project.text("pom.xml").contains("<module>axiz-core-geo</module>"));
     assertTrue(
         project
@@ -648,52 +730,21 @@ class ProjectGeneratorTest {
     }
   }
 
-  private static void assertSeparatedDeployment(GeneratedProject project, String reusable) {
-    WorkflowRelease.assertProject(project);
-    assertEquals(
-        Boolean.TRUE,
-        new Yaml(new SafeConstructor(new LoaderOptions()))
-            .<Map<?, ?>>load(project.text("release-please-config.json"))
-            .get("force-tag-creation"));
+  /** La promoción manual despliega un digest ya construido, nunca recompila. */
+  private static void assertManualPromotion(GeneratedProject project) {
     String deploy = project.text(".github/workflows/deploy.yaml");
-    assertTrue(deploy.contains("workflow_dispatch"));
-    assertTrue(deploy.contains("/" + reusable + ".yaml@" + WorkflowRelease.expected()));
-    assertFalse(deploy.contains("image-tag:"));
-    assertFalse(deploy.contains("mvnw"));
-    assertFalse(deploy.contains("/setup-maven@"));
+    assertTrue(deploy.contains("service-deploy.yaml@" + WORKFLOWS), deploy);
+    assertFalse(deploy.contains("mvnw"), deploy);
     Map<?, ?> workflow = new Yaml(new SafeConstructor(new LoaderOptions())).load(deploy);
     Object trigger = workflow.containsKey("on") ? workflow.get("on") : workflow.get(Boolean.TRUE);
     Map<?, ?> dispatch = (Map<?, ?>) ((Map<?, ?>) trigger).get("workflow_dispatch");
     Map<?, ?> inputs = (Map<?, ?>) dispatch.get("inputs");
+    for (String key : List.of("environment", "digest", "version")) {
+      assertEquals(Boolean.TRUE, ((Map<?, ?>) inputs.get(key)).get("required"), key);
+    }
     Map<?, ?> job = (Map<?, ?>) ((Map<?, ?>) workflow.get("jobs")).get("deploy");
     Map<?, ?> forwarded = (Map<?, ?>) job.get("with");
-    for (String key :
-        List.of(
-            "build-run-id",
-            "build-run-attempt",
-            "manifest-sha256",
-            "environment",
-            "previous-manifest-sha256")) {
-      assertEquals(Boolean.TRUE, ((Map<?, ?>) inputs.get(key)).get("required"), key);
-      String source = "service-deploy".equals(reusable) ? " || needs.automatic.outputs." + key : "";
-      assertEquals("${{ inputs." + key + source + " }}", forwarded.get(key), key);
-    }
-    if ("service-deploy".equals(reusable)) {
-      assertEquals(
-          "${{ inputs.values-revision || needs.automatic.outputs.values-revision }}",
-          forwarded.get("values-revision"));
-      Map<?, ?> automaticTrigger = (Map<?, ?>) ((Map<?, ?>) trigger).get("workflow_run");
-      assertEquals(List.of("ci"), automaticTrigger.get("workflows"));
-      assertEquals(List.of("completed"), automaticTrigger.get("types"));
-      Map<?, ?> automatic = (Map<?, ?>) ((Map<?, ?>) workflow.get("jobs")).get("automatic");
-      assertEquals(Map.of("contents", "read", "actions", "read"), automatic.get("permissions"));
-      Map<?, ?> step = (Map<?, ?>) ((List<?>) automatic.get("steps")).getFirst();
-      assertEquals(
-          "edgarrth/java-framework-custom/.github/actions/resolve-service-build@"
-              + WorkflowRelease.expected(),
-          step.get("uses"));
-      assertEquals("dev", ((Map<?, ?>) step.get("with")).get("environment"));
-      assertTrue(job.get("if").toString().contains("needs.automatic.result == 'success'"));
-    } else assertEquals("${{ inputs.destination }}", forwarded.get("destination"));
+    assertEquals("${{ inputs.digest }}", forwarded.get("digest"));
+    assertEquals("${{ inputs.environment }}", forwarded.get("environment"));
   }
 }

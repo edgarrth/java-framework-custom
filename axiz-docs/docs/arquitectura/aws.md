@@ -20,7 +20,7 @@ Gateway, CodeArtifact, ECR) queda fuera, y el enforcer bloquea sus librerías.
 | Amazon S3 | archivos, batch, archivo de auditoría | `axiz-adapter-storage-s3` | LocalStack |
 | Observabilidad | OpenTelemetry Collector en EKS; Prometheus y Grafana; trazas y logs en el backend OTLP de plataforma | `axiz-observability-*`, `axiz-metrics-*` | Grafana LGTM en Docker |
 
-Fuera de AWS: Nexus Repository (artefactos Maven e imágenes), GitHub Actions (CI/CD), Argo CD
+Fuera de AWS: GitHub Packages (Maven), GHCR (imágenes y charts OCI), GitHub Actions (CI/CD), Argo CD
 (despliegue) y el IdP OIDC corporativo.
 
 ## Convenciones de los clientes AWS
@@ -63,7 +63,7 @@ Las integraciones inyectan `AwsIdentity`, una infraestructura declarativa y pasi
 Las aplicaciones pueden aportar beans singleton `AwsCredentialsProvider`. Un bean sin calificador
 es global. `@AwsIdentityFor(service = AwsService.S3)` limita un proveedor a S3;
 `@AwsIdentityFor(capability = AwsCapability.AUDIT)` lo limita a auditoría. Se declara exactamente
-uno de los dos atributos. La precedencia es capacidad → servicio → global → fuente del contexto.
+uno de los dos atributos. La precedencia es capacidad -> servicio -> global -> fuente del contexto.
 `@Primary` resuelve varios candidatos dentro del mismo alcance; una ambigüedad, declaración
 inválida o proveedor no singleton se rechaza al arrancar, aunque su alcance no esté en uso.
 No se exige que las capacidades declaradas estén activas.
@@ -72,7 +72,7 @@ Un calificador textual o ajeno a Axiz queda excluido del alcance global y no se 
 selector AWS. Los atributos de anotaciones compuestas deben usar los enums tipados. Un bean
 sin calificador y `defaultCandidate=false` no se considera global; los beans con alcance tipado
 siguen disponibles. Se heredan candidatos del padre salvo que su nombre quede oculto localmente.
-Importar los tipos desde `pe.axiz.spring.foundation.aws`.
+Importar los tipos desde `pe.axiz.spring.aws`.
 
 Por ejemplo, una aplicación que ya posee un cliente STS puede aportar un rol distinto para S3:
 

@@ -20,30 +20,34 @@ import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Builds cache keys from values, without ambiguity: every part carries its type, {@code null} has
- * its own marker and separators inside values are escaped. So {@code "7"} and {@code 7}, {@code
- * null} and {@code "_"}, or {@code ("a:b", "c")} and {@code ("a", "b:c")} never share a key.
+ * Construye claves de caché a partir de valores, sin ambigüedad: cada parte lleva su tipo, {@code
+ * null} tiene su propio marcador y los separadores dentro de los valores se escapan. Así, {@code
+ * "7"} y {@code 7}, {@code null} y {@code "_"}, o {@code ("a:b", "c")} y {@code ("a", "b:c")} nunca
+ * comparten una clave.
  *
- * <p>Supported values: strings and characters, numbers, booleans, enums, {@link UUID}, {@code
- * java.time} values, {@link Currency}, {@link Locale}, {@code byte[]}, arrays, lists, sets and maps
- * (sets and maps in a stable order), {@link Optional}, records (by their components) and any type
- * that implements {@link CacheKeyPart}. Anything else is rejected: {@code toString()} of an
- * arbitrary object is not a stable identity (it may change, include memory addresses or leave out
- * fields), so it would silently mix up or never hit entries.
+ * <p>Valores soportados: cadenas y caracteres, números, booleanos, enums, {@link UUID}, valores de
+ * {@code java.time}, {@link Currency}, {@link Locale}, {@code byte[]}, arrays, listas, conjuntos y
+ * mapas (conjuntos y mapas en un orden estable), {@link Optional}, records (por sus componentes) y
+ * cualquier tipo que implemente {@link CacheKeyPart}. Todo lo demás se rechaza: el {@code
+ * toString()} de un objeto arbitrario no es una identidad estable (puede cambiar, incluir
+ * direcciones de memoria u omitir campos), así que mezclaría entradas en silencio o nunca
+ * acertaría.
  *
- * <p>The format is versioned by {@link #FORMAT}: a change of format changes every key, so old
- * entries are simply not read again and expire with their TTL.
+ * <p>El formato se versiona con {@link #FORMAT}: un cambio de formato cambia todas las claves, de
+ * modo que las entradas con otro formato simplemente no se vuelven a leer y expiran con su TTL.
  */
 public final class CacheKeys {
 
-  /** Version of the key format; part of every method key built by the framework. */
+  /**
+   * Versión del formato de clave; forma parte de cada clave de método que construye el framework.
+   */
   public static final String FORMAT = "k5";
 
   private static final String NULL = "-";
 
   private CacheKeys() {}
 
-  /** Key of the given parts, joined with {@code :}. */
+  /** Clave de las partes indicadas, unidas con {@code :}. */
   public static String of(@Nullable Object... parts) {
     if (parts == null) {
       return NULL;
@@ -56,9 +60,9 @@ public final class CacheKeys {
   }
 
   /**
-   * Encodes one value as {@code <type>=<value>} ({@code -} for {@code null}).
+   * Codifica un valor como {@code <type>=<value>} ({@code -} para {@code null}).
    *
-   * @throws IllegalArgumentException for a type without a stable key (see the class comment)
+   * @throws IllegalArgumentException para un tipo sin clave estable (ver el comentario de la clase)
    */
   public static String part(@Nullable Object value) {
     if (value == null) {
@@ -74,7 +78,7 @@ public final class CacheKeys {
       case Long l -> "l=" + l;
       case Short s -> "h=" + s;
       case Byte b -> "y=" + b;
-      // BigDecimal keeps its scale: 1.0 and 1.00 are different values for equals() too
+      // BigDecimal conserva su escala: 1.0 y 1.00 también son valores distintos para equals()
       case BigDecimal d -> "n=" + d;
       case BigInteger i -> "N=" + i;
       case Double d -> "d=" + d;
@@ -89,7 +93,7 @@ public final class CacheKeys {
       case List<?> list -> "[" + join(list) + "]";
       case Set<?> set -> "{" + join(sorted(set)) + "}";
       case Map<?, ?> map -> "m{" + entries(map) + "}";
-      // any other collection keeps its class: an ArrayDeque is never equal to a List
+      // cualquier otra colección conserva su clase: un ArrayDeque nunca es igual a una List
       case Collection<?> c -> "q(" + c.getClass().getName() + ")=[" + join(c) + "]";
       case Record r -> "r(" + r.getClass().getName() + ")=[" + components(r) + "]";
       default -> {
@@ -98,8 +102,8 @@ public final class CacheKeys {
           for (int i = 0; i < Array.getLength(value); i++) {
             items.add(Array.get(value, i));
           }
-          // the array class keeps the component type: int[]{7}, Integer[]{7}, long[]{7} and
-          // int[][]{{7}} are different arguments and never share an entry
+          // la clase del array conserva el tipo de componente: int[]{7}, Integer[]{7}, long[]{7} e
+          // int[][]{{7}} son argumentos distintos y nunca comparten una entrada
           yield "a(" + value.getClass().getName() + ")=[" + join(items) + "]";
         }
         throw new IllegalArgumentException(
@@ -110,7 +114,7 @@ public final class CacheKeys {
     };
   }
 
-  /** A part inside a container: its own separators are escaped once more. */
+  /** Parte dentro de un contenedor: sus propios separadores se escapan una vez más. */
   private static String nested(@Nullable Object value) {
     return escape(part(value), true);
   }
@@ -154,8 +158,9 @@ public final class CacheKeys {
   }
 
   /**
-   * Escapes the key separator ({@code :}) and the escape character; inside containers also the
-   * container syntax, so element boundaries cannot be forged by element contents.
+   * Escapa el separador de clave ({@code :}) y el carácter de escape; dentro de contenedores
+   * también la sintaxis del contenedor, de modo que el contenido de los elementos no puede
+   * falsificar sus límites.
    */
   private static String escape(String s, boolean nested) {
     StringBuilder b = new StringBuilder(s.length() + 8);

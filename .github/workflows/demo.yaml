@@ -1,0 +1,130 @@
+# Demo: cada servicio se verifica con el workflow reutilizable service-build contra el framework del
+# mismo commit, compilado una sola vez por framework-snapshot. En main se publican las imágenes con sus atestaciones y, si hay un repositorio
+# GitOps configurado, se despliegan en dev.
+name: demo
+
+on:
+  pull_request:
+    paths: ['axiz-demo/**', 'axiz-framework/**', '.github/workflows/demo.yaml', '.github/workflows/service-build.yaml',
+            '.github/workflows/framework-snapshot.yaml']
+  push:
+    branches: [main]
+    paths: ['axiz-demo/**', 'axiz-framework/**', '.github/workflows/demo.yaml', '.github/workflows/service-build.yaml',
+            '.github/workflows/framework-snapshot.yaml']
+  workflow_dispatch:
+
+permissions: {}
+
+# Maven Central responde 429 cuando muchos jobs descargan a la vez: el resolver reintenta con espera
+# exponencial (respeta Retry-After). setup-java conserva este valor y le agrega -ntp.
+env:
+  MAVEN_ARGS: >-
+    -Daether.connector.http.retryHandler.count=8
+    -Daether.connector.http.retryHandler.interval=10000
+    -Daether.connector.http.retryHandler.intervalMax=120000
+
+concurrency:
+  group: demo-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  framework:
+    uses: ./.github/workflows/framework-snapshot.yaml
+    permissions:
+      contents: read
+
+  service:
+    needs: framework
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [beneficiaries, banking-core, notifications-processor, payment-process,
+                  payment-network-gateway, payment-orders, payments-ux, payments-history, settlement-batch]
+    uses: ./.github/workflows/service-build.yaml
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    with:
+      service: ${{ matrix.service }}
+      working-directory: axiz-demo/services/${{ matrix.service }}
+      maven-artifact: ${{ needs.framework.outputs.artifact }}
+      publish: ${{ github.event_name == 'push' }}
+
+  coverage:
+    needs: framework
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: '25'
+      # Maven consulta primero el espejo oficial de Maven Central en Google Cloud Storage, que no limita
+      # por IP, y recurre a Central solo cuando un artefacto todavía no llega al espejo.
+      - name: Espejo oficial de Maven Central
+        run: |
+          cat > "$RUNNER_TEMP/maven-central-mirror.xml" <<'EOF'
+          <settings>
+            <profiles>
+              <profile>
+                <id>maven-central-mirror</id>
+                <repositories>
+                  <repository>
+                    <id>maven-central-mirror</id>
+                    <url>https://maven-central.storage-download.googleapis.com/maven2</url>
+                    <snapshots><enabled>false</enabled></snapshots>
+                  </repository>
+                </repositories>
+                <pluginRepositories>
+                  <pluginRepository>
+                    <id>maven-central-mirror</id>
+                    <url>https://maven-central.storage-download.googleapis.com/maven2</url>
+                    <snapshots><enabled>false</enabled></snapshots>
+                  </pluginRepository>
+                </pluginRepositories>
+              </profile>
+            </profiles>
+            <activeProfiles>
+              <activeProfile>maven-central-mirror</activeProfile>
+            </activeProfiles>
+          </settings>
+          EOF
+          echo "MAVEN_ARGS=$MAVEN_ARGS -gs $RUNNER_TEMP/maven-central-mirror.xml" >> "$GITHUB_ENV"
+      # Caché propio de este job: la clave restaura el anterior aunque cambie un pom.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.m2/wrapper
+          key: maven-demo-coverage-${{ hashFiles('axiz-demo/**/pom.xml') }}
+          restore-keys: maven-demo-coverage-
+      - name: Framework del mismo commit
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ needs.framework.outputs.artifact }}
+          path: ${{ runner.temp }}/maven-artifact
+      - name: Framework copiado al repositorio Maven local
+        run: mkdir -p ~/.m2/repository && cp -r "$RUNNER_TEMP/maven-artifact/." ~/.m2/repository/
+      # El control exige los reportes JUnit recientes de cada servicio y ejemplo, así que corre el
+      # reactor completo de la demo (ver axiz-demo/coverage/README.md).
+      - name: La demo usa todas las capacidades del catálogo
+        working-directory: axiz-demo
+        run: ./mvnw -B -ntp -Pquality -Daxiz.it.requireDocker=true verify
+
+  axiz-demo-pr:
+    if: always()
+    needs: [framework, service, coverage]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - name: Todos los jobs de la demo terminaron bien
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1

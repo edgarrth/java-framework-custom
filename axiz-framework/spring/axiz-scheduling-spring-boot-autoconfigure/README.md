@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-scheduling-spring-boot-autoconfigure
 
-Single execution per cluster for scheduled tasks with ShedLock (JDBC or DynamoDB) (auto-configuration).
+Ejecución única por clúster de tareas programadas con ShedLock (JDBC o DynamoDB) (autoconfiguración).
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,17 +12,17 @@ Single execution per cluster for scheduled tasks with ShedLock (JDBC or DynamoDB
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `AxizSchedulingAutoConfiguration` | `@Scheduled` with ShedLock: annotate tasks with `@SchedulerLock(name = ...)` so only one replica runs them. |
-| `AxizSchedulingDynamoDbAutoConfiguration` | ShedLock on DynamoDB (`axiz.scheduling.store=dynamodb`). |
-| `AxizSchedulingProperties` | Scheduled tasks with a single execution per cluster (`axiz.scheduling.*`). |
-| `AxizSchedulingR2dbcAutoConfiguration` | ShedLock on Aurora over R2DBC (`axiz.scheduling.store=r2dbc`) for reactive services; the lock table comes from the service's Flyway migrations. |
+| `AxizSchedulingAutoConfiguration` | `@Scheduled` con ShedLock: las tareas se anotan con `@SchedulerLock(name = ...)` para que solo una réplica las ejecute. |
+| `AxizSchedulingProperties` | Tareas programadas con una sola ejecución por clúster (`axiz.scheduling.*`). |
 
-## Tests
+Tipos relacionados: `AxizSchedulingDynamoDbAutoConfiguration` están en `axiz-scheduling-dynamodb-spring-boot-autoconfigure`; `AxizSchedulingR2dbcAutoConfiguration` están en `axiz-scheduling-r2dbc-spring-boot-autoconfigure`.
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-scheduling-spring-boot-autoconfigure verify`.
+## Pruebas
+
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl spring/axiz-scheduling-spring-boot-autoconfigure verify`.

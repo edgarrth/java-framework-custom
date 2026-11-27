@@ -11,29 +11,32 @@ import pe.axiz.core.inbox.InboxStore.Acquisition;
 import pe.axiz.core.messaging.MessageKeys;
 
 /**
- * Properties of every {@link InboxStore}: one delivery processes a message at a time, completion
- * and release are fenced by the owner token, an expired lease is taken over without interference
- * from the previous owner, and processed messages are recognized.
+ * Propiedades de todo {@link InboxStore}: una entrega procesa un mensaje a la vez, la finalización
+ * y la liberación están cercadas por el token del propietario, un lease expirado se toma sin
+ * interferencia del propietario previo y los mensajes procesados se reconocen.
  */
 public final class InboxStoreContract {
 
   static final Duration LEASE = Duration.ofSeconds(30);
   static final Duration RETENTION = Duration.ofDays(7);
 
-  /** Backend under test. */
+  /** Backend bajo prueba. */
   public interface Backend {
 
-    /** An empty store (or one whose existing rows do not collide with random message ids). */
+    /**
+     * Un almacén vacío (o uno cuyas filas existentes no coinciden con ids de mensaje aleatorios).
+     */
     InboxStore create();
 
-    /** {@code false} for stores whose retention is enforced by the server (DynamoDB TTL). */
+    /** {@code false} para los almacenes cuya retención aplica el servidor (TTL de DynamoDB). */
     default boolean purgesOnDemand() {
       return true;
     }
 
     /**
-     * Instant the checks start at. Stores compare against the instants they receive, so a fixed
-     * value works; DynamoDB TTL needs future expiry times, hence the current time by default.
+     * Instante en el que comienzan las verificaciones. Los almacenes comparan contra los instantes
+     * que reciben, por lo que un valor fijo funciona; el TTL de DynamoDB necesita tiempos de
+     * expiración futuros, de ahí que por defecto se use la hora actual.
      */
     default Instant start() {
       return Instant.now().truncatedTo(ChronoUnit.MILLIS);
@@ -46,6 +49,9 @@ public final class InboxStoreContract {
     List<ContractCheck> checks = new ArrayList<>();
     checks.add(new ContractCheck("one delivery at a time", () -> exclusive(backend)));
     checks.add(new ContractCheck("only the owner completes", () -> complete(backend)));
+    checks.add(
+        new ContractCheck(
+            "expired owners cannot complete without a takeover", () -> lateCompletion(backend)));
     checks.add(
         new ContractCheck(
             "the same id from two sources is two messages", () -> sourceAndId(backend)));
@@ -94,6 +100,20 @@ public final class InboxStoreContract {
         "processed is recognized, also after the lease");
     Expect.isFalse(store.release("contract", id, "a"), "processed entries are kept");
     Expect.isFalse(store.markProcessed("contract", id, "a", now), "completing twice");
+  }
+
+  private static void lateCompletion(Backend backend) {
+    InboxStore store = backend.create();
+    Instant now = backend.start();
+    String id = id();
+    acquire(store, id, "old", now);
+    Expect.isFalse(store.markProcessed("contract", id, "old", now.plus(LEASE)), "lease boundary");
+    Expect.isFalse(
+        store.markProcessed("contract", id, "old", now.plus(RETENTION)), "retention boundary");
+    Instant later = now.plus(RETENTION).plusMillis(1);
+    Expect.equal(
+        Acquisition.Status.ACQUIRED, acquire(store, id, "new", later).status(), "takeover");
+    Expect.isTrue(store.markProcessed("contract", id, "new", later), "new live owner");
   }
 
   private static void sourceAndId(Backend backend) {

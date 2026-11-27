@@ -31,8 +31,8 @@ import pe.axiz.structure.hexagonal.UseCaseTransaction;
 import pe.axiz.structure.hexagonal.annotation.UseCase;
 
 /**
- * Hexagonal style: {@code @UseCase} classes run in a transaction with an observation and publish
- * their domain events at commit, through the outbox when the service has one.
+ * Estilo hexagonal: las clases {@code @UseCase} se ejecutan en una transacción con una observación
+ * y publican sus eventos de dominio en el commit, mediante el outbox cuando el servicio tiene uno.
  */
 @AutoConfiguration(
     afterName = {
@@ -43,7 +43,7 @@ import pe.axiz.structure.hexagonal.annotation.UseCase;
 @EnableConfigurationProperties(AxizHexagonalProperties.class)
 public class AxizHexagonalAutoConfiguration {
 
-  /** Outbox publication when the outbox starter is present. */
+  /** Publicación mediante el outbox cuando el starter de outbox está presente. */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnClass(name = "pe.axiz.spring.outbox.TransactionalEvents")
   @ConditionalOnBean(type = "pe.axiz.spring.outbox.TransactionalEvents")
@@ -74,7 +74,10 @@ public class AxizHexagonalAutoConfiguration {
     return new UseCaseRunner(transaction, sink);
   }
 
-  /** Public business methods of {@code @UseCase} classes (never {@code Object} methods). */
+  /**
+   * Métodos de negocio públicos de las clases {@code @UseCase} (nunca los métodos de {@code
+   * Object}).
+   */
   static Pointcut useCaseMethods() {
     return new ComposablePointcut(
             new AnnotationMatchingPointcut(UseCase.class, true).getClassFilter())

@@ -8,13 +8,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import pe.axiz.core.idempotency.Idempotent;
-import pe.axiz.payments.networkgateway.api.model.Transfer;
-import pe.axiz.payments.networkgateway.api.model.TransferRequest;
+import pe.axiz.payments.networkgateway.adapter.in.rest.model.Transfer;
+import pe.axiz.payments.networkgateway.adapter.in.rest.model.TransferRequest;
 import pe.axiz.payments.networkgateway.application.usecase.SendTransferUseCase;
 
 /**
- * REST adapter of the {@code transfers} operations of the contract (src/main/openapi). Only the
- * payment process sends transfers ({@code payments:process}).
+ * Adaptador REST de las operaciones {@code transfers} del contrato (src/main/openapi). Solo el
+ * proceso de pagos envía transferencias ({@code payments:process}).
  */
 @RestController
 @PreAuthorize("hasAuthority('SCOPE_payments:process')")
@@ -26,7 +26,7 @@ public class TransfersController {
     this.sendTransferUseCase = sendTransferUseCase;
   }
 
-  /** Sends an inter-bank transfer to the payment network (POST /v1/transfers). */
+  /** Envía una transferencia interbancaria a la red de pagos (POST /v1/transfers). */
   @Idempotent
   @PostMapping("/v1/transfers")
   public ResponseEntity<Transfer> sendTransfer(

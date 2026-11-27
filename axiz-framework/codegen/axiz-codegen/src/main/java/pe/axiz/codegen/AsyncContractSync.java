@@ -20,12 +20,16 @@ import pe.axiz.codegen.project.ProjectLayout;
 import pe.axiz.codegen.project.ProjectManifest;
 
 /**
- * Synchronizes payloads without overwriting implementations or accepting a changed published vN.
+ * Sincroniza los payloads sin sobrescribir implementaciones ni aceptar un vN publicado que haya
+ * cambiado.
  */
 public final class AsyncContractSync {
   public static final String SNAPSHOT = ".axiz/asyncapi.snapshot.yaml";
 
-  /** Files created, proposals awaiting review, compatibility changes and whether sync applied. */
+  /**
+   * Archivos creados, propuestas pendientes de revisión, cambios de compatibilidad y si la
+   * sincronización se aplicó.
+   */
   public record Result(
       List<String> created,
       List<String> proposed,
@@ -85,7 +89,8 @@ public final class AsyncContractSync {
     for (String path : payloads.keySet()) payloadPaths.add(layout.relative(path));
     List<String> created = new ArrayList<>();
     List<String> proposed = new ArrayList<>();
-    // Validate every destination before any write, including potential proposal files.
+    // Se valida cada destino previo a cualquier escritura, incluidos los posibles archivos de
+    // propuesta.
     for (String path : generated.keySet()) {
       SafePaths.target(directory, path);
       SafePaths.target(directory, path + ContractSync.PROPOSAL);
@@ -102,7 +107,7 @@ public final class AsyncContractSync {
         proposed.add(proposal);
       }
     }
-    // Advance the generation snapshot only after all payload proposals have been written.
+    // El snapshot de generación avanza solo cuando se escribieron todas las propuestas de payload.
     SafePaths.write(directory, SNAPSHOT, source.getBytes(StandardCharsets.UTF_8), true);
     return new Result(created, proposed, changes, true);
   }

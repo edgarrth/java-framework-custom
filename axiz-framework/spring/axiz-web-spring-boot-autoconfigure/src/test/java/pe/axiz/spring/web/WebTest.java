@@ -21,12 +21,12 @@ import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.reactive.BindingContext;
 import org.springframework.web.server.ServerWebExchange;
-import pe.axiz.core.commons.HeaderCatalog;
-import pe.axiz.core.commons.HeaderDefinition;
-import pe.axiz.core.commons.PageRequest;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
-import pe.axiz.core.commons.Sort;
+import pe.axiz.core.api.HeaderCatalog;
+import pe.axiz.core.api.HeaderDefinition;
+import pe.axiz.core.api.PageRequest;
+import pe.axiz.core.api.Sort;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.errors.ValidationException;
 
 class WebTest {
@@ -46,9 +46,11 @@ class WebTest {
     assertEquals(20, p.size());
     assertEquals(Sort.Direction.DESC, p.sort().orders().get(0).direction());
     assertThrows(ValidationException.class, () -> parser.parse("x", "500", List.of(), null));
-    // malformed sort expressions are the client's error: 400 with a violation on "sort", as the
-    // audit reproduced over HTTP (sort=name;drop table, sort=$invalid answered 500 before)
-    for (String sort : List.of("name;drop table", "$invalid", "a b,desc")) {
+    // las expresiones de ordenamiento malformadas son un error del cliente: 400 con una violación
+    // sobre "sort" (p. ej. sort=name;drop table o sort=$invalid), nunca un 500
+    for (String sort :
+        List.of(
+            "name;drop table", "$invalid", "a b,desc", "name,wrong", "name,", "name,asc,desc")) {
       ValidationException e =
           assertThrows(
               ValidationException.class, () -> parser.parse("0", "10", List.of(sort), null));
@@ -57,7 +59,7 @@ class WebTest {
     }
   }
 
-  /** Controller method shape the resolvers serve. */
+  /** Forma de método de controlador que atienden los resolvedores. */
   @SuppressWarnings("unused")
   private void list(PageRequest page) {}
 
@@ -139,7 +141,8 @@ class WebTest {
 
   @Test
   void anOptionalApiVersionHeaderAlwaysHasADefault() {
-    // without a default, Spring WebFlux finds no handler for requests without the header (404)
+    // sin valor por defecto, Spring WebFlux no encuentra ningún handler para las solicitudes sin la
+    // cabecera (404)
     assertEquals(
         "1",
         new AxizWebProperties.ApiVersion(true, "API-Version", null, List.of("2", "1.1", "1"), false)

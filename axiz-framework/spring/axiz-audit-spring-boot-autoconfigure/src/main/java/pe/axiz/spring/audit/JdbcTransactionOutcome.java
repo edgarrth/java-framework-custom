@@ -13,7 +13,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.util.ClassUtils;
 import pe.axiz.core.commons.TransactionOutcome;
 
-/** Captures completion evidence; a failed commit is never inferred to be a rollback. */
+/** Captura la evidencia de finalización; nunca se infiere que un commit fallido sea un rollback. */
 final class JdbcTransactionOutcome {
   private final AtomicReference<TransactionOutcome> value =
       new AtomicReference<>(TransactionOutcome.UNKNOWN);
@@ -58,7 +58,10 @@ final class JdbcTransactionOutcome {
         "org.springframework.transaction.support.TransactionSynchronizationManager", null);
   }
 
-  /** Keep linkage to the optional Spring transaction module behind the classpath guard. */
+  /**
+   * Mantiene el enlace con el módulo opcional de transacciones de Spring detrás de la guarda de
+   * classpath.
+   */
   private static final class SpringTransactions {
     static void capture(JdbcTransactionOutcome outcome) {
       if (TransactionSynchronizationManager.isSynchronizationActive())

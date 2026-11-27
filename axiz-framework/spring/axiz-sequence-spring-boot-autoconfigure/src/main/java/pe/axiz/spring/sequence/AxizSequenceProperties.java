@@ -7,36 +7,31 @@ import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 import pe.axiz.core.sequence.ResetPolicy;
-import pe.axiz.spring.foundation.jdbc.SchemaInitializer;
 
 /**
- * Business sequences ({@code axiz.sequence.*}), e.g. operation numbers {@code OP-2026-00001234}.
+ * Secuencias de negocio ({@code axiz.sequence.*}), p. ej. números de operación {@code
+ * OP-2026-00001234}.
  *
- * @param store {@code jdbc} (Aurora; native R2DBC in a reactive service), {@code r2dbc}, or {@code
+ * @param store {@code jdbc} (Aurora; R2DBC nativo en un servicio reactivo), {@code r2dbc} o {@code
  *     dynamodb}
- * @param table counters table
- * @param initializeSchema when the JDBC table is created by the starter
- * @param sequences sequences by name
+ * @param sequences secuencias por nombre
  */
 @ConfigurationProperties("axiz.sequence")
 public record AxizSequenceProperties(
-    @DefaultValue("jdbc") String store,
-    @DefaultValue("axiz_sequence") String table,
-    @DefaultValue("EMBEDDED") SchemaInitializer.Mode initializeSchema,
-    @DefaultValue Map<String, Spec> sequences) {
+    @DefaultValue("jdbc") String store, @DefaultValue Map<String, Spec> sequences) {
   public AxizSequenceProperties {
     sequences = Collections.unmodifiableMap(new LinkedHashMap<>(sequences));
   }
 
   /**
-   * One sequence.
+   * Una secuencia.
    *
-   * @param prefix fixed prefix
-   * @param width zero-padded digits
-   * @param reset reset period
-   * @param separator separator between prefix, period and number
-   * @param zone zone of the period
-   * @param blockSize values reserved per round trip (gaps possible on restart)
+   * @param prefix prefijo fijo
+   * @param width dígitos rellenados con ceros
+   * @param reset periodo de reinicio
+   * @param separator separador entre prefijo, periodo y número
+   * @param zone zona del periodo
+   * @param blockSize valores reservados por viaje de ida y vuelta (puede haber huecos al reiniciar)
    */
   public record Spec(
       @DefaultValue("") String prefix,

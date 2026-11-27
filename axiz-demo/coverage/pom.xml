@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Checks that the demo uses every capability of the axiz catalog (see src/test/resources/coverage.yaml). -->
+<!-- Verifica que la demo usa cada capacidad del catálogo de axiz (ver src/test/resources/coverage.yaml). -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
@@ -18,15 +18,36 @@
 
   <properties>
     <axiz.module.name>pe.axiz.payments.demo.coverage</axiz.module.name>
-    <!-- tests only: the jar holds just the manifest, by design (no "JAR will be empty" warning) -->
+    <!-- solo pruebas: el jar contiene únicamente el manifiesto, por diseño (sin la advertencia "JAR will be empty") -->
     <maven.jar.forceCreation>true</maven.jar.forceCreation>
     <maven.deploy.skip>true</maven.deploy.skip>
-    <!-- the tests are the only code of this module: SpotBugs analyzes them (with no production
-         classes it would find nothing to analyze and only warn) -->
+    <!-- las pruebas son el único código de este módulo: SpotBugs las analiza (sin clases de producción
+         no encontraría nada que analizar y solo emitiría una advertencia) -->
     <spotbugs.includeTests>true</spotbugs.includeTests>
   </properties>
 
+  <build><plugins><plugin>
+    <groupId>org.apache.maven.plugins</groupId><artifactId>maven-dependency-plugin</artifactId><version>3.11.0</version>
+    <configuration>
+      <!-- El catálogo es una dependencia solo de recursos, que CapabilityCoverageTest lee y exige. -->
+      <usedDependencies><usedDependency>pe.axiz:axiz-archetypes</usedDependency><usedDependency>pe.axiz.payments:payments-ux</usedDependency><usedDependency>pe.axiz.payments:payment-orders</usedDependency><usedDependency>pe.axiz.payments:beneficiaries</usedDependency><usedDependency>pe.axiz.payments:banking-core</usedDependency><usedDependency>pe.axiz.payments:payment-process</usedDependency><usedDependency>pe.axiz.payments:payments-history</usedDependency><usedDependency>pe.axiz.payments:notifications-processor</usedDependency><usedDependency>pe.axiz.payments:settlement-batch</usedDependency><usedDependency>pe.axiz.payments:payment-network-gateway</usedDependency><usedDependency>pe.axiz.payments:protected-data-example</usedDependency><usedDependency>pe.axiz.payments:provider-recipes-example</usedDependency><usedDependency>pe.axiz.payments:sqs-consumer-example</usedDependency></usedDependencies>
+    </configuration>
+  </plugin></plugins></build>
   <dependencies>
+    <dependency><groupId>pe.axiz.payments</groupId><artifactId>sqs-consumer-example</artifactId><version>${project.version}</version><type>pom</type><scope>test</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <!-- Solo para el orden del reactor: sin código de servicios ni dependencias transitivas del framework en este classpath. -->
+    <dependency><groupId>pe.axiz.payments</groupId><artifactId>payments-ux</artifactId><version>${project.version}</version><type>pom</type><scope>test</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>pe.axiz.payments</groupId><artifactId>payment-orders</artifactId><version>${project.version}</version><type>pom</type><scope>test</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>pe.axiz.payments</groupId><artifactId>beneficiaries</artifactId><version>${project.version}</version><type>pom</type><scope>test</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>pe.axiz.payments</groupId><artifactId>banking-core</artifactId><version>${project.version}</version><type>pom</type><scope>test</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>pe.axiz.payments</groupId><artifactId>payment-process</artifactId><version>${project.version}</version><type>pom</type><scope>test</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>pe.axiz.payments</groupId><artifactId>payments-history</artifactId><version>${project.version}</version><type>pom</type><scope>test</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>pe.axiz.payments</groupId><artifactId>notifications-processor</artifactId><version>${project.version}</version><type>pom</type><scope>test</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>pe.axiz.payments</groupId><artifactId>settlement-batch</artifactId><version>${project.version}</version><type>pom</type><scope>test</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>pe.axiz.payments</groupId><artifactId>payment-network-gateway</artifactId><version>${project.version}</version><type>pom</type><scope>test</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>pe.axiz.payments</groupId><artifactId>protected-data-example</artifactId><version>${project.version}</version><type>pom</type><scope>test</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>pe.axiz.payments</groupId><artifactId>provider-recipes-example</artifactId><version>${project.version}</version><type>pom</type><scope>test</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>org.jspecify</groupId><artifactId>jspecify</artifactId><scope>test</scope></dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-archetypes</artifactId>

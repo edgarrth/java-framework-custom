@@ -3,10 +3,11 @@ package pe.axiz.spring.audit;
 import pe.axiz.core.audit.AuditPublisher;
 
 /**
- * A destination of audit events contributed by an adapter auto-configuration. The audit starter
- * combines all sinks (or the log publisher when there is none) behind the async publisher.
+ * Destino de eventos de auditoría aportado por la autoconfiguración de un adaptador. El starter de
+ * auditoría combina todos los destinos (o el publicador de log cuando no hay ninguno) detrás del
+ * publicador asíncrono.
  *
- * @param name sink name for diagnostics
- * @param publisher publisher
+ * @param name nombre del destino para diagnóstico
+ * @param publisher publicador
  */
 public record AuditSink(String name, AuditPublisher publisher) {}

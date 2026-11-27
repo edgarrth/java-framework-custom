@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Internal module: never published. -->
+<!-- Módulo interno: nunca se publica. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
@@ -12,25 +12,203 @@
   </parent>
 
   <artifactId>axiz-coverage-report</artifactId>
-  <!-- only aggregates the reports of the other modules: no classes of its own, so no jar
-       (with jar packaging Maven warns "JAR will be empty") -->
+  <!-- solo agrega los reportes de los demás módulos: sin clases propias, por lo que no hay jar
+       (con packaging jar Maven advierte "JAR will be empty") -->
   <packaging>pom</packaging>
   <name>axiz :: quality :: coverage report</name>
-  <description>Aggregated JaCoCo report of the whole reactor (published to the CI run, not to Nexus)</description>
+  <description>Aggregated JaCoCo report of the whole reactor (published to the CI run, not to GitHub Packages)</description>
 
   <properties>
     <axiz.module.name>pe.axiz.quality.report</axiz.module.name>
     <maven.deploy.skip>true</maven.deploy.skip>
     <maven.install.skip>true</maven.install.skip>
-    <!-- overridden by -DskipTests: without tests there is nothing to aggregate -->
+    <!-- lo sobrescribe -DskipTests: sin pruebas no hay nada que agregar -->
     <skipTests>false</skipTests>
   </properties>
 
-  <!-- every module with production code, generated from the reactor and checked by
-       .github/scripts/check-coverage-aggregate.py. The scope is provided: report-aggregate takes
-       classes and sources only from compile, runtime and provided dependencies; a test
-       dependency would add its execution data and nothing to measure it against. -->
+  <!-- cada módulo del reactor con código de producción. El scope es provided: report-aggregate toma
+       clases y fuentes solo de las dependencias compile, runtime y provided; una dependencia
+       test añadiría sus datos de ejecución y nada contra lo que medirlos. -->
   <dependencies>
+    <!-- Las pruebas entre módulos y con almacenes reales aportan datos de ejecución, no clases de producción. -->
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-architecture-tests</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-store-integration-tests</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-test-containers</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-saga-jdbc-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-saga-jdbc-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-tokenization-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-tokenization-spring-boot-starter</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-tokenization-vault-redis-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-tokenization-vault-redis-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-tokenization-pan-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-tokenization-pan-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-tokenization-vault-dynamodb-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-tokenization-vault-dynamodb-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-tokenization-vault-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-tokenization-vault-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-tokenization-redis</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-tokenization-dynamodb</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-tokenization-pan</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-tokenization-vault</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-tokenization</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kit-audit-reactor</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-r2dbc-aws-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-r2dbc-aws-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-jpa-aws-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-jpa-aws-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-scheduling-dynamodb-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-scheduling-dynamodb-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-scheduling-r2dbc-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-scheduling-r2dbc-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-scheduling-jdbc-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-scheduling-jdbc-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-sequence-dynamodb-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-sequence-dynamodb-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-sequence-r2dbc-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-sequence-r2dbc-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-sequence-jdbc-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-sequence-jdbc-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-inbox-dynamodb-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-inbox-dynamodb-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-inbox-r2dbc-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-inbox-r2dbc-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-inbox-jdbc-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-inbox-jdbc-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-outbox-r2dbc-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-outbox-r2dbc-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-outbox-jdbc-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-outbox-jdbc-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-config-aws-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-config-aws-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-audit-sqs-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-audit-sqs-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-audit-kafka-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-audit-kafka-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kit-outbox-reactor</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-messaging-msk-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-messaging-msk-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-messaging-sns-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-messaging-sns-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-messaging-sqs-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-messaging-sqs-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-messaging-kafka-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-messaging-kafka-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-kafka-msk</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-secrets-file-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-secrets-file-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-secrets-aws-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-secrets-aws-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-storage-s3-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-storage-s3-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-security-redis-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-security-redis-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-crypto-kms-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-crypto-kms-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-idempotency-dynamodb-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-idempotency-dynamodb-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-idempotency-redis-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-idempotency-redis-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-lock-dynamodb-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-lock-dynamodb-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-lock-redis-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-lock-redis-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-cache-redis-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-cache-redis-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-aws-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-http-jdk</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-secrets-file</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-carddata</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kit-sql</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-json</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-concurrent</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-context</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-api</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kafka-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-redis-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-jdbc-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
@@ -718,9 +896,9 @@
   </build>
 
   <profiles>
-    <!-- with the quality profile the modules run under the JaCoCo agent, so the aggregate must
-         hold their classes and counters: an empty report fails the build instead of being
-         published as if it measured something -->
+    <!-- con el perfil quality los módulos se ejecutan bajo el agente de JaCoCo, por lo que el agregado debe
+         contener sus clases y contadores: un reporte vacío hace fallar el build en lugar de
+         publicarse como si midiera algo -->
     <profile>
       <id>quality</id>
       <build>

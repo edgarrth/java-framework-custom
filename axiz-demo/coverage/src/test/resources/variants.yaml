@@ -1,0 +1,87 @@
+# Variantes de proveedor y stack requeridas, además de las opciones de persistencia impuestas desde el catálogo.
+jpa:
+- aurora
+r2dbc:
+- r2dbc
+sequence:
+- aurora
+- r2dbc
+- dynamodb
+outbox:
+- aurora
+- r2dbc
+inbox:
+- aurora
+- r2dbc
+- dynamodb
+scheduling:
+- aurora
+- r2dbc
+- dynamodb
+cache-redis:
+- servlet
+- reactive
+idempotency-redis:
+- servlet
+- reactive
+idempotency-dynamodb:
+- servlet
+- reactive
+lock-redis:
+- servlet
+- reactive
+lock-dynamodb:
+- servlet
+- reactive
+security-redis:
+- servlet
+- reactive
+storage-s3:
+- servlet
+- reactive
+secrets-file:
+- servlet
+- reactive
+secrets-aws:
+- servlet
+- reactive
+audit-kafka:
+- servlet
+- reactive
+audit-sqs:
+- servlet
+- reactive
+tenancy:
+- servlet
+- reactive
+notification:
+- servlet
+- reactive
+tokenization-vault:
+- servlet
+- reactive
+tokenization-vault-dynamodb:
+- servlet
+- reactive
+tokenization-vault-redis:
+- servlet
+- reactive
+tokenization-pan:
+- servlet
+- reactive
+messaging-sqs:
+- servlet
+- reactive
+- consumer
+- retry
+- dlq
+- redrive
+- fifo
+- fifo-dlq
+- discovery
+messaging-sns:
+- servlet
+- reactive
+http-client:
+- servlet
+- reactive

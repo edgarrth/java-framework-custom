@@ -1,40 +1,41 @@
 package pe.axiz.spring.crypto;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.nio.charset.StandardCharsets;
+import io.micrometer.core.instrument.binder.MeterBinder;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import pe.axiz.core.crypto.AesGcm;
 import pe.axiz.core.crypto.BlindIndex;
-import pe.axiz.core.crypto.DataKeyProvider;
-import pe.axiz.core.crypto.EncryptionRegistry;
-import pe.axiz.core.crypto.EnvelopeEncryptor;
+import pe.axiz.core.crypto.CryptoException;
 import pe.axiz.core.crypto.FieldEncryptor;
+import pe.axiz.core.crypto.IndexScope;
 import pe.axiz.core.crypto.PasswordHasher;
 import pe.axiz.core.crypto.StaticKeyProvider;
 import pe.axiz.core.secrets.SecretNotFoundException;
 import pe.axiz.core.secrets.SecretResolver;
 import pe.axiz.core.secrets.SecretValue;
-import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
-import software.amazon.awssdk.services.kms.KmsClient;
 
-/** Key material comes only from the secret store; hashing and envelope encryption are wired. */
+/**
+ * El material de claves proviene solo del almacén de secretos; el hash y el cifrado de sobre quedan
+ * cableados.
+ */
 class CryptoConfigurationTest {
 
   private final ApplicationContextRunner runner =
       new ApplicationContextRunner()
-          .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
           .withConfiguration(AutoConfigurations.of(AxizCryptoAutoConfiguration.class));
 
   private static String newKey() {
@@ -132,53 +133,125 @@ class CryptoConfigurationTest {
   }
 
   @Test
-  void theRegistryIsClearedWhenTheContextCloses() {
+  void independentContextsCannotOverwriteOrCloseEachOthersKeys() {
     String hmac = Base64.getEncoder().encodeToString(new byte[32]);
     runner
         .withBean(
             SecretResolver.class, () -> store(Map.of("field-key-k1", newKey(), "blind", hmac)))
         .withPropertyValues(
-            "axiz.crypto.fields.current-key-id=k1", "axiz.crypto.fields.blind-index-secret=blind")
+            "axiz.crypto.fields.current-key-id=k1",
+            "axiz.crypto.fields.index-current-key-id=i1",
+            "axiz.crypto.fields.index-secrets.i1=blind")
         .run(
-            ctx -> {
-              String index = EncryptionRegistry.blindIndex("12345678", "customer.document");
-              assertEquals(
-                  ctx.getBean(BlindIndex.class).index("12345678", "customer.document"), index);
+            first -> {
+              FieldEncryptor enc = first.getBean(FieldEncryptor.class);
+              String encrypted = enc.encrypt("00123456", "customer.document");
+              runner
+                  .withBean(SecretResolver.class, () -> store(Map.of("field-key-k1", newKey())))
+                  .withPropertyValues("axiz.crypto.fields.current-key-id=k1")
+                  .run(
+                      second ->
+                          assertThrows(
+                              pe.axiz.core.crypto.CryptoException.class,
+                              () ->
+                                  second
+                                      .getBean(FieldEncryptor.class)
+                                      .decrypt(encrypted, "customer.document")));
+              assertEquals("00123456", enc.decrypt(encrypted, "customer.document"));
+              assertEquals(java.util.Set.of("i1"), first.getBean(BlindIndex.class).keyIds());
             });
-    assertThrows(IllegalStateException.class, EncryptionRegistry::encryptor);
   }
 
   @Test
-  void kmsEnvelopeEncryptionIsWiredOnlyWithAKeyId() {
-    DataKeyProvider fakeKms =
-        new DataKeyProvider() {
-          private final byte[] key = AesGcm.newKey().getEncoded();
+  void resolvedSecretsAreClosedAndOwnedKeysAreClosedWithTheirContext() {
+    var fieldSecret = SecretValue.of(newKey());
+    var indexSecret = SecretValue.of(newKey());
+    var provider = new AtomicReference<StaticKeyProvider>();
+    var index = new AtomicReference<BlindIndex>();
+    var registry = new SimpleMeterRegistry();
+    try {
+      runner
+          .withPropertyValues(
+              "axiz.crypto.fields.current-key-id=k1",
+              "axiz.crypto.fields.index-current-key-id=i1",
+              "axiz.crypto.fields.index-secrets.i1=index")
+          .withBean(
+              SecretResolver.class,
+              () -> name -> Optional.of(name.equals("index") ? indexSecret : fieldSecret))
+          .run(
+              ctx -> {
+                assertThat(ctx).hasNotFailed();
+                assertThrows(IllegalStateException.class, fieldSecret::revealChars);
+                assertThrows(IllegalStateException.class, indexSecret::revealChars);
+                provider.set(ctx.getBean(StaticKeyProvider.class));
+                index.set(ctx.getBean(BlindIndex.class));
+                ctx.getBean(MeterBinder.class).bindTo(registry);
+                ctx.getBean(FieldEncryptor.class).encrypt("00123456", "customer.dni");
+                assertEquals(
+                    1,
+                    registry
+                        .get("axiz.crypto.field.encryptions")
+                        .tag("keyId", "k1")
+                        .functionCounter()
+                        .count());
+              });
+      assertThrows(CryptoException.class, () -> provider.get().key("k1"));
+      assertThrows(
+          CryptoException.class,
+          () ->
+              index
+                  .get()
+                  .index("00123456", new IndexScope("field", "DNI", "t", "d", "identity", 1)));
+    } finally {
+      registry.close();
+    }
+  }
 
-          @Override
-          public DataKey generate(String context) {
-            return new DataKey(key, "wrapped".getBytes(StandardCharsets.UTF_8));
-          }
+  @Test
+  void malformedKeyMaterialStillClosesTheResolvedSecretAndDoesNotEchoIt() {
+    for (String material : List.of("secret-canary", "á".repeat(44), "A".repeat(5000))) {
+      var secret = SecretValue.of(material);
+      runner
+          .withPropertyValues("axiz.crypto.fields.current-key-id=k1")
+          .withBean(SecretResolver.class, () -> name -> Optional.of(secret))
+          .run(
+              ctx -> {
+                assertThat(ctx).hasFailed();
+                assertThat(ctx.getStartupFailure())
+                    .hasStackTraceContaining("Invalid Base64 secret")
+                    .hasStackTraceContaining("IllegalArgumentException");
+                assertFalse(ctx.getStartupFailure().getMessage().contains(material));
+                assertThrows(IllegalStateException.class, secret::revealChars);
+              });
+    }
+  }
 
-          @Override
-          public byte[] decrypt(byte[] encryptedKey, String context) {
-            return key.clone();
-          }
-        };
-    ApplicationContextRunner kms =
-        new ApplicationContextRunner()
-            .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
-            .withConfiguration(AutoConfigurations.of(AxizCryptoKmsAutoConfiguration.class))
-            .withPropertyValues("axiz.aws.region=us-east-1");
-    kms.run(ctx -> assertThat(ctx).doesNotHaveBean(EnvelopeEncryptor.class));
-    kms.withBean(DataKeyProvider.class, () -> fakeKms)
-        .withPropertyValues("axiz.crypto.kms.key-id=alias/payments")
+  @Test
+  void encryptionAndIndexCannotReuseMaterialEvenUnderDifferentSecretNamesOrOldKeyIds() {
+    String shared = newKey();
+    runner
+        .withPropertyValues(
+            "axiz.crypto.fields.current-key-id=current",
+            "axiz.crypto.fields.key-ids=old",
+            "axiz.crypto.fields.index-current-key-id=index",
+            "axiz.crypto.fields.index-secrets.index=separate-name")
+        .withBean(
+            SecretResolver.class,
+            () ->
+                store(
+                    Map.of(
+                        "field-key-current",
+                        newKey(),
+                        "field-key-old",
+                        shared,
+                        "separate-name",
+                        shared)))
         .run(
-            ctx -> {
-              assertThat(ctx).hasSingleBean(KmsClient.class);
-              EnvelopeEncryptor envelope = ctx.getBean(EnvelopeEncryptor.class);
-              byte[] plain = "statement".getBytes(StandardCharsets.UTF_8);
-              byte[] sealed = envelope.encrypt(plain, "statements");
-              assertArrayEquals(plain, envelope.decrypt(sealed, "statements"));
-            });
+            ctx ->
+                assertThat(ctx)
+                    .hasFailed()
+                    .getFailure()
+                    .hasRootCauseMessage(
+                        "Field encryption and index keys must use different key material"));
   }
 }

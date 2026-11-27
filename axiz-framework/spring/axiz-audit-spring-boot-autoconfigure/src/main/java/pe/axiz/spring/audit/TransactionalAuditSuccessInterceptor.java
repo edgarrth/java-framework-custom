@@ -8,7 +8,10 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.commons.TransactionOutcome;
 
-/** The outer advice records failures after completion; this one keeps success inside the commit. */
+/**
+ * El advice externo registra los fallos tras la finalización; este mantiene el éxito dentro del
+ * commit.
+ */
 final class TransactionalAuditSuccessInterceptor implements MethodInterceptor {
   private final BooleanSupplier durable;
 

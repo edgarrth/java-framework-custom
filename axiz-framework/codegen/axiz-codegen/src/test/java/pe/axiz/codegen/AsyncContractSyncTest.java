@@ -30,20 +30,21 @@ class AsyncContractSyncTest {
   static ProjectRequest request(String contract, Structure structure) {
     ProjectRequest base =
         Fixtures.request("business", structure, Stack.SERVLET, "aurora", List.of("messaging-sqs"));
-    return new ProjectRequest(
-        base.name(),
-        "pe.axiz",
-        "pe.axiz.orders",
-        base.description(),
-        base.archetype(),
-        base.structure(),
-        base.stack(),
-        base.persistence(),
-        base.capabilities(),
-        base.openApi(),
-        contract,
-        base.frameworkVersion(),
-        base.extensions());
+    return ProjectRequest.builder()
+        .name(base.name())
+        .groupId("pe.axiz")
+        .basePackage("pe.axiz.orders")
+        .description(base.description())
+        .archetype(base.archetype())
+        .structure(base.structure())
+        .stack(base.stack())
+        .persistence(base.persistence())
+        .capabilities(base.capabilities())
+        .openApi(base.openApi())
+        .asyncApi(contract)
+        .frameworkVersion(base.frameworkVersion())
+        .extensions(base.extensions())
+        .build();
   }
 
   @Test
@@ -81,7 +82,8 @@ class AsyncContractSyncTest {
     String record = project.text("src/main/java/pe/axiz/orders/domain/event/OrderCreatedV1.java");
     assertTrue(record.contains("String id"), record);
     assertTrue(record.contains("List<Map<String, Object>> lines"), record);
-    assertTrue(record.contains("List.copyOf(lines)"));
+    assertTrue(record.contains("ValueSnapshots.map(element0)"));
+    assertTrue(record.contains("element0 == null ? null"));
     assertFalse(record.contains("org.jspecify"));
     assertFalse(record.contains("@Nullable"));
     assertTrue(
@@ -91,20 +93,21 @@ class AsyncContractSyncTest {
     var edaBase =
         Fixtures.request("event-processor", Structure.EDA, Stack.REACTIVE, "aurora", List.of());
     var eda =
-        new ProjectRequest(
-            edaBase.name(),
-            edaBase.groupId(),
-            edaBase.basePackage(),
-            edaBase.description(),
-            edaBase.archetype(),
-            edaBase.structure(),
-            edaBase.stack(),
-            edaBase.persistence(),
-            edaBase.capabilities(),
-            null,
-            contract(),
-            edaBase.frameworkVersion(),
-            edaBase.extensions());
+        ProjectRequest.builder()
+            .name(edaBase.name())
+            .groupId(edaBase.groupId())
+            .basePackage(edaBase.basePackage())
+            .description(edaBase.description())
+            .archetype(edaBase.archetype())
+            .structure(edaBase.structure())
+            .stack(edaBase.stack())
+            .persistence(edaBase.persistence())
+            .capabilities(edaBase.capabilities())
+            .openApi(null)
+            .asyncApi(contract())
+            .frameworkVersion(edaBase.frameworkVersion())
+            .extensions(edaBase.extensions())
+            .build();
     var generated = ProjectGenerator.withDefaults().generate(eda);
     assertFalse(
         generated.files().keySet().stream().anyMatch(path -> path.contains("ExampleCreated")));
@@ -172,20 +175,21 @@ class AsyncContractSyncTest {
     assertThrows(IOException.class, () -> new AsyncContractSync().sync(directory));
     assertFalse(Files.exists(directory.resolve("outside")));
     ProjectManifest m = ProjectManifest.read(directory);
-    new ProjectManifest(
-            m.name(),
-            m.groupId(),
-            m.basePackage(),
-            m.archetype(),
-            m.structure(),
-            m.stack(),
-            m.persistence(),
-            m.axizVersion(),
-            m.openapi(),
-            null,
-            m.capabilities(),
-            m.operations(),
-            m.extensions())
+    ProjectManifest.builder()
+        .name(m.name())
+        .groupId(m.groupId())
+        .basePackage(m.basePackage())
+        .archetype(m.archetype())
+        .structure(m.structure())
+        .stack(m.stack())
+        .persistence(m.persistence())
+        .axizVersion(m.axizVersion())
+        .openapi(m.openapi())
+        .asyncapi(null)
+        .capabilities(m.capabilities())
+        .operations(m.operations())
+        .extensions(m.extensions())
+        .build()
         .write(directory);
     assertThrows(IllegalArgumentException.class, () -> new AsyncContractSync().sync(directory));
   }

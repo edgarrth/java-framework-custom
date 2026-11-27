@@ -16,7 +16,7 @@ import pe.axiz.extension.cqrs.QueryHandler;
 import {{item.modelPackage}}.{{item.responseModel}};
 {{/item.hasResponseModel}}
 
-/** Handles {@link {{item.queryName}}} on the read side (never triggers writes). */
+/** Atiende {@link {{item.queryName}}} en el lado de lectura (nunca provoca escrituras). */
 {{#fw.reactiveHandlers}}
 public class {{item.className}}Handler implements ReactiveQueryHandler<{{item.queryName}}, {{item.responseType}}> {
 

@@ -17,8 +17,8 @@ import pe.axiz.structure.hexagonal.UseCaseRunner;
 import pe.axiz.structure.hexagonal.annotation.UseCase;
 
 /**
- * Wraps the public methods of {@link UseCase} classes: observation {@code axiz.usecase} with the
- * operation and outcome, one transaction and the domain event lifecycle.
+ * Envuelve los métodos públicos de las clases {@link UseCase}: observación {@code axiz.usecase} con
+ * la operación y el resultado, una transacción y el ciclo de vida de los eventos de dominio.
  */
 public class UseCaseInterceptor implements MethodInterceptor {
 
@@ -70,7 +70,7 @@ public class UseCaseInterceptor implements MethodInterceptor {
 
   private record Descriptor(String operation, boolean readOnly) {}
 
-  /** Carries a checked exception through the functional wrappers. */
+  /** Lleva una excepción comprobada a través de los wrappers funcionales. */
   private static final class CheckedFailure extends RuntimeException {
     private static final long serialVersionUID = 1L;
 

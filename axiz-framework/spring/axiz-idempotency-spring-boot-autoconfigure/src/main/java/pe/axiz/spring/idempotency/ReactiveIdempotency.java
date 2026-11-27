@@ -5,8 +5,9 @@ import java.util.function.Supplier;
 import org.aopalliance.intercept.MethodInvocation;
 import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
+import pe.axiz.core.crypto.AsyncPayloadProtector;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.NoEffect;
 import pe.axiz.core.idempotency.AsyncIdempotencyService;
@@ -19,10 +20,16 @@ import reactor.core.Exceptions;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/** Reactive half of {@link IdempotencyMethodInterceptor}; loaded only when Reactor is present. */
+/**
+ * Mitad reactiva de {@link IdempotencyMethodInterceptor}; solo se carga cuando Reactor está
+ * presente.
+ */
 final class ReactiveIdempotency {
 
-  /** Reactor context key of the request state set by {@link IdempotencyWebFilter}. */
+  /**
+   * Clave en el contexto de Reactor del estado de la solicitud establecido por {@link
+   * IdempotencyWebFilter}.
+   */
   static final String CONTEXT_KEY = "axiz.idempotency.exchange";
 
   private ReactiveIdempotency() {}
@@ -35,13 +42,14 @@ final class ReactiveIdempotency {
       MethodInvocation invocation,
       Idempotent rule,
       String operation,
-      Supplier<AsyncIdempotencyService> service) {
+      Supplier<AsyncIdempotencyService> service,
+      Supplier<AsyncPayloadProtector> protection) {
     Mono<Void> gate =
         Mono.deferContextual(
             ctx -> {
               IdempotencyExchange exchange = ctx.getOrDefault(CONTEXT_KEY, null);
               if (exchange == null || exchange.execution() != null) {
-                return Mono.<Void>empty(); // safe method, or already decided
+                return Mono.<Void>empty(); // método seguro, o ya decidido
               }
               String key = exchange.key();
               String fingerprint = exchange.fingerprint();
@@ -54,11 +62,18 @@ final class ReactiveIdempotency {
               }
               RequestMetadata caller = ctx.getOrDefault(RequestContext.KEY, null);
               String scope = IdempotencySupport.scope(operation, caller);
+              var binding = IdempotencyPayloads.Binding.of(operation, scope, key);
+              exchange.binding = binding;
               return ReactiveStages.from(() -> service.get().begin(scope, key, fingerprint))
                   .flatMap(
                       decision -> {
                         if (decision instanceof IdempotencyService.Replay replay) {
-                          return Mono.<Void>error(new IdempotentReplay(replay.response()));
+                          return ReactiveStages.from(
+                                  () ->
+                                      IdempotencyPayloads.reveal(
+                                          replay.response(), binding, protection.get()))
+                              .flatMap(
+                                  revealed -> Mono.<Void>error(new IdempotentReplay(revealed)));
                         }
                         exchange.execution((IdempotencyService.Proceed) decision);
                         exchange.lease =
@@ -94,8 +109,8 @@ final class ReactiveIdempotency {
   }
 
   /**
-   * Per-request state shared by the web filter (which fingerprints the request and stores the
-   * response) and the advice (which takes the decision after authorization).
+   * Estado por solicitud compartido por el web filter (que calcula la huella de la solicitud y
+   * almacena la respuesta) y el advice (que toma la decisión después de la autorización).
    */
   static final class IdempotencyExchange {
     private final @Nullable String key;
@@ -103,6 +118,7 @@ final class ReactiveIdempotency {
     private volatile IdempotencyService.@Nullable Proceed execution;
     private volatile @Nullable IdempotencyLease lease;
     volatile boolean noEffect;
+    volatile IdempotencyPayloads.@Nullable Binding binding;
 
     void closeLease() {
       IdempotencyLease current = lease;

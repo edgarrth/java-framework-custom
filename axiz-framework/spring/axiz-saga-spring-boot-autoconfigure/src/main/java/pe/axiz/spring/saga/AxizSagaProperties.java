@@ -3,23 +3,19 @@ package pe.axiz.spring.saga;
 import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
-import pe.axiz.spring.foundation.jdbc.SchemaInitializer;
 
 /**
- * Orchestrated sagas ({@code axiz.saga.*}) with persisted state and compensation.
+ * Sagas orquestadas ({@code axiz.saga.*}) con estado persistido y compensación.
  *
- * @param table state table
- * @param initializeSchema when the table is created by the starter
- * @param stepAttempts attempts of a step on transient failures
- * @param compensationAttempts attempts of a compensation
- * @param initialDelay first retry delay
- * @param maxDelay retry delay cap
+ * @param stepAttempts intentos de un paso ante fallos transitorios
+ * @param compensationAttempts intentos de una compensación
+ * @param initialDelay retraso del primer reintento
+ * @param maxDelay tope del retraso de reintento
  */
 @ConfigurationProperties("axiz.saga")
 public record AxizSagaProperties(
-    @DefaultValue("axiz_saga") String table,
-    @DefaultValue("EMBEDDED") SchemaInitializer.Mode initializeSchema,
     @DefaultValue("3") int stepAttempts,
     @DefaultValue("5") int compensationAttempts,
     @DefaultValue("200ms") Duration initialDelay,
-    @DefaultValue("5s") Duration maxDelay) {}
+    @DefaultValue("5s") Duration maxDelay,
+    @DefaultValue("30s") Duration executionLease) {}

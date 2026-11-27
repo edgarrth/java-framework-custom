@@ -15,21 +15,21 @@ import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.openapi.OpenApiDocument;
 
 /**
- * Generation request of the API (same fields as the CLI). Missing structure, stack and persistence
- * take the archetype defaults.
+ * Solicitud de generación de la API (los mismos campos que la CLI). La estructura, el stack y la
+ * persistencia faltantes toman los valores por defecto del arquetipo.
  *
- * @param name project name in kebab-case
- * @param groupId Maven group
- * @param basePackage base package
- * @param description one-line description
- * @param archetype archetype id
- * @param structure style id
- * @param stack stack id
- * @param persistence persistence option
- * @param capabilities extra capabilities
- * @param openApi OpenAPI contract text
- * @param asyncApi AsyncAPI contract text
- * @param frameworkVersion axiz version (default: the initializr's)
+ * @param name nombre del proyecto en kebab-case
+ * @param groupId grupo de Maven
+ * @param basePackage paquete base
+ * @param description descripción de una línea
+ * @param archetype id del arquetipo
+ * @param structure id del estilo
+ * @param stack id del stack
+ * @param persistence opción de persistencia
+ * @param capabilities capacidades adicionales
+ * @param openApi texto del contrato OpenAPI
+ * @param asyncApi texto del contrato AsyncAPI
+ * @param frameworkVersion versión de axiz (por defecto, la del initializr)
  */
 public record ProjectRequestBody(
     @NotBlank @Size(max = 60) @Pattern(regexp = "^[a-z][a-z0-9]*(-[a-z0-9]+)*$") String name,
@@ -50,29 +50,35 @@ public record ProjectRequestBody(
     capabilities = capabilities == null ? null : List.copyOf(capabilities);
   }
 
-  /** The engine request, defaults resolved from the archetype. */
+  /** La solicitud para el motor, con los valores por defecto resueltos a partir del arquetipo. */
   public ProjectRequest toRequest(Catalog catalog, String defaultVersion) {
     Archetype a =
         catalog
             .archetype(archetype)
             .orElseThrow(() -> new IllegalArgumentException("Unknown archetype " + archetype));
-    return new ProjectRequest(
-        name,
-        groupId,
-        basePackage,
-        description == null ? "" : description,
-        a.name(),
-        structure == null || structure.isBlank()
-            ? a.defaultStructure()
-            : Structure.of(structure.toLowerCase(Locale.ROOT)),
-        stack == null || stack.isBlank()
-            ? a.defaultStack()
-            : Stack.of(stack.toLowerCase(Locale.ROOT)),
-        persistence == null || persistence.isBlank() ? a.defaultPersistence() : persistence,
-        capabilities == null ? List.of() : capabilities,
-        openApi,
-        asyncApi,
-        frameworkVersion == null ? defaultVersion : frameworkVersion,
-        (extensions == null ? List.<String>of() : extensions).stream().map(Extension::of).toList());
+    return ProjectRequest.builder()
+        .name(name)
+        .groupId(groupId)
+        .basePackage(basePackage)
+        .description(description == null ? "" : description)
+        .archetype(a.name())
+        .structure(
+            structure == null || structure.isBlank()
+                ? a.defaultStructure()
+                : Structure.of(structure.toLowerCase(Locale.ROOT)))
+        .stack(
+            stack == null || stack.isBlank()
+                ? a.defaultStack()
+                : Stack.of(stack.toLowerCase(Locale.ROOT)))
+        .persistence(
+            persistence == null || persistence.isBlank() ? a.defaultPersistence() : persistence)
+        .capabilities(capabilities == null ? List.of() : capabilities)
+        .openApi(openApi)
+        .asyncApi(asyncApi)
+        .frameworkVersion(frameworkVersion == null ? defaultVersion : frameworkVersion)
+        .extensions(
+            (extensions == null ? List.<String>of() : extensions)
+                .stream().map(Extension::of).toList())
+        .build();
   }
 }

@@ -1,4 +1,4 @@
-/** Queries and their handlers (read side). */
+/** Consultas y sus handlers (lado de lectura). */
 @NullMarked
 package pe.axiz.payments.orders.application.query;
 

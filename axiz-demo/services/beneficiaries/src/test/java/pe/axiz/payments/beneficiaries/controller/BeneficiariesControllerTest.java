@@ -12,12 +12,12 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.PageRequest;
 import pe.axiz.core.errors.NotFoundException;
-import pe.axiz.payments.beneficiaries.api.model.Beneficiary;
-import pe.axiz.payments.beneficiaries.api.model.BeneficiaryPage;
-import pe.axiz.payments.beneficiaries.api.model.BeneficiaryRequest;
-import pe.axiz.payments.beneficiaries.api.model.BeneficiaryUpdate;
+import pe.axiz.payments.beneficiaries.model.api.Beneficiary;
+import pe.axiz.payments.beneficiaries.model.api.BeneficiaryPage;
+import pe.axiz.payments.beneficiaries.model.api.BeneficiaryRequest;
+import pe.axiz.payments.beneficiaries.model.api.BeneficiaryUpdate;
 import pe.axiz.payments.beneficiaries.service.InMemoryBeneficiaries;
 import pe.axiz.payments.beneficiaries.service.Services;
 import pe.axiz.spring.test.OpenApiResponses;
@@ -25,8 +25,8 @@ import pe.axiz.spring.web.PageRequestArgumentResolver;
 import pe.axiz.spring.web.PageRequestParser;
 
 /**
- * The REST adapter over the real service: what each operation answers (status and body in the
- * contract's models) and how the contract models map to the service's.
+ * El adaptador REST sobre el servicio real: lo que responde cada operación (estado y cuerpo en los
+ * modelos del contrato) y cómo los modelos del contrato se convierten en los del servicio.
  */
 class BeneficiariesControllerTest {
 

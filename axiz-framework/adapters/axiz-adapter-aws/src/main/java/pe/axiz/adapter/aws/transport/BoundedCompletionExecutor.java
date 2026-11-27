@@ -2,9 +2,9 @@ package pe.axiz.adapter.aws.transport;
 
 import java.util.Objects;
 import java.util.concurrent.RejectedExecutionException;
-import pe.axiz.core.commons.BoundedCallbackExecutor;
+import pe.axiz.core.concurrent.BoundedCallbackExecutor;
 
-/** Owned AWS callback workers using the common bounded admission policy. */
+/** Workers propios de callbacks de AWS que usan la política común de admisión acotada. */
 final class BoundedCompletionExecutor extends BoundedCallbackExecutor {
   private volatile CompletionObserver observer = CompletionObserver.NOOP;
 

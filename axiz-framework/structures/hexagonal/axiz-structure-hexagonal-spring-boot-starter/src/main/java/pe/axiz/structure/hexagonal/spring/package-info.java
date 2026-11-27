@@ -1,4 +1,4 @@
-/** Spring wiring of the hexagonal style. */
+/** Configuración de Spring del estilo hexagonal. */
 @NullMarked
 package pe.axiz.structure.hexagonal.spring;
 

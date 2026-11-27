@@ -6,7 +6,9 @@ import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
 import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-/** Stores {@link Money} as its text form ({@code "PEN 150.00"}), never as a binary float. */
+/**
+ * Almacena {@link Money} en su forma de texto ({@code "PEN 150.00"}), nunca como un float binario.
+ */
 public final class MoneyAttributeConverter implements AttributeConverter<Money> {
 
   @Override

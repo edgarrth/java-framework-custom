@@ -1,6 +1,6 @@
 [
   {
-    "name": "pe.axiz.adapter.messaging.kafka.aws.AxizIamClientCallbackHandler",
+    "name": "pe.axiz.adapter.kafka.msk.AxizIamClientCallbackHandler",
     "allPublicConstructors": true
   }
 ]

@@ -7,7 +7,7 @@ import pe.axiz.payments.process.adapter.out.bankingcore.model.MovementRequest;
 import pe.axiz.payments.process.application.port.out.Accounts;
 import pe.axiz.payments.process.domain.PaymentInstruction;
 
-/** Debits and reversals through banking-core (HTTP service group {@code banking-core}). */
+/** Débitos y reversiones mediante banking-core (grupo de servicios HTTP {@code banking-core}). */
 @Component
 public class AccountsAdapter implements Accounts {
 

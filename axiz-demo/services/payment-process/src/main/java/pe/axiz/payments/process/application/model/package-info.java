@@ -1,4 +1,4 @@
-/** Owned application contracts independent of HTTP models. */
+/** Contratos de aplicación propios, independientes de los modelos HTTP. */
 @NullMarked
 package pe.axiz.payments.process.application.model;
 

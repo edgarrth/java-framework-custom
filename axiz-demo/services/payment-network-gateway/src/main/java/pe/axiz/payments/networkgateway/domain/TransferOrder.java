@@ -7,11 +7,11 @@ import pe.axiz.core.sensitive.Sensitive;
 import pe.axiz.core.sensitive.SensitivityLevel;
 
 /**
- * An inter-bank transfer to send.
+ * Transferencia interbancaria por enviar.
  *
- * @param creditorCci destination account (CCI)
- * @param amount positive amount
- * @param reference end-to-end reference
+ * @param creditorCci cuenta de destino (CCI)
+ * @param amount monto positivo
+ * @param reference referencia de extremo a extremo
  */
 public record TransferOrder(
     @Sensitive(level = SensitivityLevel.MEDIUM, mask = MaskType.DOCUMENT) String creditorCci,

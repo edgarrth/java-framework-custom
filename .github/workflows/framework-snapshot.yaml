@@ -1,0 +1,91 @@
+# Compila e instala el framework del mismo commit una sola vez por ejecución y lo comparte como
+# artefacto del run. Los jobs que lo consumen lo copian a su repositorio Maven local con la entrada
+# maven-artifact de lib-build y service-build, en lugar de recompilar el framework cada uno.
+name: framework-snapshot
+
+on:
+  workflow_call:
+    outputs:
+      artifact:
+        description: Artefacto con el fragmento pe/axiz del repositorio Maven local
+        value: ${{ jobs.install.outputs.artifact }}
+
+permissions: {}
+
+# Maven Central responde 429 cuando muchos jobs descargan a la vez: el resolver reintenta con espera
+# exponencial (respeta Retry-After). setup-java conserva este valor y le agrega -ntp.
+env:
+  MAVEN_ARGS: >-
+    -Daether.connector.http.retryHandler.count=8
+    -Daether.connector.http.retryHandler.interval=10000
+    -Daether.connector.http.retryHandler.intervalMax=120000
+
+jobs:
+  install:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    outputs:
+      artifact: axiz-framework-maven
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: '25'
+      # Maven consulta primero el espejo oficial de Maven Central en Google Cloud Storage, que no limita
+      # por IP, y recurre a Central solo cuando un artefacto todavía no llega al espejo.
+      - name: Espejo oficial de Maven Central
+        run: |
+          cat > "$RUNNER_TEMP/maven-central-mirror.xml" <<'EOF'
+          <settings>
+            <profiles>
+              <profile>
+                <id>maven-central-mirror</id>
+                <repositories>
+                  <repository>
+                    <id>maven-central-mirror</id>
+                    <url>https://maven-central.storage-download.googleapis.com/maven2</url>
+                    <snapshots><enabled>false</enabled></snapshots>
+                  </repository>
+                </repositories>
+                <pluginRepositories>
+                  <pluginRepository>
+                    <id>maven-central-mirror</id>
+                    <url>https://maven-central.storage-download.googleapis.com/maven2</url>
+                    <snapshots><enabled>false</enabled></snapshots>
+                  </pluginRepository>
+                </pluginRepositories>
+              </profile>
+            </profiles>
+            <activeProfiles>
+              <activeProfile>maven-central-mirror</activeProfile>
+            </activeProfiles>
+          </settings>
+          EOF
+          echo "MAVEN_ARGS=$MAVEN_ARGS -gs $RUNNER_TEMP/maven-central-mirror.xml" >> "$GITHUB_ENV"
+      # Caché propio del job, nunca en los tags: lo que se compila ahí termina en artefactos publicados.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.m2/wrapper
+          key: maven-framework-snapshot-${{ hashFiles('axiz-framework/**/pom.xml') }}
+          restore-keys: maven-framework-snapshot-
+      - name: Framework instalado en el repositorio Maven local
+        working-directory: axiz-framework
+        run: ./mvnw --bootstrap -B -ntp -q -DskipTests install
+      - name: Fragmento del repositorio Maven con el framework
+        run: |
+          mkdir -p "$RUNNER_TEMP/maven/pe"
+          cp -r ~/.m2/repository/pe/axiz "$RUNNER_TEMP/maven/pe/"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: axiz-framework-maven
+          path: ${{ runner.temp }}/maven
+          retention-days: 1
+          if-no-files-found: error

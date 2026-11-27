@@ -1,11 +1,11 @@
--- {{project.name}}: initial schema (Aurora PostgreSQL). Flyway owns the schema in every
+-- {{project.name}}: esquema inicial (Aurora PostgreSQL). Flyway es dueño del esquema en todos los
 {{#persistence.jpa}}
--- environment; Hibernate only validates it (spring.jpa.hibernate.ddl-auto=validate).
+-- entornos; Hibernate solo lo valida (spring.jpa.hibernate.ddl-auto=validate).
 {{/persistence.jpa}}
 {{#persistence.r2dbc}}
--- environment: it runs over JDBC at startup, the service itself only uses R2DBC.
+-- entornos: se ejecuta sobre JDBC al arrancar, y el servicio en sí solo usa R2DBC.
 {{/persistence.r2dbc}}
--- Add domain tables in new migrations (V2__..., never edit an applied one).
+-- Las tablas de dominio se añaden en migraciones nuevas (V2__..., nunca se edita una ya aplicada).
 {{#schema.outbox}}
 
 {{> sql/outbox}}
@@ -30,7 +30,7 @@
 
 {{> sql/batch}}
 
--- Input records loaded by the job (the reference makes reloading idempotent)
+-- Registros de entrada que carga el job (la referencia hace idempotente la recarga)
 CREATE TABLE IF NOT EXISTS input_line (
   reference  VARCHAR(64)  PRIMARY KEY,
   line_value VARCHAR(500) NOT NULL,

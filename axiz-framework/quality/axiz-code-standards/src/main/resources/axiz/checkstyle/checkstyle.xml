@@ -3,14 +3,14 @@
     "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
     "https://checkstyle.org/dtds/configuration_1_3.dtd">
 <!--
-  axiz Checkstyle configuration.
-  Formatting (indentation, whitespace, braces, wrapping) is NOT checked here: Spotless with
-  google-java-format owns it. Checkstyle only checks what a formatter cannot: naming, imports,
-  public API Javadoc and forbidden APIs. Every violation is an error.
+  Configuración de Checkstyle de axiz.
+  El formato (indentación, espacios, llaves, saltos de línea) NO se verifica aquí: es responsabilidad de Spotless
+  con google-java-format. Checkstyle solo verifica lo que un formateador no puede: nombres, imports,
+  Javadoc de la API pública y APIs prohibidas. Toda violación es un error.
 
-  Property expansion (maven-checkstyle-plugin <propertyExpansion>):
-    axiz.packagePattern  - allowed package names (services may set their own root package)
-    axiz.lineLength      - hard limit for lines google-java-format cannot wrap (long literals)
+  Expansión de propiedades (maven-checkstyle-plugin <propertyExpansion>):
+    axiz.packagePattern  - nombres de paquete permitidos (los servicios pueden definir su propio paquete raíz)
+    axiz.lineLength      - límite estricto para las líneas que google-java-format no puede partir (literales largos)
 -->
 <module name="Checker">
   <property name="charset" value="UTF-8"/>
@@ -19,7 +19,7 @@
 
   <module name="SuppressWarningsFilter"/>
 
-  <!-- Since Checkstyle 8.24 LineLength is a child of Checker, not of TreeWalker -->
+  <!-- Desde Checkstyle 8.24, LineLength es hijo de Checker, no de TreeWalker -->
   <module name="LineLength">
     <property name="max" value="${axiz.lineLength}" default="120"/>
     <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
@@ -33,14 +33,17 @@
       <property name="checkFormat" value="$1"/>
     </module>
 
-    <!-- Structure -->
+    <!-- Estructura -->
     <module name="OuterTypeFilename"/>
     <module name="OneTopLevelClass"/>
     <module name="OneStatementPerLine"/>
     <module name="MultipleVariableDeclarations"/>
     <module name="ArrayTypeStyle"/>
     <module name="UpperEll"/>
-    <module name="HideUtilityClassConstructor"/>
+    <!-- Spring instancia la configuración incluso cuando sus beans de infraestructura son estáticos. -->
+    <module name="HideUtilityClassConstructor">
+      <property name="ignoreAnnotatedBy" value="AutoConfiguration,org.springframework.boot.autoconfigure.AutoConfiguration"/>
+    </module>
     <module name="EqualsHashCode"/>
     <module name="NoFinalizer"/>
     <module name="MissingSwitchDefault"/>
@@ -61,7 +64,7 @@
       <property name="customImportOrderRules" value="STATIC###THIRD_PARTY_PACKAGE"/>
       <property name="tokens" value="IMPORT, STATIC_IMPORT, PACKAGE_DEF"/>
     </module>
-    <!-- JDK internals, JUnit 4, javax.* where Jakarta applies, Spring nullability (JSpecify is the standard), AWS SDK v1 -->
+    <!-- Internos del JDK, JUnit 4, javax.* donde aplica Jakarta, nulabilidad de Spring (JSpecify es el estándar), AWS SDK v1 -->
     <module name="IllegalImport">
       <property name="regexp" value="true"/>
       <property name="illegalPkgs" value="sun, jdk\.internal, com\.amazonaws"/>
@@ -73,7 +76,7 @@
                        ^org\.springframework\.lang\.(Nullable|NonNull|NonNullApi|NonNullFields)$"/>
     </module>
 
-    <!-- Forbidden APIs -->
+    <!-- APIs prohibidas -->
     <module name="RegexpSinglelineJava">
       <property name="id" value="noSystemOut"/>
       <property name="format" value="System\.(out|err)\.(print|println|printf|format)\("/>
@@ -93,7 +96,7 @@
       <property name="message" value="Forbidden cipher: use AES/GCM/NoPadding or RSA/ECB/OAEPWithSHA-256AndMGF1Padding"/>
     </module>
 
-    <!-- Naming -->
+    <!-- Nombres -->
     <module name="PackageName">
       <property name="format" value="${axiz.packagePattern}" default="^pe\.axiz(\.[a-z][a-z0-9]*)*$"/>
     </module>
@@ -142,15 +145,15 @@
       <property name="allowedAbbreviations" value="AWS,KMS,SQS,SNS,JWT,JWS,JWE,HTTP,SOAP,JSON,UUID,ULID,JDBC,JPA,ISO,IBAN,CCI,RUC,DNI,OTP,MFA,BFF,CQRS,EDA,AES,GCM,RSA,OAEP,HMAC,SHA,URL,URI,API,TTL,SLO,PII,SSE"/>
     </module>
 
-    <!-- Public API documentation (layers 1 and 2); tests are excluded in suppressions.xml -->
+    <!-- Documentación de la API pública (capas 1 y 2); las pruebas se excluyen en suppressions.xml -->
     <module name="MissingJavadocType">
       <property name="scope" value="public"/>
       <property name="skipAnnotations" value="Generated"/>
       <property name="tokens" value="CLASS_DEF, INTERFACE_DEF, ENUM_DEF, RECORD_DEF, ANNOTATION_DEF"/>
     </module>
-    <!-- Every Javadoc has a description. JavadocStyle no longer exists (removed in Checkstyle 13.9 in
-         favor of SummaryJavadoc); an empty period keeps the rule it had here: a description is
-         required, its first sentence does not have to end with a period -->
+    <!-- Todo Javadoc tiene una descripción. Checkstyle 13.9 eliminó JavadocStyle en favor de
+         SummaryJavadoc; un period vacío mantiene la regla de este archivo: se exige una descripción
+         y su primera oración no tiene que terminar en punto -->
     <module name="SummaryJavadoc">
       <property name="period" value=""/>
     </module>

@@ -7,7 +7,7 @@ import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.render.JavaFormatter;
 
-/** Real generated consumers exercise scoped, authenticated-only and public HTTP decisions. */
+/** Consumidores generados reales que ejercitan decisiones HTTP con scope, solo autenticadas y públicas. */
 class GenerateAccessPolicySamples {
   private static final String CONTRACT =
       """
@@ -49,19 +49,7 @@ class GenerateAccessPolicySamples {
       String basePackage = "pe.axiz.samples.access." + stack.id();
       Path directory = Path.of(args[0]).resolve(name);
       var request =
-          new ProjectRequest(
-              name,
-              "pe.axiz.samples",
-              basePackage,
-              "HTTP access policy acceptance",
-              "business",
-              Structure.HEXAGONAL,
-              stack,
-              "aurora",
-              List.of("security"),
-              CONTRACT,
-              null,
-              args[1]);
+          ProjectRequest.builder().name(name).groupId("pe.axiz.samples").basePackage(basePackage).description("HTTP access policy acceptance").archetype("business").structure(Structure.HEXAGONAL).stack(stack).persistence("aurora").capabilities(List.of("security")).openApi(CONTRACT).asyncApi(null).frameworkVersion(args[1]).extensions(List.of()).build();
       ProjectGenerator.withDefaults().generate(request).writeTo(directory, false);
       Path test =
           directory.resolve(
@@ -130,7 +118,7 @@ class GenerateAccessPolicySamples {
             ? "client.mutateWith(mockJwt().authorities(new"
                   + " SimpleGrantedAuthority(\"SCOPE_other\"))).get().uri(\"/v1/access/scoped\").exchange().expectStatus().isForbidden();"
             : "client.perform(get(\"/v1/access/scoped\").with(jwt().authorities(new"
-                  + " SimpleGrantedAuthority(\"SCOPE_other\")))).andExpect(status().isForbidden());";
+                + " SimpleGrantedAuthority(\"SCOPE_other\")))).andExpect(status().isForbidden());";
     tests
         .append("@Test void scopedRejectsWrongAuthority() throws Exception {\n")
         .append(wrongScope)
@@ -191,6 +179,7 @@ class GenerateAccessPolicySamples {
         + (reactive ? "@WebFluxTest" : "@WebMvcTest")
         + """
         (controllers = AccessController.class, properties = {
+          "axiz.config.environment=test",
           "axiz.security.issuers[0].issuer=https://issuer.test",
           "axiz.security.issuers[0].jwk-set-uri=https://issuer.test/jwks",
           "axiz.security.issuers[0].audiences[0]=test"

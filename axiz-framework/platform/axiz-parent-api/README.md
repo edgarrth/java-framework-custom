@@ -1,5 +1,5 @@
 # axiz-parent-api
 
-Neutral structure and extension APIs: core contracts plus the Reactive Streams interoperability standard; no Reactor or runtime.
+APIs neutrales de estructuras y extensiones: contratos del núcleo más el estándar de interoperabilidad Reactive Streams; sin Reactor ni runtime.
 
-Inherits all core formatting, static-analysis, test, coverage and mutation gates.
+Hereda todos los controles del núcleo de formato, análisis estático, pruebas, cobertura y mutación.

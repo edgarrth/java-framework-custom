@@ -14,7 +14,10 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.context.ContextView;
 
-/** Reactor support for {@code @AxizCacheable}; cache I/O uses native asynchronous ports. */
+/**
+ * Soporte de Reactor para {@code @AxizCacheable}; la E/S de la caché usa puertos asíncronos
+ * nativos.
+ */
 final class ReactiveCaching {
 
   private ReactiveCaching() {}
@@ -27,8 +30,9 @@ final class ReactiveCaching {
   }
 
   /**
-   * Caches a {@code Mono} or {@code Flux}. The scope (tenant, caller) is read when the publisher is
-   * subscribed, from the Reactor context; without a resolvable scope the publisher runs uncached.
+   * Cachea un {@code Mono} o un {@code Flux}. El ámbito (tenant, invocante) se lee del contexto de
+   * Reactor cuando se suscribe el publicador; sin un ámbito resoluble, el publicador se ejecuta sin
+   * caché.
    */
   @SuppressWarnings("unchecked")
   static Object wrap(
@@ -37,7 +41,8 @@ final class ReactiveCaching {
       String arguments,
       MethodInvocation invocation)
       throws Throwable {
-    // a reactive method that returns null (a contract violation) behaves as an empty publisher
+    // un método reactivo que devuelve null (una violación del contrato) se comporta como un
+    // publicador vacío
 
     Mono<Optional<String>> keys =
         scope(plan.scope(), in.callers())
@@ -139,7 +144,7 @@ final class ReactiveCaching {
                             plan.ttl())));
   }
 
-  /** Scope part of the key, from the Reactor context of the subscriber. */
+  /** Parte del ámbito de la clave, tomada del contexto de Reactor del suscriptor. */
   static Mono<Optional<String>> scope(CacheScope scope, @Nullable CacheCallerResolver callers) {
     return Mono.deferContextual(
         ctx -> {

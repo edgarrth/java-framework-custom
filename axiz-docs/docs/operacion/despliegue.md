@@ -15,34 +15,31 @@ Cada servicio trae su chart en `deploy/helm/<servicio>` con `values.yaml` (por d
 | `ServiceAccount` | IRSA/Pod Identity por ambiente; sin token de la API de Kubernetes montado (`automountServiceAccountToken: false`) y sin `Role` ni `RoleBinding`: el servicio no consulta la API |
 | `NetworkPolicy` | denegación por defecto en ambos sentidos. Entrada: el mismo namespace y los namespaces listados (ingress, monitoreo). Salida: DNS, los pods del namespace (`egress.sameNamespace`), los namespaces listados (`egress.namespaces`) y los CIDR con sus puertos (`egress.cidrs`: endpoints de VPC de los servicios de AWS, Aurora, ElastiCache, MSK, socios) que cada `values-<env>.yaml` declara |
 
-CI valida cada combinación `values.yaml` + `values-<env>.yaml` con `helm lint`, kubeconform y
-kube-linter.
+CI valida cada combinación `values.yaml` + `values-<env>.yaml` con `helm lint --strict` y
+kubeconform.
 
 ## Cómo llega a un ambiente
 
-El pipeline **nunca** ejecuta `helm` contra un clúster. `service-deploy` escribe el release en el
-repositorio GitOps y Argo CD lo aplica:
+El pipeline **nunca** ejecuta `helm` contra un clúster. `service-build` publica la imagen en
+`ghcr.io/<owner>/<servicio>` y el chart en `oci://ghcr.io/<owner>/charts/<servicio>`, con la
+procedencia SLSA y el SBOM como atestaciones de GitHub. `service-deploy` corre en el ambiente de
+GitHub elegido, verifica la atestación del digest con `gh attestation verify` y escribe
+`environments/<ambiente>/<servicio>.yaml` en el repositorio GitOps. Argo CD, con su
+ApplicationSet, aplica la versión del chart con `values-<ambiente>.yaml` y la imagen por digest.
 
-El workflow `service-deploy` verifica el bundle de un build anterior mediante su run, intento
-y hash externo del manifiesto firmado. La imagen y el chart se consumen por digest. La revisión
-de values es un commit completo e inmutable; no se reconstruye el chart desde una rama móvil.
-El registro GitOps conserva esos identificadores, el environment, el ejecutor y el despliegue
-anterior esperado. Argo CD aplica el estado verificado y el workflow exige sincronización y salud.
+La promoción a qa o prod y el rollback despliegan un digest ya construido: el de dev o el
+anterior. Las reglas de protección del ambiente (revisores requeridos, ramas permitidas) se
+aplican antes del despliegue. Recompilar no forma parte del deploy, y los permisos de escritura
+GitOps pertenecen solo a él, mediante una GitHub App limitada al repositorio GitOps.
 
-La promoción a qa/prod y el rollback seleccionan el manifiesto correspondiente y pasan por el
-mismo flujo de verificación y aprobación. Cambiar un tag o recompilar no forma parte del deploy.
-Los permisos de escritura GitOps pertenecen exclusivamente al deploy; el build carece de ellos.
+## Imágenes atestiguadas
 
-## Imágenes firmadas
-
-El build firma los digests con **cosign sin llave**, usando el token OIDC del job de firma,
-Fulcio y Rekor, y adjunta las atestaciones de SBOM y procedencia. No requiere una llave KMS para
-firmar. La política Kyverno (`.github/gitops/policies/verify-images.yaml.template`) verifica el issuer
-`https://token.actions.githubusercontent.com`, la identidad
-`https://github.com/edgarrth/java-framework-custom/.github/workflows/service-build.yaml@refs/tags/axiz-workflows-vX.Y.Z`
-y la transparencia de Rekor. La versión de workflows adoptada determina la identidad exacta.
-El deploy exige los digests verificados del manifiesto. Las imágenes base se fijan por tag y digest;
-Renovate actualiza ambos.
+Las atestaciones las firma Sigstore sin llave con la identidad OIDC del workflow
+`service-build`, y quedan en el registro junto a la imagen. La política Kyverno
+(`.github/gitops/policies/verify-images.yaml.template`) admite en los namespaces de los servicios
+solo imágenes de GHCR por digest con esa procedencia (issuer
+`https://token.actions.githubusercontent.com` y el workflow `service-build` de Axiz como firmante).
+Las imágenes base se fijan por tag y digest; Renovate actualiza ambos.
 
 ## Configuración y secretos por ambiente
 
@@ -78,11 +75,7 @@ garantía declarada se degrade sin dejar rastro:
 | Rate limit en Redis | `axiz.security.rate-limit.rules[].fail-open` es obligatorio en cada regla, sin valor por defecto. |
 | Rate limit en memoria | Solo se admite con store explícito `memory` y entorno `local`, `test` o `ci`. En despliegues compartidos se exige `redis`. |
 
-Las plantillas GitOps se renderizan antes de aplicarse usando la misma configuración JSON
-`BUILD_DESTINATION` del build, firmador, resolver y deploy. Esta define autoridad del registro, namespace,
-repositorios exactos y servicios permitidos. Deploy, rollback y ApplicationSet comparten la ruta
-`environments/<ambiente>/<servicio>.yaml` desde la raíz del repositorio GitOps y la rama `main`,
-sin variables o entradas alternativas. Las políticas se validan con Kyverno **1.17.0**,
-separando Pods/controladores del subrecurso de efímeros. La matriz offline verifica admisión
-de imágenes y digest; las firmas se comprueban como configuración, sin acceso al registro. Véase
-[la configuración de destinos](https://github.com/edgarrth/java-framework-custom/blob/main/.github/gitops/README.md).
+Las plantillas GitOps (ApplicationSet, AppProject y la política de Kyverno) se aplican después de
+reemplazar el owner y el repositorio GitOps. Deploy, rollback y ApplicationSet comparten la ruta
+`environments/<ambiente>/<servicio>.yaml` desde la raíz del repositorio GitOps y la rama `main`.
+Véase [la guía de GitOps](https://github.com/edgarrth/java-framework-custom/blob/main/.github/gitops/README.md).

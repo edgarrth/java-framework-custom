@@ -13,17 +13,17 @@ import org.springframework.http.MediaType;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
-import pe.axiz.core.commons.StandardHeaders;
+import pe.axiz.core.api.StandardHeaders;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.errors.Problem;
 import pe.axiz.core.errors.ProblemFactory;
 import reactor.core.publisher.Mono;
 
 /**
- * Reactive counterpart of {@link RequestMetadataFilter}. The metadata travels in the Reactor
- * context under {@link RequestContext#KEY}; context-propagation restores it as a thread-local where
- * needed, without global Reactor hooks of our own.
+ * Contraparte reactiva de {@link RequestMetadataFilter}. Los metadatos viajan en el contexto de
+ * Reactor bajo {@link RequestContext#KEY}; context-propagation los restaura como thread-local donde
+ * se necesita, sin hooks globales propios de Reactor.
  */
 public final class RequestMetadataWebFilter implements WebFilter, Ordered {
 

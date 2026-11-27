@@ -32,12 +32,13 @@ import pe.axiz.spring.test.LocalStackTestConfiguration;
 import pe.axiz.spring.test.PostgresTestConfiguration;
 
 /**
- * Regression: with 10,000 already used under a 30,000 limit, concurrent orders of 15,000 must not
- * both pass. Runs against PostgreSQL in a container (Docker).
+ * Regresión: con 10,000 ya usados bajo un límite de 30,000, dos órdenes concurrentes de 15,000 no
+ * deben pasar ambas. Se ejecuta contra PostgreSQL en un contenedor (Docker).
  */
 @SpringBootTest(
     properties = {
       "axiz.config.environment=test",
+      "axiz.messaging.kafka.authentication=configured",
       "axiz.transport.allow-plain-http=true",
       "axiz.transport.allow-insecure-data-stores=true"
     })
@@ -48,7 +49,9 @@ import pe.axiz.spring.test.PostgresTestConfiguration;
 })
 class DailyLimitConcurrencyIT {
 
-  /** Field encryption and blind index keys: random for every run, never committed. */
+  /**
+   * Claves de cifrado de campos y de índice ciego: aleatorias en cada ejecución, nunca versionadas.
+   */
   @DynamicPropertySource
   static void secrets(DynamicPropertyRegistry registry) {
     EphemeralSecrets.register(registry, "field-key-v1", "blind-index-key");
@@ -130,7 +133,7 @@ class DailyLimitConcurrencyIT {
     assertThat(accepted).isEqualTo(1);
     assertThat(orders.reservedOn(customer, "PEN", day)).isEqualTo(Money.of("25000", "PEN"));
 
-    // a rejected order gives its amount back
+    // una orden rechazada devuelve su monto
     transactions.executeWithoutResult(
         _ -> orders.releaseDaily(customer, Money.of("15000", "PEN"), day));
     assertThat(orders.reservedOn(customer, "PEN", day)).isEqualTo(Money.of("10000", "PEN"));
@@ -148,7 +151,7 @@ class DailyLimitConcurrencyIT {
     transactions.executeWithoutResult(
         tx -> {
           orders.reserveDaily(customer, Money.of("20000", "PEN"), day, limit);
-          tx.setRollbackOnly(); // e.g. the duplicate check or the insert failed afterwards
+          tx.setRollbackOnly(); // p. ej., falló luego la verificación de duplicados o el insert
         });
     assertThat(orders.reservedOn(customer, "PEN", day)).isEqualTo(Money.zero("PEN"));
   }

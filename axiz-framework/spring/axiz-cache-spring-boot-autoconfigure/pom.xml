@@ -15,13 +15,13 @@
   <description>@AxizCacheable with L1 Caffeine and L2 Redis (ElastiCache), TTL per cache and failure tolerance (auto-configuration)</description>
 
   <properties>
+    <axiz.provider.boundaries.skip>false</axiz.provider.boundaries.skip>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
     <axiz.module.name>pe.axiz.spring.cache</axiz.module.name>
   </properties>
 
   <dependencies>
-    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-redis-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-autoconfigure</artifactId>
@@ -30,12 +30,6 @@
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-core-cache</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-adapter-cache-redis</artifactId>
-      <version>${project.version}</version>
-      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
@@ -48,7 +42,7 @@
       <artifactId>spring-security-core</artifactId>
       <optional>true</optional>
     </dependency>
-    <!-- caller identity of token authentications (issuer, subject, client) -->
+    <!-- identidad del invocador de las autenticaciones por token (issuer, subject, client) -->
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-core-security</artifactId>
@@ -70,11 +64,6 @@
       <optional>true</optional>
     </dependency>
     <dependency>
-      <groupId>io.lettuce</groupId>
-      <artifactId>lettuce-core</artifactId>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
       <groupId>io.projectreactor</groupId>
       <artifactId>reactor-core</artifactId>
       <optional>true</optional>
@@ -83,13 +72,8 @@
       <groupId>tools.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-data-redis</artifactId>
-      <optional>true</optional>
-    </dependency>
 
-    <!-- the cache is tested together with real method security (servlet and reactive) -->
+    <!-- la caché se prueba junto con la seguridad de métodos real (servlet y reactiva) -->
     <dependency>
       <groupId>org.springframework.security</groupId>
       <artifactId>spring-security-config</artifactId>
@@ -100,7 +84,7 @@
       <artifactId>spring-security-oauth2-resource-server</artifactId>
       <scope>test</scope>
     </dependency>
-    <!-- the tests build Jwt tokens (org.springframework.security.oauth2.jwt) -->
+    <!-- las pruebas construyen tokens Jwt (org.springframework.security.oauth2.jwt) -->
     <dependency>
       <groupId>org.springframework.security</groupId>
       <artifactId>spring-security-oauth2-jose</artifactId>

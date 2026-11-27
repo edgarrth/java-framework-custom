@@ -10,7 +10,7 @@ import pe.axiz.core.featureflags.FlagDefinition;
 import pe.axiz.core.featureflags.FlagProvider;
 import pe.axiz.core.featureflags.MapFlagProvider;
 
-/** Feature flags from configuration: activation by channel, tenant, attributes or percentage. */
+/** Feature flags desde la configuración: activación por canal, tenant, atributos o porcentaje. */
 @AutoConfiguration
 @EnableConfigurationProperties(AxizFeatureFlagsProperties.class)
 public class AxizFeatureFlagsAutoConfiguration {

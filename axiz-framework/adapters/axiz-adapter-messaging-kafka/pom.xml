@@ -12,7 +12,7 @@
 
   <artifactId>axiz-adapter-messaging-kafka</artifactId>
   <name>axiz :: adapter :: messaging-kafka</name>
-  <description>Amazon MSK (Kafka) publisher and consumer adapter with IAM authentication</description>
+  <description>Kafka publisher and consumer adapter independent of authentication</description>
 
   <properties>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
@@ -22,7 +22,6 @@
 
   <dependencies>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-test-support</artifactId><version>${project.version}</version><scope>test</scope></dependency>
-    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-aws</artifactId><version>${project.version}</version><optional>true</optional></dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-core-messaging</artifactId>
@@ -31,11 +30,6 @@
     <dependency>
       <groupId>org.apache.kafka</groupId>
       <artifactId>kafka-clients</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.msk</groupId>
-      <artifactId>aws-msk-iam-auth</artifactId>
-      <optional>true</optional>
     </dependency>
   </dependencies>
 </project>

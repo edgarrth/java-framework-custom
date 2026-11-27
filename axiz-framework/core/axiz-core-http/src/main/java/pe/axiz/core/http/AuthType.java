@@ -1,14 +1,14 @@
 package pe.axiz.core.http;
 
-/** Outbound authentication of an HTTP client. */
+/** Autenticación saliente de un cliente HTTP. */
 public enum AuthType {
   NONE,
-  /** OAuth2 client credentials, token cached and renewed before expiry. */
+  /** Client credentials de OAuth2, con el token en caché y renovado antes de expirar. */
   CLIENT_CREDENTIALS,
-  /** Forwards the inbound access token (same audience chain only). */
+  /** Reenvía el token de acceso entrante (solo dentro de la misma cadena de audiencias). */
   TOKEN_RELAY,
-  /** Static API key header resolved from Secrets Manager. */
+  /** Cabecera de API key estática resuelta desde Secrets Manager. */
   API_KEY,
-  /** Mutual TLS with a client certificate. */
+  /** TLS mutuo con un certificado de cliente. */
   MTLS
 }

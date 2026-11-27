@@ -15,7 +15,7 @@
   <description>@AxizCacheable with L1 Caffeine and L2 Redis (ElastiCache), TTL per cache and failure tolerance</description>
 
   <properties>
-    <!-- dependencies only: the jar holds just the manifest, by design (no "JAR will be empty" warning) -->
+    <!-- solo dependencias: el jar contiene únicamente el manifiesto, por diseño (sin la advertencia "JAR will be empty") -->
     <maven.jar.forceCreation>true</maven.jar.forceCreation>
     <axiz.module.name>pe.axiz.spring.cache.starter</axiz.module.name>
   </properties>

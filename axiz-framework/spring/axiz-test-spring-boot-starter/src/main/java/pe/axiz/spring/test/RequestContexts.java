@@ -2,10 +2,13 @@ package pe.axiz.spring.test;
 
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 
-/** Opens a request context in unit tests, as the web and security starters would. */
+/**
+ * Abre un contexto de solicitud en pruebas unitarias, como lo harían los starters web y de
+ * seguridad.
+ */
 public final class RequestContexts {
 
   private RequestContexts() {}

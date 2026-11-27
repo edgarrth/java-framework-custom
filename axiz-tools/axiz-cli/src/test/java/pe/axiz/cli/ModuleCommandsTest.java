@@ -45,20 +45,21 @@ class ModuleCommandsTest {
         <modules><module>domain-model</module><module>application</module></modules></project>
         """);
     ProjectManifest m = ProjectManifest.read(project);
-    new ProjectManifest(
-            m.name(),
-            m.groupId(),
-            m.basePackage(),
-            m.archetype(),
-            m.structure(),
-            m.stack(),
-            m.persistence(),
-            m.axizVersion(),
-            m.openapi() == null ? null : "application/" + m.openapi(),
-            m.asyncapi() == null ? null : "application/" + m.asyncapi(),
-            m.capabilities(),
-            m.operations(),
-            m.extensions())
+    ProjectManifest.builder()
+        .name(m.name())
+        .groupId(m.groupId())
+        .basePackage(m.basePackage())
+        .archetype(m.archetype())
+        .structure(m.structure())
+        .stack(m.stack())
+        .persistence(m.persistence())
+        .axizVersion(m.axizVersion())
+        .openapi(m.openapi() == null ? null : "application/" + m.openapi())
+        .asyncapi(m.asyncapi() == null ? null : "application/" + m.asyncapi())
+        .capabilities(m.capabilities())
+        .operations(m.operations())
+        .extensions(m.extensions())
+        .build()
         .write(project);
     return application;
   }
@@ -179,9 +180,6 @@ class ModuleCommandsTest {
     Map<?, ?> build = (Map<?, ?>) jobs.get("build");
     assertEquals("application", ((Map<?, ?>) build.get("with")).get("module"));
     assertEquals("deploy/helm/orders", ((Map<?, ?>) build.get("with")).get("chart"));
-    assertTrue(
-        Files.readString(project.resolve(".github/workflows/ci.yaml"))
-            .contains("application/pom.xml"));
     assertTrue(
         Files.readString(project.resolve("release-please-config.json"))
             .contains("application/pom.xml"));

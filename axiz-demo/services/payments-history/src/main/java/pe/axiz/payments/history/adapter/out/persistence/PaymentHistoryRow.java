@@ -11,10 +11,10 @@ import pe.axiz.payments.history.domain.PaymentStatus;
 import pe.axiz.spring.r2dbc.AuditableRow;
 
 /**
- * Row of {@code payment_history}: UUIDv7 id, optimistic locking and auditing columns come from
- * {@link AuditableRow}; the creditor account is an {@link EncryptedText} column (AES-GCM with the
- * field keys of the secret store) and the amount a {@link Money} column, both converted by the axiz
- * R2DBC starter.
+ * Fila de {@code payment_history}: el id UUIDv7, el bloqueo optimista y las columnas de auditoría
+ * provienen de {@link AuditableRow}; la cuenta del acreedor es una columna {@link EncryptedText}
+ * (AES-GCM con las claves de campo del almacén de secretos) y el monto una columna {@link Money},
+ * ambas convertidas por el starter R2DBC de axiz.
  */
 @Table("payment_history")
 public class PaymentHistoryRow extends AuditableRow {
@@ -29,7 +29,7 @@ public class PaymentHistoryRow extends AuditableRow {
   private @Nullable String reason;
   private Instant lastChangeAt = Instant.EPOCH;
 
-  /** Used by Spring Data to read rows. */
+  /** Lo usa Spring Data para leer filas. */
   protected PaymentHistoryRow() {}
 
   static PaymentHistoryRow of(PaymentHistory h) {
@@ -38,7 +38,10 @@ public class PaymentHistoryRow extends AuditableRow {
     return row;
   }
 
-  /** Copies the projected state into this row, keeping its id, version and audit columns. */
+  /**
+   * Copia el estado proyectado en esta fila y conserva su id, su versión y sus columnas de
+   * auditoría.
+   */
   PaymentHistoryRow copy(PaymentHistory h) {
     paymentId = h.paymentId();
     customerId = h.customerId();

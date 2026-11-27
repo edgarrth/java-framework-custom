@@ -17,7 +17,9 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.core.Ordered;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-/** Enforces declared and chunked body limits before request deserialization. */
+/**
+ * Aplica los límites de cuerpo declarados y por chunks antes de la deserialización de la solicitud.
+ */
 public final class RequestBodyLimitFilter extends OncePerRequestFilter implements Ordered {
   private final RequestBodyLimits limits;
 

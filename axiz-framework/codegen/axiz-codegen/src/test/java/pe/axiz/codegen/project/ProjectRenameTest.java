@@ -121,7 +121,8 @@ class ProjectRenameTest {
     Path base = chart.resolve("values.yaml");
     Files.writeString(
         base,
-        "configBootstrap.parameterStore.enabled: true\nconfigBootstrap.parameterStore.application: stable-payments\n");
+        "configBootstrap.parameterStore.enabled: true\n"
+            + "configBootstrap.parameterStore.application: stable-payments\n");
     Path qa = chart.resolve("values-qa.yaml");
     Files.writeString(qa, "configBootstrap.parameterStore.application: stable-qa\n");
     Path prod = chart.resolve("values-prod.yaml");
@@ -175,18 +176,20 @@ class ProjectRenameTest {
   }
 
   private static ProjectManifest manifest(String name) {
-    return new ProjectManifest(
-        name,
-        "pe.axiz.payments",
-        "pe.axiz.payments.orders",
-        "business",
-        Structure.HEXAGONAL,
-        Stack.SERVLET,
-        "none",
-        "2.0.0",
-        null,
-        null,
-        List.of(),
-        List.of());
+    return ProjectManifest.builder()
+        .name(name)
+        .groupId("pe.axiz.payments")
+        .basePackage("pe.axiz.payments.orders")
+        .archetype("business")
+        .structure(Structure.HEXAGONAL)
+        .stack(Stack.SERVLET)
+        .persistence("none")
+        .axizVersion("2.0.0")
+        .openapi(null)
+        .asyncapi(null)
+        .capabilities(List.of())
+        .operations(List.of())
+        .extensions(List.of())
+        .build();
   }
 }

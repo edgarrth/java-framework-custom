@@ -1,10 +1,10 @@
 /**
- * Domain event {@code {{artifact.kebab}}}: raised by the aggregate inside a use case and published
- * after commit (through the outbox when the service has one).
+ * Evento de dominio {@code {{artifact.kebab}}}: lo emite el agregado dentro de un caso de uso y se
+ * publica después del commit (mediante el outbox cuando el servicio tiene uno).
  *
- * @param eventId unique id (UUIDv7)
- * @param occurredAt when it happened
- * @param aggregateId id of the aggregate
+ * @param eventId identificador único (UUIDv7)
+ * @param occurredAt cuándo ocurrió
+ * @param aggregateId identificador del agregado
  */
 public record {{artifact.className}}(String eventId, Instant occurredAt, String aggregateId)
     implements DomainEvent {}

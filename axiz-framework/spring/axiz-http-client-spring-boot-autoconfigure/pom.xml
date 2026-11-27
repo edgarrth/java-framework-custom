@@ -21,6 +21,16 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-http-jdk</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-sensitive-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-carddata</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-concurrent</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-context</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-api</artifactId><version>${project.version}</version></dependency>
+
     <dependency><groupId>io.micrometer</groupId><artifactId>context-propagation</artifactId></dependency>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-reactor-netty</artifactId><optional>true</optional></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-foundation-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>

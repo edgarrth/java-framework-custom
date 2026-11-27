@@ -7,8 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.errors.ExternalErrorDetail;
 import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.payments.ux.client.beneficiaries.BeneficiariesClient;
@@ -25,7 +25,7 @@ import pe.axiz.payments.ux.client.paymentorders.model.StatusChange;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 
-/** In-memory downstream services for composition and controller tests. */
+/** Servicios aguas abajo en memoria para las pruebas de composiciones y controladores. */
 public final class Fakes {
 
   public static final String CCI = "00219100123456789053";

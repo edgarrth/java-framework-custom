@@ -1,6 +1,6 @@
 package pe.axiz.payments.bankingcore.domain;
 
-/** State of an account movement in the core. */
+/** Estado de un movimiento de cuenta en el core. */
 public enum MovementStatus {
   POSTED,
   REVERSED

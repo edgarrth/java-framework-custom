@@ -1,235 +1,137 @@
+# Workflow reutilizable de despliegue GitOps. Verifica con `gh attestation verify` que el digest de
+# la imagen fue construido por el workflow service-build de Axiz y escribe en el repositorio GitOps
+# el archivo environments/<ambiente>/<servicio>.yaml que lee el ApplicationSet de Argo CD. El
+# ambiente de GitHub aplica sus reglas de protección (aprobaciones, ramas) antes de ejecutar el job.
+# Promover a otro ambiente o volver atrás es desplegar otro digest ya construido; nunca se recompila.
 name: service-deploy
+
 on:
   workflow_call:
     inputs:
-      build-run-id: {type: string, required: true}
-      build-run-attempt: {type: string, required: true}
-      manifest-sha256: {type: string, required: true}
-      environment: {type: string, required: true}
-      values-revision:
-        description: Full commit SHA of environment values in the service source repository
+      service:
         type: string
         required: true
-      previous-manifest-sha256:
-        description: Current deployed manifest hash or initial-deployment, checked before writing
+      environment:
+        description: Ambiente de GitHub y de GitOps (dev, qa, prod)
         type: string
         required: true
+      image:
+        description: Repositorio de la imagen, sin tag ni digest; por defecto ghcr.io/<owner>/<servicio>
+        type: string
+        default: ''
+      digest:
+        description: Digest sha256 de la imagen construida
+        type: string
+        required: true
+      chart:
+        description: Repositorio OCI del chart; por defecto oci://ghcr.io/<owner>/charts/<servicio>
+        type: string
+        default: ''
+      version:
+        description: Versión del chart publicado
+        type: string
+        required: true
+      gitops-repository:
+        description: Repositorio GitOps owner/name; por defecto, el mismo repositorio
+        type: string
+        default: ''
     secrets:
-      AXIZ_WORKFLOWS_READ_TOKEN: {required: false}
-      BUILD_READ_TOKEN: {required: false}
-      BUILD_DESTINATION: {required: true}
-      REGISTRY_READ_USERNAME: {required: true}
-      REGISTRY_READ_PASSWORD: {required: true}
-      GITOPS_APP_CLIENT_ID: {required: true}
-      GITOPS_APP_PRIVATE_KEY: {required: true}
-      ARGOCD_AUTH_TOKEN: {required: true}
+      GITOPS_APP_CLIENT_ID:
+        required: false
+      GITOPS_APP_PRIVATE_KEY:
+        required: false
 
 permissions: {}
 
-concurrency:
-  group: service-deploy-${{ github.repository }}-${{ inputs.environment }}
-  cancel-in-progress: false
-
 jobs:
-  axiz-workflows-trust:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 3
-    permissions:
-      contents: read
-    steps:
-      - name: Verify immutable Axiz workflow release
-        env:
-          GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
-          GH_HOST: github.com
-          AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0 # x-release-please-version
-        shell: bash
-        run: |
-          set -euo pipefail
-          release=$(gh api "repos/edgarrth/java-framework-custom/releases/tags/$AXIZ_WORKFLOWS_VERSION")
-          jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
-
-  destination:
-    needs: axiz-workflows-trust
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-    steps:
-      - name: Validate destination before selecting protected environment
-        env:
-          ENVIRONMENT: ${{ inputs.environment }}
-          VALUES_REVISION: ${{ inputs.values-revision }}
-          ARGOCD_SERVER: ${{ vars.ARGOCD_SERVER }}
-        run: |
-          set -euo pipefail
-          [[ "$ENVIRONMENT" == dev || "$ENVIRONMENT" == qa || "$ENVIRONMENT" == prod ]]
-          [[ "$VALUES_REVISION" =~ ^[0-9a-f]{40}$ ]]
-          [[ "$ARGOCD_SERVER" =~ ^[A-Za-z0-9][A-Za-z0-9.:-]*$ ]]
-
   deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: ${{ inputs.environment }}
+    concurrency:
+      group: deploy-${{ inputs.service }}-${{ inputs.environment }}
+      cancel-in-progress: false
     permissions:
       contents: write
-      actions: read
-      id-token: write
-    needs: [axiz-workflows-trust, destination]
-    runs-on: ubuntu-24.04
-    timeout-minutes: 40
-    environment: ${{ inputs.environment }}
+      packages: read
+      attestations: read
+    env:
+      SERVICE: ${{ inputs.service }}
+      ENVIRONMENT: ${{ inputs.environment }}
+      IMAGE: ${{ inputs.image || format('ghcr.io/{0}/{1}', github.repository_owner, inputs.service) }}
+      DIGEST: ${{ inputs.digest }}
+      CHART: ${{ inputs.chart || format('oci://ghcr.io/{0}/charts/{1}', github.repository_owner, inputs.service) }}
+      VERSION: ${{ inputs.version }}
+      GITOPS: ${{ inputs.gitops-repository || github.repository }}
     steps:
-      - name: Isolate registry read credentials
+      - name: Entradas válidas
+        id: gitops
         run: |
-          echo "DOCKER_CONFIG=$RUNNER_TEMP/axiz-deploy-docker" >> "$GITHUB_ENV"
-          echo "HELM_REGISTRY_CONFIG=$RUNNER_TEMP/axiz-deploy-helm/config.json" >> "$GITHUB_ENV"
-      # Immutable internal release: axiz-workflows-trust must succeed first.
-      # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-      - uses: edgarrth/java-framework-custom/.github/actions/consume-build@axiz-workflows-v2.0.0 # x-release-please-version
-        id: build
+          [[ "$SERVICE" =~ ^[a-z0-9][a-z0-9-]*$ && "$ENVIRONMENT" =~ ^[a-z0-9-]+$ ]]
+          [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ && "$CHART" == oci://* && "$GITOPS" == */* ]]
+          echo "owner=${GITOPS%%/*}" >> "$GITHUB_OUTPUT"
+          echo "name=${GITOPS#*/}" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
-          repository: ${{ github.repository }}
-          build-run-id: ${{ inputs.build-run-id }}
-          build-run-attempt: ${{ inputs.build-run-attempt }}
-          manifest-sha256: ${{ inputs.manifest-sha256 }}
-          kind: service
-          token: ${{ secrets.BUILD_READ_TOKEN || github.token }}
-      - name: Resolve trusted deployment destination before credentials
-        id: destination
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: La imagen fue construida por el workflow service-build de Axiz
         env:
-          BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
-          PYTHON: ${{ steps.build.outputs.python }}
-          TOOLS: ${{ steps.build.outputs.tools-path }}
-          BUNDLE: ${{ steps.build.outputs.bundle-path }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          set -euo pipefail
-          export SERVICE
-          SERVICE=$(jq -er '.parameters.service' "$BUNDLE/build-manifest.json")
-          "$PYTHON" "$TOOLS/build_destination.py" deployment >> "$GITHUB_OUTPUT"
-      - uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
-        with:
-          version: v3.19.0
-      - name: Verify immutable registry content, values and environment approval
-        id: preflight
-        env:
-          GH_TOKEN: ${{ secrets.BUILD_READ_TOKEN || github.token }}
-          GH_HOST: github.com
-          BUNDLE: ${{ steps.build.outputs.bundle-path }}
-          PYTHON: ${{ steps.build.outputs.python }}
-          TOOLS: ${{ steps.build.outputs.tools-path }}
-          HASH: ${{ inputs.manifest-sha256 }}
-          ENVIRONMENT: ${{ inputs.environment }}
-          VALUES_REVISION: ${{ inputs.values-revision }}
-          PREVIOUS: ${{ inputs.previous-manifest-sha256 }}
-          GITOPS: ${{ steps.destination.outputs.repository }}
-          BRANCH: ${{ steps.destination.outputs.branch }}
-          USERNAME: ${{ secrets.REGISTRY_READ_USERNAME }}
-          PASSWORD: ${{ secrets.REGISTRY_READ_PASSWORD }}
-        run: |
-          set -euo pipefail
-          mkdir -p "$DOCKER_CONFIG" "$(dirname "$HELM_REGISTRY_CONFIG")"
-          chmod 700 "$DOCKER_CONFIG" "$(dirname "$HELM_REGISTRY_CONFIG")"
-          mapfile -t registries < <(jq -r '[.artifacts.image.repository,.artifacts.chart.oci|sub("^oci://";"")|split("/")[0]]|unique[]' "$BUNDLE/build-manifest.json")
-          for registry in "${registries[@]}"; do
-            printf '%s' "$PASSWORD" | docker login "$registry" --username "$USERNAME" --password-stdin
-            printf '%s' "$PASSWORD" | helm registry login "$registry" --username "$USERNAME" --password-stdin
-          done
-          "$PYTHON" "$TOOLS/service_deploy.py" --bundle "$BUNDLE" --manifest-sha256 "$HASH" \
-            --repository "$GITHUB_REPOSITORY" --environment "$ENVIRONMENT" --values-revision "$VALUES_REVISION" \
-            --output "$RUNNER_TEMP/prepared-deployment.json" --configuration "$RUNNER_TEMP/values-refs.json"
-          jq --arg environment "$ENVIRONMENT" --arg gitops "$GITOPS" --arg branch "$BRANCH" '. + [
-            {name:"gitops-destination",ref:("https://github.com/"+$gitops+"/tree/"+$branch)},
-            {name:"gitops-app",ref:("environment:"+$environment+"/GITOPS_APP_CLIENT_ID")},
-            {name:"gitops-app-key",ref:("environment:"+$environment+"/GITOPS_APP_PRIVATE_KEY")},
-            {name:"argocd-read-token",ref:("environment:"+$environment+"/ARGOCD_AUTH_TOKEN")}
-          ]' "$RUNNER_TEMP/values-refs.json" > "$RUNNER_TEMP/deploy-configuration.json"
-          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/approvals" > "$RUNNER_TEMP/approvals.json"
-          "$PYTHON" "$TOOLS/deploy_record.py" --bundle "$BUNDLE" --manifest-sha256 "$HASH" \
-            --repository "$GITHUB_REPOSITORY" --environment "$ENVIRONMENT" --destination "https://github.com/$GITOPS" \
-            --previous-manifest "$PREVIOUS" --approvals "$RUNNER_TEMP/approvals.json" \
-            --configuration "$RUNNER_TEMP/deploy-configuration.json" --result requested --output "$RUNNER_TEMP/deploy-request.json"
-          cosign sign-blob --yes --bundle "$RUNNER_TEMP/deploy-request.sigstore.json" "$RUNNER_TEMP/deploy-request.json"
-          echo "request-sha256=$(sha256sum "$RUNNER_TEMP/deploy-request.json" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
-      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        id: token
+          gh attestation verify "oci://$IMAGE@$DIGEST" --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow edgarrth/java-framework-custom/.github/workflows/service-build.yaml
+      - name: Token del repositorio GitOps
+        id: app
+        if: inputs.gitops-repository != '' && inputs.gitops-repository != github.repository
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ secrets.GITOPS_APP_CLIENT_ID }}
-          permission-contents: write
           private-key: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
-          owner: ${{ steps.destination.outputs.owner }}
-          repositories: ${{ steps.destination.outputs.name }}
-      - name: Commit approved digests and signed request to GitOps
-        id: gitops
-        env:
-          PYTHON: ${{ steps.build.outputs.python }}
-          TOOLS: ${{ steps.build.outputs.tools-path }}
-          HASH: ${{ inputs.manifest-sha256 }}
-          ENVIRONMENT: ${{ inputs.environment }}
-          PREVIOUS: ${{ inputs.previous-manifest-sha256 }}
-          BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
-          GITOPS_TOKEN: ${{ steps.token.outputs.token }}
-        run: |
-          set -euo pipefail
-          "$PYTHON" "$TOOLS/gitops.py" \
-            --prepared "$RUNNER_TEMP/prepared-deployment.json" --manifest-sha256 "$HASH" \
-            --environment "$ENVIRONMENT" --previous-manifest "$PREVIOUS" \
-            --record "$RUNNER_TEMP/deploy-request.json" --signature "$RUNNER_TEMP/deploy-request.sigstore.json"
-      - name: Confirm Argo CD applied the approved immutable sources
-        id: health
-        env:
-          PYTHON: ${{ steps.build.outputs.python }}
-          TOOLS: ${{ steps.build.outputs.tools-path }}
-          HASH: ${{ inputs.manifest-sha256 }}
-          ENVIRONMENT: ${{ inputs.environment }}
-          RECORD: ${{ steps.preflight.outputs.request-sha256 }}
-          ARGOCD_SERVER: ${{ vars.ARGOCD_SERVER }}
-          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
-        run: |
-          "$PYTHON" "$TOOLS/wait_service.py" --prepared "$RUNNER_TEMP/prepared-deployment.json" \
-            --manifest-sha256 "$HASH" --environment "$ENVIRONMENT" --record-sha256 "$RECORD" --server "$ARGOCD_SERVER"
-      - name: Sign deployment outcome
-        id: record
-        if: ${{ always() && steps.preflight.outcome == 'success' }}
-        env:
-          BUNDLE: ${{ steps.build.outputs.bundle-path }}
-          PYTHON: ${{ steps.build.outputs.python }}
-          TOOLS: ${{ steps.build.outputs.tools-path }}
-          HASH: ${{ inputs.manifest-sha256 }}
-          ENVIRONMENT: ${{ inputs.environment }}
-          PREVIOUS: ${{ inputs.previous-manifest-sha256 }}
-          GITOPS: ${{ steps.destination.outputs.repository }}
-          HEALTH: ${{ steps.health.outcome }}
-        run: |
-          set -euo pipefail
-          result=failed
-          if [[ "$HEALTH" == success ]]; then result=succeeded; fi
-          "$PYTHON" "$TOOLS/deploy_record.py" --bundle "$BUNDLE" --manifest-sha256 "$HASH" \
-            --repository "$GITHUB_REPOSITORY" --environment "$ENVIRONMENT" --destination "https://github.com/$GITOPS" \
-            --previous-manifest "$PREVIOUS" --approvals "$RUNNER_TEMP/approvals.json" \
-            --configuration "$RUNNER_TEMP/deploy-configuration.json" --result "$result" --output "$RUNNER_TEMP/deploy-record.json"
-          cosign sign-blob --yes --bundle "$RUNNER_TEMP/deploy-record.sigstore.json" "$RUNNER_TEMP/deploy-record.json"
-      - name: Retain signed outcome in GitOps audit
-        if: ${{ always() && steps.gitops.outcome == 'success' && steps.record.outcome == 'success' }}
-        env:
-          PYTHON: ${{ steps.build.outputs.python }}
-          TOOLS: ${{ steps.build.outputs.tools-path }}
-          HASH: ${{ inputs.manifest-sha256 }}
-          ENVIRONMENT: ${{ inputs.environment }}
-          PREVIOUS: ${{ inputs.previous-manifest-sha256 }}
-          BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
-          GITOPS_TOKEN: ${{ steps.token.outputs.token }}
-        run: |
-          "$PYTHON" "$TOOLS/gitops.py" \
-            --prepared "$RUNNER_TEMP/prepared-deployment.json" --manifest-sha256 "$HASH" \
-            --environment "$ENVIRONMENT" --previous-manifest "$PREVIOUS" --outcome \
-            --record "$RUNNER_TEMP/deploy-record.json" --signature "$RUNNER_TEMP/deploy-record.sigstore.json"
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: ${{ always() && steps.record.outcome == 'success' }}
+          owner: ${{ steps.gitops.outputs.owner }}
+          repositories: ${{ steps.gitops.outputs.name }}
+          permission-contents: write
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
-          name: deploy-record-${{ github.run_attempt }}
-          path: |
-            ${{ runner.temp }}/deploy-request.json
-            ${{ runner.temp }}/deploy-request.sigstore.json
-            ${{ runner.temp }}/deploy-record.json
-            ${{ runner.temp }}/deploy-record.sigstore.json
-          if-no-files-found: error
-          retention-days: 90
-      - name: Remove registry read credentials
-        if: always()
-        run: rm -rf "$DOCKER_CONFIG" "$(dirname "$HELM_REGISTRY_CONFIG")"
+          repository: ${{ env.GITOPS }}
+          ref: main
+          token: ${{ steps.app.outputs.token || github.token }}
+          path: gitops
+          persist-credentials: false
+      - name: Estado deseado del servicio en el ambiente
+        working-directory: gitops
+        env:
+          GIT_TOKEN: ${{ steps.app.outputs.token || github.token }}
+        run: |
+          file="environments/$ENVIRONMENT/$SERVICE.yaml"
+          mkdir -p "$(dirname "$file")"
+          cat > "$file" <<EOF
+          # Escrito por service-deploy; Argo CD lo lee con su ApplicationSet.
+          service: $SERVICE
+          environment: $ENVIRONMENT
+          image:
+            repository: $IMAGE
+            digest: $DIGEST
+          chart:
+            oci: $CHART
+            version: $VERSION
+          source:
+            repository: $GITHUB_REPOSITORY
+            run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$file"
+          if git diff --cached --quiet; then
+            echo "El ambiente ya tiene ese digest; no hay cambios."
+            exit 0
+          fi
+          git commit -m "deploy($ENVIRONMENT): $SERVICE $VERSION ${DIGEST:7:12}"
+          # La credencial vive solo en este paso; no se persiste en la copia ni en artefactos.
+          git remote set-url origin "https://x-access-token:$GIT_TOKEN@github.com/$GITOPS.git"
+          for _ in 1 2 3; do
+            git push origin HEAD:main && exit 0
+            git pull --rebase origin main
+          done
+          exit 1

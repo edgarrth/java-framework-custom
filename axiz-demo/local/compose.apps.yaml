@@ -1,0 +1,285 @@
+# Los ocho servicios de la demo como contenedores en la red de compose.yaml (perfil "apps").
+# Las imágenes provienen de Jib (axiz/<service>:local); scripts/compose.sh las construye y arranca
+# la infraestructura y los servicios con un solo comando. Cada servicio conserva los perfiles local,platform
+# y el puerto que usa en el host; SPRING_APPLICATION_JSON reemplaza los endpoints de localhost por
+# los nombres de esta red (los mismos ajustes que kind/values/<service>.yaml).
+# Solo para desarrollo: ningún valor de este archivo es una credencial real.
+services:
+  # los servicios leen las claves de los tokens por HTTP plano solo desde un nombre local del clúster, como en kind
+  keycloak:
+    networks:
+      default:
+        aliases:
+        - keycloak.axiz-demo.svc.cluster.local
+  payments-ux:
+    image: axiz/payments-ux:local
+    profiles:
+    - apps
+    restart: on-failure
+    # los archivos de secretos de local/secrets son privados del usuario que ejecuta la demo
+    user: ${AXIZ_UID:-1000}:${AXIZ_GID:-1000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-topics:
+        condition: service_completed_successfully
+      valkey:
+        condition: service_started
+      localstack:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      wiremock:
+        condition: service_started
+      otel-lgtm:
+        condition: service_started
+    ports:
+    - 127.0.0.1:8080:8080
+    environment:
+      SPRING_PROFILES_ACTIVE: local,platform
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_REGION: us-east-1
+      SPRING_APPLICATION_JSON: '{"axiz.config.environment":"local","axiz.transport.allow-plain-http":true,"axiz.transport.allow-insecure-data-stores":true,"spring.data.redis.ssl.enabled":false,"management.opentelemetry.tracing.export.otlp.endpoint":"http://otel-lgtm:4318/v1/traces","management.otlp.metrics.export.url":"http://otel-lgtm:4318/v1/metrics","axiz.security.issuers":[{"issuer":"http://localhost:8180/realms/axiz","jwk-set-uri":"http://keycloak.axiz-demo.svc.cluster.local:8080/realms/axiz/protocol/openid-connect/certs","audiences":["local-services"]}],"spring.data.redis.url":"redis://valkey:6379","axiz.http-client.clients":{"payment-orders":{"base-url":"http://payment-orders:8081","auth":{"type":"TOKEN_RELAY"}},"beneficiaries":{"base-url":"http://beneficiaries:8082","auth":{"type":"TOKEN_RELAY"}}},"axiz.feature-flags.flags":{"payments-usd":{"enabled":false}},"axiz.secrets.directory":"/var/run/secrets/axiz"}'
+    volumes:
+    - ../services/payments-ux/local/secrets:/var/run/secrets/axiz:ro
+  payment-orders:
+    image: axiz/payment-orders:local
+    profiles:
+    - apps
+    restart: on-failure
+    # los archivos de secretos de local/secrets son privados del usuario que ejecuta la demo
+    user: ${AXIZ_UID:-1000}:${AXIZ_GID:-1000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-topics:
+        condition: service_completed_successfully
+      valkey:
+        condition: service_started
+      localstack:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      wiremock:
+        condition: service_started
+      otel-lgtm:
+        condition: service_started
+    ports:
+    - 127.0.0.1:8081:8081
+    environment:
+      SPRING_PROFILES_ACTIVE: local,platform
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_REGION: us-east-1
+      SPRING_APPLICATION_JSON: '{"axiz.config.environment":"local","axiz.transport.allow-plain-http":true,"axiz.transport.allow-insecure-data-stores":true,"spring.datasource.hikari.data-source-properties.sslmode":"disable","spring.flyway.jdbc-properties.sslmode":"disable","spring.kafka.security.protocol":"PLAINTEXT","management.opentelemetry.tracing.export.otlp.endpoint":"http://otel-lgtm:4318/v1/traces","management.otlp.metrics.export.url":"http://otel-lgtm:4318/v1/metrics","axiz.security.issuers":[{"issuer":"http://localhost:8180/realms/axiz","jwk-set-uri":"http://keycloak.axiz-demo.svc.cluster.local:8080/realms/axiz/protocol/openid-connect/certs","audiences":["local-services"]}],"spring.datasource.url":"jdbc:postgresql://postgres:5432/payment_orders","spring.datasource.username":"app","spring.kafka.bootstrap-servers":"kafka:29092","axiz.messaging.kafka.authentication":"configured","axiz.messaging.kafka.iam":false,"axiz.aws.endpoint":"http://localstack:4566","axiz.aws.region":"us-east-1","axiz.crypto.kms.key-id":"alias/local","axiz.secrets.directory":"/var/run/secrets/axiz"}'
+    volumes:
+    - ../services/payment-orders/local/secrets:/var/run/secrets/axiz:ro
+  beneficiaries:
+    image: axiz/beneficiaries:local
+    profiles:
+    - apps
+    restart: on-failure
+    # los archivos de secretos de local/secrets son privados del usuario que ejecuta la demo
+    user: ${AXIZ_UID:-1000}:${AXIZ_GID:-1000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-topics:
+        condition: service_completed_successfully
+      valkey:
+        condition: service_started
+      localstack:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      wiremock:
+        condition: service_started
+      otel-lgtm:
+        condition: service_started
+    ports:
+    - 127.0.0.1:8082:8082
+    environment:
+      SPRING_PROFILES_ACTIVE: local,platform
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_REGION: us-east-1
+      SPRING_APPLICATION_JSON: '{"axiz.config.environment":"local","axiz.transport.allow-plain-http":true,"management.opentelemetry.tracing.export.otlp.endpoint":"http://otel-lgtm:4318/v1/traces","management.otlp.metrics.export.url":"http://otel-lgtm:4318/v1/metrics","axiz.security.issuers":[{"issuer":"http://localhost:8180/realms/axiz","jwk-set-uri":"http://keycloak.axiz-demo.svc.cluster.local:8080/realms/axiz/protocol/openid-connect/certs","audiences":["local-services"]}],"axiz.aws.endpoint":"http://localstack:4566","axiz.aws.region":"us-east-1","axiz.dynamodb.table-prefix":"local-","axiz.secrets.directory":"/var/run/secrets/axiz"}'
+    volumes:
+    - ../services/beneficiaries/local/secrets:/var/run/secrets/axiz:ro
+  banking-core:
+    image: axiz/banking-core:local
+    profiles:
+    - apps
+    restart: on-failure
+    # los archivos de secretos de local/secrets son privados del usuario que ejecuta la demo
+    user: ${AXIZ_UID:-1000}:${AXIZ_GID:-1000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-topics:
+        condition: service_completed_successfully
+      valkey:
+        condition: service_started
+      localstack:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      wiremock:
+        condition: service_started
+      otel-lgtm:
+        condition: service_started
+    ports:
+    - 127.0.0.1:8083:8083
+    environment:
+      SPRING_PROFILES_ACTIVE: local,platform
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_REGION: us-east-1
+      SPRING_APPLICATION_JSON: '{"axiz.config.environment":"local","axiz.transport.allow-plain-http":true,"axiz.transport.allow-insecure-data-stores":true,"spring.data.redis.ssl.enabled":false,"management.opentelemetry.tracing.export.otlp.endpoint":"http://otel-lgtm:4318/v1/traces","management.otlp.metrics.export.url":"http://otel-lgtm:4318/v1/metrics","axiz.security.issuers":[{"issuer":"http://localhost:8180/realms/axiz","jwk-set-uri":"http://keycloak.axiz-demo.svc.cluster.local:8080/realms/axiz/protocol/openid-connect/certs","audiences":["local-services"]}],"axiz.aws.endpoint":"http://localstack:4566","axiz.aws.region":"us-east-1","spring.data.redis.url":"redis://valkey:6379","axiz.audit.sqs.queue-url":"http://localstack:4566/000000000000/axiz-demo-audit","axiz.http-client.clients":{"core-banking":{"base-url":"http://wiremock:8080","auth":{"type":"CLIENT_CREDENTIALS","token-uri":"http://wiremock:8080/oauth/token","client-id":"banking-core","client-secret-ref":"core-banking-client-secret","scopes":["movements"]}},"payment-network":{"base-url":"http://wiremock:8080","auth":{"type":"API_KEY","api-key-header":"X-Api-Key","api-key-ref":"payment-network-api-key"}}},"axiz.soap.clients":{"core-credit":{"endpoint":"http://wiremock:8080/soap/credit","username":"banking-core","password-ref":"core-soap-password"}},"axiz.secrets.directory":"/var/run/secrets/axiz"}'
+    volumes:
+    - ../services/banking-core/local/secrets:/var/run/secrets/axiz:ro
+  payment-process:
+    image: axiz/payment-process:local
+    profiles:
+    - apps
+    restart: on-failure
+    # los archivos de secretos de local/secrets son privados del usuario que ejecuta la demo
+    user: ${AXIZ_UID:-1000}:${AXIZ_GID:-1000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-topics:
+        condition: service_completed_successfully
+      valkey:
+        condition: service_started
+      localstack:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      wiremock:
+        condition: service_started
+      otel-lgtm:
+        condition: service_started
+    ports:
+    - 127.0.0.1:8084:8084
+    environment:
+      SPRING_PROFILES_ACTIVE: local,platform
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_REGION: us-east-1
+      SPRING_APPLICATION_JSON: '{"axiz.config.environment":"local","axiz.transport.allow-plain-http":true,"axiz.transport.allow-insecure-data-stores":true,"spring.datasource.hikari.data-source-properties.sslmode":"disable","spring.flyway.jdbc-properties.sslmode":"disable","spring.kafka.security.protocol":"PLAINTEXT","management.opentelemetry.tracing.export.otlp.endpoint":"http://otel-lgtm:4318/v1/traces","management.otlp.metrics.export.url":"http://otel-lgtm:4318/v1/metrics","axiz.security.issuers":[{"issuer":"http://localhost:8180/realms/axiz","jwk-set-uri":"http://keycloak.axiz-demo.svc.cluster.local:8080/realms/axiz/protocol/openid-connect/certs","audiences":["local-services"]}],"spring.datasource.url":"jdbc:postgresql://postgres:5432/payment_process","spring.datasource.username":"app","spring.kafka.bootstrap-servers":"kafka:29092","axiz.messaging.kafka.authentication":"configured","axiz.messaging.kafka.iam":false,"axiz.http-client.clients":{"payment-orders":{"base-url":"http://payment-orders:8081","auth":{"type":"CLIENT_CREDENTIALS","token-uri":"http://keycloak.axiz-demo.svc.cluster.local:8080/realms/axiz/protocol/openid-connect/token","client-id":"payment-process","client-secret-ref":"payment-process-client-secret"}},"banking-core":{"base-url":"http://banking-core:8083","auth":{"type":"CLIENT_CREDENTIALS","token-uri":"http://keycloak.axiz-demo.svc.cluster.local:8080/realms/axiz/protocol/openid-connect/token","client-id":"payment-process","client-secret-ref":"payment-process-client-secret"}},"payment-network-gateway":{"base-url":"http://payment-network-gateway:8087","auth":{"type":"CLIENT_CREDENTIALS","token-uri":"http://keycloak.axiz-demo.svc.cluster.local:8080/realms/axiz/protocol/openid-connect/token","client-id":"payment-process","client-secret-ref":"payment-process-client-secret"}}},"axiz.secrets.directory":"/var/run/secrets/axiz"}'
+    volumes:
+    - ../services/payment-process/local/secrets:/var/run/secrets/axiz:ro
+  notifications-processor:
+    image: axiz/notifications-processor:local
+    profiles:
+    - apps
+    restart: on-failure
+    # los archivos de secretos de local/secrets son privados del usuario que ejecuta la demo
+    user: ${AXIZ_UID:-1000}:${AXIZ_GID:-1000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-topics:
+        condition: service_completed_successfully
+      valkey:
+        condition: service_started
+      localstack:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      wiremock:
+        condition: service_started
+      otel-lgtm:
+        condition: service_started
+    ports:
+    - 127.0.0.1:8085:8085
+    environment:
+      SPRING_PROFILES_ACTIVE: local,platform
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_REGION: us-east-1
+      SPRING_APPLICATION_JSON: '{"axiz.config.environment":"local","axiz.transport.allow-plain-http":true,"axiz.transport.allow-insecure-data-stores":true,"spring.kafka.security.protocol":"PLAINTEXT","management.opentelemetry.tracing.export.otlp.endpoint":"http://otel-lgtm:4318/v1/traces","management.otlp.metrics.export.url":"http://otel-lgtm:4318/v1/metrics","spring.kafka.bootstrap-servers":"kafka:29092","axiz.messaging.kafka.authentication":"configured","axiz.messaging.kafka.iam":false,"axiz.aws.endpoint":"http://localstack:4566","axiz.aws.region":"us-east-1","axiz.dynamodb.table-prefix":"local-","axiz.storage.bucket":"local-bucket","axiz.messaging.sqs.queues":["http://localstack:4566/000000000000/axiz-demo-audit"],"axiz.messaging.destinations":{"customer-notifications":"arn:aws:sns:us-east-1:000000000000:local-customer-notifications"},"axiz.secrets.directory":"/var/run/secrets/axiz"}'
+    volumes:
+    - ../services/notifications-processor/local/secrets:/var/run/secrets/axiz:ro
+  payments-history:
+    image: axiz/payments-history:local
+    profiles:
+    - apps
+    restart: on-failure
+    # los archivos de secretos de local/secrets son privados del usuario que ejecuta la demo
+    user: ${AXIZ_UID:-1000}:${AXIZ_GID:-1000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-topics:
+        condition: service_completed_successfully
+      valkey:
+        condition: service_started
+      localstack:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      wiremock:
+        condition: service_started
+      otel-lgtm:
+        condition: service_started
+    ports:
+    - 127.0.0.1:8086:8086
+    environment:
+      SPRING_PROFILES_ACTIVE: local,platform
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_REGION: us-east-1
+      SPRING_APPLICATION_JSON: '{"axiz.config.environment":"local","axiz.transport.allow-plain-http":true,"axiz.transport.allow-insecure-data-stores":true,"spring.kafka.security.protocol":"PLAINTEXT","spring.flyway.jdbc-properties.sslmode":"disable","management.opentelemetry.tracing.export.otlp.endpoint":"http://otel-lgtm:4318/v1/traces","management.otlp.metrics.export.url":"http://otel-lgtm:4318/v1/metrics","axiz.security.issuers":[{"issuer":"http://localhost:8180/realms/axiz","jwk-set-uri":"http://keycloak.axiz-demo.svc.cluster.local:8080/realms/axiz/protocol/openid-connect/certs","audiences":["local-services"]}],"spring.r2dbc.url":"r2dbc:postgresql://postgres:5432/payments_history","spring.r2dbc.username":"app","spring.r2dbc.properties.sslMode":"disable","axiz.r2dbc.iam.enabled":false,"spring.kafka.bootstrap-servers":"kafka:29092","axiz.messaging.kafka.authentication":"configured","axiz.messaging.kafka.iam":false,"axiz.aws.endpoint":"http://localstack:4566","axiz.secrets.directory":"/var/run/secrets/axiz"}'
+    volumes:
+    - ../services/payments-history/local/secrets:/var/run/secrets/axiz:ro
+  payment-network-gateway:
+    image: axiz/payment-network-gateway:local
+    profiles:
+    - apps
+    restart: on-failure
+    # los archivos de secretos de local/secrets son privados del usuario que ejecuta la demo
+    user: ${AXIZ_UID:-1000}:${AXIZ_GID:-1000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-topics:
+        condition: service_completed_successfully
+      valkey:
+        condition: service_started
+      localstack:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      wiremock:
+        condition: service_started
+      otel-lgtm:
+        condition: service_started
+    ports:
+    - 127.0.0.1:8087:8087
+    environment:
+      SPRING_PROFILES_ACTIVE: local,platform
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_REGION: us-east-1
+      SPRING_APPLICATION_JSON: '{"axiz.config.environment":"local","axiz.transport.allow-plain-http":true,"axiz.transport.allow-insecure-data-stores":true,"spring.data.redis.ssl.enabled":false,"management.opentelemetry.tracing.export.otlp.endpoint":"http://otel-lgtm:4318/v1/traces","management.otlp.metrics.export.url":"http://otel-lgtm:4318/v1/metrics","axiz.security.issuers":[{"issuer":"http://localhost:8180/realms/axiz","jwk-set-uri":"http://keycloak.axiz-demo.svc.cluster.local:8080/realms/axiz/protocol/openid-connect/certs","audiences":["local-services"]}],"axiz.aws.endpoint":"http://localstack:4566","axiz.aws.region":"us-east-1","spring.data.redis.url":"redis://valkey:6379","axiz.audit.sqs.queue-url":"http://localstack:4566/000000000000/axiz-demo-audit","axiz.http-client.clients":{"payment-network":{"base-url":"http://wiremock:8080","auth":{"type":"API_KEY","api-key-header":"X-Api-Key","api-key-ref":"payment-network-api-key"}}},"axiz.secrets.directory":"/var/run/secrets/axiz"}'
+    volumes:
+    - ../services/payment-network-gateway/local/secrets:/var/run/secrets/axiz:ro

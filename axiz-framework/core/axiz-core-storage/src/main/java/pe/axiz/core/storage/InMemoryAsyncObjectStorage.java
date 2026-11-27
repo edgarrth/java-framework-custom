@@ -19,9 +19,12 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 
-/** Native in-memory implementation for local/test use, with a bounded upload size per object. */
+/**
+ * Implementación nativa en memoria para uso local o de prueba, con un tamaño de subida acotado por
+ * objeto.
+ */
 public final class InMemoryAsyncObjectStorage implements AsyncObjectStorage {
   private final ConcurrentSkipListMap<String, Entry> objects = new ConcurrentSkipListMap<>();
   private final int maximumObjectBytes;

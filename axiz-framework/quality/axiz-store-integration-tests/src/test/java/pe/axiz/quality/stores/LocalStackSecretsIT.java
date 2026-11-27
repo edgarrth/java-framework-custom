@@ -29,17 +29,18 @@ import org.junit.jupiter.api.io.TempDir;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.testcontainers.localstack.LocalStackContainer;
-import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
 import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.core.observability.AxizAttributes;
 import pe.axiz.core.secrets.SecretNotFoundException;
+import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.secrets.AxizSecretsAutoConfiguration;
-import pe.axiz.spring.secrets.AxizSecretsAwsAutoConfiguration;
-import pe.axiz.spring.secrets.AxizSecretsNativeAwsAutoConfiguration;
 import pe.axiz.spring.secrets.ReactiveSecrets;
+import pe.axiz.spring.secrets.aws.AxizSecretsAwsAutoConfiguration;
+import pe.axiz.spring.secrets.aws.AxizSecretsNativeAwsAutoConfiguration;
+import pe.axiz.spring.secrets.file.AxizSecretsFileAutoConfiguration;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -57,13 +58,13 @@ import software.amazon.awssdk.services.ssm.SsmClient;
 import software.amazon.awssdk.services.ssm.model.ParameterType;
 
 /**
- * Native secret lookup through the actual Spring chain, with cold I/O and non-noop observations.
+ * Búsqueda nativa de secretos mediante la cadena real de Spring, con E/S en frío y observaciones
+ * distintas de noop.
  */
 @ExtendWith(BlockHoundExtension.class)
 class LocalStackSecretsIT {
   private static final LocalStackContainer LOCALSTACK =
-      new LocalStackContainer(DockerImageName.parse(Docker.LOCALSTACK))
-          .withServices("secretsmanager", "ssm");
+      TestContainerImages.localstack().withServices("secretsmanager", "ssm");
   private static final ObservationRegistry OBSERVATIONS = ObservationRegistry.create();
   private static final AtomicInteger MANAGER_GETS = new AtomicInteger();
   private static final AtomicInteger PARAMETER_GETS = new AtomicInteger();
@@ -195,6 +196,7 @@ class LocalStackSecretsIT {
             AutoConfigurations.of(
                 AxizSecretsAwsAutoConfiguration.class,
                 AxizSecretsNativeAwsAutoConfiguration.class,
+                AxizSecretsFileAutoConfiguration.class,
                 AxizSecretsAutoConfiguration.class))
         .withPropertyValues(
             "axiz.secrets.directory=" + directory,

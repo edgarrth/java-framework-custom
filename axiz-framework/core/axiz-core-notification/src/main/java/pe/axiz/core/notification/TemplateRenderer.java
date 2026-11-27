@@ -5,8 +5,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Renders {@code {{name}}} placeholders. Email (HTML) values are escaped; missing parameters fail
- * instead of sending a broken message.
+ * Genera los marcadores {@code {{name}}}. Los valores de email (HTML) se escapan; los parámetros
+ * faltantes fallan en lugar de enviar un mensaje roto.
  */
 public final class TemplateRenderer {
 

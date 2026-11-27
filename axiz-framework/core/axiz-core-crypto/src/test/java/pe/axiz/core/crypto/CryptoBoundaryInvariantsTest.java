@@ -52,10 +52,11 @@ class CryptoBoundaryInvariantsTest {
     byte[] signature = Rsa.sign(rsa.getPrivate(), data);
     assertTrue(Rsa.verify(rsa.getPublic(), data, signature));
     assertFalse(Rsa.verify(rsa.getPublic(), "other".getBytes(StandardCharsets.UTF_8), signature));
-    assertThrows(CryptoException.class, () -> new BlindIndex(key, 7));
-    assertThrows(CryptoException.class, () -> new BlindIndex(key, 33));
-    assertNotNull(new BlindIndex(key, 8).index("value", "purpose:test"));
-    assertNotNull(new BlindIndex(key, 32).index("value", "purpose:test"));
+    assertThrows(CryptoException.class, () -> new BlindIndex(Map.of(), "i1"));
+    assertThrows(CryptoException.class, () -> new BlindIndex(Map.of("i1", new byte[31]), "i1"));
+    assertNotNull(
+        new BlindIndex(Map.of("i1", key), "i1")
+            .index("value", new IndexScope("search", "DNI", "tenant", "domain", "identity", 1)));
   }
 
   @Test
@@ -63,21 +64,22 @@ class CryptoBoundaryInvariantsTest {
     byte[] key = AesGcm.newKey().getEncoded();
     for (int length : new int[] {1, 65535}) {
       byte[] encryptedKey = new byte[length];
-      byte[] envelope = EnvelopePayload.seal(new byte[0], key, encryptedKey, "purpose:test");
+      byte[] envelope =
+          EnvelopePayload.seal(new byte[0], key.clone(), encryptedKey, "purpose:test");
       var parsed = EnvelopePayload.parse(envelope);
       assertEquals(length, parsed.encryptedKey().length);
-      assertEquals(0, parsed.open(key, "purpose:test").length);
-      assertThrows(CryptoException.class, () -> parsed.open(key, "purpose:other"));
+      assertEquals(0, parsed.open(key.clone(), "purpose:test").length);
+      assertThrows(CryptoException.class, () -> parsed.open(key.clone(), "purpose:other"));
       assertThrows(
           CryptoException.class,
           () -> EnvelopePayload.parse(Arrays.copyOf(envelope, envelope.length - 1)));
     }
     assertThrows(
         CryptoException.class,
-        () -> EnvelopePayload.seal(new byte[0], key, new byte[0], "purpose:test"));
+        () -> EnvelopePayload.seal(new byte[0], key.clone(), new byte[0], "purpose:test"));
     assertThrows(
         CryptoException.class,
-        () -> EnvelopePayload.seal(new byte[0], key, new byte[65536], "purpose:test"));
+        () -> EnvelopePayload.seal(new byte[0], key.clone(), new byte[65536], "purpose:test"));
     EnvelopePayload.validatePolicy(Duration.ofSeconds(1), 1);
     assertThrows(
         IllegalArgumentException.class, () -> EnvelopePayload.validatePolicy(Duration.ZERO, 1));

@@ -16,8 +16,11 @@ import pe.axiz.codegen.openapi.SafeYaml;
 import pe.axiz.codegen.output.SafePaths;
 import pe.axiz.codegen.project.ProjectLayout;
 import pe.axiz.codegen.project.ProjectManifest;
+import pe.axiz.core.json.JsonWriter;
 
-/** Safely updates current workflow bindings when a service is renamed. */
+/**
+ * Actualiza de forma segura los bindings vigentes de los workflows cuando se renombra un servicio.
+ */
 final class WorkflowBindings {
   private WorkflowBindings() {}
 
@@ -40,7 +43,6 @@ final class WorkflowBindings {
     result.put("service", manifest.name());
     result.put("module", module.isEmpty() ? "." : module);
     result.put("pom", root.relativize(layout.pom()).toString().replace('\\', '/'));
-    result.put("SOURCE_POM", result.get("pom"));
     if (layout.charts().size() == 1)
       result.put(
           "chart", root.relativize(layout.charts().getFirst()).toString().replace('\\', '/'));
@@ -77,8 +79,9 @@ final class WorkflowBindings {
           proposed =
               binding.matcher(proposed).replaceAll("$1$2" + values.get(value.getKey()) + "$2");
         }
-        // Preserve comments and the custom graph. A flow-style or unrelated same-name field
-        // requires manual review rather than an unverified textual replacement.
+        // Se preservan los comentarios y el grafo personalizado. Un campo en estilo flow o un campo
+        // no relacionado con el mismo nombre requiere revisión manual en lugar de un reemplazo
+        // textual sin verificar.
         if (!yaml(proposed).equals(expected)) return false;
         edits.put(relative, proposed.getBytes(StandardCharsets.UTF_8));
       }
@@ -131,9 +134,13 @@ final class WorkflowBindings {
           && (ref.startsWith(
                   "edgarrth/java-framework-custom/.github/workflows/service-build.yaml@axiz-workflows-v2.")
               || ref.startsWith(
-                  "edgarrth/java-framework-custom/.github/actions/resolve-service-build@axiz-workflows-v2."))
+                  "edgarrth/java-framework-custom/.github/workflows/service-deploy.yaml@axiz-workflows-v2."))
           && map.get("with") instanceof Map<?, ?> parameters) {
+        // service-deploy solo recibe el nombre del servicio: imagen, chart y versión son salidas
+        // del build o valores derivados del nombre, no rutas del proyecto.
+        boolean deploy = ref.contains("/service-deploy.yaml@");
         for (var value : values.entrySet()) {
+          if (deploy && !"service".equals(value.getKey())) continue;
           Object old = parameters.get(value.getKey());
           if (old instanceof String oldValue && !oldValue.equals(value.getValue())) {
             String conflict = previous.putIfAbsent(value.getKey(), oldValue);
@@ -143,14 +150,6 @@ final class WorkflowBindings {
             changed = true;
           }
         }
-      }
-      if ("version".equals(map.get("id"))
-          && map.get("env") instanceof Map<?, ?> env
-          && env.get("SOURCE_POM") instanceof String old
-          && !old.equals(values.get("SOURCE_POM"))) {
-        previous.put("SOURCE_POM", old);
-        ((Map<Object, Object>) env).put("SOURCE_POM", values.get("SOURCE_POM"));
-        changed = true;
       }
       for (Object value : map.values()) changed |= alignBindings(value, values, previous);
     } else if (node instanceof List<?> list) {

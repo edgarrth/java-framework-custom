@@ -115,7 +115,9 @@ class SecurityTest {
     assertEquals(
         ISSUER,
         AxizSecurityAutoConfiguration.issuerPolicy(
-                List.of(new AxizSecurityProperties.Issuer(ISSUER, null, List.of("payments-api"))))
+                List.of(
+                    new AxizSecurityProperties.Issuer(
+                        ISSUER, null, List.of("payments-api"), JwtAccessProfile.COMPATIBLE)))
             .find(ISSUER)
             .orElseThrow()
             .issuer());

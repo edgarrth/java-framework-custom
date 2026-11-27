@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Aggregator only (generated list of modules); it is never deployed. -->
+<!-- Solo agregador (lista de módulos generada); nunca se despliega. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
@@ -21,6 +21,10 @@
   </properties>
 
   <modules>
+    <module>axiz-saga-jdbc-spring-boot-starter</module>
+    <module>axiz-saga-jdbc-spring-boot-autoconfigure</module>
+    <module>axiz-tokenization-spring-boot-autoconfigure</module>
+    <module>axiz-tokenization-spring-boot-starter</module>
     <module>axiz-kafka-spring-boot-autoconfigure</module>
     <module>axiz-redis-spring-boot-autoconfigure</module>
     <module>axiz-jdbc-spring-boot-autoconfigure</module>
@@ -89,5 +93,74 @@
     <module>axiz-test-spring-boot-starter</module>
     <module>axiz-web-spring-boot-autoconfigure</module>
     <module>axiz-web-spring-boot-starter</module>
+    <module>axiz-aws-spring-boot-autoconfigure</module>
+    <module>axiz-cache-redis-spring-boot-autoconfigure</module>
+    <module>axiz-cache-redis-spring-boot-starter</module>
+    <module>axiz-lock-redis-spring-boot-autoconfigure</module>
+    <module>axiz-lock-redis-spring-boot-starter</module>
+    <module>axiz-lock-dynamodb-spring-boot-autoconfigure</module>
+    <module>axiz-lock-dynamodb-spring-boot-starter</module>
+    <module>axiz-idempotency-redis-spring-boot-autoconfigure</module>
+    <module>axiz-idempotency-redis-spring-boot-starter</module>
+    <module>axiz-idempotency-dynamodb-spring-boot-autoconfigure</module>
+    <module>axiz-idempotency-dynamodb-spring-boot-starter</module>
+    <module>axiz-crypto-kms-spring-boot-autoconfigure</module>
+    <module>axiz-crypto-kms-spring-boot-starter</module>
+    <module>axiz-security-redis-spring-boot-autoconfigure</module>
+    <module>axiz-security-redis-spring-boot-starter</module>
+    <module>axiz-storage-s3-spring-boot-autoconfigure</module>
+    <module>axiz-storage-s3-spring-boot-starter</module>
+    <module>axiz-secrets-aws-spring-boot-autoconfigure</module>
+    <module>axiz-secrets-aws-spring-boot-starter</module>
+    <module>axiz-secrets-file-spring-boot-autoconfigure</module>
+    <module>axiz-secrets-file-spring-boot-starter</module>
+    <module>axiz-messaging-kafka-spring-boot-autoconfigure</module>
+    <module>axiz-messaging-kafka-spring-boot-starter</module>
+    <module>axiz-messaging-sqs-spring-boot-autoconfigure</module>
+    <module>axiz-messaging-sqs-spring-boot-starter</module>
+    <module>axiz-messaging-sns-spring-boot-autoconfigure</module>
+    <module>axiz-messaging-sns-spring-boot-starter</module>
+    <module>axiz-messaging-msk-spring-boot-autoconfigure</module>
+    <module>axiz-messaging-msk-spring-boot-starter</module>
+    <module>axiz-audit-kafka-spring-boot-autoconfigure</module>
+    <module>axiz-audit-kafka-spring-boot-starter</module>
+    <module>axiz-audit-sqs-spring-boot-autoconfigure</module>
+    <module>axiz-audit-sqs-spring-boot-starter</module>
+    <module>axiz-config-aws-spring-boot-autoconfigure</module>
+    <module>axiz-config-aws-spring-boot-starter</module>
+    <module>axiz-outbox-jdbc-spring-boot-autoconfigure</module>
+    <module>axiz-outbox-jdbc-spring-boot-starter</module>
+    <module>axiz-outbox-r2dbc-spring-boot-autoconfigure</module>
+    <module>axiz-outbox-r2dbc-spring-boot-starter</module>
+    <module>axiz-inbox-jdbc-spring-boot-autoconfigure</module>
+    <module>axiz-inbox-jdbc-spring-boot-starter</module>
+    <module>axiz-inbox-r2dbc-spring-boot-autoconfigure</module>
+    <module>axiz-inbox-r2dbc-spring-boot-starter</module>
+    <module>axiz-inbox-dynamodb-spring-boot-autoconfigure</module>
+    <module>axiz-inbox-dynamodb-spring-boot-starter</module>
+    <module>axiz-sequence-jdbc-spring-boot-autoconfigure</module>
+    <module>axiz-sequence-jdbc-spring-boot-starter</module>
+    <module>axiz-sequence-r2dbc-spring-boot-autoconfigure</module>
+    <module>axiz-sequence-r2dbc-spring-boot-starter</module>
+    <module>axiz-sequence-dynamodb-spring-boot-autoconfigure</module>
+    <module>axiz-sequence-dynamodb-spring-boot-starter</module>
+    <module>axiz-scheduling-jdbc-spring-boot-autoconfigure</module>
+    <module>axiz-scheduling-jdbc-spring-boot-starter</module>
+    <module>axiz-scheduling-r2dbc-spring-boot-autoconfigure</module>
+    <module>axiz-scheduling-r2dbc-spring-boot-starter</module>
+    <module>axiz-scheduling-dynamodb-spring-boot-autoconfigure</module>
+    <module>axiz-scheduling-dynamodb-spring-boot-starter</module>
+    <module>axiz-jpa-aws-spring-boot-autoconfigure</module>
+    <module>axiz-jpa-aws-spring-boot-starter</module>
+    <module>axiz-r2dbc-aws-spring-boot-autoconfigure</module>
+    <module>axiz-r2dbc-aws-spring-boot-starter</module>
+    <module>axiz-tokenization-vault-spring-boot-autoconfigure</module>
+    <module>axiz-tokenization-vault-spring-boot-starter</module>
+    <module>axiz-tokenization-vault-dynamodb-spring-boot-autoconfigure</module>
+    <module>axiz-tokenization-vault-dynamodb-spring-boot-starter</module>
+    <module>axiz-tokenization-pan-spring-boot-autoconfigure</module>
+    <module>axiz-tokenization-pan-spring-boot-starter</module>
+    <module>axiz-tokenization-vault-redis-spring-boot-autoconfigure</module>
+    <module>axiz-tokenization-vault-redis-spring-boot-starter</module>
   </modules>
 </project>

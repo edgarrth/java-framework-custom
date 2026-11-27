@@ -8,11 +8,11 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
+import pe.axiz.core.idempotency.AsyncIdempotencyCas;
 import pe.axiz.core.idempotency.AsyncIdempotencyStore;
 import pe.axiz.core.idempotency.IdempotencyRecord;
 import pe.axiz.core.idempotency.StoredResponse;
@@ -24,8 +24,8 @@ import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
 /**
- * Native asynchronous DynamoDB idempotency, with the same durable records and fencing as {@link
- * DynamoDbIdempotencyStore}.
+ * Idempotencia asíncrona nativa sobre DynamoDB, con los mismos registros durables y el mismo
+ * fencing que {@link DynamoDbIdempotencyStore}.
  */
 public final class DynamoDbAsyncIdempotencyStore implements AsyncIdempotencyStore {
   @SuppressFBWarnings(
@@ -123,26 +123,21 @@ public final class DynamoDbAsyncIdempotencyStore implements AsyncIdempotencyStor
   }
 
   @Override
-  public CompletionStage<Boolean> complete(
-      String key, String owner, StoredResponse response, Instant expiresAt) {
-    return completeAttempt(key, owner, response, expiresAt, 0);
+  public CompletionStage<Boolean> renew(
+      String key, String owner, Instant leaseUntil, Instant retainUntil, Instant now) {
+    return AsyncIdempotencyCas.renew(this, key, owner, leaseUntil, retainUntil, clock);
   }
 
-  private CompletionStage<Boolean> completeAttempt(
-      String key, String owner, StoredResponse response, Instant expiresAt, int attempt) {
-    if (attempt >= 16) return CompletableFuture.completedFuture(false);
-    return Stages.compose(
-        find(key, clock.instant()),
-        current -> {
-          if (current.isEmpty() || !current.get().heldBy(owner))
-            return CompletableFuture.completedFuture(false);
-          return Stages.compose(
-              compareAndSet(current.get(), current.get().completed(response, expiresAt)),
-              changed ->
-                  changed
-                      ? CompletableFuture.completedFuture(true)
-                      : completeAttempt(key, owner, response, expiresAt, attempt + 1));
-        });
+  @Override
+  public CompletionStage<Boolean> markUnknown(
+      String key, String owner, String diagnostic, Instant now) {
+    return AsyncIdempotencyCas.markUnknown(this, key, owner, diagnostic, clock);
+  }
+
+  @Override
+  public CompletionStage<Boolean> complete(
+      String key, String owner, StoredResponse response, Instant expiresAt) {
+    return AsyncIdempotencyCas.complete(this, key, owner, response, expiresAt, clock);
   }
 
   @Override

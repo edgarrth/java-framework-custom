@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.money.Money;
-import pe.axiz.core.sensitive.ObjectMasker;
 import pe.axiz.core.soap.SafeXml;
 import pe.axiz.payments.bankingcore.domain.Movement;
 import pe.axiz.payments.bankingcore.domain.MovementOrder;
@@ -22,7 +21,7 @@ import pe.axiz.spring.soap.SoapClients;
 
 class CoreCreditGatewayTest {
 
-  /** SOAP clients that answer a fixed payload and record what was called. */
+  /** Clientes SOAP que responden un payload fijo y registran lo que se invocó. */
   static final class Answering extends SoapClients {
     final List<String> calls = new ArrayList<>();
     String response = "";
@@ -31,7 +30,6 @@ class CoreCreditGatewayTest {
       super(
           new AxizSoapProperties(Map.of()),
           null,
-          ObjectMasker.defaults(),
           ObservationRegistry.NOOP,
           Clock.systemUTC(),
           TransportSecurityPolicy.secure());

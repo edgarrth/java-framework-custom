@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- ArchUnit rules that services (and the framework) run in their tests. -->
+<!-- Reglas de ArchUnit que los servicios (y el framework) ejecutan en sus pruebas. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>pe.axiz</groupId>
-    <artifactId>axiz-parent-core</artifactId>
+    <artifactId>axiz-parent-test</artifactId>
     <version>${revision}</version>
-    <relativePath>../../platform/axiz-parent-core/pom.xml</relativePath>
+    <relativePath>../../platform/axiz-parent-test/pom.xml</relativePath>
   </parent>
 
   <artifactId>axiz-archunit-rules</artifactId>
@@ -22,21 +22,41 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-lang</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-messaging</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-tokenization</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-carddata</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-tokenization-vault</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-saga</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kit-jpa</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kit-dynamodb</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>dynamodb-enhanced</artifactId><scope>test</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-sensitive</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-commons</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>jakarta.persistence</groupId><artifactId>jakarta.persistence-api</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-autoconfigure</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>org.springframework</groupId><artifactId>spring-web</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>org.springframework</groupId><artifactId>spring-context</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>org.springframework</groupId><artifactId>spring-tx</artifactId><scope>test</scope></dependency>
+
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-notification</artifactId><version>${project.version}</version><scope>test</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-audit</artifactId><version>${project.version}</version><scope>test</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-http</artifactId><version>${project.version}</version><scope>test</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-crypto</artifactId><version>${project.version}</version><scope>test</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-secrets</artifactId><version>${project.version}</version><scope>test</scope></dependency>
-    <!-- compile scope on purpose: this artifact is itself only used in test scope by services -->
+    <!-- scope compile a propósito: los servicios usan este artefacto solo en el scope test -->
     <dependency>
       <groupId>com.tngtech.archunit</groupId>
       <artifactId>archunit</artifactId>
     </dependency>
-    <!-- sample code for the reactive rules (blocking calls, global hooks) -->
+    <!-- código de ejemplo para las reglas reactivas (llamadas bloqueantes, hooks globales) -->
     <dependency>
       <groupId>io.projectreactor</groupId>
       <artifactId>reactor-core</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
+<build><plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-enforcer-plugin</artifactId><executions><execution><id>axiz-core-layer-rules</id><configuration><rules><bannedDependencies><includes combine.children="append"><include>org.springframework:*:*:*:test</include><include>org.springframework.boot:*:*:*:test</include></includes></bannedDependencies></rules></configuration></execution></executions></plugin></plugins></build>
 </project>

@@ -36,6 +36,10 @@ config:
             api-key-header: X-Api-Key
             api-key-ref: payment-network-api-key
     audit:
+      integrity:
+        mode: HMAC
+        hmac-secret: audit-hmac-key
+        hmac-key-id: v1
       sqs:
         queue-url: https://sqs.us-east-1.amazonaws.com/111111111111/axiz-demo-audit-dev
   spring:

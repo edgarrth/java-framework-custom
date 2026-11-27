@@ -1,4 +1,4 @@
-/** Commands and their handlers (write side). */
+/** Comandos y sus handlers (lado de escritura). */
 @NullMarked
 package pe.axiz.payments.history.application.command;
 

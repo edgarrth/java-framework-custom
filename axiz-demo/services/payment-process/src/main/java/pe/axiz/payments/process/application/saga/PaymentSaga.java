@@ -12,23 +12,23 @@ import pe.axiz.payments.process.application.port.out.PaymentOrders;
 import pe.axiz.payments.process.application.port.out.Transfers;
 
 /**
- * The payment saga.
+ * La saga de pago.
  *
  * <ol>
- *   <li>{@code processing}: the order moves to PROCESSING; undo: the order is REJECTED.
- *   <li>{@code debit}: the debtor account is debited; undo: the debit is reversed.
- *   <li>{@code transfer}: the transfer is sent. This is the pivot: once the network accepts it
- *       nothing is undone.
- *   <li>{@code complete}: the order moves to COMPLETED. It never fails the saga (the money already
- *       moved): if payment-orders cannot be reached the context is marked {@code completionPending}
- *       and the settlement reconciliation completes the order.
+ *   <li>{@code processing}: la orden pasa a PROCESSING; deshacer: la orden queda REJECTED.
+ *   <li>{@code debit}: se debita la cuenta deudora; deshacer: se revierte el débito.
+ *   <li>{@code transfer}: se envía la transferencia. Es el pivote: una vez que la red la acepta, no
+ *       se deshace nada.
+ *   <li>{@code complete}: la orden pasa a COMPLETED. Nunca hace fallar la saga (el dinero ya se
+ *       movió): si payment-orders no está accesible, el contexto se marca con {@code
+ *       completionPending} y la conciliación de liquidación completa la orden.
  * </ol>
  *
- * <p>Every downstream call uses a key derived from the order and the step, so retries and resumed
- * sagas never repeat an effect. A step that fails without a definite rejection is verified (the
- * same call with the same key) before anything is undone: a debit confirmed after a timeout is
- * never left in place under a "rejected" order, and a transfer whose answer was lost never leads to
- * reversing the debit.
+ * <p>Cada llamada aguas abajo usa una clave derivada de la orden y del paso, por lo que los
+ * reintentos y las sagas reanudadas nunca repiten un efecto. Un paso que falla sin un rechazo
+ * definitivo se verifica (la misma llamada con la misma clave) previo a deshacer cualquier cosa: un
+ * débito confirmado tras un timeout nunca queda vigente bajo una orden "rechazada", y una
+ * transferencia cuya respuesta se perdió nunca provoca la reversión del débito.
  */
 public final class PaymentSaga {
 
@@ -36,7 +36,7 @@ public final class PaymentSaga {
 
   public static final String NAME = "payment";
 
-  /** Reason sent to payment-orders when the payment is undone. */
+  /** Motivo que se envía a payment-orders cuando se deshace el pago. */
   static final String REJECTION_REASON = "payment could not be completed";
 
   private PaymentSaga() {}
@@ -81,9 +81,9 @@ public final class PaymentSaga {
                     return c;
                   } catch (RuntimeException e) {
                     LOG.error(
-                        "Order {} paid but not completed; settlement reconciliation will do it",
+                        "Order {} paid but not completed; settlement reconciliation will do it; failureType={}",
                         c.instruction().orderId(),
-                        e);
+                        e.getClass().getSimpleName());
                     return c.pendingCompletion();
                   }
                 },
@@ -91,24 +91,26 @@ public final class PaymentSaga {
                 _ -> {})));
   }
 
-  /** Step action. */
+  /** Acción del paso. */
   @FunctionalInterface
   interface Action {
     PaymentContext apply(PaymentContext context) throws Exception;
   }
 
-  /** Step compensation. */
+  /** Compensación del paso. */
   @FunctionalInterface
   interface Undo {
     void apply(PaymentContext context) throws Exception;
   }
 
   /**
-   * A step. With {@code verifiable}, an uncertain failure (timeout, 5xx, lost answer) is verified
-   * by repeating the call with the same idempotency key: every participant (payment-orders,
-   * banking-core and through it the core and the network) returns the first outcome for a key it
-   * already processed, and applies the request if it never arrived. A definite rejection means the
-   * effect does not exist; another failure leaves the process VERIFYING.
+   * Un paso. Con {@code verifiable}, una falla incierta (timeout, 5xx, respuesta perdida) se
+   * verifica repitiendo la llamada con la misma clave de idempotencia: cada participante
+   * (payment-orders, banking-core y, a través de este, el core y la red) devuelve el primer
+   * resultado para una clave que ya procesó y aplica la solicitud si nunca llegó. Un rechazo
+   * observado durante la verificación no prueba que una llamada previa en curso no pueda aplicarse
+   * nunca: sin un contrato durable de cancelación del participante, el estado sigue siendo
+   * IN_DOUBT.
    */
   static SagaStep<PaymentContext> step(String name, Action action, boolean verifiable, Undo undo) {
     return new SagaStep<>() {

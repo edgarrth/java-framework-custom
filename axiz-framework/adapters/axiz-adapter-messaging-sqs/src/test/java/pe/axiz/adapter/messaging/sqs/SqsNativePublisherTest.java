@@ -23,15 +23,16 @@ import software.amazon.awssdk.services.sqs.model.SqsException;
 
 class SqsNativePublisherTest {
   private static final EventEnvelope EVENT =
-      new EventEnvelope(
-          "id",
-          "urn:service",
-          "event.v1",
-          Instant.EPOCH,
-          null,
-          "application/json",
-          new byte[0],
-          Map.of());
+      EventEnvelope.builder()
+          .id("id")
+          .source("urn:service")
+          .type("event.v1")
+          .time(Instant.EPOCH)
+          .subject(null)
+          .dataContentType("application/json")
+          .data(new byte[0])
+          .extensions(Map.of())
+          .build();
 
   static final class Client implements SqsAsyncClient {
     CompletableFuture<SendMessageResponse> response = new CompletableFuture<>();

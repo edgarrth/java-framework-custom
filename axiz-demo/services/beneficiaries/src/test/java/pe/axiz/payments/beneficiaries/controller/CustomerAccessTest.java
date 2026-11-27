@@ -9,14 +9,23 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import pe.axiz.core.security.AxizPrincipal;
 
-/** A customer only manages their own beneficiaries; service tokens never do. */
+/** Un cliente solo gestiona sus propios beneficiarios; los tokens de servicio nunca lo hacen. */
 class CustomerAccessTest {
 
   final CustomerAccess access = new CustomerAccess();
 
   static TestingAuthenticationToken token(String subject, String client) {
     AxizPrincipal principal =
-        new AxizPrincipal(subject, client, "iss", List.of(), Set.of(), Set.of(), null, Map.of());
+        AxizPrincipal.builder()
+            .subject(subject)
+            .clientId(client)
+            .issuer("iss")
+            .audience(List.of())
+            .scopes(Set.of())
+            .roles(Set.of())
+            .tenantId(null)
+            .attributes(Map.of())
+            .build();
     return new TestingAuthenticationToken(principal, null, List.of());
   }
 

@@ -3,13 +3,16 @@ package pe.axiz.core.identifiers.banking;
 import java.util.List;
 import java.util.Map;
 import pe.axiz.core.identifiers.CheckDigits;
+import pe.axiz.core.identifiers.IdentifierMasks;
 import pe.axiz.core.identifiers.IdentifierType;
 import pe.axiz.core.identifiers.IdentifierTypeProvider;
 
-/** Banking identifiers: inter-bank account code (CCI), card number (PAN) and IBAN. */
+/**
+ * Identificadores bancarios: código de cuenta interbancario (CCI), número de tarjeta (PAN) e IBAN.
+ */
 public final class BankingIdentifiers implements IdentifierTypeProvider {
 
-  /** Inter-bank account code: 20 digits (bank 3, branch 3, account 12, control 2). */
+  /** Código de cuenta interbancario: 20 dígitos (banco 3, agencia 3, cuenta 12, control 2). */
   public static final IdentifierType CCI =
       new IdentifierType() {
         @Override
@@ -24,9 +27,9 @@ public final class BankingIdentifiers implements IdentifierTypeProvider {
       };
 
   /**
-   * Inter-bank account code with control digits verified: the first over bank and branch, the
-   * second over the account number (alternating 1-2 weights). Use it when the issuing banks of your
-   * ecosystem follow that scheme.
+   * Código de cuenta interbancario con dígitos de control verificados: el primero sobre banco y
+   * agencia, el segundo sobre el número de cuenta (pesos alternos 1-2). Se usa cuando los bancos
+   * emisores del ecosistema siguen ese esquema.
    */
   public static final IdentifierType CCI_STRICT =
       new IdentifierType() {
@@ -46,7 +49,7 @@ public final class BankingIdentifiers implements IdentifierTypeProvider {
         }
       };
 
-  /** Payment card number: 13 to 19 digits with Luhn check. */
+  /** Número de tarjeta de pago: 13 a 19 dígitos con verificación Luhn. */
   public static final IdentifierType CARD =
       new IdentifierType() {
         @Override
@@ -61,12 +64,11 @@ public final class BankingIdentifiers implements IdentifierTypeProvider {
 
         @Override
         public String mask(String v) {
-          // PCI DSS: at most first 6 and last 4 digits may be displayed
-          return v.substring(0, 6) + "*".repeat(v.length() - 10) + v.substring(v.length() - 4);
+          return IdentifierMasks.card(v);
         }
       };
 
-  /** International bank account number (ISO 13616) with MOD 97-10 check. */
+  /** Número de cuenta bancaria internacional (ISO 13616) con verificación MOD 97-10. */
   public static final IdentifierType IBAN =
       new IdentifierType() {
         @Override
@@ -120,9 +122,9 @@ public final class BankingIdentifiers implements IdentifierTypeProvider {
           Map.entry("SV", 28));
 
   /**
-   * Card schemes. Which one a card belongs to is decided by a {@link CardSchemeResolver}: in
-   * production an {@link IinRangeTable} loaded from the governed IIN/BIN table, never from ranges
-   * written in code.
+   * Marcas de tarjeta. A cuál pertenece una tarjeta lo decide un {@link CardSchemeResolver}: en
+   * producción, una {@link IinRangeTable} cargada desde la tabla IIN/BIN gobernada, nunca desde
+   * rangos escritos en código.
    */
   public enum CardBrand {
     VISA,
@@ -135,15 +137,16 @@ public final class BankingIdentifiers implements IdentifierTypeProvider {
     UNKNOWN;
 
     /**
-     * Best-effort guess from a few well-known leading digits, for display and telemetry only.
+     * Estimación de mejor esfuerzo a partir de unos pocos dígitos iniciales conocidos, solo para
+     * presentación y telemetría.
      *
-     * <p><strong>Not for routing, authorization, acceptance, pricing or fraud decisions</strong>:
-     * IIN ranges change, overlap, include co-branded and private ranges and are published by the
-     * schemes. Those decisions use a {@link CardSchemeResolver} backed by the governed table
-     * ({@link IinRangeTable}).
+     * <p><strong>No sirve para decisiones de enrutamiento, autorización, aceptación, precios ni
+     * fraude</strong>: los rangos IIN cambian, se superponen, incluyen rangos co-branded y privados
+     * y los publican las marcas. Esas decisiones usan un {@link CardSchemeResolver} respaldado por
+     * la tabla gobernada ({@link IinRangeTable}).
      *
-     * @param pan card number digits
-     * @return the guessed brand, {@link #UNKNOWN} when not recognized
+     * @param pan dígitos del número de tarjeta
+     * @return la marca estimada, {@link #UNKNOWN} cuando no se reconoce
      */
     public static CardBrand guess(String pan) {
       if (pan.length() < 6 || !CheckDigits.allDigits(pan.substring(0, 6))) {
@@ -177,7 +180,10 @@ public final class BankingIdentifiers implements IdentifierTypeProvider {
     }
   }
 
-  /** Bank identification number (first 8 digits for 16+ digit cards, otherwise 6). */
+  /**
+   * Número de identificación bancaria (los primeros 8 dígitos para tarjetas de 16 o más dígitos; en
+   * otro caso, 6).
+   */
   public static String bin(String pan) {
     return pan.length() >= 16 ? pan.substring(0, 8) : pan.substring(0, 6);
   }

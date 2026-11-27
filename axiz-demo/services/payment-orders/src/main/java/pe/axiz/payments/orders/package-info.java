@@ -1,6 +1,6 @@
 /**
- * Payment Orders: Owner of payment orders. Archetype business, hexagonal structure with CQRS
- * extension, servlet stack. Types are non-null unless annotated {@code @Nullable}.
+ * Payment Orders: propietario de las órdenes de pago. Arquetipo business, estructura hexagonal con
+ * extensión CQRS, stack servlet. Los tipos no son nulos salvo que se anoten con {@code @Nullable}.
  */
 @NullMarked
 package pe.axiz.payments.orders;

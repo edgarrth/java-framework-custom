@@ -20,13 +20,13 @@ import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.testcontainers.postgresql.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.inbox.jdbc.JdbcInboxStore;
 import pe.axiz.adapter.inbox.r2dbc.R2dbcInboxStore;
 import pe.axiz.adapter.inbox.r2dbc.R2dbcReactiveInboxStore;
 import pe.axiz.core.inbox.InboxStore.Acquisition.Status;
 import pe.axiz.kit.jdbc.JdbcTransactions;
 import pe.axiz.kit.r2dbc.R2dbcSql;
+import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.test.BlockHoundExtension;
 import pe.axiz.test.contracts.AsyncInboxStoreContract;
@@ -36,14 +36,14 @@ import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
 /**
- * Inbox contract on PostgreSQL (Aurora) through JDBC and R2DBC: row locks, conditional updates,
- * timestamps and the shipped DDL.
+ * Contrato de inbox sobre PostgreSQL (Aurora) mediante JDBC y R2DBC: locks de fila, actualizaciones
+ * condicionales, marcas de tiempo y el DDL incluido.
  */
 @ExtendWith(BlockHoundExtension.class)
 class PostgresInboxStoresIT {
 
   private static final PostgreSQLContainer POSTGRES =
-      new PostgreSQLContainer(DockerImageName.parse(Docker.POSTGRES))
+      TestContainerImages.postgres()
           .withDatabaseName("app")
           .withUsername("app")
           .withPassword("local-only");

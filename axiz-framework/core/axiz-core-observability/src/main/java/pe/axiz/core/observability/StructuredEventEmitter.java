@@ -1,6 +1,9 @@
 package pe.axiz.core.observability;
 
-/** Port to emit structured events; the observability starter logs them and adds span events. */
+/**
+ * Puerto para emitir eventos estructurados; el starter de observabilidad los registra en log y
+ * agrega eventos al span.
+ */
 @FunctionalInterface
 public interface StructuredEventEmitter {
 

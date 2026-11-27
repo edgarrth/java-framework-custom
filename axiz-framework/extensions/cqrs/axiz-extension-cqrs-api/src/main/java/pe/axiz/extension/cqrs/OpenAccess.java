@@ -7,16 +7,19 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Explicit, reviewed decision that this request needs no authority and no {@link AccessPolicy}: for
- * example a command only sent by an event consumer and never exposed over HTTP, or a public catalog
- * query. Without it (or one of those), the request is reported at startup as unprotected, and the
- * application fails to start when {@code axiz.cqrs.authorization.unprotected=fail}.
+ * Decisión explícita y revisada de que esta petición no necesita ninguna autoridad ni {@link
+ * AccessPolicy}: por ejemplo, un comando que solo envía un consumidor de eventos y que nunca se
+ * expone por HTTP, o una consulta de catálogo público. Sin ella (o sin una de esas), la petición se
+ * informa al arrancar como no protegida, y la aplicación no arranca cuando {@code
+ * axiz.cqrs.authorization.unprotected=fail}.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface OpenAccess {
 
-  /** Why no check is needed (reviewed like any security decision). */
+  /**
+   * Por qué no se necesita ninguna verificación (se revisa como cualquier decisión de seguridad).
+   */
   String reason();
 }

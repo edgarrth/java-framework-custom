@@ -5,8 +5,8 @@ import pe.axiz.payments.orders.application.port.out.OperationNumbers;
 import pe.axiz.spring.sequence.Sequences;
 
 /**
- * Operation numbers from the {@code operation} sequence (prefix, daily reset and width configured
- * in {@code axiz.sequence.sequences.operation}).
+ * Números de operación a partir de la secuencia {@code operation} (prefijo, reinicio diario y ancho
+ * configurados en {@code axiz.sequence.sequences.operation}).
  */
 @Component
 public class OperationNumberAdapter implements OperationNumbers {

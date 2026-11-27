@@ -6,7 +6,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/** Allow-list of trusted issuers. Tokens from any other issuer are rejected before validation. */
+/**
+ * Lista de emisores confiables permitidos. Los tokens de cualquier otro emisor se rechazan antes de
+ * la validación.
+ */
 public final class IssuerPolicy {
 
   private final Map<String, TrustedIssuer> issuers;
@@ -36,7 +39,7 @@ public final class IssuerPolicy {
     return List.copyOf(issuers.values());
   }
 
-  /** Whether at least one token audience is accepted for the issuer. */
+  /** Indica si al menos una audiencia del token se acepta para el emisor. */
   public boolean audienceAccepted(String issuer, List<String> tokenAudiences) {
     return find(issuer)
         .map(t -> tokenAudiences.stream().anyMatch(t.audiences()::contains))

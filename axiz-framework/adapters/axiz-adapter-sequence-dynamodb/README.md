@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-adapter-sequence-dynamodb
 
-Sequence store on a DynamoDB atomic counter.
+Almacén de secuencias sobre un contador atómico de DynamoDB.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,14 +12,14 @@ Sequence store on a DynamoDB atomic counter.
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `DynamoDbSequenceStore` | Atomic counter on DynamoDB (`ADD value :inc` with `UPDATED_NEW`). |
+| `DynamoDbSequenceStore` | Contador atómico sobre DynamoDB (`ADD value :inc` con `UPDATED_NEW`). |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl adapters/axiz-adapter-sequence-dynamodb verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl adapters/axiz-adapter-sequence-dynamodb verify`.

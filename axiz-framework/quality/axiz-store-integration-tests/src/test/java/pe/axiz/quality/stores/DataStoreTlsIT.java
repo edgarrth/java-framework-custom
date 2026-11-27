@@ -30,11 +30,11 @@ import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.r2dbc.core.DatabaseClient;
-import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import pe.axiz.core.commons.net.DataTransportSecurityPolicy;
-import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
+import pe.axiz.quality.containers.TestContainerImages;
+import pe.axiz.spring.aws.AxizAwsIdentityAutoConfiguration;
 import pe.axiz.spring.jdbc.AxizJdbcTransportAutoConfiguration;
 import pe.axiz.spring.r2dbc.AxizR2dbcAutoConfiguration;
 import pe.axiz.spring.r2dbc.AxizR2dbcTransportAutoConfiguration;
@@ -43,7 +43,10 @@ import pe.axiz.spring.r2dbc.ReaderDatabase;
 import pe.axiz.spring.redis.AxizRedisTransportAutoConfiguration;
 import pe.axiz.spring.test.BlockHoundExtension;
 
-/** Real TLS handshakes, including certificate and hostname rejection, for managed data clients. */
+/**
+ * Handshakes TLS reales, incluido el rechazo por certificado y por nombre de host, para los
+ * clientes de datos administrados.
+ */
 @Timeout(180)
 @ExtendWith(BlockHoundExtension.class)
 class DataStoreTlsIT {
@@ -60,13 +63,13 @@ class DataStoreTlsIT {
   }
 
   private PostgreSQLContainer postgres() throws Exception {
-    var postgres = material.copyTo(new PostgreSQLContainer(Docker.POSTGRES));
+    var postgres = material.copyTo(TestContainerImages.postgres());
     postgres.withCommand(
         "sh",
         "-c",
-        "chown postgres:postgres /tmp/axiz-server.key && chmod 600 /tmp/axiz-server.key"
+        "umask 077 && cp /tmp/axiz-server.key /tmp/axiz-owned-server.key"
             + " && exec docker-entrypoint.sh postgres -c ssl=on"
-            + " -c ssl_cert_file=/tmp/axiz-server.crt -c ssl_key_file=/tmp/axiz-server.key");
+            + " -c ssl_cert_file=/tmp/axiz-server.crt -c ssl_key_file=/tmp/axiz-owned-server.key");
     return postgres;
   }
 
@@ -153,7 +156,7 @@ class DataStoreTlsIT {
         var writer = ConnectionFactoryBuilder.withOptions(options.mutate()).build();
         R2dbcTransportSecurity.validate(writer, PRODUCTION);
         assertQuery(DatabaseClient.create(writer), proof.valid());
-        // The reader must go through the real Axiz builder, its pool and its final decorators.
+        // El lector debe pasar por el builder real de Axiz, su pool y sus decoradores finales.
         new ApplicationContextRunner()
             .withConfiguration(
                 AutoConfigurations.of(
@@ -196,7 +199,7 @@ class DataStoreTlsIT {
   void lettuceUsesTlsAndRejectsUntrustedCertificatesAndWrongHosts() throws Exception {
     try (var redis =
         material
-            .copyTo(new GenericContainer<>(Docker.VALKEY))
+            .copyTo(TestContainerImages.valkey())
             .withExposedPorts(6379)
             .withCommand(
                 "valkey-server",

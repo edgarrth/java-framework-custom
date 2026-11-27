@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-structure-hexagonal-api
 
-Hexagonal style: use cases, ports and adapters, transaction per use case and domain events on commit (contracts, plain Java).
+Estilo hexagonal: casos de uso, puertos y adaptadores, transacción por caso de uso y eventos de dominio al confirmar (contratos, Java simple).
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,23 +12,33 @@ Hexagonal style: use cases, ports and adapters, transaction per use case and dom
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `AggregateEvent` | A domain event that names its aggregate type, used for routing and partitioning. |
-| `DomainEventSink` | Where domain events go when a use case finishes. |
-| `DomainEvents` | Collects the domain events raised during the current use case. |
-| `UseCase` | An application use case (inbound port implementation). |
-| `UseCaseRunner` | Runs a use case: one transaction, domain events collected while it runs and handed to the sink inside the transaction (outbox) or after commit (direct publication). |
-| `UseCaseTransaction` | Runs work in a transaction (implemented by the Spring starter with a transaction template). |
-| `Adapter` | Marks an adapter: it implements an outbound port or drives an inbound port. |
-| `InboundPort` | Marks an interface through which adapters drive the application. |
-| `OutboundPort` | Marks an interface the application needs from the outside (repository, client, publisher). |
-| `UseCase` | Marks a use case implementation. |
+| `AggregateEvent` | Evento de dominio que nombra su tipo de agregado; se usa para enrutar y particionar. |
+| `DomainEventSink` | Destino de los eventos de dominio cuando termina un caso de uso. |
+| `DomainEvents` | Recoge los eventos de dominio generados durante el caso de uso actual. |
+| `UseCase` | Caso de uso de aplicación (implementación de un puerto de entrada). |
+| `UseCaseRunner` | Ejecuta un caso de uso: una transacción, con los eventos de dominio recogidos durante la ejecución y entregados al destino dentro de la transacción (outbox) o después del commit (publicación directa). |
+| `UseCaseTransaction` | Ejecuta trabajo en una transacción (lo implementa el starter de Spring con una plantilla de transacción). |
+| `Adapter` | Marca un adaptador: implementa un puerto de salida o invoca un puerto de entrada. |
+| `InboundPort` | Marca una interfaz mediante la cual los adaptadores invocan la aplicación. |
+| `OutboundPort` | Marca una interfaz que la aplicación necesita del exterior (repositorio, cliente, publicador). |
+| `UseCase` | Marca la implementación de un caso de uso. |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl structures/hexagonal/axiz-structure-hexagonal-api verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl structures/hexagonal/axiz-structure-hexagonal-api verify`.
+
+## Fallo después del commit
+
+Con un destino de eventos directo y no transaccional, la entrega puede fallar después de que la
+transacción de negocio hizo commit. El runner emite un ERROR operativo que contiene solo la cantidad
+de eventos y la clase del fallo, y luego lanza `PostCommitPublicationException`
+(`CommittedTransactionOutcome`, código `AXZ-CORE-0410`). El sufijo numérico es un identificador del
+catálogo, no HTTP 410. La operación de negocio nunca se repite para reparar este error. La entrega
+directa no tiene garantía de durabilidad; se selecciona el destino del outbox transaccional cuando se
+requieren entrega eventual y conciliación por parte del operador.

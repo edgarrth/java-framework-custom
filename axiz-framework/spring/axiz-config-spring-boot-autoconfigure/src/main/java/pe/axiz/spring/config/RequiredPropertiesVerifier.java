@@ -7,8 +7,8 @@ import org.springframework.core.env.Environment;
 import org.springframework.util.StringUtils;
 
 /**
- * Fails startup when a property declared in {@code axiz.config.required} is missing or blank. The
- * message lists property names only, never values.
+ * Hace fallar el arranque cuando falta o está en blanco una propiedad declarada en {@code
+ * axiz.config.required}. El mensaje solo lista nombres de propiedades, nunca valores.
  */
 public final class RequiredPropertiesVerifier implements InitializingBean {
 

@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-adapter-lock-dynamodb
 
-Distributed lock on DynamoDB conditional writes.
+Lock distribuido con escrituras condicionales de DynamoDB.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,14 +12,14 @@ Distributed lock on DynamoDB conditional writes.
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `DynamoDbDistributedLock` | Lock on DynamoDB conditional writes: acquire when the item does not exist or its lease expired; renew and release only with the owner's token. |
+| `DynamoDbDistributedLock` | Lock con escrituras condicionales de DynamoDB: se adquiere cuando el elemento no existe o su lease venció; se renueva y libera solo con el token del propietario. |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl adapters/axiz-adapter-lock-dynamodb verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl adapters/axiz-adapter-lock-dynamodb verify`.

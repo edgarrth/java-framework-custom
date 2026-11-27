@@ -14,7 +14,7 @@ import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/** Counts streamed buffers without retaining the request in memory. */
+/** Cuenta los búferes transmitidos sin retener la solicitud en memoria. */
 public final class RequestBodyLimitWebFilter implements WebFilter, Ordered {
   private final RequestBodyLimits limits;
 

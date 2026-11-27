@@ -16,9 +16,9 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Hexagonal style: {@code domain} at the center, {@code application} (use cases and ports) around
- * it, {@code adapter.in} and {@code adapter.out} outside, {@code config} wiring everything.
- * Dependencies point inwards only.
+ * Estilo hexagonal: {@code domain} en el centro, {@code application} (casos de uso y puertos) a su
+ * alrededor, {@code adapter.in} y {@code adapter.out} en el exterior y {@code config} cableándolo
+ * todo. Las dependencias apuntan solo hacia dentro.
  */
 public final class HexagonalRules {
 
@@ -30,6 +30,9 @@ public final class HexagonalRules {
     String adapters = basePackage + ".adapter..";
     String config = basePackage + ".config..";
     return List.of(
+        PackageClosure.rule(
+            basePackage, List.of("domain", "application", "adapter.in", "adapter.out", "config")),
+        PackageClosure.bootstrapOnlyStarts(basePackage),
         layeredArchitecture()
             .consideringOnlyDependenciesInLayers()
             .layer("Domain")
@@ -48,6 +51,41 @@ public final class HexagonalRules {
             .mayOnlyBeAccessedByLayers("Adapters", "Config")
             .whereLayer("Domain")
             .mayOnlyBeAccessedByLayers("Application", "Adapters", "Config"),
+        noClasses()
+            .that()
+            .resideInAPackage(domain)
+            .should()
+            .dependOnClassesThat()
+            .haveFullyQualifiedName("java.lang.Runtime"),
+        noClasses()
+            .that()
+            .resideInAPackage(domain)
+            .should()
+            .dependOnClassesThat()
+            .haveFullyQualifiedName("java.lang.ProcessBuilder"),
+        noClasses()
+            .that()
+            .resideInAPackage(domain)
+            .should()
+            .dependOnClassesThat()
+            .haveFullyQualifiedName("java.lang.Thread"),
+        noClasses()
+            .that()
+            .resideInAPackage(domain)
+            .should()
+            .callMethodWhere(
+                DescribedPredicate.describe(
+                    "ambient system state or exit",
+                    call ->
+                        call.getTargetOwner().isEquivalentTo(System.class)
+                            && Set.of(
+                                    "getenv",
+                                    "getProperty",
+                                    "getProperties",
+                                    "setProperty",
+                                    "setProperties",
+                                    "exit")
+                                .contains(call.getName()))),
         classes()
             .that()
             .resideInAnyPackage(domain, application)
@@ -58,7 +96,13 @@ public final class HexagonalRules {
             .should()
             .onlyDependOnClassesThat(
                 JavaClass.Predicates.resideInAnyPackage(
-                        "java..",
+                        "java.lang..",
+                        "java.util",
+                        "java.util.function..",
+                        "java.util.stream..",
+                        "java.util.concurrent.atomic..",
+                        "java.time..",
+                        "java.math..",
                         "org.jspecify.annotations..",
                         domain,
                         "pe.axiz.core.domain..",
@@ -85,7 +129,7 @@ public final class HexagonalRules {
                             "HeaderDefinition",
                             "StandardHeaders")
                         .stream()
-                        .map(n -> "pe.axiz.core.commons." + n)
+                        .map(n -> "pe.axiz.core.api." + n)
                         .anyMatch(n -> name.equals(n) || name.startsWith(n + "$"));
                   }
                 }),
@@ -131,7 +175,11 @@ public final class HexagonalRules {
                 "pe.axiz.extension.cqrs.spring..",
                 "pe.axiz.adapter..",
                 "pe.axiz.kit..")
-            .because("application code uses ports instead of infrastructure or transport models"),
+            .because(
+                "application code uses ports instead of infrastructure or transport models; reactive"
+                    + " use cases call the core Async* ports (AsyncTokenizer, AsyncAuditTrail,"
+                    + " AsyncIdempotencyService, AsyncEventPublisher) through"
+                    + " Mono.fromCompletionStage instead of the Spring Reactive* facades"),
         noClasses()
             .that()
             .resideInAPackage(basePackage + ".adapter.in..")
@@ -158,6 +206,7 @@ public final class HexagonalRules {
                 "pe.axiz.structure.hexagonal.annotation..",
                 "pe.axiz.extension.cqrs",
                 "pe.axiz.core.commons..",
+                "pe.axiz.core.api..",
                 "pe.axiz.core.lang..",
                 "pe.axiz.core.money..",
                 "pe.axiz.core.errors..",
@@ -182,10 +231,16 @@ public final class HexagonalRules {
   }
 
   private static DescribedPredicate<JavaClass> neutralLanguageTypes() {
-    return new DescribedPredicate<>("pure language value helpers") {
+    return new DescribedPredicate<>("pure language value helpers or field-review metadata") {
       @Override
       public boolean test(JavaClass type) {
-        return Set.of("Checks", "Strings", "Dates", "Result", "Result$Ok", "Result$Err").stream()
+        // Solo se permite esta anotación de revisión en tiempo de compilación, no el paquete
+        // commons completo.
+        if (type.getBaseComponentType().getName().equals("pe.axiz.core.commons.ReviewedState"))
+          return true;
+        return Set.of(
+                "Checks", "Strings", "Dates", "ValueSnapshots", "Result", "Result$Ok", "Result$Err")
+            .stream()
             .anyMatch(
                 name -> type.getBaseComponentType().getName().equals("pe.axiz.core.lang." + name));
       }
@@ -205,7 +260,8 @@ public final class HexagonalRules {
           for (var dependency : current.getDirectDependenciesFromSelf()) {
             var target = dependency.getTargetClass();
             String name = target.getName();
-            // Static-analysis metadata on owned contracts does not acquire runtime infrastructure.
+            // Los metadatos de análisis estático sobre contratos propios no adquieren
+            // infraestructura de runtime.
             if (current.getName().startsWith("pe.axiz.core.")
                 && Set.of(
                         "edu.umd.cs.findbugs.annotations.SuppressFBWarnings",

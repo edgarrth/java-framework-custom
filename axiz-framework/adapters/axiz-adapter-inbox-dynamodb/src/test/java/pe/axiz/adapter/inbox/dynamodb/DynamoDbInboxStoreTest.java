@@ -31,7 +31,7 @@ import software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse;
 
 class DynamoDbInboxStoreTest {
 
-  /** Evaluates the conditions this store uses against an in-memory table. */
+  /** Evalúa contra una tabla en memoria las condiciones que usa este almacén. */
   static final class FakeDynamo implements DynamoDbClient {
     final Map<String, Map<String, AttributeValue>> items = new HashMap<>();
 
@@ -58,10 +58,16 @@ class DynamoDbInboxStoreTest {
     @Override
     public UpdateItemResponse updateItem(UpdateItemRequest r) {
       Map<String, AttributeValue> item = items.get(r.key().get("pk").s());
-      if (!owned(item, r.expressionAttributeValues())) {
+      if (!owned(item, r.expressionAttributeValues())
+          || (r.conditionExpression().contains("attribute_exists(expiresAt)")
+              && !item.containsKey("expiresAt"))
+          || (r.conditionExpression().contains("leaseUntil > :at")
+              && Long.parseLong(item.get("leaseUntil").n())
+                  <= Long.parseLong(r.expressionAttributeValues().get(":at").n()))) {
         throw ConditionalCheckFailedException.builder().message("not owner").build();
       }
       item.put("status", r.expressionAttributeValues().get(":processed"));
+      item.put("ttl", item.get("expiresAt"));
       return UpdateItemResponse.builder().build();
     }
 
@@ -98,7 +104,7 @@ class DynamoDbInboxStoreTest {
         store.tryAcquire("c", "e-1", "b", now, now.plusSeconds(60), now.plusSeconds(3600));
     assertEquals(Acquisition.Status.BUSY, busy.status());
     assertEquals(now.plusSeconds(60), busy.leaseUntil());
-    // A's lease expires and B takes over
+    // el lease de A expira y B toma el control
     assertEquals(
         Acquisition.Status.ACQUIRED,
         store
@@ -119,6 +125,22 @@ class DynamoDbInboxStoreTest {
     assertEquals("c#e-1", DynamoDbInboxStore.key("c", "e-1"));
   }
 
+  @Test
+  void retentionTtlIsEnabledOnlyAfterCompletionAndMissingMigrationFailsClosed() {
+    var dynamo = new FakeDynamo();
+    var store = new DynamoDbInboxStore(dynamo, "axiz-inbox");
+    Instant now = Instant.parse("2026-01-01T00:00:00Z");
+    store.tryAcquire("ttl", "event", "owner", now, now.plusSeconds(60), now.plusSeconds(3600));
+    var item = dynamo.items.get("ttl#event");
+    assertFalse(item.containsKey("ttl"));
+    var expiration = item.remove("expiresAt");
+    assertFalse(store.markProcessed("ttl", "event", "owner", now.plusSeconds(1)));
+    assertEquals("IN_PROGRESS", item.get("status").s());
+    item.put("expiresAt", expiration);
+    assertTrue(store.markProcessed("ttl", "event", "owner", now.plusSeconds(1)));
+    assertEquals(expiration, item.get("ttl"));
+  }
+
   @TestFactory
   Stream<DynamicTest> contract() {
     InboxStoreContract.Backend backend =
@@ -130,14 +152,14 @@ class DynamoDbInboxStoreTest {
 
           @Override
           public boolean purgesOnDemand() {
-            return false; // table TTL
+            return false; // TTL de la tabla
           }
         };
     return InboxStoreContract.checks(backend).stream()
         .map(c -> DynamicTest.dynamicTest(c.name(), c::run));
   }
 
-  /** Answers every write with the given failure. */
+  /** Responde cada escritura con el fallo indicado. */
   static DynamoDbClient failing(RuntimeException failure) {
     return new DynamoDbClient() {
       @Override
@@ -168,8 +190,8 @@ class DynamoDbInboxStoreTest {
   @Test
   void aRefusedWriteWithoutTheCurrentItemIsBusyWithAnUnknownLease() {
     Instant now = Instant.parse("2026-01-01T00:00:00Z");
-    // the condition failed but DynamoDB returned no item (or one without lease): busy, lease
-    // unknown
+    // la condición falló pero DynamoDB no devolvió ítem (o uno sin lease): ocupado, lease
+    // desconocido
     DynamoDbInboxStore withoutItem =
         new DynamoDbInboxStore(
             failing(ConditionalCheckFailedException.builder().message("exists").build()), "t");
@@ -200,7 +222,8 @@ class DynamoDbInboxStoreTest {
     InboxException acquire =
         assertThrows(
             InboxException.class,
-            () -> store.tryAcquire("c", "e-1", "a", now, now.plusSeconds(60), now.plusSeconds(60)));
+            () ->
+                store.tryAcquire("c", "e-1", "a", now, now.plusSeconds(60), now.plusSeconds(120)));
     assertInstanceOf(SdkException.class, acquire.getCause());
     assertThrows(InboxException.class, () -> store.markProcessed("c", "e-1", "a", now));
     assertThrows(InboxException.class, () -> store.release("c", "e-1", "a"));

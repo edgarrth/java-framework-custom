@@ -10,18 +10,18 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.PageRequest;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.core.money.Money;
 import pe.axiz.extension.cqrs.Command;
 import pe.axiz.extension.cqrs.CommandBus;
 import pe.axiz.extension.cqrs.Query;
 import pe.axiz.extension.cqrs.QueryBus;
-import pe.axiz.payments.orders.api.model.PaymentOrder;
-import pe.axiz.payments.orders.api.model.PaymentOrderPage;
-import pe.axiz.payments.orders.api.model.PaymentOrderRequest;
-import pe.axiz.payments.orders.api.model.PaymentStatus;
-import pe.axiz.payments.orders.api.model.StatusChange;
+import pe.axiz.payments.orders.adapter.in.rest.model.PaymentOrder;
+import pe.axiz.payments.orders.adapter.in.rest.model.PaymentOrderPage;
+import pe.axiz.payments.orders.adapter.in.rest.model.PaymentOrderRequest;
+import pe.axiz.payments.orders.adapter.in.rest.model.PaymentStatus;
+import pe.axiz.payments.orders.adapter.in.rest.model.StatusChange;
 import pe.axiz.payments.orders.application.command.ChangePaymentOrderStatusCommand;
 import pe.axiz.payments.orders.application.command.CreatePaymentOrderCommand;
 import pe.axiz.payments.orders.application.command.InMemoryPaymentOrders;
@@ -31,8 +31,9 @@ import pe.axiz.payments.orders.application.query.ListPaymentOrdersHandler;
 import pe.axiz.payments.orders.application.query.ListPaymentOrdersQuery;
 
 /**
- * The REST adapter: the commands it builds from the contract models and the contract models it
- * answers with (masked creditor account, UTC timestamps), queries through the real handlers.
+ * El adaptador REST: los comandos que construye a partir de los modelos del contrato y los modelos
+ * del contrato con los que responde (cuenta del acreedor enmascarada, marcas de tiempo UTC), con
+ * consultas mediante los handlers reales.
  */
 class PaymentOrdersControllerTest {
 

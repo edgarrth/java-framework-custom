@@ -6,7 +6,10 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 import org.springframework.util.ClassUtils;
 
-/** Skips server observations for infrastructure paths such as probes and metrics scraping. */
+/**
+ * Omite las observaciones de servidor para rutas de infraestructura como las sondas y el scraping
+ * de métricas.
+ */
 public class IgnoredPathsObservationPredicate implements ObservationPredicate {
 
   private static final boolean SERVLET =

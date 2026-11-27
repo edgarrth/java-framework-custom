@@ -11,9 +11,9 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.kit.jpa.AuditableEntity;
 
 /**
- * Row of {@code payment_order}. Account numbers are encrypted (AES-GCM keys from the secret store,
- * rotation by key id); the creditor account also has a blind index (HMAC) to search by it without
- * decrypting.
+ * Fila de {@code payment_order}. Los números de cuenta se cifran (claves AES-GCM del almacén de
+ * secretos, rotación por id de clave); la cuenta del acreedor tiene además un índice ciego (HMAC)
+ * para buscar por ella sin descifrar.
  */
 @Entity
 @Table(name = "payment_order")
@@ -33,7 +33,7 @@ public class PaymentOrderEntity extends AuditableEntity {
   @Column(name = "creditor_cci", nullable = false, updatable = false, length = 200)
   private String creditorCci = "";
 
-  @Column(name = "creditor_cci_index", nullable = false, updatable = false, length = 64)
+  @Column(name = "creditor_cci_index", nullable = false, updatable = false, length = 256)
   private String creditorCciIndex = "";
 
   @Column(name = "amount", nullable = false, updatable = false, precision = 18, scale = 2)

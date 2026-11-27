@@ -3,9 +3,9 @@ package pe.axiz.extension.cqrs.spring;
 import pe.axiz.extension.cqrs.Command;
 import reactor.core.publisher.Mono;
 
-/** Sends commands through the reactive pipeline to their {@code ReactiveCommandHandler}. */
+/** Envía comandos a través del pipeline reactivo hasta su {@code ReactiveCommandHandler}. */
 public interface ReactiveCommandBus {
 
-  /** Nothing runs until the returned {@code Mono} is subscribed. */
+  /** No se ejecuta nada hasta que se suscribe el {@code Mono} devuelto. */
   <R> Mono<R> send(Command<R> command);
 }

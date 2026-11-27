@@ -20,34 +20,37 @@ import pe.axiz.core.idempotency.StoredResponse;
 import pe.axiz.test.support.MutableClock;
 
 /**
- * Properties of every {@link IdempotencyStore}: exclusive start while the lock lives, completion
- * and release fenced by the owner token, takeover after expiry without interference from the
- * previous owner, and retention.
+ * Propiedades de todo {@link IdempotencyStore}: inicio exclusivo mientras dura el lock,
+ * finalización y liberación cercadas por el token del propietario, toma del control tras la
+ * expiración sin interferencia del propietario previo y retención.
  */
 public final class IdempotencyStoreContract {
 
-  /** Lock duration used by the checks. */
+  /** Duración del lock que usan las verificaciones. */
   public static final Duration LOCK = Duration.ofSeconds(1);
 
-  /** Retention used by the checks. */
+  /** Retención que usan las verificaciones. */
   public static final Duration RETENTION = Duration.ofSeconds(3);
 
-  /** Backend under test. */
+  /** Backend bajo prueba. */
   public interface Backend {
 
-    /** A store reading time from {@code clock}; keys of different checks never collide. */
+    /**
+     * Un almacén que lee el tiempo de {@code clock}; las claves de verificaciones distintas nunca
+     * coinciden.
+     */
     IdempotencyStore create(MutableClock clock);
 
     /**
-     * Makes the record of {@code key} expire. The default advances the clock past {@link
-     * #RETENTION}, enough for stores that compare against their clock; stores whose server expires
-     * keys (Redis TTL) wait or delete the key as well.
+     * Hace expirar el registro de {@code key}. Por defecto avanza el reloj más allá de {@link
+     * #RETENTION}, lo que basta para los almacenes que comparan contra su reloj; los almacenes cuyo
+     * servidor expira las claves (TTL de Redis) además esperan o eliminan la clave.
      */
     default void expire(IdempotencyStore store, String key, MutableClock clock) throws Exception {
       clock.advance(RETENTION.plusSeconds(1));
     }
 
-    /** Start time of the clock; real backends need the current time. */
+    /** Hora de inicio del reloj; los backends reales necesitan la hora actual. */
     default Instant start() {
       return Instant.now();
     }
@@ -81,8 +84,14 @@ public final class IdempotencyStoreContract {
   }
 
   private static IdempotencyRecord start(String key, String owner, MutableClock clock) {
-    return new IdempotencyRecord(
-        key, "fp", IdempotencyRecord.Status.IN_PROGRESS, owner, null, clock.instant().plus(LOCK));
+    return IdempotencyRecord.builder(
+            key, "fp", clock.instant().plus(LOCK), clock.instant().plus(LOCK))
+        .status(IdempotencyRecord.Status.IN_PROGRESS)
+        .owner(owner)
+        .response(null)
+        .resolutionVersion(0)
+        .failure(null)
+        .build();
   }
 
   private static StoredResponse response(String body) {
@@ -173,16 +182,14 @@ public final class IdempotencyStoreContract {
   }
 
   private static IdempotencyRecord retained(String key, String owner, MutableClock clock) {
-    return new IdempotencyRecord(
-        key,
-        "fp",
-        IdempotencyRecord.Status.IN_PROGRESS,
-        owner,
-        null,
-        clock.instant().plus(LOCK),
-        clock.instant().plus(RETENTION),
-        0,
-        null);
+    return IdempotencyRecord.builder(
+            key, "fp", clock.instant().plus(LOCK), clock.instant().plus(RETENTION))
+        .status(IdempotencyRecord.Status.IN_PROGRESS)
+        .owner(owner)
+        .response(null)
+        .resolutionVersion(0)
+        .failure(null)
+        .build();
   }
 
   private static void retainedLease(Backend backend) {

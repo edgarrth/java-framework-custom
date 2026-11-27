@@ -9,18 +9,18 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.PageRequest;
 import pe.axiz.core.featureflags.FeatureFlags;
 import pe.axiz.core.featureflags.FlagDefinition;
 import pe.axiz.core.featureflags.MapFlagProvider;
-import pe.axiz.payments.ux.api.model.BeneficiaryList;
-import pe.axiz.payments.ux.api.model.BeneficiaryView;
-import pe.axiz.payments.ux.api.model.PaymentRequest;
-import pe.axiz.payments.ux.api.model.PaymentView;
 import pe.axiz.payments.ux.composition.BeneficiariesComposition;
 import pe.axiz.payments.ux.composition.BeneficiaryDirectory;
 import pe.axiz.payments.ux.composition.Fakes;
 import pe.axiz.payments.ux.composition.PaymentsComposition;
+import pe.axiz.payments.ux.composition.model.BeneficiaryList;
+import pe.axiz.payments.ux.composition.model.BeneficiaryView;
+import pe.axiz.payments.ux.composition.model.PaymentRequest;
+import pe.axiz.payments.ux.composition.model.PaymentView;
 import pe.axiz.spring.test.BlockHoundExtension;
 import pe.axiz.spring.test.OpenApiResponses;
 import pe.axiz.spring.web.PageRequestParser;
@@ -28,8 +28,8 @@ import pe.axiz.spring.web.ReactivePageRequestArgumentResolver;
 import reactor.core.publisher.Mono;
 
 /**
- * The channel REST adapters over the real compositions and in-memory downstream services: status
- * codes and bodies of each operation, for the customer of the token.
+ * Los adaptadores REST del canal sobre las composiciones reales y los servicios aguas abajo en
+ * memoria: códigos de estado y cuerpos de cada operación, para el cliente del token.
  */
 @ExtendWith(BlockHoundExtension.class)
 class ControllersTest {

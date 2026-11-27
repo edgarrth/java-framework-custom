@@ -1,0 +1,72 @@
+# axiz-tokenization-vault-dynamodb-spring-boot-autoconfigure
+
+Integra la bóveda genérica con DynamoDB. Usa el adaptador transaccional; no contiene otro motor,
+perfiles de valores ni configuración de repositorios de negocio. Para consumidores remotos no
+se instala este módulo.
+
+## Configuración y composición
+
+```yaml
+axiz:
+  tokenization:
+    vault:
+      dynamodb:
+        table: ${TOKEN_VAULT_TABLE}
+        request-timeout: 2s
+```
+
+Son obligatorios también los tipos/claims de la [base](../axiz-tokenization-vault-spring-boot-autoconfigure/README.md),
+las claves HMAC, el enrutamiento explícito de claves del sobre, el presupuesto distribuido,
+la política de acceso y la vía estricta de auditoría. No se crean tabla, controles ni claves al arrancar.
+El plazo por petición admite 1 ms a 30 s. La tabla se aprovisiona mediante el proceso de infraestructura.
+
+El cliente operativo tiene nombre `axizTokenVaultDynamoClient` en servlet/no-web y
+`axizTokenVaultDynamoAsyncClient` en WebFlux. No toma un `DynamoDbClient` genérico de los repositorios.
+Si se aporta el cliente con ese nombre, su propietario debe configurar TLS, identidad, timeouts
+y ciclo de vida adecuados. La variante nativa crea recursos acotados con el soporte AWS compartido;
+no envuelve el cliente bloqueante. Los beans creados por la integración se cierran con el contexto.
+
+La selección de identidad utiliza `AwsCapability.TOKENIZATION_VAULT`. El soporte AWS permite
+selección por capacidad, después servicio y finalmente identidad predeterminada; por eso **el
+nombre de la capacidad no demuestra por sí solo que el rol sea distinto**. Configurar una fuente
+de credenciales explícita para el rol operativo. `TOKENIZATION_MAINTENANCE` identifica la capacidad
+privilegiada, pero este starter no crea un servicio de mantenimiento ni le concede sus permisos.
+
+## Arranque cerrado
+
+Antes de completar el arranque se consulta el destino con la identidad operativa:
+
+- Tabla `ACTIVE`, una clave `pk` de tipo string, sin sort key, índices secundarios ni réplicas
+  de Global Tables. La implementación inicial no ofrece garantías entre regiones.
+- TTL exactamente `DISABLED`; `DISABLING`, desconocido o sin respuesta impiden arrancar.
+- Controles C/E presentes, esquema válido y pareja leída en una misma transacción para cada
+  keyset configurado. Todas sus claves HMAC y rutas de descifrado deben estar instaladas; la
+  ruta de escritura debe coincidir con E.
+
+Requiere `KeyringDataKeyProvider` o `KeyringAsyncDataKeyProvider`, además del cifrador compuesto
+con ese mismo proveedor. KMS permite esta composición mediante su configuración `key-ring`.
+La comprobación compara identificadores instalados: no genera claves remotas ni demuestra
+permisos `Decrypt`, acceso a versiones históricas o permisos de escritura DynamoDB. Esos
+permisos requieren pruebas del despliegue y siguen sujetos a fallo cerrado durante la operación.
+La aplicación que sustituya el cifrador debe conservar la misma composición de claves.
+
+Hay como máximo cuatro llamadas de lectura: dos de metadatos y dos transacciones para hasta
+64 keysets. Cada llamada tiene plazo finito. WebFlux usa el SDK nativo y espera únicamente en
+el hilo de arranque, con un límite total de cuatro plazos más un segundo; no espera en rutas HTTP.
+Una validación exitosa es una instantánea: las barreras de escritura y la validación de cada
+operación siguen siendo necesarias tras cambios de claves o permisos.
+
+El rol operativo necesita `DescribeTable` y `DescribeTimeToLive` sobre la tabla y `GetItem`
+sobre controles, además de los permisos operativos del
+[adaptador](../../adapters/axiz-adapter-tokenization-dynamodb/README.md).
+No necesita crear tablas, modificarlas ni generar sus controles para esta comprobación.
+Las transacciones de lectura mantienen C/E juntos conforme a
+[TransactGetItems](https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_TransactGetItems.html).
+
+## Pruebas
+
+`DynamoVaultWiringTest` comprueba selección exclusiva del cliente, variantes de ejecución,
+configuración ausente y caída del proveedor. `DynamoDbVaultReadinessTest` comprueba controles,
+TTL, plazos, errores saneados y partición del máximo inventario. `LocalStackTokenVaultIT` usa
+una tabla real local y BlockHound para la lectura nativa. LocalStack no acredita IAM de AWS
+ni cumplimiento PCI DSS del despliegue.

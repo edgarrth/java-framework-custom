@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-spring</artifactId><version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-spring/pom.xml</relativePath></parent>
+  <artifactId>axiz-secrets-aws-spring-boot-autoconfigure</artifactId>
+  <name>axiz :: secrets :: aws :: spring :: boot :: autoconfigure</name>
+  <description>AWS integration for secret resolution</description>
+  <properties><axiz.module.name>pe.axiz.spring.secrets.aws</axiz.module.name><axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity></properties>
+  <dependencies>
+<dependency><groupId>io.micrometer</groupId><artifactId>micrometer-observation</artifactId></dependency>
+<dependency><groupId>io.micrometer</groupId><artifactId>micrometer-core</artifactId></dependency>
+<dependency><groupId>software.amazon.awssdk</groupId><artifactId>ssm</artifactId></dependency>
+<dependency><groupId>software.amazon.awssdk</groupId><artifactId>secretsmanager</artifactId></dependency>
+<dependency><groupId>io.projectreactor</groupId><artifactId>reactor-test</artifactId><scope>test</scope></dependency>
+<dependency><groupId>org.springframework</groupId><artifactId>spring-webflux</artifactId><scope>test</scope></dependency>
+<dependency><groupId>io.projectreactor</groupId><artifactId>reactor-core</artifactId></dependency>
+<dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-autoconfigure</artifactId></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-secrets-aws</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-observability-aws</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-aws</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-aws-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-secrets</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-secrets-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
+</dependencies>
+</project>

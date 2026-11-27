@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-r2dbc-spring-boot-autoconfigure
 
-Aurora PostgreSQL for reactive services over R2DBC: IAM tokens, pool defaults, Flyway over JDBC, transactional ReactiveSql, auditing, encrypted and money columns, reader endpoint (auto-configuration).
+Aurora PostgreSQL para servicios reactivos sobre R2DBC: tokens IAM, valores por defecto del pool, Flyway sobre JDBC, ReactiveSql transaccional, auditoría, columnas cifradas y de dinero, endpoint de lectura (autoconfiguración).
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,41 +12,47 @@ Aurora PostgreSQL for reactive services over R2DBC: IAM tokens, pool defaults, F
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `AuditableRow` | Base of Spring Data R2DBC rows: time-ordered UUIDv7 id assigned on creation, optimistic locking and auditing columns filled from the caller of the request (`id`, `version`, `created_at`, `created_by`, `updated_at`, `updated_by`). |
-| `AxizR2dbcAuditingAutoConfiguration` | Auditing of `AuditableRow` (and any entity with `@CreatedBy`/`@CreatedDate` fields): the caller of the request and the application clock, in UTC. |
-| `AxizR2dbcAutoConfiguration` | Reactive relational persistence on Aurora PostgreSQL: a `ReactiveSql` that joins the reactive transaction of the caller, the axiz column converters (`EncryptedText`, `Money`) for Spring Data R2DBC, and an optional reader endpoint. |
-| `AxizR2dbcConverters` | Column converters of axiz types for Spring Data R2DBC: `EncryptedText` is stored as AES-256-GCM ciphertext (an explicit entity.field or purpose:name context, shared with JPA only when the application declares that purpose) and `Money` as its text form (`PEN 150.00`). |
-| `AxizR2dbcEnvironmentPostProcessor` | R2DBC defaults (lowest precedence) suited to Aurora: connections are validated against the server when borrowed and renewed every 10 minutes, so a failover or an expired IAM token never leaves dead connections in the pool; acquiring a connection is bounded so an exhausted pool fails fast instead of queueing requests forever. |
-| `AxizR2dbcFlywayIamAutoConfiguration` | With IAM authentication, Flyway connects over JDBC with a token of its own. |
-| `AxizR2dbcIamAutoConfiguration` | IAM database authentication for Aurora (`axiz.r2dbc.iam.enabled=true`): every new connection of the pool, and the Flyway migration at startup, authenticate with a short-lived token signed with the pod's credentials. |
-| `AxizR2dbcProperties` | Aurora PostgreSQL over R2DBC (`axiz.r2dbc.*`). |
-| `DatabaseClientReactiveSql` | `ReactiveSql` over Spring's `DatabaseClient`: statements join the reactive transaction of the caller (`@Transactional` or `TransactionalOperator`) and are observed by the R2DBC instrumentation. |
-| `FlywayIamCustomizer` | Gives Flyway a JDBC connection authenticated with an IAM token (the migration runs once at startup, well within the token's lifetime). |
-| `ReaderDatabase` | The reader endpoint of the Aurora cluster (`axiz.r2dbc.reader.url`): a separate pool for queries that tolerate replica lag. |
-| `RequestReactiveAuditor` | Auditor of `createdBy`/`updatedBy` for reactive code: the end user, or the calling application for machine-to-machine requests, read from the request metadata that the web and security starters put in the Reactor context (or the thread-local of a consumer thread); `system` otherwise. |
+| `AuditableRow` | Base de las filas de Spring Data R2DBC: id UUIDv7 ordenado por tiempo asignado al crear, bloqueo optimista y columnas de auditoría llenadas con el llamador de la petición (`id`, `version`, `created_at`, `created_by`, `updated_at`, `updated_by`). |
+| `AxizR2dbcAuditingAutoConfiguration` | Auditoría de `AuditableRow` (y de cualquier entidad con campos `@CreatedBy`/`@CreatedDate`): el llamador de la petición y el reloj de la aplicación, en UTC. |
+| `AxizR2dbcAutoConfiguration` | Persistencia relacional reactiva sobre Aurora PostgreSQL: un `ReactiveSql` que se une a la transacción reactiva del llamador, los convertidores de columnas axiz (`EncryptedText`, `Money`) para Spring Data R2DBC y un endpoint de lectura opcional. |
+| `AxizR2dbcConverters` | Convertidores de columnas de tipos axiz para Spring Data R2DBC: `EncryptedText` se guarda como texto cifrado AES-256-GCM (con un contexto explícito entity.field o purpose:name, compartido con JPA solo cuando la aplicación declara ese propósito) y `Money` en su forma de texto (`PEN 150.00`). |
+| `AxizR2dbcEnvironmentPostProcessor` | Valores por defecto de R2DBC (precedencia más baja) adecuados para Aurora: las conexiones se validan contra el servidor al tomarlas y se renuevan cada 10 minutos, de modo que un failover o un token IAM vencido nunca dejan conexiones muertas en el pool; la obtención de una conexión está acotada para que un pool agotado falle rápido en lugar de encolar peticiones indefinidamente. |
+| `AxizR2dbcFlywayPasswordAutoConfiguration` | Con autenticación IAM, Flyway se conecta por JDBC con un token propio. |
+| `AxizR2dbcProperties` | Aurora PostgreSQL sobre R2DBC (`axiz.r2dbc.*`). |
+| `DatabaseClientReactiveSql` | `ReactiveSql` sobre el `DatabaseClient` de Spring: las sentencias se unen a la transacción reactiva del llamador (`@Transactional` o `TransactionalOperator`) y las observa la instrumentación de R2DBC. |
+| `FlywayPasswordCustomizer` | Entrega a Flyway una conexión JDBC autenticada con un token IAM (la migración se ejecuta una vez al arranque, dentro de la vigencia del token). |
+| `ReaderDatabase` | El endpoint de lectura del clúster Aurora (`axiz.r2dbc.reader.url`): un pool separado para consultas que toleran el retraso de las réplicas. |
+| `RequestReactiveAuditor` | Auditor de `createdBy`/`updatedBy` para código reactivo: el usuario final, o la aplicación llamadora en peticiones máquina a máquina, leído de los metadatos de la petición que los starters web y de seguridad colocan en el contexto de Reactor (o del estado ligado al hilo de un consumidor); en otro caso, `unattributed`. |
 
-## Tests
+Tipos relacionados: `AxizR2dbcIamAutoConfiguration` están en `axiz-r2dbc-aws-spring-boot-autoconfigure`.
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-r2dbc-spring-boot-autoconfigure verify`.
+## Pruebas
 
-## Optional IAM adapter
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl spring/axiz-r2dbc-spring-boot-autoconfigure verify`.
 
-Services enabling `axiz.r2dbc.iam.enabled` declare `axiz-adapter-database-auth-aws` with `runtime`
-scope, or supply their own `DatabasePasswordProvider` for the primary pool. The generated R2DBC
-capability includes the AWS adapter. The generic starter and this auto-configuration do not force
-it onto minimal consumers.
-An enabled IAM configuration without its adapter or a custom provider fails with an actionable
-message. IAM reader pools use separate host-specific token providers and require the adapter.
-Ordinary password authentication, including password-based reader pools, works without it.
+## Adaptador IAM opcional
 
-The writer and reader validate their final connection options. The reader is also checked after
-its decorators. PostgreSQL uses `sslMode=verify-full` (or native `ssl=true` without an overriding
-mode). Opaque TLS context, engine, parameter or hostname-verifier callbacks are rejected by this
-validator because their later behavior cannot be inferred from the mode. Configure the native
-CA option for each destination instead of installing a callback that replaces peer validation.
+Los servicios que habilitan `axiz.r2dbc.iam.enabled` declaran `axiz-adapter-database-auth-aws` con scope
+`runtime` o aportan su propio `DatabasePasswordProvider` para el pool principal. La capacidad R2DBC
+generada incluye el adaptador AWS. El starter genérico y esta autoconfiguración no lo imponen a los
+consumidores mínimos.
+Una configuración IAM habilitada sin su adaptador ni un proveedor personalizado falla con un mensaje
+accionable. Los pools de lectura con IAM usan proveedores de tokens separados por host y requieren el
+adaptador. La autenticación ordinaria por contraseña, incluidos los pools de lectura con contraseña,
+funciona sin él.
+
+Los pools de escritura y de lectura validan sus opciones de conexión finales. El de lectura también se
+comprueba después de sus decoradores. PostgreSQL usa `sslMode=verify-full` (o `ssl=true` nativo sin un
+modo que lo sobrescriba). Este validador rechaza los callbacks opacos de contexto TLS, engine, parámetros
+o verificador de hostname, porque su comportamiento posterior no puede deducirse del modo. Se configura la
+opción nativa de CA para cada destino en lugar de instalar un callback que reemplace la validación del par.
+
+Los procesos en segundo plano proporcionan una identidad de carga de trabajo explícita mediante su
+proveedor de auditor; una identidad ausente o vacía se marca `unattributed` y nunca se atribuye en silencio a
+un sistema confiable.

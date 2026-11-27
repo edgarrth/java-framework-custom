@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,10 +22,14 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistrar;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.localstack.LocalStackContainer;
+import pe.axiz.core.audit.AuditEvent;
+import pe.axiz.core.audit.AuditEventJson;
+import pe.axiz.core.messaging.CloudEventJson;
 import pe.axiz.payments.networkgateway.application.port.out.PaymentNetwork;
 import pe.axiz.payments.networkgateway.domain.Transfer;
 import pe.axiz.payments.networkgateway.domain.TransferStatus;
@@ -36,8 +41,8 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 /**
- * Starts the whole service against real dependencies in containers (Testcontainers): wiring,
- * configuration, migrations and health. Needs Docker.
+ * Arranca el servicio completo contra dependencias reales en contenedores (Testcontainers):
+ * cableado, configuración, migraciones y salud. Requiere Docker.
  */
 @SpringBootTest(
     properties = {
@@ -51,6 +56,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
   LocalStackTestConfiguration.class,
   PaymentNetworkGatewayApplicationTest.AuditQueue.class
 })
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class PaymentNetworkGatewayApplicationTest {
   @TestConfiguration(proxyBeanMethods = false)
   static class AuditQueue {
@@ -132,8 +138,13 @@ class PaymentNetworkGatewayApplicationTest {
     assertThat(received.messages())
         .anySatisfy(
             message -> {
-              assertThat(message.body())
-                  .contains("axiz.audit", "SUCCESS", "payment-network-gateway");
+              var envelope = CloudEventJson.read(message.body());
+              assertThat(envelope.type()).isEqualTo("pe.axiz.audit.event.v1");
+              var event = AuditEventJson.read(new String(envelope.data(), StandardCharsets.UTF_8));
+              assertThat(event.action()).isEqualTo("transfer.send");
+              assertThat(event.outcome()).isEqualTo(AuditEvent.Outcome.SUCCESS);
+              assertThat(event.service()).isEqualTo("payment-network-gateway");
+              assertThat(event.integrity()).isNotNull();
             });
   }
 

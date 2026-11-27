@@ -4,9 +4,10 @@ import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.binder.MeterBinder;
 import io.micrometer.observation.ObservationRegistry;
 import java.time.Clock;
-import javax.sql.DataSource;
+import java.time.Duration;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.SmartInitializingSingleton;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
@@ -16,87 +17,65 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.transaction.PlatformTransactionManager;
-import pe.axiz.adapter.outbox.jdbc.Dialect;
-import pe.axiz.adapter.outbox.jdbc.JdbcOutboxStore;
+import pe.axiz.core.crypto.PayloadProtector;
 import pe.axiz.core.messaging.EventFactory;
 import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.outbox.OutboxRelay;
 import pe.axiz.core.outbox.OutboxRelayListener;
 import pe.axiz.core.outbox.OutboxStore;
+import pe.axiz.core.outbox.OutboxWriteTracing;
 import pe.axiz.core.outbox.OutboxWriter;
 import pe.axiz.core.resilience.Backoff;
-import pe.axiz.spring.foundation.jdbc.SchemaInitializer;
-import pe.axiz.spring.foundation.jdbc.SpringConnectionProvider;
-import pe.axiz.spring.foundation.jdbc.SpringTransactionRunner;
-import pe.axiz.spring.foundation.jdbc.SqlDialects;
+import pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter;
 
-/**
- * Transactional outbox: events written in the business transaction and relayed at-least-once to
- * MSK, SNS or SQS through the messaging starter's publisher.
- */
+/** Política común del outbox compuesta a partir de los puertos de persistencia y mensajería. */
 @AutoConfiguration(
     afterName = {
-      "org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration",
-      "org.springframework.boot.jdbc.autoconfigure.DataSourceTransactionManagerAutoConfiguration",
-      "org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration",
+      "pe.axiz.spring.outbox.jdbc.AxizOutboxJdbcAutoConfiguration",
+      "pe.axiz.spring.outbox.r2dbc.AxizOutboxR2dbcAutoConfiguration",
       "pe.axiz.spring.messaging.AxizMessagingAutoConfiguration"
     })
-@ConditionalOnBean(DataSource.class)
 @ConditionalOnBooleanProperty(name = "axiz.outbox.enabled", matchIfMissing = true)
 @EnableConfigurationProperties(AxizOutboxProperties.class)
-@Import(OutboxRelayMetricsConfiguration.class)
+@Import({OutboxRelayMetricsConfiguration.class, AxizOutboxPayloadAutoConfiguration.class})
 public class AxizOutboxAutoConfiguration {
-
   @Bean
-  SmartInitializingSingleton axizOutboxSchemaCheck(OutboxStore store) {
-    return store::verifySchema;
-  }
-
-  @Bean
-  SchemaInitializer axizOutboxSchema(DataSource dataSource, AxizOutboxProperties p) {
-    return new SchemaInitializer(dataSource, "outbox", p.initializeSchema());
-  }
-
-  @Bean
-  @ConditionalOnMissingBean
-  OutboxStore axizOutboxStore(
-      DataSource dataSource,
-      PlatformTransactionManager tx,
-      AxizOutboxProperties p,
-      SchemaInitializer axizOutboxSchema) {
-    Dialect dialect = SqlDialects.isH2(dataSource) ? Dialect.H2 : Dialect.POSTGRESQL;
-    OutboxStore store =
-        new JdbcOutboxStore(
-            new SpringConnectionProvider(dataSource),
-            new SpringTransactionRunner(tx),
-            p.table(),
-            dialect);
-    return store;
+  SmartInitializingSingleton axizOutboxSchemaCheck(ObjectProvider<OutboxStore> stores) {
+    return () -> {
+      OutboxStore store = stores.getIfAvailable();
+      if (store == null)
+        throw new IllegalStateException(
+            "Outbox requires an OutboxStore; select its integration and axiz.outbox.store");
+      store.verifySchema();
+    };
   }
 
   @Bean
   @ConditionalOnMissingBean
-  OutboxWriter axizOutboxWriter(
-      OutboxStore store,
-      ObjectProvider<Clock> clock,
-      ObjectProvider<ObservationRegistry> registry) {
-    // every write keeps the trace of the caller: the relay continues it when it publishes
-    return new OutboxWriter(
-        store,
-        clock.getIfAvailable(Clock::systemUTC),
-        OutboxTrace.tracing(registry.getIfAvailable(() -> ObservationRegistry.NOOP)));
+  OutboxWriteTracing axizOutboxWriteTracing(ObjectProvider<ObservationRegistry> registry) {
+    return OutboxTrace.tracing(registry.getIfAvailable(() -> ObservationRegistry.NOOP));
   }
 
   @Bean
   @ConditionalOnMissingBean
-  @ConditionalOnBean(EventFactory.class)
+  @ConditionalOnBean({EventFactory.class, OutboxWriter.class})
   TransactionalEvents axizTransactionalEvents(EventFactory factory, OutboxWriter writer) {
     return new TransactionalEvents(factory, writer);
   }
 
+  @Bean
+  @ConditionalOnMissingBean
+  @ConditionalOnBean({EventFactory.class, ReactiveOutboxWriter.class})
+  ReactiveTransactionalEvents axizReactiveTransactionalEvents(
+      EventFactory factory,
+      ReactiveOutboxWriter writer,
+      ObjectProvider<ObservationRegistry> registry) {
+    return new ReactiveTransactionalEvents(
+        factory, writer, registry.getIfAvailable(() -> ObservationRegistry.NOOP));
+  }
+
   @Configuration(proxyBeanMethods = false)
-  @ConditionalOnBean({EventPublisher.class, PlatformTransactionManager.class})
+  @ConditionalOnBean({EventPublisher.class, OutboxRelayTransactions.class})
   @ConditionalOnBooleanProperty(name = "axiz.outbox.relay.enabled", matchIfMissing = true)
   static class RelayConfiguration {
 
@@ -105,22 +84,25 @@ public class AxizOutboxAutoConfiguration {
     OutboxRelay axizOutboxRelay(
         OutboxStore store,
         EventPublisher publisher,
-        PlatformTransactionManager tx,
+        OutboxRelayTransactions transactions,
         AxizOutboxProperties p,
         ObjectProvider<Clock> clock,
-        ObjectProvider<OutboxRelayListener> listeners) {
+        ObjectProvider<OutboxRelayListener> listeners,
+        AxizOutboxProtectionProperties protection,
+        @Qualifier("axizOutboxPayloadProtector") PayloadProtector protector) {
       AxizOutboxProperties.Relay r = p.relay();
-      return new OutboxRelay(
-          store,
-          publisher,
-          new SpringTransactionRunner(tx),
-          clock.getIfAvailable(Clock::systemUTC),
-          r.batchSize(),
-          r.maxAttempts(),
-          Backoff.exponential(r.initialDelay(), r.maxDelay()),
-          r.leaseDuration(),
-          OutboxLeaseValidation.budget(publisher, r),
-          listeners.getIfAvailable(() -> OutboxRelayListener.NOOP));
+      var budget = OutboxLeaseValidation.budget(publisher, r).plus(protection.readBudget());
+      OutboxLeaseValidation.validate(r.leaseDuration(), budget, r.claimAllowance());
+      return OutboxRelay.builder(
+              store, publisher, transactions.runner(), clock.getIfAvailable(Clock::systemUTC))
+          .batchSize(r.batchSize())
+          .maxAttempts(r.maxAttempts())
+          .backoff(Backoff.exponential(r.initialDelay(), r.maxDelay()))
+          .lease(r.leaseDuration())
+          .publishBudget(budget)
+          .listener(listeners.getIfAvailable(() -> OutboxRelayListener.NOOP))
+          .protector(protector)
+          .build();
     }
 
     @Bean
@@ -139,24 +121,19 @@ public class AxizOutboxAutoConfiguration {
     }
   }
 
-  /** {@code axiz.outbox.pending}: records waiting to be published. */
+  /** {@code axiz.outbox.pending}, refrescado fuera del hilo de scraping. */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnClass(name = "io.micrometer.core.instrument.MeterRegistry")
+  @ConditionalOnBean(OutboxStore.class)
   static class MetricsConfiguration {
 
     @Bean
-    MeterBinder axizOutboxMetrics(OutboxStore store) {
+    MeterBinder axizOutboxMetrics(OutboxStore store, ObjectProvider<Clock> clock) {
+      CachedPendingCount pending =
+          new CachedPendingCount(
+              store, Duration.ofSeconds(15), clock.getIfAvailable(Clock::systemUTC));
       return registry ->
-          Gauge.builder(
-                  "axiz.outbox.pending",
-                  store,
-                  s -> {
-                    try {
-                      return s.countPending();
-                    } catch (RuntimeException e) {
-                      return Double.NaN;
-                    }
-                  })
+          Gauge.builder("axiz.outbox.pending", pending, CachedPendingCount::value)
               .description("Outbox records waiting to be published")
               .register(registry);
     }

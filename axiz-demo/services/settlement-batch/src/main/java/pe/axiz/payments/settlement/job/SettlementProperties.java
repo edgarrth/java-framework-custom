@@ -6,15 +6,15 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
- * Settings of the settlement job ({@code settlement.*}).
+ * Configuración del job de liquidación ({@code settlement.*}).
  *
- * @param inputKey explicit object key to load (reprocessing); when empty, the file of the previous
- *     business day under {@code inputPrefix}
- * @param inputPrefix folder of the network files in the bucket
- * @param maxDuration upper bound of a run (cluster lock lease)
- * @param runOnStartup load the file when the process starts (the CronJob); false only where the
- *     file is loaded on demand with {@link SettlementRunner#load(String)}, as in the application
- *     test
+ * @param inputKey clave de objeto explícita por cargar (reprocesamiento); cuando está vacía, el
+ *     archivo del día hábil previo bajo {@code inputPrefix}
+ * @param inputPrefix carpeta de los archivos de la red en el bucket
+ * @param maxDuration límite superior de una ejecución (lease del lock del clúster)
+ * @param runOnStartup carga el archivo al iniciar el proceso (el CronJob); false solo donde el
+ *     archivo se carga bajo demanda con {@link SettlementRunner#load(String)}, como en la prueba de
+ *     la aplicación
  */
 @ConfigurationProperties("settlement")
 public record SettlementProperties(

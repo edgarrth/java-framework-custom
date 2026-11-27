@@ -17,19 +17,18 @@ las referencian: un servicio no copia archivos de configuración.
 | Formato | Spotless con google-java-format (Java); `./mvnw spotless:apply` formatea (`-Pquality`) | falla con archivos sin formatear |
 | Convenciones | Checkstyle: nombres, imports, Javadoc de la API pública, APIs prohibidas (`-Pquality`) | severidad error |
 | Errores y nulos | Error Prone + NullAway sobre JSpecify, `@NullMarked` en cada paquete (`-Pquality`) | falla el build |
-| Bytecode y seguridad | SpotBugs + FindSecBugs | sin hallazgos de prioridad alta |
+| Bytecode y seguridad | SpotBugs + FindSecBugs | sin advertencias de prioridad alta |
 | Modernización | OpenRewrite (análisis estático) en modo informe en cada PR | informativo |
-| Cobertura | JaCoCo por módulo, sobre el código escrito: los modelos que genera openapi-generator llevan `@Generated` de axiz (retención en el bytecode) y JaCoCo los deja fuera, como a todo lo marcado así. Ver [Cobertura de fuentes y modelos](#cobertura-de-fuentes-y-modelos) | ≥ 80 % líneas, ≥ 70 % ramas |
-| Calidad de pruebas | PIT en la capa 1 | ≥ 60 % de mutantes eliminados |
+| Cobertura | JaCoCo por módulo, sobre el código escrito: los modelos que genera openapi-generator llevan `@Generated` de axiz (retención en el bytecode) y JaCoCo los deja fuera, como a todo lo marcado así. Ver [Cobertura de fuentes y modelos](#cobertura-de-fuentes-y-modelos) | al menos 80 % de líneas y 70 % de ramas |
+| Calidad de pruebas | PIT en la capa 1 | al menos 81 % de mutantes eliminados |
 | Integración | Failsafe + Testcontainers + LocalStack; BlockHound en reactivo | obligatorio por starter |
 | Nativo | compilación y pruebas nativas del demo y de un servicio por arquetipo | nocturno en verde |
-| SAST | SonarQube (quality gate) y Semgrep (reglas públicas y de axiz) | sin bloqueantes ni críticos |
-| Vulnerabilidades | Trivy sobre dependencias (SBOM), filesystem e imagen | falla con HIGH/CRITICAL sin excepción aprobada |
-| SBOM y firma | CycloneDX por artefacto; imágenes firmadas con cosign y SBOM atestado | en cada imagen |
-| Secretos | gitleaks en pre-commit (`.pre-commit-config.yaml`) y en cada PR | cero hallazgos |
+| SAST | CodeQL (`security-extended`, sobre el código que se distribuye: excluye `src/test`) y las reglas Semgrep de axiz | sin alertas abiertas |
+| Vulnerabilidades | Trivy sobre dependencias (SBOM), filesystem e imagen | bloquea siempre MEDIUM/HIGH/CRITICAL, incluidas dependencias de desarrollo |
+| SBOM y procedencia | CycloneDX por artefacto; procedencia SLSA y SBOM como atestaciones de GitHub | en cada imagen y artefacto publicado |
+| Secretos | secret scanning de GitHub con push protection y gitleaks en pre-commit (`.pre-commit-config.yaml`) | cero detecciones |
 | Licencias | dependency review con licencias denegadas (AGPL, GPL-3.0, SSPL) | falla el PR |
-| Otros linters | Spectral (OpenAPI, AsyncAPI), actionlint, kubeconform y kube-linter, markdownlint (docs), título Conventional Commits | falla el PR |
-| Neutralidad de origen | guardia de nombres con la lista de identificadores prohibidos (secreto de la organización) | cero coincidencias |
+| Otros linters | Spectral (OpenAPI, AsyncAPI), actionlint y zizmor (workflows), helm lint y kubeconform, markdownlint (docs) | falla el PR |
 | Documentación | README obligatorio por módulo (enforcer), metadata de propiedades y ejemplos de uso | falla el build si falta el README |
 
 ## Librerías de terceros
@@ -99,8 +98,11 @@ reglas no cambian, y la anotación no se pone a mano sobre código escrito.
 El reporte agregado (`quality/axiz-coverage-report`, en `target/site/jacoco-aggregate`) reúne a
 todos los módulos con código del framework. Cada uno entra con alcance `provided`, porque
 `report-aggregate` de JaCoCo solo toma clases de dependencias `compile`, `runtime` o `provided`: con
-alcance `test` el reporte salía sin clases. `check-coverage-aggregate.py` (CI) falla si un módulo
-con código falta o cambia de alcance, y con `-Pquality` el build falla si el agregado sale vacío.
+alcance `test` el reporte salía sin clases. Con `-Pquality` el build falla si el agregado sale
+vacío. El reporte se genera en los builds locales completos; en CI el framework se verifica por
+capas en jobs paralelos y el umbral de cobertura se exige en cada módulo.
+
+PIT corre con `axiz.pit.threads` hilos por módulo (4 por defecto, los vCPU de un runner hospedado).
 
 Las ramas del código escrito se cubren con pruebas de comportamiento: adaptadores REST sobre los
 casos de uso reales, adaptadores de persistencia sobre el cliente real de DynamoDB o Spring Data
@@ -108,9 +110,9 @@ con un almacenamiento en memoria, y cada rama de error que el código traduce.
 
 ## Avisos de prioridad media
 
-`EI_EXPOSE_REP`, `EI_EXPOSE_REP2` y `CT_CONSTRUCTOR_THROW` están activos. El control adicional
-`check-encapsulation` hace fallar CI por estos avisos también con prioridad media, después de
-ejecutar Maven con `-Pquality`. Las colecciones de configuración se copian al construirlas;
+`EI_EXPOSE_REP`, `EI_EXPOSE_REP2` y `CT_CONSTRUCTOR_THROW` están activos. SpotBugs corre con
+`threshold` y `failThreshold` en `Medium`, así que el perfil `quality` falla también por estos
+avisos de prioridad media. Las colecciones de configuración se copian al construirlas;
 los resultados del generador también protegen los arrays y los árboles de propiedades anidados.
 Las pruebas verifican que modificar los argumentos o los valores devueltos no altere el estado.
 

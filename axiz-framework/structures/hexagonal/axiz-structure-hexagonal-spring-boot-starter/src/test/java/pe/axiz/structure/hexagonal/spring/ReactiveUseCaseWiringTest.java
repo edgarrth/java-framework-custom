@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.aop.AopAutoConfiguration;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,7 +28,7 @@ import org.springframework.r2dbc.connection.R2dbcTransactionManager;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.transaction.ReactiveTransactionManager;
 import pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxStore;
-import pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter;
+import pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxWriter;
 import pe.axiz.core.domain.DomainEvent;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.messaging.EventFactory;
@@ -162,8 +163,7 @@ class ReactiveUseCaseWiringTest {
     var events =
         new ReactiveTransactionalEvents(
             new EventFactory("urn:original", "", codec, IdGenerator.uuidV7(), Clock.systemUTC()),
-            new ReactiveOutboxWriter(
-                new R2dbcOutboxStore(sql, "axiz_outbox", T), Clock.systemUTC()));
+            new R2dbcOutboxWriter(new R2dbcOutboxStore(sql, "axiz_outbox", T), Clock.systemUTC()));
     return runner()
         .withUserConfiguration(Cases.class)
         .withBean(ReactiveSql.class, () -> sql)
@@ -223,8 +223,8 @@ class ReactiveUseCaseWiringTest {
               assertTrue(db.events().stream().anyMatch(event -> event.startsWith("rollback:")));
               var cancelled =
                   change.execute("cancel").subscribeOn(Schedulers.parallel()).toFuture();
-              // Wait for the bounded, CPU-only protocol fake to record the outbox write before
-              // cancelling.
+              // Se espera a que el fake del protocolo, acotado y solo de CPU, registre la escritura
+              // en el outbox antes de cancelar.
               StepVerifier.create(
                       Mono.defer(() -> Mono.just(db.executions().size()))
                           .repeatWhen(repeats -> repeats.delayElements(Duration.ofMillis(10)))
@@ -293,6 +293,26 @@ class ReactiveUseCaseWiringTest {
               StepVerifier.create(lookup.execute("late-error"))
                   .expectErrorMessage("late failure")
                   .verify(T);
+            });
+  }
+
+  @Test
+  void aNonWebWorkerStartsAndCommitsAReactiveTransactionForEachSubscription() {
+    var db = database();
+    new ApplicationContextRunner()
+        .withConfiguration(
+            AutoConfigurations.of(
+                AopAutoConfiguration.class,
+                AxizHexagonalAutoConfiguration.class,
+                AxizReactiveHexagonalAutoConfiguration.class))
+        .withBean(ReactiveTransactionManager.class, () -> new R2dbcTransactionManager(db))
+        .withBean(Lookup.class)
+        .run(
+            context -> {
+              var worker = context.getBean(Lookup.class);
+              assertTrue(AopUtils.isAopProxy(worker));
+              assertEquals("worker-result", worker.execute("worker-result").block(T));
+              assertTrue(db.events().stream().anyMatch(e -> e.startsWith("commit:")));
             });
   }
 

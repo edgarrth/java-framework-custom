@@ -14,10 +14,11 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.fileformats.FixedWidthLayout;
 
 /**
- * Fixed-width records (legacy files) parsed with a layout; header and trailer lines are recognized
- * by predicates and skipped (the trailer is kept for control totals).
+ * Registros de ancho fijo (archivos de mainframe) parseados con una disposición; las líneas de
+ * cabecera y trailer se reconocen mediante predicados y se omiten (el trailer se conserva para los
+ * totales de control).
  *
- * @param <T> record type
+ * @param <T> tipo del registro
  */
 public final class FixedWidthRecordReader<T> implements RecordReader<T> {
 
@@ -61,7 +62,10 @@ public final class FixedWidthRecordReader<T> implements RecordReader<T> {
     }
   }
 
-  /** Last header or trailer line seen (the trailer once the file is fully read). */
+  /**
+   * Última línea de cabecera o trailer vista (el trailer una vez que el archivo se leyó por
+   * completo).
+   */
   public @Nullable String trailer() {
     return trailer;
   }

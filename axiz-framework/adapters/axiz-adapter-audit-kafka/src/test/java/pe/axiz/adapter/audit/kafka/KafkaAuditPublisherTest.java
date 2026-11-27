@@ -17,22 +17,26 @@ import pe.axiz.core.commons.TransactionOutcome;
 class KafkaAuditPublisherTest {
 
   private static AuditEvent event(String resourceId) {
-    return new AuditEvent(
-        "e-1",
-        Instant.EPOCH,
-        "svc",
-        "order.create",
-        "order",
-        resourceId,
-        AuditEvent.Actor.system(),
-        AuditEvent.Outcome.SUCCESS,
-        null,
-        "c-1",
-        "web",
-        null,
-        Map.of("k", "v"),
-        TransactionOutcome.UNKNOWN,
-        TransactionOutcome.UNKNOWN);
+    return AuditEvent.builder()
+        .id("e-1")
+        .occurredAt(Instant.EPOCH)
+        .service("svc")
+        .action("order.create")
+        .resourceType("order")
+        .resourceId(resourceId)
+        .actor(AuditEvent.Actor.system())
+        .outcome(AuditEvent.Outcome.SUCCESS)
+        .errorCode(null)
+        .correlationId("c-1")
+        .channel("web")
+        .tenant(null)
+        .details(Map.of("k", "v"))
+        .transactionOutcome(TransactionOutcome.UNKNOWN)
+        .operationOutcome(TransactionOutcome.UNKNOWN)
+        .persistence(null)
+        .integrity(null)
+        .detailsSanitized(0)
+        .build();
   }
 
   @Test
@@ -56,6 +60,24 @@ class KafkaAuditPublisherTest {
     assertEquals("order:o-1", record.key());
     assertTrue(record.value().contains("\"action\":\"order.create\""));
     assertEquals("e-1", new String(record.headers().lastHeader("ce_id").value()));
+  }
+
+  @Test
+  void interruptedAcknowledgementRestoresTheInterruptFlag() throws Exception {
+    try (var producer =
+        new MockProducer<String, String>(
+            false, null, new StringSerializer(), new StringSerializer())) {
+      var publisher = new KafkaAuditPublisher(producer, "audit", Duration.ofSeconds(1));
+      try {
+        Thread.currentThread().interrupt();
+        var failure =
+            assertThrows(AuditPublishException.class, () -> publisher.publish(event("o-1")));
+        assertTrue(failure.getCause() instanceof InterruptedException);
+        assertTrue(Thread.currentThread().isInterrupted());
+      } finally {
+        Thread.interrupted();
+      }
+    }
   }
 
   @Test

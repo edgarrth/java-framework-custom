@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-spring</artifactId><version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-spring/pom.xml</relativePath></parent>
+  <artifactId>axiz-lock-redis-spring-boot-autoconfigure</artifactId>
+  <name>axiz :: lock :: redis :: spring :: boot :: autoconfigure</name>
+  <description>Lock integration for redis</description>
+  <properties><axiz.module.name>pe.axiz.spring.lock.redis</axiz.module.name><axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity></properties>
+  <dependencies>
+<dependency><groupId>org.springframework</groupId><artifactId>spring-webflux</artifactId><scope>test</scope></dependency>
+<dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-data-redis</artifactId></dependency>
+<dependency><groupId>io.lettuce</groupId><artifactId>lettuce-core</artifactId></dependency>
+<dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-autoconfigure</artifactId></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-redis-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-foundation-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-lock</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-lock-redis</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-lock-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
+</dependencies>
+</project>

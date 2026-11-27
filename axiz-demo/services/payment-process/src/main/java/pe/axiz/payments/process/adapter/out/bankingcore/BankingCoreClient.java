@@ -9,26 +9,26 @@ import pe.axiz.payments.process.adapter.out.bankingcore.model.Movement;
 import pe.axiz.payments.process.adapter.out.bankingcore.model.MovementRequest;
 
 /**
- * Client of the Banking Core API (1.0.0), HTTP service group {@code banking-core}: base URL,
- * timeouts, retries, circuit breaker and authentication come from {@code
+ * Cliente de la API Banking Core (1.0.0), grupo de servicios HTTP {@code banking-core}: la URL
+ * base, los timeouts, los reintentos, el circuit breaker y la autenticación provienen de {@code
  * axiz.http-client.clients.banking-core.*}.
  */
 @HttpExchange
 public interface BankingCoreClient {
 
-  /** Holds and debits funds of an account in the core (POST /v1/debits). */
+  /** Retiene y debita fondos de una cuenta en el core (POST /v1/debits). */
   @PostExchange("/v1/debits")
   Movement debitAccount(
       @RequestHeader(name = "Idempotency-Key", required = true) String idempotencyKey,
       @RequestBody MovementRequest body);
 
-  /** Reverses a debit (saga compensation) (POST /v1/debits/{movementId}/reversal). */
+  /** Revierte un débito (compensación de la saga) (POST /v1/debits/{movementId}/reversal). */
   @PostExchange("/v1/debits/{movementId}/reversal")
   Movement reverseDebit(
       @PathVariable("movementId") String movementId,
       @RequestHeader(name = "Idempotency-Key", required = true) String idempotencyKey);
 
-  /** Credits an account of the core (SOAP service of the core) (POST /v1/credits). */
+  /** Abona a una cuenta del core (servicio SOAP del core) (POST /v1/credits). */
   @PostExchange("/v1/credits")
   Movement creditAccount(
       @RequestHeader(name = "Idempotency-Key", required = true) String idempotencyKey,

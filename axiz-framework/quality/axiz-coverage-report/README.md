@@ -1,11 +1,15 @@
 # axiz-coverage-report
 
-Aggregates the JaCoCo reports of every module with production code (`./mvnw -Pquality verify`,
-report in `target/site/jacoco-aggregate`). Not published.
+Agrega los reportes de JaCoCo de todos los módulos con código de producción (`./mvnw -Pquality verify`,
+reporte en `target/site/jacoco-aggregate`). No se publica.
 
-- Every module with code is a `provided` dependency: JaCoCo's `report-aggregate` takes classes and
-  sources only from compile, runtime and provided dependencies. A `test` dependency adds its
-  execution data and nothing to measure it against, which produced an empty report.
-- `.github/scripts/check-coverage-aggregate.py .` (framework CI) fails when a module with code is
-  missing or has another scope; with `-Pquality` the build fails when the report holds no classes.
-  `-DskipTests` skips that check, since nothing ran under the agent.
+- Cada módulo con código es una dependencia `provided`: el `report-aggregate` de JaCoCo toma clases y
+  fuentes solo de las dependencias compile, runtime y provided. Una dependencia `test` aporta sus
+  datos de ejecución sin nada contra qué medirlos, lo que daría un reporte vacío.
+- Los módulos solo de pruebas de arquitectura y de integración de almacenes son dependencias `test`,
+  para que sus datos de ejecución cuenten para los módulos de producción que ejercitan, sin contar los
+  fixtures de prueba como producción.
+- Con `-Pquality` el build falla cuando el reporte no contiene clases. `-DskipTests` omite esa
+  comprobación, porque nada se ejecutó bajo el agente.
+- El reporte se genera en los builds locales completos. En CI el framework se verifica por capas en
+  jobs paralelos, sin este módulo, y el umbral de cobertura se exige en cada módulo.

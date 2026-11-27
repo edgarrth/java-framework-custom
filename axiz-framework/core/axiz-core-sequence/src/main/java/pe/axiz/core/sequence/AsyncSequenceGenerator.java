@@ -8,12 +8,12 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 
 /**
- * Native asynchronous, gap-tolerant sequence allocation. Concurrent callers share a block
- * reservation without waiting on a thread. Cancelling the last pending caller cancels the native
- * reservation; cancelling one caller does not invalidate another caller's allocation.
+ * Asignación de secuencias asíncrona nativa y tolerante a huecos. Los llamadores concurrentes
+ * comparten la reserva de un bloque sin esperar en un hilo. Cancelar al último llamador pendiente
+ * cancela la reserva nativa; cancelar a un llamador no invalida la asignación de otro.
  */
 public final class AsyncSequenceGenerator {
   private final String name;
@@ -52,7 +52,8 @@ public final class AsyncSequenceGenerator {
       if (reservation == null || !reservation.period.equals(period)) {
         Reservation fresh = new Reservation(period);
         if (!current.compareAndSet(reservation, fresh)) continue;
-        // The owner is counted before publication, so another caller cannot cancel its work.
+        // El propietario se cuenta antes de la publicación, de modo que otro llamador no puede
+        // cancelar su trabajo.
         CompletableFuture<Block> owner = fresh.listener();
         fresh.start();
         return Stages.compose(owner, block -> take(fresh, block));

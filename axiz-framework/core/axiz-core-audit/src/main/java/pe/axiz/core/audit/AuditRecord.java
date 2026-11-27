@@ -11,8 +11,8 @@ import pe.axiz.core.sensitive.ObjectMasker;
 import pe.axiz.core.sensitive.OutputChannel;
 
 /**
- * Builds sanitized immutable snapshots without publishing or performing I/O. Instances belong to
- * one recording operation; do not share a mutable record across concurrent subscribers.
+ * Construye instantáneas inmutables saneadas sin publicar ni hacer E/S. Las instancias pertenecen a
+ * una operación de registro; un registro mutable no se comparte entre suscriptores concurrentes.
  */
 public final class AuditRecord {
   private final String service;
@@ -25,6 +25,7 @@ public final class AuditRecord {
   private AuditTrail.Context context = AuditTrail.Context.system();
   private TransactionOutcome local = TransactionOutcome.UNKNOWN;
   private TransactionOutcome operation = TransactionOutcome.UNKNOWN;
+  private int sanitized;
   private final Map<String, @Nullable Object> details = new LinkedHashMap<>();
 
   public AuditRecord(
@@ -51,7 +52,9 @@ public final class AuditRecord {
   }
 
   public void detail(String key, @Nullable Object value) {
-    details.put(key, masker.describe(value, OutputChannel.AUDIT));
+    var description = masker.describeCounting(key, value, null, OutputChannel.AUDIT);
+    details.put(key, description.value());
+    sanitized = Math.addExact(sanitized, description.sanitized());
   }
 
   public void outcomes(TransactionOutcome local, TransactionOutcome operation) {
@@ -60,21 +63,25 @@ public final class AuditRecord {
   }
 
   public AuditEvent event(AuditEvent.Outcome outcome, @Nullable String errorCode) {
-    return new AuditEvent(
-        ids.newId(),
-        clock.instant(),
-        service,
-        action,
-        resourceType,
-        resourceId,
-        context.actor(),
-        outcome,
-        errorCode,
-        context.correlationId(),
-        context.channel(),
-        context.tenant(),
-        details,
-        local,
-        operation);
+    return AuditEvent.builder()
+        .id(ids.newId())
+        .occurredAt(clock.instant())
+        .service(service)
+        .action(action)
+        .resourceType(resourceType)
+        .resourceId(resourceId)
+        .actor(context.actor())
+        .outcome(outcome)
+        .errorCode(errorCode)
+        .correlationId(context.correlationId())
+        .channel(context.channel())
+        .tenant(context.tenant())
+        .details(details)
+        .transactionOutcome(local)
+        .operationOutcome(operation)
+        .persistence(null)
+        .integrity(null)
+        .detailsSanitized(sanitized)
+        .build();
   }
 }

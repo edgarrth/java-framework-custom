@@ -5,14 +5,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.Page;
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.Page;
+import pe.axiz.core.api.PageRequest;
 import pe.axiz.payments.history.application.port.out.PaymentHistories;
 import pe.axiz.payments.history.domain.PaymentHistory;
 import pe.axiz.payments.history.domain.PaymentStatus;
 import reactor.core.publisher.Mono;
 
-/** Test double of the R2DBC adapter. */
+/** Doble de prueba del adaptador R2DBC. */
 public final class InMemoryPaymentHistories implements PaymentHistories {
 
   public final Map<String, PaymentHistory> entries = new ConcurrentHashMap<>();

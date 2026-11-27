@@ -14,7 +14,10 @@ import java.nio.charset.Charset;
 import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 
-/** Writes through immediately, retaining a bounded copy only for complete JSON diagnostics. */
+/**
+ * Escribe de inmediato hacia la salida y conserva una copia acotada solo para diagnósticos JSON
+ * completos.
+ */
 final class BoundedCaptureResponseWrapper extends HttpServletResponseWrapper {
   private final HttpServletRequest request;
   private final int limit;

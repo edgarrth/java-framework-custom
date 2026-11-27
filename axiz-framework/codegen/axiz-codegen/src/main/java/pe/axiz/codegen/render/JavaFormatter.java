@@ -8,12 +8,13 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Formats generated Java sources with google-java-format (and removes unused imports) when it is on
- * the classpath and can run, so generated projects pass {@code spotless:check} from the first
- * build. The initializr and the CLI jar ship it; google-java-format reads the compiler internals,
- * so the JVM must export them ({@code --add-exports jdk.compiler/...}: the initializr image sets
- * the flags, the CLI jar declares them in its manifest). Where it cannot run, such as the native
- * CLI, sources are returned as rendered and the caller runs {@code spotless:apply}.
+ * Formatea las fuentes Java generadas con google-java-format (y elimina los imports sin usar)
+ * cuando está en el classpath y puede ejecutarse, de modo que los proyectos generados superan
+ * {@code spotless:check} desde el primer build. El initializr y el jar de la CLI lo incluyen;
+ * google-java-format lee los internos del compilador, por lo que la JVM debe exportarlos ({@code
+ * --add-exports jdk.compiler/...}: la imagen del initializr fija los flags y el jar de la CLI los
+ * declara en su manifiesto). Donde no puede ejecutarse, como en la CLI nativa, las fuentes se
+ * devuelven tal como se renderizaron y el invocador ejecuta {@code spotless:apply}.
  */
 public final class JavaFormatter {
 
@@ -24,14 +25,14 @@ public final class JavaFormatter {
   private JavaFormatter() {}
 
   /**
-   * Whether google-java-format is on the classpath and runs: it is tried once on a small source,
-   * because without the exports of jdk.compiler it loads but fails on the first format.
+   * Indica si google-java-format está en el classpath y funciona: se prueba una vez con una fuente
+   * pequeña, porque sin los exports de jdk.compiler se carga, pero falla en el primer formateo.
    */
   public static boolean available() {
     return WORKS;
   }
 
-  /** Formats one source; returns it unchanged when the formatter is missing or rejects it. */
+  /** Formatea una fuente; la devuelve sin cambios cuando el formateador falta o la rechaza. */
   public static String format(String source) {
     Method method = FORMAT;
     Object formatter = FORMATTER;
@@ -49,7 +50,7 @@ public final class JavaFormatter {
     }
   }
 
-  /** Formats every {@code .java} entry of a rendered file map. */
+  /** Formatea cada entrada {@code .java} de un mapa de archivos renderizados. */
   public static Map<String, byte[]> formatAll(Map<String, byte[]> files) {
     if (!available()) {
       return files;

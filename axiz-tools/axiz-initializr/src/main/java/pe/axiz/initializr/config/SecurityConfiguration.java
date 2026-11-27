@@ -1,9 +1,12 @@
 package pe.axiz.initializr.config;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.ServletListenerRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -27,42 +30,49 @@ import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.SupplierJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.web.util.HttpSessionMutexListener;
+import pe.axiz.core.security.RateLimiter;
 
 /**
- * Corporate SSO for everything: the web UI signs in with OpenID Connect (session, SPA CSRF cookie);
- * the CLI and automations call the API with their own bearer token (JWT of the same identity
- * provider). Health probes are the only anonymous endpoints.
+ * SSO corporativo para todo: la UI web inicia sesión con OpenID Connect (sesión, cookie CSRF para
+ * SPA); la CLI y las automatizaciones invocan la API con su propio token bearer (JWT del mismo
+ * proveedor de identidad). Las sondas de salud son los únicos endpoints anónimos.
  *
- * <p>Two OAuth clients are registered, with different roles: {@value #SSO} signs the user in and
- * {@value #GITHUB} only authorizes the creation of repositories for the user already signed in.
- * Only the SSO registration signs in: a GitHub authorization never becomes, or replaces, the
- * identity of the session, even if its code is sent to the login callback by hand. The GitHub
- * callback ({@value #GITHUB_CALLBACK}) is outside the login path and is handled by the OAuth client
- * support, which stores the authorization for the user already signed in.
+ * <p>Se registran dos clientes OAuth con roles distintos: {@value #SSO} autentica al usuario y
+ * {@value #GITHUB} solo autoriza la creación de repositorios para el usuario ya autenticado. Solo
+ * el registro SSO inicia sesión: una autorización de GitHub nunca se convierte en la identidad de
+ * la sesión ni la reemplaza, aunque su código se envíe a mano al callback de login. El callback de
+ * GitHub ({@value #GITHUB_CALLBACK}) está fuera de la ruta de login y lo atiende el soporte de
+ * cliente OAuth, que almacena la autorización para el usuario ya autenticado.
  *
- * <p>Bearer tokens must come from the SSO issuer and name this API in their audience ({@code
- * axiz.initializr.audience}, {@value #DEFAULT_AUDIENCE} by default): a token of the same identity
- * provider issued for another API is rejected with 401.
+ * <p>Los tokens bearer deben provenir del emisor del SSO y nombrar esta API en su audiencia ({@code
+ * axiz.initializr.audience}, {@value #DEFAULT_AUDIENCE} por defecto): un token del mismo proveedor
+ * de identidad emitido para otra API se rechaza con 401.
  */
 @Configuration(proxyBeanMethods = false)
+@EnableConfigurationProperties(InitializrLimits.class)
 public class SecurityConfiguration {
 
-  /** Registration that signs users in (corporate identity provider). */
+  /** Registro que autentica a los usuarios (proveedor de identidad corporativo). */
   public static final String SSO = "sso";
 
-  /** Registration used only to create repositories with the user's GitHub authorization. */
+  /** Registro que se usa solo para crear repositorios con la autorización de GitHub del usuario. */
   public static final String GITHUB = "github";
 
-  /** Where the browser starts the SSO login: there is no login page with a choice of providers. */
+  /**
+   * Donde el navegador inicia el login del SSO: no hay una página de login con elección de
+   * proveedores.
+   */
   public static final String SSO_LOGIN = "/oauth2/authorization/" + SSO;
 
-  /** Redirect URI of the GitHub registration, outside the login callback path. */
+  /** URI de redirección del registro de GitHub, fuera de la ruta del callback de login. */
   public static final String GITHUB_CALLBACK = "/authorized/" + GITHUB;
 
-  /** Audience that bearer tokens must carry when no other is configured. */
+  /** Audiencia que deben llevar los tokens bearer cuando no se configura otra. */
   public static final String DEFAULT_AUDIENCE = "axiz-initializr";
 
   static final String CSP =
@@ -70,19 +80,36 @@ public class SecurityConfiguration {
           + " connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'";
 
   @Bean
-  SecurityFilterChain initializrSecurity(HttpSecurity http) throws Exception {
+  ServletListenerRegistrationBean<HttpSessionMutexListener> sessionMutex() {
+    return new ServletListenerRegistrationBean<>(new HttpSessionMutexListener());
+  }
+
+  @Bean
+  EphemeralAuthorizedClients authorizedClients() {
+    return new EphemeralAuthorizedClients(Clock.systemUTC());
+  }
+
+  @Bean
+  SecurityFilterChain initializrSecurity(
+      HttpSecurity http,
+      EphemeralAuthorizedClients authorizedClients,
+      RateLimiter limiter,
+      InitializrLimits limits)
+      throws Exception {
     http.authorizeHttpRequests(
             a ->
-                // only the probes are anonymous: build details (info) need a session or token
+                // solo las sondas son anónimas: los detalles del build (info) requieren sesión o
+                // token
                 a.requestMatchers("/actuator/health/**").permitAll().anyRequest().authenticated())
         .oauth2Login(
             o ->
-                o.loginPage(SSO_LOGIN)
+                o.authorizedClientRepository(authorizedClients)
+                    .loginPage(SSO_LOGIN)
                     .userInfoEndpoint(
                         u ->
                             u.userService(signInOnlyWithSso(new DefaultOAuth2UserService()))
                                 .oidcUserService(signInOnlyWithSso(new OidcUserService()))))
-        .oauth2Client(Customizer.withDefaults())
+        .oauth2Client(o -> o.authorizedClientRepository(authorizedClients))
         .oauth2ResourceServer(o -> o.jwt(Customizer.withDefaults()))
         .csrf(c -> c.spa())
         .exceptionHandling(
@@ -94,13 +121,14 @@ public class SecurityConfiguration {
             h ->
                 h.contentSecurityPolicy(csp -> csp.policyDirectives(CSP))
                     .referrerPolicy(r -> r.policy(ReferrerPolicy.NO_REFERRER)));
+    http.addFilterAfter(new InitializrQuotaFilter(limiter, limits), AuthorizationFilter.class);
     return http.build();
   }
 
   /**
-   * Decoder of the API bearer tokens: signature from the issuer's keys, issuer, validity and
-   * audience. The issuer metadata is fetched on the first token, so the service starts even when
-   * the identity provider is not reachable yet.
+   * Decodificador de los tokens bearer de la API: firma con las claves del emisor, emisor, validez
+   * y audiencia. Los metadatos del emisor se obtienen con el primer token, de modo que el servicio
+   * arranca aunque el proveedor de identidad todavía no sea accesible.
    */
   @Bean
   JwtDecoder apiTokenDecoder(
@@ -116,8 +144,8 @@ public class SecurityConfiguration {
   }
 
   /**
-   * Issuer, validity window (an expiration is required) and audience: what a bearer token needs to
-   * reach this API.
+   * Emisor, ventana de validez (se exige una expiración) y audiencia: lo que un token bearer
+   * necesita para llegar a esta API.
    */
   static OAuth2TokenValidator<Jwt> apiTokenValidator(String issuer, String audience) {
     return new DelegatingOAuth2TokenValidator<>(
@@ -128,9 +156,10 @@ public class SecurityConfiguration {
   }
 
   /**
-   * Refuses a sign-in through any registration other than {@value #SSO}. Login runs this before
-   * creating the session's identity, after the provider answered: the code of another provider
-   * (GitHub) sent to the login callback ends in a failed login, never in a session.
+   * Rechaza un inicio de sesión mediante cualquier registro distinto de {@value #SSO}. El login
+   * ejecuta esto previo a crear la identidad de la sesión, una vez que el proveedor respondió: el
+   * código de otro proveedor (GitHub) enviado al callback de login termina en un login fallido,
+   * nunca en una sesión.
    */
   static <R extends OAuth2UserRequest, U extends OAuth2User>
       OAuth2UserService<R, U> signInOnlyWithSso(OAuth2UserService<R, U> delegate) {

@@ -15,7 +15,7 @@
   <description>OpenTelemetry via Micrometer: framework spans, structured events, PII protection, health groups, AWS SDK tracing</description>
 
   <properties>
-    <!-- dependencies only: the jar holds just the manifest, by design (no "JAR will be empty" warning) -->
+    <!-- solo dependencias: el jar contiene únicamente el manifiesto, por diseño (sin la advertencia "JAR will be empty") -->
     <maven.jar.forceCreation>true</maven.jar.forceCreation>
     <axiz.module.name>pe.axiz.spring.observability.starter</axiz.module.name>
   </properties>
@@ -34,8 +34,8 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-opentelemetry</artifactId>
       <exclusions>
-        <!-- micrometer-tracing brings aopalliance 1.0, whose classes spring-aop already ships:
-             excluded so services pass BanDuplicateClasses. -->
+        <!-- micrometer-tracing incorpora aopalliance 1.0, cuyas clases ya incluye spring-aop:
+             se excluye para que los servicios superen BanDuplicateClasses. -->
         <exclusion>
           <groupId>aopalliance</groupId>
           <artifactId>aopalliance</artifactId>

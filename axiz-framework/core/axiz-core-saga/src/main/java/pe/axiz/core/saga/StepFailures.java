@@ -4,20 +4,21 @@ import java.util.Set;
 import pe.axiz.core.errors.AxizException;
 
 /**
- * Classifies step failures: definite rejections (the effect does not exist) against uncertain
- * outcomes (the effect may exist).
+ * Clasifica los fallos de los pasos: rechazos definitivos (el efecto no existe) frente a resultados
+ * inciertos (el efecto puede existir).
  */
 public final class StepFailures {
 
-  /** 4xx statuses that do not prove the request was not processed. */
+  /** Estados 4xx que no prueban que la petición no se procesó. */
   private static final Set<Integer> UNCERTAIN_4XX = Set.of(408, 409, 425, 429);
 
   private StepFailures() {}
 
   /**
-   * {@code true} for {@link SagaStepRejectedException} and for axiz errors in a client-error
-   * category (400, 401, 403, 404, 412, 422...: the participant refused the request). Timeouts,
-   * server errors, transport errors, conflicts and anything else are uncertain.
+   * {@code true} para {@link SagaStepRejectedException} y para errores de axiz en una categoría de
+   * error de cliente (400, 401, 403, 404, 412, 422, etc.: el participante rechazó la petición). Los
+   * timeouts, errores de servidor, errores de transporte, conflictos y cualquier otra cosa son
+   * inciertos.
    */
   public static boolean isDefiniteRejection(Throwable failure) {
     for (Throwable t = failure; t != null; t = t.getCause()) {

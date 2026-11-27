@@ -1,11 +1,11 @@
-# Service template set: one entry per generated file.
-#   template  file of this set (mustache unless binary)
-#   path      output path (a mustache template itself)
-#   when      condition over the context: dotted paths, &&, ||, ! (see ProjectGenerator#context)
-#   each      list of the context; the entry is rendered once per element, bound as `item`
-#   binary    copied as is (Helm templates, static files)
+# Conjunto de plantillas de servicio: una entrada por archivo generado.
+#   template  archivo de este conjunto (mustache salvo que sea binario)
+#   path      ruta de salida (es a su vez una plantilla mustache)
+#   when      condición sobre el contexto: rutas con puntos, &&, ||, ! (ver ProjectGenerator#context)
+#   each      lista del contexto; la entrada se renderiza una vez por elemento, vinculado como `item`
+#   binary    se copia tal cual (plantillas de Helm, archivos estáticos)
 files:
-  # --- build and governance ------------------------------------------------------------------
+  # --- build y gobierno --------------------------------------------------------------------------
   - {template: /shared/mvnw, path: mvnw, binary: true}
   - {template: /shared/mvnw.cmd, path: mvnw.cmd, binary: true}
   - {template: /shared/mvn/wrapper/maven-wrapper.properties, path: .mvn/wrapper/maven-wrapper.properties, binary: true}
@@ -30,8 +30,13 @@ files:
   - {template: /shared/release/release-please-manifest.json, path: .release-please-manifest.json, binary: true}
   - {template: /shared/release/version.txt, path: version.txt, binary: true}
 
-  # --- local environment ---------------------------------------------------------------------
+  # --- entorno local ---------------------------------------------------------------------------
   - {template: local/compose.yaml.mustache, path: compose.yaml}
+  - {template: local/images/postgres/Dockerfile, path: local/images/postgres/Dockerfile, binary: true, when: infra.postgres}
+  - {template: local/images/valkey/Dockerfile, path: local/images/valkey/Dockerfile, binary: true, when: infra.redis}
+  - {template: local/images/wiremock/Dockerfile, path: local/images/wiremock/Dockerfile, binary: true, when: infra.wiremock}
+  - {template: local/images/keycloak/Dockerfile, path: local/images/keycloak/Dockerfile, binary: true, when: infra.keycloak}
+  - {template: local/images/kafka/Dockerfile, path: local/images/kafka/Dockerfile, binary: true, when: infra.kafka}
   - {template: local/dev-secrets.sh.mustache, path: local/dev-secrets.sh}
   - {template: local/localstack-init.sh.mustache, path: local/localstack/init.sh, when: infra.localstack}
   - {template: static/keycloak-realm.json, path: local/keycloak/axiz-realm.json, binary: true, when: infra.keycloak}
@@ -79,7 +84,11 @@ files:
 
   # --- tests ---------------------------------------------------------------------------------
   - {template: test/ArchitectureTest.java.mustache, path: "src/test/java/{{project.packagePath}}/ArchitectureTest.java"}
+  - {template: test/ArchitectureSelfCheckTest.java.mustache, path: "src/test/java/{{project.packagePath}}/ArchitectureSelfCheckTest.java"}
   - {template: test/ApplicationTest.java.mustache, path: "src/test/java/{{project.packagePath}}/{{project.className}}ApplicationTest.java"}
+  - {template: test/ApplicationTestSupport.java.mustache, path: "src/test/java/{{project.packagePath}}/{{project.className}}ApplicationTestSupport.java"}
+  - {template: test/ApplicationModelTest.java.mustache, path: "src/test/java/{{project.packagePath}}/{{item.name}}ApplicationModelTest.java", each: applicationModels, when: item.record}
+  - {template: test/SensitiveDataCanaryTest.java.mustache, path: "src/test/java/{{project.packagePath}}/SensitiveDataCanaryTest.java"}
   - {template: test/AuditTestConfiguration.java.mustache, path: "src/test/java/{{project.packagePath}}/AuditTestConfiguration.java", when: auditResources.required}
   - {template: test/ContractExamplesTest.java.mustache, path: "src/test/java/{{project.packagePath}}/{{fw.restPath}}/ContractExamplesTest.java", when: hasExamples}
   - {template: test/example.json.mustache, path: "src/test/resources/contract-examples/{{item.operationId}}.json", each: examples}
@@ -111,3 +120,32 @@ files:
   - {template: test/ApplicationMappingTest.java.mustache, path: "src/test/java/{{project.packagePath}}/{{item.className}}ApplicationMappingTest.java", each: operations, when: fw.hasApplicationModels && item.exampleTestable}
 
   - {template: test/AuthorizationTest.java.mustache, path: "src/test/java/{{project.packagePath}}/{{fw.restPath}}/{{item.className}}AuthorizationTest.java", each: tags, when: caps.security && item.hasSecuredOperations}
+  - {template: test/ControllerResponseTest.java.mustache, path: "src/test/java/{{project.packagePath}}/{{fw.restPath}}/{{item.className}}ControllerResponseTest.java", each: tags, when: caps.web}
+  - {template: test/response-example.json.mustache, path: "src/test/resources/response-examples/{{item.operationId}}.json", each: operations, when: item.hasResponse}
+  - {template: local/images/localstack/Dockerfile, path: local/images/localstack/Dockerfile, binary: true, when: infra.localstack}
+  - {template: local/images/localstack/requirements.lock, path: local/images/localstack/requirements.lock, binary: true, when: infra.localstack}
+  - {template: local/images/localstack/build-requirements.lock, path: local/images/localstack/build-requirements.lock, binary: true, when: infra.localstack}
+  - {template: local/images/localstack/libraries.lock.json, path: local/images/localstack/libraries.lock.json, binary: true, when: infra.localstack}
+  - {template: local/images/localstack/files.list, path: local/images/localstack/files.list, binary: true, when: infra.localstack}
+  - {template: local/images/otel-lgtm/Dockerfile, path: local/images/otel-lgtm/Dockerfile, binary: true}
+  - {template: local/images/otel-lgtm/collector-LICENSE, path: local/images/otel-lgtm/collector-LICENSE, binary: true}
+  - {template: local/images/otel-lgtm/collector-components.go, path: local/images/otel-lgtm/collector-components.go, binary: true}
+  - {template: local/images/otel-lgtm/collector-go.mod, path: local/images/otel-lgtm/collector-go.mod, binary: true}
+  - {template: local/images/otel-lgtm/collector-go.sum, path: local/images/otel-lgtm/collector-go.sum, binary: true}
+  - {template: local/images/otel-lgtm/collector-main.go, path: local/images/otel-lgtm/collector-main.go, binary: true}
+  - {template: local/images/otel-lgtm/collector-main_others.go, path: local/images/otel-lgtm/collector-main_others.go, binary: true}
+  - {template: local/images/otel-lgtm/collector-main_windows.go, path: local/images/otel-lgtm/collector-main_windows.go, binary: true}
+  - {template: local/images/otel-lgtm/collector-manifest.yaml, path: local/images/otel-lgtm/collector-manifest.yaml, binary: true}
+  - {template: local/images/otel-lgtm/collector.yaml, path: local/images/otel-lgtm/collector.yaml, binary: true}
+  - {template: local/images/otel-lgtm/datasources.yaml, path: local/images/otel-lgtm/datasources.yaml, binary: true}
+  - {template: local/images/otel-lgtm/grafana-dependencies.patch, path: local/images/otel-lgtm/grafana-dependencies.patch, binary: true}
+  - {template: local/images/otel-lgtm/grafana.ini, path: local/images/otel-lgtm/grafana.ini, binary: true}
+  - {template: local/images/otel-lgtm/loki-dependencies.patch, path: local/images/otel-lgtm/loki-dependencies.patch, binary: true}
+  - {template: local/images/otel-lgtm/loki.yaml, path: local/images/otel-lgtm/loki.yaml, binary: true}
+  - {template: local/images/otel-lgtm/prometheus-dependencies.patch, path: local/images/otel-lgtm/prometheus-dependencies.patch, binary: true}
+  - {template: local/images/otel-lgtm/prometheus.yaml, path: local/images/otel-lgtm/prometheus.yaml, binary: true}
+  - {template: local/images/otel-lgtm/sources.lock.json, path: local/images/otel-lgtm/sources.lock.json, binary: true}
+  - {template: local/images/otel-lgtm/start.sh, path: local/images/otel-lgtm/start.sh, binary: true}
+  - {template: local/images/otel-lgtm/tempo-dependencies.patch, path: local/images/otel-lgtm/tempo-dependencies.patch, binary: true}
+  - {template: local/images/otel-lgtm/tempo.yaml, path: local/images/otel-lgtm/tempo.yaml, binary: true}
+  - {template: local/images/otel-lgtm/files.list, path: local/images/otel-lgtm/files.list, binary: true}

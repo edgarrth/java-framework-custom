@@ -14,22 +14,26 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.lang.model.SourceVersion;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.codegen.model.Extension;
 import pe.axiz.codegen.model.Snapshots;
 import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.project.ProjectManifest;
 import pe.axiz.codegen.render.JavaFormatter;
+import pe.axiz.codegen.render.JavaSourceText;
 import pe.axiz.codegen.render.TemplateSet;
 
 /**
- * {@code axiz generate <type> <name>}: code coherent with the project's style, stack and
- * persistence. Returns new files only; files that already exist are reported by the caller and
- * never overwritten.
+ * {@code axiz generate <type> <name>}: código coherente con el estilo, el stack y la persistencia
+ * del proyecto. Devuelve solo archivos nuevos; el invocador informa los archivos que ya existen y
+ * nunca se sobrescriben.
  */
 public final class ArtifactGenerator {
 
-  /** Artifact types and the styles they apply to (empty: every service style). */
+  /**
+   * Tipos de artefacto y los estilos a los que se aplican (vacío: todos los estilos de servicio).
+   */
   public static final Map<String, Set<Structure>> TYPES;
 
   static {
@@ -52,12 +56,12 @@ public final class ArtifactGenerator {
   }
 
   /**
-   * Options of a generation.
+   * Opciones de una generación.
    *
-   * @param category error category for {@code error-code} (e.g. {@code UNPROCESSABLE})
-   * @param title title for {@code error-code}
-   * @param source source type of a {@code mapper}
-   * @param target target type of a {@code mapper}
+   * @param category categoría de error para {@code error-code} (p. ej., {@code UNPROCESSABLE})
+   * @param title título para {@code error-code}
+   * @param source tipo de origen de un {@code mapper}
+   * @param target tipo de destino de un {@code mapper}
    */
   public record Options(
       @Nullable String category,
@@ -70,13 +74,13 @@ public final class ArtifactGenerator {
   }
 
   /**
-   * Files of an artifact.
+   * Archivos de un artefacto.
    *
-   * @param created new files (never overwrite: the caller skips existing ones)
-   * @param updated existing files rewritten with the artifact added (error codes)
-   * @param appended text appended to existing files (message bundles)
-   * @param dependencies artifacts ({@code groupId:artifactId}) the pom must declare
-   * @param notes follow-up hints for the developer
+   * @param created archivos nuevos (nunca se sobrescribe: el invocador omite los existentes)
+   * @param updated archivos existentes reescritos con el artefacto agregado (códigos de error)
+   * @param appended texto agregado al final de archivos existentes (paquetes de mensajes)
+   * @param dependencies artefactos ({@code groupId:artifactId}) que el pom debe declarar
+   * @param notes indicaciones de seguimiento para el desarrollador
    */
   public record Result(
       Map<String, byte[]> created,
@@ -110,11 +114,12 @@ public final class ArtifactGenerator {
   }
 
   /**
-   * Generates the files of an artifact.
+   * Genera los archivos de un artefacto.
    *
-   * @param existingErrors source of the errors class, when it exists (error codes are appended)
-   * @throws IllegalArgumentException for an unknown type, a type the style does not use or an
-   *     invalid name
+   * @param existingErrors fuente de la clase de errores, cuando existe (los códigos de error se
+   *     agregan al final)
+   * @throws IllegalArgumentException ante un tipo desconocido, un tipo que el estilo no usa o un
+   *     nombre inválido
    */
   public Result generate(
       ProjectManifest project,
@@ -126,11 +131,12 @@ public final class ArtifactGenerator {
   }
 
   /**
-   * Generates the files of an artifact.
+   * Genera los archivos de un artefacto.
    *
-   * @param existingErrors source of the errors class, when it exists (error codes are appended)
-   * @param migrationVersion Flyway version of a generated migration ({@code Migrations.next}); a
-   *     UTC timestamp when null
+   * @param existingErrors fuente de la clase de errores, cuando existe (los códigos de error se
+   *     agregan al final)
+   * @param migrationVersion versión de Flyway de una migración generada ({@code Migrations.next});
+   *     una marca de tiempo UTC cuando es null
    */
   public Result generate(
       ProjectManifest project,
@@ -142,6 +148,9 @@ public final class ArtifactGenerator {
     if ((type.equals("command") || type.equals("query")) && !project.cqrs()) {
       throw new IllegalArgumentException(type + " requires the CQRS extension");
     }
+    if (project.archetype().equals("core")
+        && Set.of("entity", "repository", "migration").contains(type))
+      throw new IllegalArgumentException("Core facades do not own persistence artifacts");
     Set<Structure> styles = TYPES.get(type);
     if (styles == null) {
       throw new IllegalArgumentException(
@@ -166,7 +175,7 @@ public final class ArtifactGenerator {
     }
     if ((type.equals("handler") || type.equals("event-handler"))
         && project.capabilities().stream().noneMatch(cap -> cap.startsWith("messaging-"))) {
-      // the handler would not compile without the messaging API
+      // el handler no compilaría sin la API de mensajería
       throw new IllegalArgumentException(
           "Consuming events needs a messaging capability: run axiz add messaging-kafka (or"
               + " messaging-sqs) first");
@@ -209,7 +218,7 @@ public final class ArtifactGenerator {
     Map<String, Object> a =
         (Map<String, Object>) Objects.requireNonNull(c.get("artifact"), "artifact");
     Map<String, String> appended = new LinkedHashMap<>();
-    String line = "error." + a.get("code") + "=" + a.get("title") + "\n";
+    String line = "error." + a.get("code") + "=" + a.get("titleProperties") + "\n";
     appended.put("src/main/resources/messages.properties", line);
     appended.put("src/main/resources/messages_en.properties", line);
     if (existingErrors == null) {
@@ -229,7 +238,27 @@ public final class ArtifactGenerator {
     return new Result(Map.of(), out, appended, List.of(), List.of());
   }
 
-  /** Categories accepted by {@code error-code} (see {@code ErrorCategory}). */
+  /**
+   * Receta de aceptación de persistencia para una muestra generada. Requiere el soporte de pruebas
+   * de aplicación generado; la generación ordinaria de artefactos sigue siendo independiente de ese
+   * soporte para los proyectos existentes.
+   */
+  public Map<String, byte[]> persistenceAcceptanceTest(ProjectManifest project, String name) {
+    generate(project, "repository", name, Options.none(), null);
+    var context = context(project, "repository", name, Options.none(), null, null);
+    String source =
+        TemplateSet.load("artifacts")
+            .renderTemplate("test/PersistenceAcceptanceTest.java.mustache", context);
+    String path =
+        "src/test/java/"
+            + Names.packagePath(project.basePackage())
+            + "/"
+            + Names.pascal(name)
+            + "PersistenceTest.java";
+    return JavaFormatter.formatAll(Map.of(path, source.getBytes(StandardCharsets.UTF_8)));
+  }
+
+  /** Categorías aceptadas por {@code error-code} (ver {@code ErrorCategory}). */
   public static final List<String> ERROR_CATEGORIES =
       List.of(
           "BAD_REQUEST",
@@ -278,14 +307,14 @@ public final class ArtifactGenerator {
         "entityPackage",
         switch (p.structure()) {
           case HEXAGONAL -> "adapter.out.persistence";
-          case LAYERED -> "model";
+          case LAYERED, EDA, BATCH -> "repository.entity";
           default -> "persistence";
         });
     fw.put(
         "repositoryPackage",
         switch (p.structure()) {
           case HEXAGONAL -> "adapter.out.persistence";
-          case LAYERED -> "repository";
+          case LAYERED, EDA, BATCH -> "repository";
           default -> "persistence";
         });
     fw.put(
@@ -295,6 +324,7 @@ public final class ArtifactGenerator {
           case LAYERED -> "service";
           default -> "";
         });
+    fw.put("separateEntityPackage", !fw.get("entityPackage").equals(fw.get("repositoryPackage")));
     c.put("fw", paths(fw));
     c.put(
         "stack",
@@ -314,8 +344,14 @@ public final class ArtifactGenerator {
     String simple = name.contains(".") ? name.substring(name.lastIndexOf('.') + 1) : name;
     String subPackage =
         name.contains(".") ? name.substring(0, name.lastIndexOf('.')).toLowerCase(Locale.ROOT) : "";
+    if (name.contains(".") && !Names.isPackage(subPackage)) {
+      throw new IllegalArgumentException("Artifact subpackage must be a valid Java package");
+    }
     Map<String, Object> a = new LinkedHashMap<>();
     String className = Names.pascal(simple);
+    if (!SourceVersion.isName(className)) {
+      throw new IllegalArgumentException("Artifact name must produce a valid Java type");
+    }
     a.put("name", simple);
     a.put("className", className);
     a.put("camel", Names.camel(simple));
@@ -345,9 +381,15 @@ public final class ArtifactGenerator {
     a.put(
         "category",
         requestedCategory == null ? "UNPROCESSABLE" : requestedCategory.toUpperCase(Locale.ROOT));
-    String title = options.title();
-    a.put(
-        "title", title == null ? String.join(" ", Names.words(simple)) : title.replace("\"", "'"));
+    String requestedTitle = options.title();
+    String title = requestedTitle == null ? String.join(" ", Names.words(simple)) : requestedTitle;
+    if (title.length() > 800 || title.chars().anyMatch(Character::isISOControl))
+      throw new IllegalArgumentException(
+          "Artifact title must be a single line of at most 800 characters");
+    a.put("title", title);
+    a.put("titleJavadoc", JavaSourceText.javadoc(title));
+    a.put("titleLiteral", JavaSourceText.literal(title));
+    a.put("titleProperties", title.replace("\\", "\\\\").replaceFirst("^ ", "\\\\ "));
     a.put("constant", Names.snake(simple).toUpperCase(Locale.ROOT));
     a.put(
         "code",
@@ -362,13 +404,20 @@ public final class ArtifactGenerator {
     return c;
   }
 
-  /** A type given on the command line: qualified names are kept, simple names become PascalCase. */
+  /**
+   * Un tipo indicado en la línea de comandos: los nombres calificados se conservan y los nombres
+   * simples pasan a PascalCase.
+   */
   static String typeName(@Nullable String type) {
     if (type == null || type.isBlank()) {
       return "";
     }
     String t = type.strip();
-    return t.contains(".") ? t : Names.pascal(t);
+    String result = t.contains(".") ? t : Names.pascal(t);
+    if (!SourceVersion.isName(result)) {
+      throw new IllegalArgumentException("Mapper type must be a valid Java type name");
+    }
+    return result;
   }
 
   private static Map<String, Object> paths(Map<String, Object> fw) {
@@ -384,7 +433,7 @@ public final class ArtifactGenerator {
     return out;
   }
 
-  /** Next free number of the service error codes ({@code -NNNN}). */
+  /** Siguiente número libre de los códigos de error del servicio ({@code -NNNN}). */
   static int nextErrorNumber(@Nullable String existingErrors) {
     if (existingErrors == null) {
       return 1;
@@ -397,7 +446,7 @@ public final class ArtifactGenerator {
     return max + 1;
   }
 
-  /** Types available for a style. */
+  /** Tipos disponibles para un estilo. */
   public static List<String> typesFor(Structure structure) {
     return typesFor(structure, List.of());
   }

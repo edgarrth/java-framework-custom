@@ -4,20 +4,21 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Which claims hold each principal attribute. Paths use dots for nested claims ({@code
- * realm_access.roles}); the first path present wins.
+ * Qué claims contienen cada atributo del principal. Las rutas usan puntos para los claims anidados
+ * ({@code realm_access.roles}); prevalece la primera ruta presente.
  *
- * @param subject subject claims
- * @param clientId client id claims
- * @param scopes scope claims (space separated string or list)
- * @param roles role claims (list or space separated string)
- * @param tenant tenant claims
- * @param attributes extra claims copied to the principal attributes
- * @param machine exact {@code claim=value} markers issued exclusively by the trusted identity
- *     provider for application tokens, never derived from editable user attributes. Such tokens use
- *     the client id as subject. The default is Microsoft Entra's {@code idtyp=app}; other providers
- *     must configure a trusted token-kind claim. Presence and prefix heuristics and standard
- *     user-profile claims are not accepted.
+ * @param subject claims del subject
+ * @param clientId claims del id de cliente
+ * @param scopes claims de scopes (cadena separada por espacios o lista)
+ * @param roles claims de roles (lista o cadena separada por espacios)
+ * @param tenant claims del tenant
+ * @param attributes claims adicionales copiados a los atributos del principal
+ * @param machine marcadores exactos {@code claim=value} emitidos exclusivamente por el proveedor de
+ *     identidad confiable para tokens de aplicación, nunca derivados de atributos de usuario
+ *     editables. Esos tokens usan el id de cliente como subject. El valor por defecto es {@code
+ *     idtyp=app} de Microsoft Entra; otros proveedores deben configurar un claim confiable de tipo
+ *     de token. No se aceptan heurísticas de presencia o de prefijo ni claims estándar del perfil
+ *     de usuario.
  */
 public record ClaimMapping(
     List<String> subject,
@@ -28,7 +29,10 @@ public record ClaimMapping(
     List<String> attributes,
     List<String> machine) {
 
-  /** Microsoft Entra application tokens; other providers configure an issuer-owned marker. */
+  /**
+   * Tokens de aplicación de Microsoft Entra; otros proveedores configuran un marcador propiedad del
+   * emisor.
+   */
   public static final List<String> DEFAULT_MACHINE_MARKERS = List.of("idtyp=app");
 
   private static final Set<String> USER_PROFILE_CLAIMS =
@@ -51,16 +55,6 @@ public record ClaimMapping(
           "phone_number",
           "address",
           "updated_at");
-
-  public ClaimMapping(
-      List<String> subject,
-      List<String> clientId,
-      List<String> scopes,
-      List<String> roles,
-      List<String> tenant,
-      List<String> attributes) {
-    this(subject, clientId, scopes, roles, tenant, attributes, DEFAULT_MACHINE_MARKERS);
-  }
 
   public ClaimMapping {
     subject = List.copyOf(subject);
@@ -90,7 +84,7 @@ public record ClaimMapping(
     }
   }
 
-  /** Defaults that work with standard OIDC providers. */
+  /** Valores por defecto que funcionan con proveedores OIDC estándar. */
   public static ClaimMapping defaults() {
     return new ClaimMapping(
         List.of("sub"),
@@ -98,6 +92,7 @@ public record ClaimMapping(
         List.of("scope", "scp"),
         List.of("roles", "realm_access.roles", "groups"),
         List.of("tenant", "tenant_id", "tid"),
-        List.of());
+        List.of(),
+        ClaimMapping.DEFAULT_MACHINE_MARKERS);
   }
 }

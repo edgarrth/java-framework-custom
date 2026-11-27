@@ -10,13 +10,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
+import pe.axiz.core.concurrent.Stages;
 
 class AsyncSecretsTest {
   @Test
@@ -27,7 +27,12 @@ class AsyncSecretsTest {
           calls.incrementAndGet();
           return CompletableFuture.completedFuture(Optional.of(SecretValue.of("remote")));
         };
-    var environment = new EnvironmentAsyncSecretResolver(Map.of("PAYMENTS_DB_PASSWORD", "local"));
+    AsyncSecretResolver environment =
+        name ->
+            CompletableFuture.completedFuture(
+                name.equals("payments/db-password")
+                    ? Optional.of(SecretValue.of("local"))
+                    : Optional.empty());
     var chain = new CompositeAsyncSecretResolver(List.of(environment, remote));
     assertEquals(
         "local", chain.require("payments/db-password").toCompletableFuture().join().reveal());
@@ -126,5 +131,80 @@ class AsyncSecretsTest {
             Duration.ofMinutes(1),
             Clock.systemUTC());
     assertSame(fatal, assertThrows(LinkageError.class, () -> broken.resolve("key")));
+  }
+
+  @Test
+  void aCompositeErasesLateSecretsEvenWhenItsNativeSourceCannotCancel() {
+    var pending =
+        new CompletableFuture<Optional<SecretValue>>() {
+          @Override
+          public boolean cancel(boolean interrupt) {
+            return false;
+          }
+        };
+    var later = new AtomicInteger();
+    var resolver =
+        new CompositeAsyncSecretResolver(
+            List.of(
+                name -> pending,
+                name -> {
+                  later.incrementAndGet();
+                  return CompletableFuture.completedFuture(Optional.empty());
+                }));
+    var result = resolver.resolve("key").toCompletableFuture();
+    assertTrue(result.cancel(true));
+    var late = SecretValue.of("late");
+    pending.complete(Optional.of(late));
+    assertThrows(IllegalStateException.class, late::reveal);
+    assertEquals(0, later.get());
+  }
+
+  @Test
+  void contextFailureBeforeStartingSourcesDoesNotPerformIo() {
+    var calls = new AtomicInteger();
+    var resolver =
+        new CompositeAsyncSecretResolver(
+            List.of(
+                name -> {
+                  calls.incrementAndGet();
+                  return CompletableFuture.completedFuture(Optional.empty());
+                }));
+    try (var scope =
+        Stages.context(
+            () -> {
+              throw new IllegalStateException("capture failed");
+            })) {
+      assertThrows(
+          CompletionException.class, () -> resolver.resolve("key").toCompletableFuture().join());
+      assertEquals(0, calls.get());
+    }
+  }
+
+  @Test
+  void cleanupStillRunsWhenContextCaptureFailsAfterASecondarySourceStarts() {
+    var captures = new AtomicInteger();
+    var pending =
+        new CompletableFuture<Optional<SecretValue>>() {
+          @Override
+          public boolean cancel(boolean interrupt) {
+            return false;
+          }
+        };
+    var resolver =
+        new CompositeAsyncSecretResolver(
+            List.of(name -> CompletableFuture.completedFuture(Optional.empty()), name -> pending));
+    try (var scope =
+        Stages.context(
+            () -> {
+              if (captures.incrementAndGet() == 3)
+                throw new IllegalStateException("capture failed");
+              return () -> () -> {};
+            })) {
+      assertThrows(
+          CompletionException.class, () -> resolver.resolve("key").toCompletableFuture().join());
+      var late = SecretValue.of("late");
+      pending.complete(Optional.of(late));
+      assertThrows(IllegalStateException.class, late::reveal);
+    }
   }
 }

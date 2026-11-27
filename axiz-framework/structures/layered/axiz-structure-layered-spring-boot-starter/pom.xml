@@ -21,6 +21,12 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-errors</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-test-support</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>com.h2database</groupId><artifactId>h2</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-api</artifactId><version>${project.version}</version></dependency>
+
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-structure-layered-api</artifactId>
@@ -80,8 +86,8 @@
       <artifactId>axiz-web-spring-boot-starter</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <!-- persistence is the service's choice (Aurora adds axiz-jpa-spring-boot-starter, DynamoDB
-         axiz-dynamodb-spring-boot-starter): a style starter never brings a DataSource -->
+    <!-- la persistencia es elección del servicio (Aurora añade axiz-jpa-spring-boot-starter, DynamoDB
+         axiz-dynamodb-spring-boot-starter): un starter de estilo nunca incorpora un DataSource -->
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-jpa-spring-boot-starter</artifactId>

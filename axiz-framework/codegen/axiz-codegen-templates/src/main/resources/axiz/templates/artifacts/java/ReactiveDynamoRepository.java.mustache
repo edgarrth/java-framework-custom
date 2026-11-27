@@ -2,15 +2,15 @@ package {{project.basePackage}}.{{fw.repositoryPackage}};
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Repository;
-import pe.axiz.core.commons.Page;
+import pe.axiz.core.api.Page;
 import pe.axiz.spring.dynamodb.ReactiveDynamoRepositories;
 import pe.axiz.spring.dynamodb.ReactiveDynamoRepository;
 import reactor.core.publisher.Mono;
-{{#fw.layered}}
+{{#fw.separateEntityPackage}}
 import {{project.basePackage}}.{{fw.entityPackage}}.{{artifact.className}}Item;
-{{/fw.layered}}
+{{/fw.separateEntityPackage}}
 
-/** Native asynchronous data access of {@link {{artifact.className}}Item}. */
+/** Acceso a datos asíncrono nativo de {@link {{artifact.className}}Item}. */
 @Repository
 public class {{artifact.className}}Repository {
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Service-only exception for the mutable collection API of generated OpenAPI wire DTOs.
-     This does not exclude handwritten classes, constructor errors, SQL or other security checks. -->
+<!-- Excepción solo para servicios de la API de colecciones mutables de los DTO de transmisión generados por OpenAPI.
+     No excluye clases escritas a mano, errores de constructor, SQL ni otras verificaciones de seguridad. -->
 <FindBugsFilter xmlns="https://github.com/spotbugs/filter/3.0.0">
   <Match>
     <Annotation name="pe.axiz.core.commons.Generated"/>

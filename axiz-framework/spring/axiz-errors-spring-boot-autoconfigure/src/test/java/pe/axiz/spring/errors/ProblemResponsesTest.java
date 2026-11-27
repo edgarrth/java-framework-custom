@@ -11,9 +11,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import jakarta.servlet.RequestDispatcher;
 import jakarta.validation.ConstraintViolationException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletionException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -43,15 +45,88 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import pe.axiz.core.errors.BusinessException;
+import pe.axiz.core.errors.CoreErrors;
 import pe.axiz.core.errors.Problem;
+import pe.axiz.core.errors.RateLimitedException;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
-/** Every failure reaches the client as an RFC 9457 problem with a stable code and no internals. */
+/**
+ * Todo fallo llega al cliente como un problema RFC 9457 con un código estable y sin detalles
+ * internos.
+ */
 class ProblemResponsesTest {
+
+  @Test
+  void synchronousErrorTranslationDoesNotRunOnTheEventLoop() {
+    var calls = new java.util.concurrent.atomic.AtomicInteger();
+    runner
+        .withBean(
+            pe.axiz.core.errors.ErrorMessageResolver.class,
+            () ->
+                (key, locale, parameters) -> {
+                  assertFalse(reactor.core.scheduler.Schedulers.isInNonBlockingThread());
+                  calls.incrementAndGet();
+                  return java.util.Optional.of("Localized error");
+                })
+        .run(
+            ctx -> {
+              var exchange =
+                  MockServerWebExchange.from(
+                      MockServerHttpRequest.get("/restricted")
+                          .header("X-Correlation-Id", "render-correlation"));
+              var handler =
+                  new ProblemWebExceptionHandler(
+                      ctx.getBean(ProblemResponder.class), Schedulers.boundedElastic());
+              Mono.defer(
+                      () ->
+                          handler.handle(
+                              exchange, new BusinessException(CoreErrors.CONFLICT, "synthetic")))
+                  .subscribeOn(reactor.core.scheduler.Schedulers.parallel())
+                  .block(Duration.ofSeconds(5));
+              assertEquals(409, exchange.getResponse().getStatusCode().value());
+              assertEquals(1, calls.get());
+              assertThat(exchange.getResponse().getBodyAsString().block(Duration.ofSeconds(5)))
+                  .contains("Localized error", "render-correlation");
+            });
+  }
 
   private final ApplicationContextRunner runner =
       new ApplicationContextRunner()
           .withConfiguration(AutoConfigurations.of(AxizErrorsAutoConfiguration.class));
+
+  @Test
+  void confirmedRateLimitCarriesABoundedDelayInServletReactiveAndErrorDispatch() {
+    runner.run(
+        ctx -> {
+          var responder = ctx.getBean(ProblemResponder.class);
+          var failure =
+              new CompletionException(
+                  new RateLimitedException(CoreErrors.TOO_MANY_REQUESTS, Duration.ofMillis(1501)));
+          var request = new MockHttpServletRequest("POST", "/token");
+          var servlet = new ProblemControllerAdvice(responder).handle(failure, request);
+          assertEquals(429, servlet.getStatusCode().value());
+          assertEquals("2", servlet.getHeaders().getFirst("Retry-After"));
+          request.setAttribute(RequestDispatcher.ERROR_EXCEPTION, failure);
+          var dispatched = new ProblemErrorController(responder).error(request);
+          assertEquals("2", dispatched.getHeaders().getFirst("Retry-After"));
+          var exchange = MockServerWebExchange.from(MockServerHttpRequest.post("/token"));
+          new ProblemWebExceptionHandler(responder, Schedulers.boundedElastic())
+              .handle(
+                  exchange,
+                  new RateLimitedException(
+                      CoreErrors.TOO_MANY_REQUESTS, Duration.ofSeconds(Long.MAX_VALUE)))
+              .block();
+          assertEquals(429, exchange.getResponse().getStatusCode().value());
+          assertEquals("86400", exchange.getResponse().getHeaders().getFirst("Retry-After"));
+          var uncertain =
+              new ProblemControllerAdvice(responder)
+                  .handle(new BusinessException(CoreErrors.OUTCOME_UNKNOWN, "synthetic"), request);
+          assertEquals(504, uncertain.getStatusCode().value());
+          assertFalse(uncertain.getHeaders().containsHeader("Retry-After"));
+        });
+  }
 
   @RestController
   static class Payments {
@@ -153,16 +228,44 @@ class ProblemResponsesTest {
     runner.run(
         ctx -> {
           ProblemResponder responder = ctx.getBean(ProblemResponder.class);
-          responder.problem(new AccessDeniedException("x"), Locale.ENGLISH, "/admin", "corr-1");
+          responder.problem(new AccessDeniedException("x"), Locale.ENGLISH, "/admin", "corr-0001");
           responder.problem(
-              new OptimisticLockingFailureException("x"), Locale.ENGLISH, "/accounts", "corr-2");
+              new OptimisticLockingFailureException("x"), Locale.ENGLISH, "/accounts", "corr-0002");
         });
     assertThat(output.getOut())
         .contains("WARN")
-        .contains("code=AXZ-SEC-0403 path=/admin")
+        .contains("code=AXZ-SEC-0403 correlationId=corr-0001")
         .contains("INFO")
-        .contains("code=AXZ-CORE-0409 path=/accounts")
+        .contains("code=AXZ-CORE-0409 correlationId=corr-0002")
         .doesNotContain("ERROR");
+  }
+
+  @Test
+  @ExtendWith(OutputCaptureExtension.class)
+  void logsContainNoExceptionMessagesPathsOrThrowableChains(CapturedOutput output) {
+    String canary = "4111111111111111";
+    runner.run(
+        ctx -> {
+          var responder = ctx.getBean(ProblemResponder.class);
+          var first = new IllegalStateException("password=secret-canary-123 " + canary);
+          var second = new IllegalArgumentException("token=secret-nested-456", first);
+          first.initCause(
+              second); // los grafos de causas cíclicos no se recorren ni filtran mensajes
+          responder.problem(first, Locale.ENGLISH, "/cards/" + canary, "safe-correlation");
+          responder.problem(
+              new AccessDeniedException("password=secret-denied-789"),
+              Locale.ENGLISH,
+              "/credentials/secret-path-987",
+              "safe-denial");
+        });
+    assertThat(output.getOut())
+        .contains("safe-correlation", "java.lang.IllegalStateException", "safe-denial")
+        .doesNotContain(
+            canary,
+            "secret-canary-123",
+            "secret-nested-456",
+            "secret-denied-789",
+            "secret-path-987");
   }
 
   @Test
@@ -193,10 +296,11 @@ class ProblemResponsesTest {
     runner.run(
         ctx -> {
           ProblemWebExceptionHandler handler =
-              new ProblemWebExceptionHandler(ctx.getBean(ProblemResponder.class));
+              new ProblemWebExceptionHandler(
+                  ctx.getBean(ProblemResponder.class), Schedulers.boundedElastic());
           MockServerWebExchange exchange =
               MockServerWebExchange.from(
-                  MockServerHttpRequest.get("/accounts/1").header("X-Correlation-Id", "corr-7"));
+                  MockServerHttpRequest.get("/accounts/1").header("X-Correlation-Id", "corr-0007"));
           handler
               .handle(exchange, new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED))
               .block();
@@ -205,7 +309,7 @@ class ProblemResponsesTest {
               Problem.MEDIA_TYPE, exchange.getResponse().getHeaders().getContentType().toString());
           assertThat(exchange.getResponse().getBodyAsString().block())
               .contains("AXZ-CORE-0405")
-              .contains("corr-7");
+              .contains("corr-0007");
 
           MockServerWebExchange committed =
               MockServerWebExchange.from(MockServerHttpRequest.get("/stream"));

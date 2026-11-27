@@ -49,8 +49,9 @@ En el stack reactivo los handlers devuelven un `Mono` y los buses son `ReactiveC
 `ReactiveQueryBus`. El pipeline es el mismo, armado con operadores que no bloquean: el span es el
 padre de todo lo que ocurre río abajo (sentencias R2DBC, llamadas HTTP) a través del Reactor
 Context, la autorización lee el `ReactiveSecurityContextHolder`, la transacción es reactiva
-(`R2dbcTransactionManager`, de solo lectura para queries) y los colaboradores bloqueantes
-(almacén de idempotencia, publicador de auditoría) corren en `boundedElastic`.
+(`R2dbcTransactionManager`, de solo lectura para queries). Idempotencia y auditoría usan
+puertos asíncronos nativos; el pipeline no convierte colaboradores bloqueantes en reactivos
+mediante schedulers de trabajo.
 
 ```java
 @Component
@@ -68,8 +69,8 @@ return queryBus.ask(new GetPaymentQuery(id)).map(p -> ResponseEntity.ok(toApi(p)
 
 Los pasos propios se agregan con un bean `ReactivePipelineBehavior`. Un tipo de request con un
 handler bloqueante y uno reactivo es un error al arrancar. El generador crea handlers reactivos en
-el stack reactivo, salvo con DynamoDB (cliente bloqueante): ahí los handlers son los de siempre y el
-controlador los ejecuta en `boundedElastic`.
+el stack reactivo, incluido DynamoDB mediante `ReactiveDynamoRepositories` y el cliente
+asíncrono nativo. El controlador compone el resultado sin `block()` ni offload.
 
 ## Proyecciones
 
@@ -77,6 +78,6 @@ controlador los ejecuta en `boundedElastic`.
 proceso, o eventos de integración que llegan por el estilo [EDA](../estructuras/eda.md). Un handler que falta para
 un tipo de request es un error de configuración que se detecta al arrancar.
 
-En el demo, `payments-business` usa CQRS con Aurora: órdenes de pago con calendario de negocio,
+En el demo, `payment-orders` usa CQRS con Aurora: órdenes de pago con calendario de negocio,
 corte horario, secuencias, cifrado de campos con blind index y outbox; `payments-history` usa CQRS
 reactivo con Aurora por R2DBC para el historial de pagos de cada cliente.

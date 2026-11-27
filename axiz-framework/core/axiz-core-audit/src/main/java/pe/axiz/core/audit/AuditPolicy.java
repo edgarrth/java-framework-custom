@@ -1,6 +1,6 @@
 package pe.axiz.core.audit;
 
-/** When an audited action is recorded. */
+/** Momento en que se registra una acción auditada. */
 public enum AuditPolicy {
   ALWAYS,
   ON_SUCCESS,

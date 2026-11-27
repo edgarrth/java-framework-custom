@@ -1,10 +1,10 @@
-## What and why
+## Qué y por qué
 
-## How it was tested
+## Cómo se probó
 
-## Checklist
+## Lista de verificación
 
-- [ ] Contract changes are backward compatible (or versioned) and their examples are updated
-- [ ] No secrets, environment values or personal data in code, config or logs
-- [ ] New configuration keys are in the Helm values of every environment
-- [ ] Module README and usage examples updated when behavior changes
+- [ ] Los cambios de contrato son compatibles hacia atrás (o versionados) y sus ejemplos están actualizados
+- [ ] Sin secretos, valores de ambiente ni datos personales en el código, la configuración o los logs
+- [ ] Las claves de configuración nuevas están en los values de Helm de cada ambiente
+- [ ] El README del módulo y los ejemplos de uso se actualizan cuando cambia el comportamiento

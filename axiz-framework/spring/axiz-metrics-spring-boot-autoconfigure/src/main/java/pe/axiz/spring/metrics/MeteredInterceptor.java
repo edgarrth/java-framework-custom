@@ -15,9 +15,9 @@ import pe.axiz.core.metrics.EventMetrics;
 import pe.axiz.core.metrics.Metered;
 
 /**
- * Applies {@link Metered}: counts the call, times it and derives outcome and reason from the
- * failure. Arguments and results implementing {@code MetricSource} contribute amount, value and
- * tags. Reactive results are measured when they complete.
+ * Aplica {@link Metered}: cuenta la llamada, la cronometra y deriva el resultado y el motivo a
+ * partir del fallo. Los argumentos y resultados que implementan {@code MetricSource} aportan monto,
+ * valor y etiquetas. Los resultados reactivos se miden cuando completan.
  */
 public class MeteredInterceptor implements MethodInterceptor {
 

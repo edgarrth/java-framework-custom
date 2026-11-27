@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import pe.axiz.core.outbox.OutboxRelayListener;
 
-/** Metrics are an optional binding of the neutral relay listener. */
+/** Las métricas son un binding opcional del listener neutral del relay. */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnClass(name = "io.micrometer.core.instrument.MeterRegistry")
 @ConditionalOnBean(MeterRegistry.class)

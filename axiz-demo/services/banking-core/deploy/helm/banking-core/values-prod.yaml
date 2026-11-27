@@ -47,6 +47,10 @@ config:
           username: banking-core
           password-ref: core-soap-password
     audit:
+      integrity:
+        mode: HMAC
+        hmac-secret: audit-hmac-key
+        hmac-key-id: v1
       sqs:
         queue-url: https://sqs.us-east-1.amazonaws.com/333333333333/axiz-demo-audit-prod
   management:

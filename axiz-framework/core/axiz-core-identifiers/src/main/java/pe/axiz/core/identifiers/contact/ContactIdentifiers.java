@@ -3,13 +3,14 @@ package pe.axiz.core.identifiers.contact;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
+import pe.axiz.core.identifiers.IdentifierMasks;
 import pe.axiz.core.identifiers.IdentifierType;
 import pe.axiz.core.identifiers.IdentifierTypeProvider;
 
-/** Contact data: E.164 phone numbers and email addresses. */
+/** Datos de contacto: números de teléfono E.164 y direcciones de correo. */
 public final class ContactIdentifiers implements IdentifierTypeProvider {
 
-  /** Phone number in E.164 format, e.g. {@code +51987654321}. */
+  /** Número de teléfono en formato E.164, por ejemplo {@code +51987654321}. */
   public static final IdentifierType PHONE =
       new IdentifierType() {
         private static final Pattern E164 = Pattern.compile("^\\+[1-9]\\d{6,14}$");
@@ -30,11 +31,11 @@ public final class ContactIdentifiers implements IdentifierTypeProvider {
         }
       };
 
-  /** Email address (pragmatic RFC 5322 subset, at most 254 characters). */
+  /** Dirección de correo (subconjunto pragmático de RFC 5322, como máximo 254 caracteres). */
   public static final IdentifierType EMAIL =
       new IdentifierType() {
-        // The address is split at '@' and '.', and each part is checked with a pattern without
-        // nested repetition, so the check is linear in the length of the address.
+        // La dirección se divide en '@' y '.', y cada parte se verifica con un patrón sin
+        // repetición anidada, de modo que la verificación es lineal en la longitud de la dirección.
         private static final Pattern LOCAL_PART = Pattern.compile("^[a-z0-9!#$%&'*+/=?^_`{|}~-]+$");
         private static final Pattern LABEL = Pattern.compile("^[a-z0-9-]{1,63}$");
         private static final Pattern TOP_LEVEL = Pattern.compile("^[a-z]{2,63}$");
@@ -77,11 +78,7 @@ public final class ContactIdentifiers implements IdentifierTypeProvider {
 
         @Override
         public String mask(String v) {
-          int at = v.indexOf('@');
-          if (at <= 1) {
-            return "*" + v.substring(Math.max(at, 0));
-          }
-          return v.charAt(0) + "*".repeat(at - 1) + v.substring(at);
+          return IdentifierMasks.email(v);
         }
       };
 

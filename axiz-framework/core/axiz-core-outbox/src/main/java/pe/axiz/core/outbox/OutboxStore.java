@@ -5,16 +5,25 @@ import java.time.Instant;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/** Persistence port of the outbox. {@link #append} runs inside the business transaction. */
+/** Puerto de persistencia del outbox. {@link #append} corre dentro de la transacción de negocio. */
 public interface OutboxStore {
+
+  /**
+   * Identidad del recurso usada para asegurar que las cabezas de auditoría y los registros
+   * compartan una transacción.
+   */
+  default @Nullable Object transactionResource() {
+    return null;
+  }
 
   void append(OutboxRecord record);
 
   /**
-   * Claims due entries atomically using database time for eligibility and lease expiration. The
-   * lease starts no earlier than this call, never from an application clock or an older surrounding
-   * transaction's timestamp. Implementations return the assigned owner and informational lease
-   * expiration; subsequent updates must fence on that owner.
+   * Reclama de forma atómica las entradas vencidas usando la hora de la base de datos para la
+   * elegibilidad y la expiración del lease. El lease no empieza antes de esta llamada, nunca a
+   * partir de un reloj de la aplicación ni de la marca de tiempo de una transacción circundante
+   * anterior. Las implementaciones devuelven el propietario asignado y la expiración informativa
+   * del lease; las actualizaciones posteriores deben aplicar fencing sobre ese propietario.
    */
   List<OutboxRecord> claimDue(int size, Duration lease, String owner);
 
@@ -38,7 +47,7 @@ public interface OutboxStore {
 
   void verifySchema();
 
-  /** Deletes published entries older than the instant; returns how many were removed. */
+  /** Borra las entradas publicadas anteriores al instante; devuelve cuántas se eliminaron. */
   int purgePublished(Instant before);
 
   long countPending();

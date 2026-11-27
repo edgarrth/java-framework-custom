@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
@@ -26,7 +27,10 @@ import pe.axiz.core.idempotency.InMemoryAsyncIdempotencyStore;
 import pe.axiz.core.idempotency.StoredResponse;
 import reactor.core.publisher.Mono;
 
-/** The reactive filter end to end: first execution stored, retries replayed, failures released. */
+/**
+ * El filtro reactivo de extremo a extremo: primera ejecución almacenada, reintentos reproducidos,
+ * fallos liberados.
+ */
 class ReactiveIdempotencyFilterTest {
 
   @RestController
@@ -82,7 +86,7 @@ class ReactiveIdempotencyFilterTest {
             () -> service));
     return WebTestClient.bindToController(factory.getProxy())
         .controllerAdvice(new IdempotencyReplayHandler(), new Errors())
-        .webFilter(new IdempotencyWebFilter(service, 1024, maxResponseSize))
+        .webFilter(new IdempotencyWebFilter(service, 1024, maxResponseSize, List.of()))
         .build();
   }
 
@@ -91,9 +95,9 @@ class ReactiveIdempotencyFilterTest {
   }
 
   /**
-   * The record is settled on a worker once the response is out: until then a retry sees the key in
-   * progress (409). Retries like a client would, for at most five seconds, and returns the first
-   * answer that is not 409.
+   * El registro se asienta en un worker una vez enviada la respuesta: hasta entonces, un reintento
+   * ve la clave en curso (409). Reintenta como lo haría un cliente, durante cinco segundos como
+   * máximo, y devuelve la primera respuesta que no sea 409.
    */
   private EntityExchangeResult<String> retry(WebTestClient client, String key, String body)
       throws InterruptedException {
@@ -164,7 +168,7 @@ class ReactiveIdempotencyFilterTest {
         .value(status -> assertThat(status).isGreaterThanOrEqualTo(400));
     assertEquals(
         1, api.executions.get(), "a required key that is missing never runs the operation");
-    assertThat(new IdempotencyWebFilter(service, 1, 1).getOrder())
+    assertThat(new IdempotencyWebFilter(service, 1, 1, List.of()).getOrder())
         .isEqualTo(IdempotencyWebFilter.ORDER);
   }
 }

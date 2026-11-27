@@ -30,22 +30,18 @@ import pe.axiz.core.messaging.PayloadCodec;
 import pe.axiz.core.messaging.RoutingEventPublisher;
 import pe.axiz.core.resilience.Backoff;
 import pe.axiz.spring.foundation.DispatchBoundary;
-import pe.axiz.spring.foundation.InboxCompletion;
 import pe.axiz.spring.foundation.ReactiveDispatchBoundary;
-import pe.axiz.spring.foundation.ReactiveInboxCompletion;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * CloudEvents messaging: envelope factory, JSON codec, observed publisher routed to the broker
- * adapters, and the dispatcher over all {@link EventHandler} beans with retries, dead-lettering and
- * de-duplication (inbox starter).
+ * Mensajería CloudEvents: fábrica de sobres, códec JSON, publicador observado enrutado a los
+ * adaptadores de broker y el dispatcher sobre todos los beans {@link EventHandler} con reintentos,
+ * dead-lettering y deduplicación (starter de inbox).
  */
 @AutoConfiguration(
     afterName = {
       "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration",
-      "pe.axiz.spring.inbox.AxizInboxAutoConfiguration",
-      "pe.axiz.spring.messaging.AxizMessagingKafkaAutoConfiguration",
-      "pe.axiz.spring.messaging.AxizMessagingAwsAutoConfiguration"
+      "pe.axiz.spring.inbox.AxizInboxAutoConfiguration"
     })
 @ConditionalOnBooleanProperty(name = "axiz.messaging.enabled", matchIfMissing = true)
 @EnableConfigurationProperties(AxizMessagingProperties.class)
@@ -63,7 +59,7 @@ public class AxizMessagingAutoConfiguration {
         tx, completion, environment.getProperty("axiz.inbox.transactional", "auto"));
   }
 
-  /** Reactive handlers: transaction, context and timeout (reactive services). */
+  /** Handlers reactivos: transacción, contexto y timeout (servicios reactivos). */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnClass(name = "reactor.core.publisher.Mono")
   static class ReactiveConfiguration {
@@ -74,9 +70,10 @@ public class AxizMessagingAutoConfiguration {
         Environment env,
         ObjectProvider<ReactiveInboxCompletion> completion,
         ObjectProvider<ReactiveDispatchBoundary> boundaries) {
-      // a static post-processor cannot take @ConfigurationProperties: bind the values with Spring
-      // Boot's conversions ("100ms", "30s", relaxed names). Environment.getProperty(Duration) only
-      // works when the environment carries Boot's conversion service, not in every context
+      // un post-processor estático no puede recibir @ConfigurationProperties: los valores se
+      // enlazan con las conversiones de Spring Boot ("100ms", "30s", nombres relajados).
+      // Environment.getProperty(Duration) solo funciona cuando el entorno lleva el servicio de
+      // conversión de Boot, no en todos los contextos
       Binder binder = Binder.get(env);
       return new ReactiveEventHandlerPostProcessor(
           tx,
@@ -215,7 +212,7 @@ public class AxizMessagingAutoConfiguration {
         });
   }
 
-  /** Accepts every delivery; used only when no inbox is configured. */
+  /** Acepta todas las entregas; solo se usa cuando no hay ningún inbox configurado. */
   enum NoDeduplication implements Deduplicator {
     INSTANCE;
 
@@ -226,12 +223,12 @@ public class AxizMessagingAutoConfiguration {
 
     @Override
     public boolean completed(String consumer, String eventId, String token) {
-      return true; // nothing to record
+      return true; // nada que registrar
     }
 
     @Override
     public boolean failed(String consumer, String eventId, String token) {
-      return true; // nothing to record
+      return true; // nada que registrar
     }
   }
 }

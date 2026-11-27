@@ -52,6 +52,31 @@ class InboxTest {
   }
 
   @Test
+  void retentionCannotPurgeInProgressRowsAndTakeoverRenewsRetention() {
+    Instant now = clock.instant();
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> store.tryAcquire("c", "e", "owner", now, now.plusSeconds(60), now.plusSeconds(30)));
+    store.tryAcquire("c", "e", "owner", now, now.plusSeconds(30), now.plusSeconds(60));
+    assertEquals(0, store.purgeExpired(now.plusSeconds(120)));
+    assertEquals(
+        InboxStore.Acquisition.Status.ACQUIRED,
+        store
+            .tryAcquire(
+                "c",
+                "e",
+                "successor",
+                now.plusSeconds(120),
+                now.plusSeconds(150),
+                now.plusSeconds(300))
+            .status());
+    assertFalse(store.markProcessed("c", "e", "owner", now.plusSeconds(121)));
+    assertTrue(store.markProcessed("c", "e", "successor", now.plusSeconds(121)));
+    assertEquals(0, store.purgeExpired(now.plusSeconds(200)));
+    assertEquals(1, store.purgeExpired(now.plusSeconds(301)));
+  }
+
+  @Test
   void processesOncePerConsumer() {
     InboxDeduplicator dedup =
         new InboxDeduplicator(store, Duration.ofMinutes(5), Duration.ofDays(7), clock);
@@ -90,7 +115,7 @@ class InboxTest {
     InboxDeduplicator dedup =
         new InboxDeduplicator(store, Duration.ofMinutes(5), Duration.ofDays(7), clock);
     Deduplicator.Claim a = dedup.claim("c", "e-5");
-    clock.now = clock.now.plus(Duration.ofMinutes(6)); // A is slow: its lease expires
+    clock.now = clock.now.plus(Duration.ofMinutes(6)); // A es lento: su lease expira
     Deduplicator.Claim b = dedup.claim("c", "e-5");
     assertEquals(Deduplicator.Claim.Status.ACQUIRED, b.status());
     assertFalse(dedup.failed("c", "e-5", a.token()), "A cannot release B's claim");
@@ -157,6 +182,8 @@ class InboxTest {
                 "c", "e-3", "o", clock.now, clock.now.plusSeconds(60), clock.now.plusSeconds(120))
             .status());
     assertEquals(0, store.purgeExpired(clock.now));
+    assertEquals(0, store.purgeExpired(clock.now.plusSeconds(121)));
+    assertTrue(store.markProcessed("c", "e-3", "o", clock.now.plusSeconds(30)));
     assertEquals(1, store.purgeExpired(clock.now.plusSeconds(121)));
     JdbcTransactions noDb = new JdbcTransactions(new JdbcDataSource());
     JdbcInboxStore broken = new JdbcInboxStore(noDb, "axiz_inbox");
@@ -168,7 +195,7 @@ class InboxTest {
   void aRegistrationReleasedWhileAcquiringIsRedeliveredAtOnce() throws Exception {
     Instant now = clock.now;
     store.tryAcquire("c", "e-9", "a", now, now.plusSeconds(60), now.plusSeconds(600));
-    // the owner releases its registration between our insert attempt and our read
+    // el propietario libera su registro entre el intento de insert y la lectura
     ConnectionProvider racing =
         new ConnectionProvider() {
           @Override
@@ -282,7 +309,7 @@ class InboxTest {
             return 0;
           }
         };
-    unknownLease.verifySchema(); // nothing to check by default
+    unknownLease.verifySchema(); // nada que verificar por defecto
     Deduplicator.Claim busy =
         new InboxDeduplicator(unknownLease, Duration.ofSeconds(30), Duration.ofHours(1), clock)
             .claim("c", "e-1");
@@ -310,8 +337,8 @@ class InboxTest {
   }
 
   /**
-   * Regression: a database created with the previous layout (no owner column) is detected at
-   * startup, upgraded by a new migration and keeps its data and invariants.
+   * Regresión: una base de datos creada con la disposición previa (sin columna owner) se detecta al
+   * arrancar, se actualiza con una migración nueva y conserva sus datos e invariantes.
    */
   @Test
   void anIncompleteSchemaIsRejectedBeforeConsumption() throws Exception {

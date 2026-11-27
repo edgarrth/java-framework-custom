@@ -6,7 +6,10 @@ import jakarta.persistence.MappedSuperclass;
 import java.time.Instant;
 import org.jspecify.annotations.Nullable;
 
-/** Entity with creation and modification audit columns (UTC instants and principal names). */
+/**
+ * Entidad con columnas de auditoría de creación y modificación (instantes UTC y nombres de
+ * principal).
+ */
 @MappedSuperclass
 @EntityListeners(AuditListener.class)
 public abstract class AuditableEntity extends BaseEntity {

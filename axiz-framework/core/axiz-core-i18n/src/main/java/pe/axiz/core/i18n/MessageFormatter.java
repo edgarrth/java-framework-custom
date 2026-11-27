@@ -3,8 +3,9 @@ package pe.axiz.core.i18n;
 import java.util.Map;
 
 /**
- * Replaces {@code {name}} placeholders. Unknown placeholders are left untouched; an opening or
- * closing brace without a name is kept literally. Values are rendered with {@code String.valueOf}.
+ * Reemplaza los marcadores {@code {name}}. Los marcadores desconocidos se dejan intactos; una llave
+ * de apertura o de cierre sin nombre se conserva de forma literal. Los valores se generan con
+ * {@code String.valueOf}.
  */
 public final class MessageFormatter {
 

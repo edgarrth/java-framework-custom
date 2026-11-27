@@ -1,5 +1,6 @@
 package pe.axiz.codegen.openapi;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -8,6 +9,123 @@ import org.junit.jupiter.api.Test;
 import pe.axiz.codegen.Fixtures;
 
 class ContractDiffTest {
+
+  private static OpenApiDocument contract(String request, String response) {
+    return OpenApiDocument.parse(
+        """
+        openapi: 3.1.0
+        info: {title: Contract compatibility, version: 1.0.0}
+        paths:
+          /items/{id}:
+            parameters:
+              - {in: path, name: id, required: true, schema: {type: string}}
+            post:
+              operationId: updateItem
+              requestBody:
+                content:
+                  application/json:
+                    schema: %s
+              responses:
+                '200':
+                  description: Current value
+                  content:
+                    application/json:
+                      schema: %s
+        """
+            .formatted(request, response));
+  }
+
+  @Test
+  void nestedInputRequirementsAndFormatChangesIdentifyTheAffectedConsumerField() {
+    var old =
+        contract(
+            "{type: object, properties: {customer: {type: object, properties: {name: {type: string}}}}}",
+            "{type: object, properties: {id: {type: string, format: uuid}}}");
+    var now =
+        contract(
+            "{type: object, properties: {customer: {type: object, required: [name], "
+                + "properties: {name: {type: integer}}}}}",
+            "{type: object, properties: {id: {type: string, format: date}}}");
+    assertEquals(
+        List.of(
+            new ContractDiff.Change(
+                true, "POST /items/{} request.customer.name", "field became required"),
+            new ContractDiff.Change(
+                true,
+                "POST /items/{} request.customer.name",
+                "type changed from string to integer"),
+            new ContractDiff.Change(
+                true, "POST /items/{} response.id", "format changed from uuid to date")),
+        ContractDiff.compare(old, now));
+  }
+
+  @Test
+  void responseArraysAndClosedEnumsMustRemainCompatibleForExistingConsumers() {
+    var old = contract("{}", "{type: array, items: {type: string, enum: [OPEN, CLOSED]}}");
+    for (String values : List.of("[OPEN]", "[OPEN, CLOSED, CANCELLED]")) {
+      var now = contract("{}", "{type: array, items: {type: string, enum: " + values + "}}");
+      assertEquals(
+          List.of(
+              new ContractDiff.Change(
+                  true,
+                  "POST /items/{} response[]",
+                  "enum values changed (consumers may not know new values)")),
+          ContractDiff.compare(old, now));
+    }
+    assertTrue(ContractDiff.compare(old, old).isEmpty());
+    var before = contract("{}", "{type: object, properties: {id: {type: string}}}");
+    var after =
+        contract("{}", "{type: object, properties: {id: {type: string}, label: {type: string}}}");
+    assertEquals(
+        List.of(
+            new ContractDiff.Change(
+                false, "POST /items/{} response.label", "response field added")),
+        ContractDiff.compare(before, after));
+  }
+
+  @Test
+  void newRequiredQueryAndBodyAreBreakingWhileRenamedPathVariablesAreCompatible() {
+    String before =
+        """
+        openapi: 3.1.0
+        info: {title: Compatibility, version: 1.0.0}
+        paths:
+          /items/{id}:
+            parameters:
+              - {in: path, name: id, required: true, schema: {type: string}}
+            post:
+              operationId: updateItem
+              responses:
+                '204': {description: Updated}
+        """;
+    var original = OpenApiDocument.parse(before);
+    assertTrue(
+        ContractDiff.compare(
+                original,
+                OpenApiDocument.parse(
+                    before.replace("{id}", "{key}").replace("name: id", "name: key")))
+            .isEmpty());
+    String next =
+        before.replace(
+            "operationId: updateItem",
+            """
+        operationId: updateItem
+              parameters:
+                - {in: query, name: approval, required: true, schema: {type: string}}
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema: {type: object, properties: {label: {type: string}}}
+        """
+                .stripTrailing());
+    assertEquals(
+        List.of(
+            new ContractDiff.Change(
+                true, "POST /items/{} query:approval", "required parameter added"),
+            new ContractDiff.Change(true, "POST /items/{} request", "required request body added")),
+        ContractDiff.compare(original, OpenApiDocument.parse(next)));
+  }
 
   private final OpenApiDocument base = OpenApiDocument.parse(Fixtures.orders());
 
@@ -62,7 +180,8 @@ class ContractDiffTest {
         removed.toString());
     List<ContractDiff.Change> retyped =
         diff(
-            "        amount: {type: number}\n        currency: {type: string}\n        status",
+            "        amount: {type: number, minimum: 0.01, maximum: 9999999999999999.99,"
+                + " multipleOf: 0.01}\n        currency: {type: string}\n        status",
             "        amount: {type: string}\n        currency: {type: string}\n        status");
     assertTrue(
         retyped.stream().anyMatch(c -> c.breaking() && c.message().startsWith("type changed")),

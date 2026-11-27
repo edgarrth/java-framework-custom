@@ -9,7 +9,7 @@ import pe.axiz.adapter.aws.transport.AwsClients;
 import software.amazon.awssdk.awscore.client.builder.AwsAsyncClientBuilder;
 import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
 
-/** Composes AWS transport with Micrometer using the SDK's public plugin contract. */
+/** Compone el transporte de AWS con Micrometer mediante el contrato público de plugins del SDK. */
 public final class AwsObservability {
   private AwsObservability() {}
 

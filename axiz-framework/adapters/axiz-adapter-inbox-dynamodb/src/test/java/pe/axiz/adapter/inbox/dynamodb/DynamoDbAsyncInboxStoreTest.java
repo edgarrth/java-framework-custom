@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.inbox.AsyncInboxStore;
 import pe.axiz.core.inbox.InboxException;
 import pe.axiz.test.contracts.AsyncInboxStoreContract;

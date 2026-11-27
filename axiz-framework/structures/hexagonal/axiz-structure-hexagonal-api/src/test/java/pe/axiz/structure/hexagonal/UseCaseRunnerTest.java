@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
+import pe.axiz.core.commons.tx.CommittedTransactionOutcome;
 import pe.axiz.core.domain.AggregateRoot;
 import pe.axiz.core.domain.DomainEvent;
 
@@ -41,6 +42,53 @@ class UseCaseRunnerTest {
       log.add("commit");
       return r;
     }
+  }
+
+  @Test
+  void directPublicationFailureExplicitlyReportsCommittedWorkWithoutLeakingPayloads() {
+    var tx = new RecordingTx();
+    var runner =
+        new UseCaseRunner(
+            tx,
+            events -> {
+              throw new IllegalStateException("PAN-CANARY");
+            });
+    var failure =
+        assertThrows(
+            PostCommitPublicationException.class,
+            () ->
+                runner.run(
+                    false,
+                    () -> {
+                      DomainEvents.collect(new Payment("p1"));
+                      return "PRIVATE-RESULT";
+                    }));
+    assertEquals(List.of("begin", "commit"), tx.log);
+    assertTrue(failure instanceof CommittedTransactionOutcome);
+    assertEquals(null, failure.getCause());
+    assertTrue(!failure.toString().contains("CANARY"));
+    assertTrue(DomainEvents.drain().isEmpty());
+  }
+
+  @Test
+  void explicitUseCaseAndNoTransactionPreserveResultWithoutRetainingEvents() {
+    UseCaseRunner runner = new UseCaseRunner(UseCaseTransaction.none(), DomainEventSink.discard());
+    assertEquals("accepted:42", runner.run(input -> "accepted:" + input, 42));
+    assertEquals(
+        "p4",
+        runner.run(
+            false,
+            () -> {
+              Payment payment = new Payment("p4");
+              DomainEvents.collect(payment);
+              assertEquals(
+                  List.of(new PaymentCreated("e-p4", Instant.EPOCH, "p4")), DomainEvents.drain());
+              assertTrue(
+                  DomainEvents.drain().isEmpty(),
+                  "draining must never publish the same event twice");
+              return payment.id();
+            }));
+    assertTrue(DomainEvents.drain().isEmpty());
   }
 
   @Test

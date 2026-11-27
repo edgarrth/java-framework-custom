@@ -10,12 +10,12 @@ import org.springframework.r2dbc.connection.R2dbcTransactionManager;
 import org.springframework.transaction.ReactiveTransactionManager;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import pe.axiz.spring.foundation.ReactiveDispatchBoundary;
-import pe.axiz.spring.foundation.ReactiveInboxCompletion;
 
 /**
- * Wraps every {@link ReactiveTypedEventHandler} bean in {@link ReactiveTransactionalEventHandler}:
- * a reactive transaction when a reactive transaction manager exists (R2DBC), the request context
- * and the handler timeout in every case.
+ * Envuelve cada bean {@link ReactiveTypedEventHandler} en {@link
+ * ReactiveTransactionalEventHandler}: una transacción reactiva cuando existe un gestor de
+ * transacciones reactivo (R2DBC), y el contexto de la solicitud y el timeout del handler en todos
+ * los casos.
  */
 public final class ReactiveEventHandlerPostProcessor implements BeanPostProcessor {
 

@@ -10,14 +10,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Keeps tag cardinality bounded: values beyond the limits, not allowed or malformed are replaced
- * with {@code other}, and a warning is logged once per tag.
+ * Mantiene acotada la cardinalidad de los tags: los valores fuera de los límites, no permitidos o
+ * mal formados se reemplazan por {@code other}, y se registra una advertencia una vez por tag.
  */
 final class CardinalityGuard {
 
   private static final Logger LOG = LoggerFactory.getLogger(CardinalityGuard.class);
-  // A separator must be followed by a letter or digit; each character has one way to match, so the
-  // check is linear in the length of the name (no nested repetition).
+  // Un separador debe ir seguido de una letra o un dígito; cada carácter tiene una sola forma de
+  // coincidir, de modo que la verificación es lineal en la longitud del nombre (sin repetición
+  // anidada).
   private static final Pattern EVENT_NAME =
       Pattern.compile("^[a-z0-9](?:[a-z0-9]|[._-](?=[a-z0-9]))*$");
   private static final Pattern TAG_VALUE = Pattern.compile("[^A-Za-z0-9._:-]");
@@ -71,7 +72,7 @@ final class CardinalityGuard {
     return bounded(key, value, policy);
   }
 
-  /** Returns null when the custom tag is not declared (it is dropped). */
+  /** Devuelve null cuando el tag personalizado no está declarado (se descarta). */
   @Nullable String custom(String key, @Nullable String value) {
     TagPolicy policy = settings.customTags().get(key);
     if (policy == null) {

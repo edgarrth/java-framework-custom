@@ -1,6 +1,6 @@
 package pe.axiz.payments.process.application.port.out;
 
-/** Status of the payment order in payment-orders. Every call is idempotent per key. */
+/** Estado de la orden de pago en payment-orders. Cada llamada es idempotente por clave. */
 public interface PaymentOrders {
 
   void markProcessing(String orderId, String idempotencyKey);

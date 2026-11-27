@@ -2,7 +2,7 @@ package pe.axiz.core.errors;
 
 import java.util.List;
 
-/** Error definitions owned by the framework itself (prefix {@code AXZ}). */
+/** Definiciones de error propias del framework (prefijo {@code AXZ}). */
 public final class CoreErrors {
 
   public static final ErrorDefinition VALIDATION_FAILED =
@@ -17,6 +17,14 @@ public final class CoreErrors {
       ErrorDefinition.of("AXZ-CORE-0405", ErrorCategory.METHOD_NOT_ALLOWED, "Method not allowed");
   public static final ErrorDefinition CONFLICT =
       ErrorDefinition.of("AXZ-CORE-0409", ErrorCategory.CONFLICT, "Conflict with current state");
+
+  /** El cambio de negocio hizo commit; repetirlo duplicaría sus efectos. */
+  public static final ErrorDefinition POST_COMMIT_PUBLICATION =
+      ErrorDefinition.of(
+          "AXZ-CORE-0410",
+          ErrorCategory.CONFLICT,
+          "Operation committed; event delivery requires reconciliation");
+
   public static final ErrorDefinition PRECONDITION_FAILED =
       ErrorDefinition.of("AXZ-CORE-0412", ErrorCategory.PRECONDITION_FAILED, "Precondition failed");
   public static final ErrorDefinition PAYLOAD_TOO_LARGE =
@@ -42,10 +50,13 @@ public final class CoreErrors {
       ErrorDefinition.of("AXZ-EXT-0502", ErrorCategory.BAD_GATEWAY, "Dependency failure");
   public static final ErrorDefinition EXTERNAL_TIMEOUT =
       ErrorDefinition.of("AXZ-EXT-0504", ErrorCategory.GATEWAY_TIMEOUT, "Dependency timeout");
+  public static final ErrorDefinition OUTCOME_UNKNOWN =
+      ErrorDefinition.of(
+          "AXZ-CORE-0504", ErrorCategory.OUTCOME_UNKNOWN, "Operation outcome uncertain");
 
   private CoreErrors() {}
 
-  /** All framework definitions, registered by default in every catalog. */
+  /** Todas las definiciones del framework, registradas por defecto en todo catálogo. */
   public static List<ErrorDefinition> all() {
     return List.of(
         VALIDATION_FAILED,
@@ -54,6 +65,7 @@ public final class CoreErrors {
         NOT_FOUND,
         METHOD_NOT_ALLOWED,
         CONFLICT,
+        POST_COMMIT_PUBLICATION,
         PRECONDITION_FAILED,
         PAYLOAD_TOO_LARGE,
         UNSUPPORTED_MEDIA_TYPE,
@@ -64,10 +76,11 @@ public final class CoreErrors {
         NOT_IMPLEMENTED,
         UNAVAILABLE,
         EXTERNAL_ERROR,
-        EXTERNAL_TIMEOUT);
+        EXTERNAL_TIMEOUT,
+        OUTCOME_UNKNOWN);
   }
 
-  /** Default framework definition for a category. */
+  /** Definición por defecto del framework para una categoría. */
   public static ErrorDefinition forCategory(ErrorCategory category) {
     return switch (category) {
       case BAD_REQUEST -> VALIDATION_FAILED;
@@ -85,6 +98,7 @@ public final class CoreErrors {
       case BAD_GATEWAY -> EXTERNAL_ERROR;
       case SERVICE_UNAVAILABLE -> UNAVAILABLE;
       case GATEWAY_TIMEOUT -> EXTERNAL_TIMEOUT;
+      case OUTCOME_UNKNOWN -> OUTCOME_UNKNOWN;
     };
   }
 }

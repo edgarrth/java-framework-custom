@@ -16,15 +16,16 @@ import pe.axiz.core.cache.CacheUnavailableException;
 import pe.axiz.core.cache.CachedValue;
 
 /**
- * Redis (ElastiCache / Valkey) cache tier. {@code SET key value PX ttl} sets the TTL atomically on
- * the key that is written; a read with its remaining TTL is one atomic script ({@code GET} and
- * {@code PTTL} of the same key); prefix eviction uses {@code SCAN} in batches (never {@code KEYS}).
+ * Nivel de caché en Redis (ElastiCache / Valkey). {@code SET key value PX ttl} fija el TTL de forma
+ * atómica en la clave que se escribe; una lectura con su TTL restante es un único script atómico
+ * ({@code GET} y {@code PTTL} de la misma clave); el desalojo por prefijo usa {@code SCAN} por
+ * lotes (nunca {@code KEYS}).
  */
 public final class RedisByteCache implements ByteCache {
 
   private static final int SCAN_COUNT = 500;
 
-  /** Value and remaining milliseconds of one key, read atomically. */
+  /** Valor y milisegundos restantes de una clave, leídos de forma atómica. */
   static final String GET_WITH_TTL =
       "return {redis.call('GET', KEYS[1]), redis.call('PTTL', KEYS[1])}";
 
@@ -54,7 +55,7 @@ public final class RedisByteCache implements ByteCache {
     if (reply == null || reply.isEmpty() || !(reply.get(0) instanceof byte[] value)) {
       return Optional.empty();
     }
-    // PTTL: milliseconds left, -1 without expiration, -2 when the key is gone
+    // PTTL: milisegundos restantes, -1 sin expiración, -2 cuando la clave no existe
     if (reply.size() < 2 || !(reply.get(1) instanceof Long millis)) {
       return Optional.of(CachedValue.unknownExpiry(value));
     }

@@ -7,7 +7,10 @@ import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 
-/** Secure transport defaults at lowest precedence; the guard checks actual client options. */
+/**
+ * Valores por defecto de transporte seguro con la precedencia más baja; la guarda comprueba las
+ * opciones reales del cliente.
+ */
 public final class AxizKafkaTransportEnvironmentPostProcessor
     implements EnvironmentPostProcessor, Ordered {
   @Override

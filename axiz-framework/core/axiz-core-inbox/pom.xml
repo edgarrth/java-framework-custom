@@ -12,12 +12,12 @@
 
   <artifactId>axiz-core-inbox</artifactId>
   <name>axiz :: core :: inbox</name>
-  <description>Idempotent consumer: processed-message registry with JDBC store</description>
+  <description>Idempotent consumer contracts and provider-independent delivery coordination</description>
 
   <properties>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
-    <!-- M10: measured locally; floor of branch 9/9 and detected mutations 11/12. -->
+    <!-- Umbrales mínimos del módulo: ramas 9/9 y mutaciones detectadas 11/12. -->
     <axiz.coverage.branch>1.00</axiz.coverage.branch>
     <axiz.mutation.threshold>91</axiz.mutation.threshold>
     <axiz.module.name>pe.axiz.core.inbox</axiz.module.name>
@@ -26,17 +26,8 @@
   <dependencies>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-commons</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
       <artifactId>axiz-core-messaging</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
     </dependency>
   </dependencies>
 </project>

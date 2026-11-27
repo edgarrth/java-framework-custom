@@ -1,9 +1,0 @@
-public final class pe.axiz.adapter.lock.redis.RedisAsyncDistributedLock implements pe.axiz.core.lock.AsyncDistributedLock {
-public java.util.concurrent.CompletionStage<java.util.Optional<pe.axiz.core.lock.AsyncLockHandle>> tryAcquire(java.lang.String, java.time.Duration);
-public pe.axiz.adapter.lock.redis.RedisAsyncDistributedLock(io.lettuce.core.api.async.RedisAsyncCommands<java.lang.String, java.lang.String>, java.lang.String);
-}
-
-public final class pe.axiz.adapter.lock.redis.RedisDistributedLock implements pe.axiz.core.lock.DistributedLock {
-public java.util.Optional<pe.axiz.core.lock.LockHandle> tryAcquire(java.lang.String, java.time.Duration);
-public pe.axiz.adapter.lock.redis.RedisDistributedLock(io.lettuce.core.api.sync.RedisCommands<java.lang.String, java.lang.String>, java.lang.String);
-}

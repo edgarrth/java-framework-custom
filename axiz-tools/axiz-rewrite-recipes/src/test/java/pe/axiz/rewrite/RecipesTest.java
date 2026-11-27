@@ -13,9 +13,9 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /**
- * Structure of the declarative recipes (the recipes themselves run in the upgrade workflow, where
- * OpenRewrite is available): every document is a recipe, names are unique and every axiz recipe
- * referenced from a list exists.
+ * Estructura de las recetas declarativas (las recetas en sí se ejecutan en el workflow de
+ * actualización, donde OpenRewrite está disponible): cada documento es una receta, los nombres son
+ * únicos y cada receta de axiz referenciada desde una lista existe.
  */
 class RecipesTest {
 

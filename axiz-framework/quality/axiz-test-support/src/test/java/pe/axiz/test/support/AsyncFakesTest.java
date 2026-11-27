@@ -105,8 +105,16 @@ class AsyncFakesTest {
   @Test
   void publisherProbePreservesAcknowledgementAndEveryKindOfFailure() {
     var event =
-        new EventEnvelope(
-            "e", "urn:test", "type", Instant.EPOCH, null, "text/plain", new byte[0], Map.of());
+        EventEnvelope.builder()
+            .id("e")
+            .source("urn:test")
+            .type("type")
+            .time(Instant.EPOCH)
+            .subject(null)
+            .dataContentType("text/plain")
+            .data(new byte[0])
+            .extensions(Map.of())
+            .build();
     var acknowledged = new PublishResult("e", "physical", "receipt");
     var success =
         new AsyncPublisherProbe(

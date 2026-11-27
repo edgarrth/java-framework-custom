@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-core-security
 
-AxizPrincipal, claim mapping, authority model, rate-limit keys and request signatures.
+AxizPrincipal, mapeo de claims, modelo de autoridades, claves de límite de tasa y firmas de peticiones.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,24 +12,24 @@ AxizPrincipal, claim mapping, authority model, rate-limit keys and request signa
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `AuthorityMapper` | Maps scopes and roles to authority names (`SCOPE_x`, `ROLE_X`). |
-| `AxizPrincipal` | Authenticated caller, built from the access token claims. |
-| `ClaimMapping` | Which claims hold each principal attribute. |
-| `ClaimsMapper` | Maps validated token claims to an `AxizPrincipal` according to a `ClaimMapping`. |
-| `InMemoryRateLimiter` | Fixed-window rate limiter kept in memory: for local use, tests and single-replica services. |
-| `IssuerPolicy` | Allow-list of trusted issuers. |
-| `RateLimitKeys` | Builds rate-limit keys from the authenticated principal. |
-| `RateLimiter` | Rate limiter port; the key always comes from the validated token, never from a client header. |
-| `RequestSignature` | HMAC-SHA256 signatures (format `AXIZ-HMAC-V2`) for partner callbacks and webhooks: unambiguous signed string, key rotation by key id, time window and single-use nonces. |
-| `NonceStore`, `InMemoryNonceStore` | Replay protection for `RequestSignature`; the in-memory store protects one instance only (use `RedisNonceStore` in a cluster). |
-| `TrustedIssuer` | An issuer the service accepts. |
+| `AuthorityMapper` | Mapea scopes y roles a nombres de autoridad (`SCOPE_x`, `ROLE_X`). |
+| `AxizPrincipal` | Llamador autenticado, construido desde los claims del token de acceso. |
+| `ClaimMapping` | Indica qué claims contienen cada atributo del principal. |
+| `ClaimsMapper` | Mapea los claims validados del token a un `AxizPrincipal` según un `ClaimMapping`. |
+| `InMemoryRateLimiter` | Limitador de tasa de ventana fija en memoria: para uso local, pruebas y servicios de una sola réplica. |
+| `IssuerPolicy` | Lista de emisores confiables permitidos. |
+| `RateLimitKeys` | Construye las claves del límite de tasa desde el principal autenticado. |
+| `RateLimiter` | Puerto del limitador de tasa; la clave siempre proviene del token validado, nunca de una cabecera del cliente. |
+| `RequestSignature` | Firmas HMAC-SHA256 (formato `AXIZ-HMAC-V2`) para callbacks y webhooks de socios: texto firmado sin ambigüedad, rotación de claves por identificador, ventana de tiempo y nonces de un solo uso. |
+| `NonceStore`, `InMemoryNonceStore` | Protección contra repetición para `RequestSignature`; el almacén en memoria protege solo una instancia (en un clúster se usa `RedisNonceStore`). |
+| `TrustedIssuer` | Un emisor que el servicio acepta. |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-security verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl core/axiz-core-security verify`.

@@ -197,7 +197,8 @@ class ReactiveLocksTest {
                 Duration.ZERO,
                 () -> Mono.fromRunnable(() -> ran.set(true)))
             .toFuture();
-    // Expire the monotonic lease: real elapsed time is the behavior under test.
+    // Se hace expirar el lease monotónico: el tiempo real transcurrido es el comportamiento bajo
+    // prueba.
     Thread.sleep(40);
     answer.complete(Optional.of(store.handle));
     CompletionException failure = assertThrows(CompletionException.class, running::join);

@@ -16,8 +16,8 @@ import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.utils.SdkAutoCloseable;
 
 /**
- * Credentials are resolved at startup and refreshed in the background; request threads only read an
- * immutable snapshot.
+ * Las credenciales se resuelven al arrancar y se renuevan en segundo plano; los hilos de petición
+ * solo leen una instantánea inmutable.
  */
 public final class WarmedAwsCredentials implements AwsCredentialsProvider, SdkAutoCloseable {
   private final AwsCredentialSource source;
@@ -71,7 +71,8 @@ public final class WarmedAwsCredentials implements AwsCredentialsProvider, SdkAu
         .filter(expiry -> !expiry.isAfter(clock.instant().plusSeconds(10)))
         .isPresent()) {
       throw SdkClientException.create(
-          "AWS credentials expired or near expiry; background refresh has not supplied a valid snapshot");
+          "AWS credentials expired or near expiry; background refresh has not supplied a valid"
+              + " snapshot");
     }
     return credentials;
   }

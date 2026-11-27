@@ -13,7 +13,7 @@ import pe.axiz.payments.process.application.saga.PaymentSaga;
 import pe.axiz.spring.saga.JacksonContextCodec;
 import tools.jackson.databind.json.JsonMapper;
 
-/** Wires the payment saga to its adapters and makes it resumable. */
+/** Conecta la saga de pago con sus adaptadores y la hace reanudable. */
 @Configuration(proxyBeanMethods = false)
 class PaymentSagaConfiguration {
 
@@ -22,7 +22,7 @@ class PaymentSagaConfiguration {
     return new JacksonContextCodec<>(mapper, PaymentContext.class);
   }
 
-  /** The saga definition, registered for recovery of interrupted processes. */
+  /** La definición de la saga, registrada para recuperar procesos interrumpidos. */
   @Bean
   SagaDefinition<PaymentContext> paymentSaga(
       PaymentOrders orders,

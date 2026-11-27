@@ -21,6 +21,8 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-context</artifactId><version>${project.version}</version></dependency>
+
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-autoconfigure</artifactId>
@@ -40,8 +42,8 @@
       <artifactId>sdk</artifactId>
       <optional>true</optional>
     </dependency>
-    <!-- compile only: the OpenFeature classes are annotated with @SuppressFBWarnings, which javac
-         warns about (one line per annotated member) when the annotation is not on the classpath -->
+    <!-- solo compilación: las clases de OpenFeature están anotadas con @SuppressFBWarnings, sobre lo que javac
+         advierte (una línea por miembro anotado) cuando la anotación no está en el classpath -->
     <dependency>
       <groupId>com.github.spotbugs</groupId>
       <artifactId>spotbugs-annotations</artifactId>

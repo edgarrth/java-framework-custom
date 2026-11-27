@@ -5,14 +5,15 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.codegen.openapi.Json;
 
 /**
- * Online mode: asks the axiz initializr to generate the project. Authentication uses the user's own
- * token from {@code AXIZ_TOKEN} (obtained through the corporate SSO); the CLI never stores it.
+ * Modo en línea: solicita al initializr de axiz que genere el proyecto. La autenticación usa el
+ * token propio del usuario de {@code AXIZ_TOKEN} (obtenido mediante el SSO corporativo); la CLI
+ * nunca lo almacena.
  */
 final class InitializrClient {
 
@@ -34,26 +35,27 @@ final class InitializrClient {
     this.token = token;
   }
 
-  /** Generates a project and returns the ZIP. */
+  /** Genera un proyecto y devuelve el ZIP. */
   byte[] generate(Map<String, Object> request) throws IOException {
     HttpRequest.Builder b =
         HttpRequest.newBuilder(server.resolve("/v1/projects"))
             .timeout(Duration.ofSeconds(60))
             .header("Content-Type", "application/json")
             .header("Accept", "application/zip, application/problem+json")
-            .POST(HttpRequest.BodyPublishers.ofString(JsonWriter.write(request)));
+            .POST(HttpRequest.BodyPublishers.ofString(Json.write(request)));
     if (token != null && !token.isBlank()) {
       b.header("Authorization", "Bearer " + token);
     }
     try {
-      HttpResponse<byte[]> response = http.send(b.build(), HttpResponse.BodyHandlers.ofByteArray());
+      HttpResponse<byte[]> response =
+          http.send(
+              b.build(),
+              HttpResponse.BodyHandlers.limiting(
+                  HttpResponse.BodyHandlers.ofByteArray(), ZipExtractor.MAX_TOTAL));
       if (response.statusCode() != 200) {
-        String body = new String(response.body(), StandardCharsets.UTF_8);
-        throw new IOException(
-            "initializr answered "
-                + response.statusCode()
-                + ": "
-                + (body.length() > 2000 ? body.substring(0, 2000) : body));
+        // Un diagnóstico remoto puede reproducir credenciales, valores del contrato o códigos de
+        // control de terminal.
+        throw new IOException("initializr answered " + response.statusCode());
       }
       return response.body();
     } catch (InterruptedException e) {

@@ -21,6 +21,8 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-money</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+
     <dependency><groupId>io.projectreactor.tools</groupId><artifactId>blockhound</artifactId><scope>test</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-foundation-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>test</scope></dependency>
     <dependency><groupId>io.micrometer</groupId><artifactId>micrometer-registry-otlp</artifactId><optional>true</optional></dependency>
@@ -57,7 +59,7 @@
       <artifactId>reactor-core</artifactId>
       <optional>true</optional>
     </dependency>
-    <!-- Optional repository instrumentation is installed only when Spring Data is present. -->
+    <!-- La instrumentación opcional de repositorios solo se instala cuando Spring Data está presente. -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-data-commons</artifactId>

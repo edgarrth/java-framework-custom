@@ -5,13 +5,13 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.inbox.AsyncInboxStore;
 import pe.axiz.core.inbox.InboxStore.Acquisition;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 
-/** Native DynamoDB inbox. Cancellation reaches the exact put/update/delete SDK future. */
+/** Inbox nativo de DynamoDB. La cancelación llega al future exacto del SDK de put/update/delete. */
 public final class DynamoDbAsyncInboxStore implements AsyncInboxStore {
   @SuppressFBWarnings(
       value = "EI_EXPOSE_REP2",
@@ -65,7 +65,7 @@ public final class DynamoDbAsyncInboxStore implements AsyncInboxStore {
         "release");
   }
 
-  /** DynamoDB's TTL service performs retention cleanup. */
+  /** El servicio TTL de DynamoDB realiza la limpieza por retención. */
   @Override
   public CompletionStage<Integer> purgeExpired(Instant now) {
     return CompletableFuture.completedFuture(0);

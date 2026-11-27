@@ -8,12 +8,12 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import reactor.core.publisher.Mono;
 
-/** The authenticated caller, only loaded when Spring Security is on the classpath. */
+/** El invocante autenticado; solo se carga cuando Spring Security está en el classpath. */
 final class SecurityCallers {
 
   private SecurityCallers() {}
 
-  /** The resolver used when the application declares none. */
+  /** El resolvedor que se usa cuando la aplicación no declara ninguno. */
   static CacheCallerResolver defaults() {
     return new DefaultCacheCallerResolver();
   }

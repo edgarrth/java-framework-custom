@@ -13,11 +13,13 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import pe.axiz.core.outbox.OutboxStore;
 
-/** Blocked aggregate visibility; scrapes never perform database I/O. */
+/**
+ * Visibilidad agregada de los bloqueados; los scrapings nunca realizan E/S contra la base de datos.
+ */
 @AutoConfiguration(
     afterName = {
       "pe.axiz.spring.outbox.AxizOutboxAutoConfiguration",
-      "pe.axiz.spring.outbox.AxizOutboxR2dbcAutoConfiguration"
+      "pe.axiz.spring.outbox.r2dbc.AxizOutboxR2dbcAutoConfiguration"
     })
 @ConditionalOnBean(OutboxStore.class)
 @ConditionalOnClass(name = "io.micrometer.core.instrument.MeterRegistry")

@@ -1,6 +1,6 @@
 package pe.axiz.extension.cqrs;
 
-/** Sends queries through the pipeline to their handler. */
+/** Envía consultas a través del pipeline hasta su handler. */
 public interface QueryBus {
 
   <R> R ask(Query<R> query);

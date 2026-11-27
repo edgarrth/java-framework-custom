@@ -9,7 +9,7 @@ import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.openapi.SafeYaml;
 
-/** Generates real services whose authorization tests must reject an incomplete set of scopes. */
+/** Genera servicios reales cuyas pruebas de autorización deben rechazar un conjunto incompleto de scopes. */
 class GenerateAuthorizationSamples {
   public static void main(String[] args) throws Exception {
     Map<String, Object> document =
@@ -28,19 +28,7 @@ class GenerateAuthorizationSamples {
     for (Stack stack : List.of(Stack.SERVLET, Stack.REACTIVE)) {
       String suffix = stack == Stack.SERVLET ? "servlet" : "reactive";
       var request =
-          new ProjectRequest(
-              "authorization-" + suffix,
-              "pe.axiz.samples",
-              "pe.axiz.samples." + suffix,
-              "Generated authorization acceptance",
-              "business",
-              Structure.HEXAGONAL,
-              stack,
-              "aurora",
-              List.of("security"),
-              contract,
-              null,
-              args[2]);
+          ProjectRequest.builder().name("authorization-" + suffix).groupId("pe.axiz.samples").basePackage("pe.axiz.samples." + suffix).description("Generated authorization acceptance").archetype("business").structure(Structure.HEXAGONAL).stack(stack).persistence("aurora").capabilities(List.of("security")).openApi(contract).asyncApi(null).frameworkVersion(args[2]).extensions(List.of()).build();
       ProjectGenerator.withDefaults()
           .generate(request)
           .writeTo(Path.of(args[0]).resolve(suffix), false);

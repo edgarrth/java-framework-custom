@@ -7,16 +7,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.SqlIdentifiers;
 import pe.axiz.core.commons.tx.TransactionRunner;
 import pe.axiz.core.sequence.SequenceStore;
 import pe.axiz.kit.jdbc.ConnectionProvider;
 import pe.axiz.kit.jdbc.SqlStates;
+import pe.axiz.kit.sql.SqlIdentifiers;
 
 /**
- * Counter table on Aurora PostgreSQL: {@code UPDATE ... SET value = value + ?} locks the row, so
- * concurrent replicas never get the same value; the first use of a period inserts the row. Works
- * with any SQL database (H2 in tests).
+ * Tabla de contadores sobre Aurora PostgreSQL: {@code UPDATE ... SET value = value + ?} bloquea la
+ * fila, de modo que réplicas concurrentes nunca obtienen el mismo valor; el primer uso de un
+ * periodo inserta la fila. Funciona con cualquier base de datos SQL (H2 en pruebas).
  */
 public final class JdbcSequenceStore implements SequenceStore {
 

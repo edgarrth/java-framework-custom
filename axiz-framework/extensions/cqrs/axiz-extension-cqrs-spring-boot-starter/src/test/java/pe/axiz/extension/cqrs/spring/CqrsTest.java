@@ -13,8 +13,8 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.errors.AccessException;
 import pe.axiz.core.errors.CoreErrors;
 import pe.axiz.core.idempotency.IdempotencyService;
@@ -92,7 +92,7 @@ class CqrsTest {
                 assertEquals("card-1-ana", first);
                 assertEquals(first, again);
                 assertEquals(1, handler.calls.get());
-                // regression: another caller reusing the key runs its own command
+                // regresión: otro llamador que reutiliza la clave ejecuta su propio comando
                 String other;
                 try (RequestContext.Scope ignored = RequestContext.open(caller("bob"))) {
                   other = bus.send(new IssueCardCommand("ana", "idempotency-key-00000001"));
@@ -114,7 +114,7 @@ class CqrsTest {
     }
   }
 
-  /** Regression: commands nothing protects stop startup in fail mode. */
+  /** Regresión: los comandos que nada protege detienen el arranque en modo fail. */
   @Test
   void unprotectedCommandsFailStartupWhenRequired() {
     new ApplicationContextRunner()

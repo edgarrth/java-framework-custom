@@ -10,6 +10,10 @@ server:
   port: 8080
   shutdown: graceful
 axiz:
+  crypto:
+    fields:
+      current-key-id: v1
+      key-ids: [v1]
   dynamodb:
     table-prefix: ${AXIZ_DYNAMODB_TABLE_PREFIX:local-}
     cursor:
@@ -45,12 +49,6 @@ axiz:
     - issuer: ${AXIZ_OIDC_ISSUER:http://localhost:8180/realms/axiz}
       audiences:
       - beneficiaries
-  cache:
-    default-ttl: 10m
-    redis: false
-    caches:
-      beneficiaries:
-        ttl: 5m
   idempotency:
     retention: 24h
     store: dynamodb

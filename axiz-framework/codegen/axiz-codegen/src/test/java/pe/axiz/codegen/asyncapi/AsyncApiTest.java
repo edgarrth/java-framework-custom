@@ -128,10 +128,13 @@ class AsyncApiTest {
     String dual =
         CONTRACT.replace(
             "created: {$ref: '#/components/messages/created'}",
-            "created: {$ref: '#/components/messages/created'}\n      v2: {$ref: '#/components/messages/createdV2'}");
-    // A second message with the same payload and a new wire identity.
+            "created: {$ref: '#/components/messages/created'}\n"
+                + "      v2: {$ref: '#/components/messages/createdV2'}");
+    // Un segundo mensaje con el mismo payload y una nueva identidad de transporte.
     String extra =
-        "    createdV2:\n      name: pe.axiz.order.created.v2\n      payload: {$ref: '#/components/schemas/Created'}\n";
+        "    createdV2:\n"
+            + "      name: pe.axiz.order.created.v2\n"
+            + "      payload: {$ref: '#/components/schemas/Created'}\n";
     dual = dual.replace("  schemas:\n", extra + "  schemas:\n");
     var changes =
         AsyncApiDiff.compare(AsyncApiDocument.parse(CONTRACT), AsyncApiDocument.parse(dual));
@@ -188,7 +191,8 @@ class AsyncApiTest {
     Files.delete(resources.resolve("application-prod.yml"));
     Files.writeString(
         config,
-        "axiz.messaging:\n  consumer.subscriptions: pe.axiz.order.created.v1,pe.axiz.order.created.v1\n");
+        "axiz.messaging:\n"
+            + "  consumer.subscriptions: pe.axiz.order.created.v1,pe.axiz.order.created.v1\n");
     assertFalse(AsyncApiSubscriptions.problems(directory, document).isEmpty());
     Files.delete(config);
     Files.writeString(
@@ -209,7 +213,8 @@ class AsyncApiTest {
     Path resources = Files.createDirectories(directory.resolve("src/main/resources"));
     Files.writeString(
         resources.resolve("application.yaml"),
-        "spring.config.activate.on-profile: prod\naxiz.messaging.consumer.subscriptions: [pe.axiz.order.created.v1]\n");
+        "spring.config.activate.on-profile: prod\n"
+            + "axiz.messaging.consumer.subscriptions: [pe.axiz.order.created.v1]\n");
     assertTrue(
         AsyncApiSubscriptions.problems(directory, AsyncApiDocument.parse(CONTRACT)).stream()
             .anyMatch(problem -> problem.contains("base application")));

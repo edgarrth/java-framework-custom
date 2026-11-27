@@ -22,6 +22,9 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-test-containers</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-context</artifactId><version>${project.version}</version></dependency>
+
     <dependency><groupId>software.amazon.awssdk</groupId><artifactId>auth</artifactId><optional>true</optional></dependency>
     <dependency>
       <groupId>com.networknt</groupId>
@@ -57,7 +60,7 @@
       <groupId>org.testcontainers</groupId>
       <artifactId>testcontainers-postgresql</artifactId>
     </dependency>
-    <!-- R2DBC service connection of the PostgreSQL container (reactive services on Aurora) -->
+    <!-- conexión de servicio R2DBC del contenedor de PostgreSQL (servicios reactivos sobre Aurora) -->
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>testcontainers-r2dbc</artifactId>
@@ -72,7 +75,7 @@
     </dependency>
     <dependency>
       <groupId>org.wiremock</groupId>
-      <artifactId>wiremock-standalone</artifactId>
+      <artifactId>wiremock-jetty12</artifactId>
     </dependency>
     <dependency>
       <groupId>io.projectreactor.tools</groupId>
@@ -102,8 +105,8 @@
 
   <build>
     <plugins>
-      <!-- this starter is the test toolkit: services add it with <scope>test</scope>, so JUnit,
-           Mockito and Testcontainers are compile dependencies here on purpose -->
+      <!-- este starter es el kit de pruebas: los servicios lo añaden con <scope>test</scope>, por lo que JUnit,
+           Mockito y Testcontainers son aquí dependencias compile a propósito -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>

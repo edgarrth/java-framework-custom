@@ -13,10 +13,10 @@ import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
-import pe.axiz.core.commons.Page;
-import pe.axiz.core.commons.PageMetadata;
-import pe.axiz.core.commons.Stages;
-import pe.axiz.core.commons.json.JsonWriter;
+import pe.axiz.core.api.Page;
+import pe.axiz.core.api.PageMetadata;
+import pe.axiz.core.concurrent.Stages;
+import pe.axiz.core.json.JsonWriter;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncTable;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedAsyncClient;
 import software.amazon.awssdk.enhanced.dynamodb.Expression;
@@ -30,9 +30,10 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
- * Native asynchronous repository. Cancellation reaches the low-level SDK request, including a
- * pending query page. Queries fetch exactly one page; converters must perform CPU-only work. The
- * application owns the supplied client. SDK default optimistic locking remains enabled.
+ * Repositorio asíncrono nativo. La cancelación llega a la petición de bajo nivel del SDK, incluida
+ * una página de consulta pendiente. Las consultas obtienen exactamente una página; los conversores
+ * deben hacer solo trabajo de CPU. La aplicación es dueña del cliente suministrado. El bloqueo
+ * optimista por defecto del SDK sigue habilitado.
  */
 public final class DynamoAsyncRepository<T> {
   @SuppressFBWarnings(
@@ -76,7 +77,8 @@ public final class DynamoAsyncRepository<T> {
   }
 
   /**
-   * SDK table for transaction descriptions or direct SDK use outside this repository's contract.
+   * Tabla del SDK para descripciones de transacciones o uso directo del SDK fuera del contrato de
+   * este repositorio.
    */
   @SuppressFBWarnings(
       value = "EI_EXPOSE_REP",
@@ -110,7 +112,7 @@ public final class DynamoAsyncRepository<T> {
         client, enhanced -> enhanced.table(tableName, schema).putItem(item));
   }
 
-  /** Inserts only when the partition-key attribute does not exist. */
+  /** Inserta solo cuando el atributo de la clave de partición no existe. */
   public CompletionStage<Void> insert(T item, String partitionKeyAttribute) {
     return NativeDynamoCall.submit(
         client,
@@ -217,7 +219,10 @@ public final class DynamoAsyncRepository<T> {
         });
   }
 
-  /** SDK interoperability is private; no Reactive Streams types in the repository's API. */
+  /**
+   * La interoperabilidad con el SDK es privada; no hay tipos de Reactive Streams en la API del
+   * repositorio.
+   */
   private static final class FirstPage<T>
       implements Subscriber<software.amazon.awssdk.enhanced.dynamodb.model.Page<T>> {
     private final int limit;

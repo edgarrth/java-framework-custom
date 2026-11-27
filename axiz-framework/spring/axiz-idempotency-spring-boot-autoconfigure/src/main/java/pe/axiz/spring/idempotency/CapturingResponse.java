@@ -13,8 +13,9 @@ import java.nio.charset.StandardCharsets;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Response that streams to the client as usual and keeps a bounded copy of the body for the
- * idempotency store (unlike a fully caching wrapper, memory never exceeds the storage limit).
+ * Respuesta que se transmite al cliente como de costumbre y conserva una copia acotada del cuerpo
+ * para el almacén de idempotencia (a diferencia de un wrapper que cachea todo, la memoria nunca
+ * supera el límite de almacenamiento).
  */
 final class CapturingResponse extends HttpServletResponseWrapper {
 
@@ -98,7 +99,10 @@ final class CapturingResponse extends HttpServletResponseWrapper {
     super.flushBuffer();
   }
 
-  /** Flushes the writer (if used) so the capture holds every byte written so far. */
+  /**
+   * Vacía el writer (si se usa) para que la captura contenga todos los bytes escritos hasta el
+   * momento.
+   */
   void flushWriter() {
     if (writer != null) {
       writer.flush();

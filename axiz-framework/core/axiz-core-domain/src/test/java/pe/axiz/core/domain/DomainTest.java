@@ -76,12 +76,12 @@ class DomainTest {
   @Test
   void commonValueObjects() {
     assertEquals("ana@example.com", new EmailAddress(" Ana@Example.com ").value());
-    assertEquals("a**@example.com", new EmailAddress("ana@example.com").toString());
+    assertEquals("****@example.com", new EmailAddress("ana@example.com").toString());
     assertThrows(BusinessException.class, () -> new EmailAddress("nope"));
     assertEquals("+51987654321", new PhoneNumber("+51 987-654-321").value());
     assertThrows(BusinessException.class, () -> new PhoneNumber("987"));
     PersonalDocument dni = new PersonalDocument(PersonalDocument.Type.parse("dni"), "12345678");
-    assertEquals("DNI:****5678", dni.toString());
+    assertEquals("DNI:******78", dni.toString());
     assertThrows(
         BusinessException.class,
         () -> new PersonalDocument(PersonalDocument.Type.RUC, "20100070971"));

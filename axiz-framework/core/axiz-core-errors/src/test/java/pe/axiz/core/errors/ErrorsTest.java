@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -27,6 +28,24 @@ class ErrorsTest {
       Clock.fixed(Instant.parse("2026-05-01T12:00:00Z"), ZoneOffset.UTC);
 
   @Test
+  void retryAfterIsNumericBoundedAndAvailableOnlyForRateLimits() {
+    assertEquals(
+        1,
+        new RateLimitedException(CoreErrors.TOO_MANY_REQUESTS, Duration.ZERO).retryAfterSeconds());
+    assertEquals(
+        2,
+        new RateLimitedException(CoreErrors.TOO_MANY_REQUESTS, Duration.ofMillis(1001))
+            .retryAfterSeconds());
+    assertEquals(
+        86400,
+        new RateLimitedException(CoreErrors.TOO_MANY_REQUESTS, Duration.ofDays(90))
+            .retryAfterSeconds());
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new RateLimitedException(CoreErrors.UNAVAILABLE, Duration.ofSeconds(1)));
+  }
+
+  @Test
   void errorCodeFormat() {
     assertEquals("AXZ", ErrorCode.of("AXZ-HTTP-0001").prefix());
     assertThrows(IllegalArgumentException.class, () -> ErrorCode.of("axz-http-1"));
@@ -38,7 +57,9 @@ class ErrorsTest {
   void everyCategoryHasStatusAndDefaultDefinition() {
     for (ErrorCategory c : ErrorCategory.values()) {
       assertTrue(c.httpStatus() >= 400 && c.httpStatus() < 600);
-      assertEquals(c, ErrorCategory.fromHttpStatus(c.httpStatus()));
+      assertEquals(
+          c == ErrorCategory.OUTCOME_UNKNOWN ? ErrorCategory.GATEWAY_TIMEOUT : c,
+          ErrorCategory.fromHttpStatus(c.httpStatus()));
       CoreErrors.forCategory(c);
     }
     assertEquals(ErrorCategory.UNPROCESSABLE, ErrorCategory.fromHttpStatus(418));
@@ -47,6 +68,8 @@ class ErrorsTest {
     assertEquals(ErrorCategory.INTERNAL, ErrorCategory.fromHttpStatus(302));
     assertTrue(ErrorCategory.SERVICE_UNAVAILABLE.retryable());
     assertFalse(ErrorCategory.CONFLICT.retryable());
+    assertFalse(ErrorCategory.OUTCOME_UNKNOWN.retryable());
+    assertEquals(ErrorCategory.OUTCOME_UNKNOWN, CoreErrors.OUTCOME_UNKNOWN.category());
   }
 
   @Test
@@ -145,7 +168,7 @@ class ErrorsTest {
             null,
             null);
     assertEquals(409, p.status());
-    // subclasses match by class hierarchy
+    // las subclases coinciden por jerarquía de clases
     Problem p2 = factory.create(new NumberFormatException("n"), Locale.ROOT, null, null);
     assertEquals(409, p2.status());
   }
@@ -189,7 +212,8 @@ class ErrorsTest {
     assertEquals("AXZ-EXT-0504", timeout.code().value());
     assertEquals(
         "Call to core-banking got no response (SocketTimeoutException)", timeout.getMessage());
-    // a client library timeout this module does not know, recognized by its type name
+    // un timeout de una librería cliente que este módulo no conoce, reconocido por el nombre de su
+    // tipo
     assertEquals(
         504,
         ExternalServiceException.from(noAnswer, new ReadTimeoutException())
@@ -207,7 +231,10 @@ class ErrorsTest {
             .getMessage());
   }
 
-  /** Stands for a client library timeout type (e.g. Netty's), unrelated to the JDK ones. */
+  /**
+   * Representa un tipo de timeout de una librería cliente (por ejemplo, el de Netty), sin relación
+   * con los del JDK.
+   */
   private static final class ReadTimeoutException extends RuntimeException {
     private static final long serialVersionUID = 1L;
   }
@@ -266,7 +293,7 @@ class ErrorsTest {
     assertEquals(500, p.status());
     assertEquals(1, original.getSuppressed().length);
     assertTrue(original.getSuppressed()[0] instanceof NoClassDefFoundError);
-    // the mappers after the broken one still run
+    // los mappers posteriores al defectuoso se ejecutan igualmente
     Problem t =
         defaultFactory(List.of(broken, timeouts))
             .create(new TimeoutException("slow"), Locale.ROOT, "/v1", "c");

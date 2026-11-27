@@ -18,7 +18,8 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 class AwsClientsTest {
 
   private static DynamoDbClient dynamo(Map<String, String> properties) {
-    // no call is made: the transport is a placeholder so the test needs no HTTP implementation
+    // no se hace ninguna llamada: el transporte es un marcador para que la prueba no necesite
+    // implementación HTTP
     return AwsClients.configured(
         DynamoDbClient.builder().httpClient(new NoHttp()), properties::get, "dynamodb");
   }
@@ -74,7 +75,7 @@ class AwsClientsTest {
             "axiz.aws.region", " ",
             "axiz.aws.dynamodb.endpoint", " ",
             "axiz.aws.endpoint", "https://localhost:4566");
-    // a blank region leaves the one of the builder (or the SDK chain) in place
+    // una región en blanco deja la del builder (o la de la cadena del SDK)
     try (DynamoDbClient client =
         AwsClients.configured(
             DynamoDbClient.builder().httpClient(new NoHttp()).region(Region.SA_EAST_1),

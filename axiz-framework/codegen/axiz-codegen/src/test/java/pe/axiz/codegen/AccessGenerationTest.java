@@ -48,19 +48,21 @@ class AccessGenerationTest {
       """;
 
   private ProjectRequest request(String contract, Stack stack) {
-    return new ProjectRequest(
-        "policy-orders",
-        "pe.axiz.samples",
-        "pe.axiz.samples.policy",
-        "Access policy",
-        "business",
-        Structure.HEXAGONAL,
-        stack,
-        "aurora",
-        List.of(),
-        contract,
-        null,
-        "2.0.0");
+    return ProjectRequest.builder()
+        .name("policy-orders")
+        .groupId("pe.axiz.samples")
+        .basePackage("pe.axiz.samples.policy")
+        .description("Access policy")
+        .archetype("business")
+        .structure(Structure.HEXAGONAL)
+        .stack(stack)
+        .persistence("aurora")
+        .capabilities(List.of())
+        .openApi(contract)
+        .asyncApi(null)
+        .frameworkVersion("2.0.0")
+        .extensions(List.of())
+        .build();
   }
 
   @Test
@@ -120,7 +122,12 @@ class AccessGenerationTest {
       var result = ProjectGenerator.withDefaults().validate(request(contract, Stack.SERVLET));
       assertFalse(result.valid(), policy);
       assertTrue(
-          result.problems().stream().anyMatch(problem -> problem.contains("readScoped")),
+          result.findings().stream()
+              .anyMatch(
+                  finding ->
+                      finding.error()
+                          && finding.rule().equals("axiz-explicit-http-access")
+                          && finding.message().contains("readScoped")),
           result.toString());
     }
   }
@@ -130,8 +137,10 @@ class AccessGenerationTest {
     var generator = ProjectGenerator.withDefaults();
     String overlap = CONTRACT.replace("/v1/policies/public:", "/v1/policies/{policy}:");
     assertTrue(
-        generator.validate(request(overlap, Stack.REACTIVE)).problems().stream()
-            .anyMatch(problem -> problem.contains("overlaps authenticated-only")));
+        generator.validate(request(overlap, Stack.REACTIVE)).findings().stream()
+            .anyMatch(
+                finding ->
+                    finding.error() && finding.message().contains("overlaps authenticated-only")));
     String disjoint = CONTRACT.replace("/v1/policies/public:", "/v1/status:");
     assertTrue(generator.validate(request(disjoint, Stack.REACTIVE)).valid());
   }

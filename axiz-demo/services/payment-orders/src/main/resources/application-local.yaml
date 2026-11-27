@@ -20,10 +20,11 @@ spring:
     url: jdbc:postgresql://localhost:5432/payment_orders
     username: app
 
-# The local Kafka container has no IAM listener.
+# El contenedor local de Kafka no tiene listener IAM.
+axiz.messaging.kafka.authentication: configured
 axiz.messaging.kafka.iam: false
 
-# Explicit transport settings for local containers without TLS.
+# Ajustes de transporte explícitos para contenedores locales sin TLS.
 spring.datasource.hikari.data-source-properties.sslmode: disable
 spring.flyway.jdbc-properties.sslmode: disable
 spring.r2dbc.properties.sslMode: disable

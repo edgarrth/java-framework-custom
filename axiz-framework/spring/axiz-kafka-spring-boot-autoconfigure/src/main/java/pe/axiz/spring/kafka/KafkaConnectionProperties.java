@@ -12,18 +12,27 @@ import org.springframework.boot.kafka.autoconfigure.SslBundleSslEngineFactory;
 import org.springframework.boot.ssl.SslBundle;
 import org.springframework.core.env.Environment;
 
-/** Native Kafka properties from the selected Boot integration; no clients are created. */
+/**
+ * Propiedades nativas de Kafka tomadas de la integración de Boot seleccionada; no se crea ningún
+ * cliente.
+ */
 public final class KafkaConnectionProperties {
   private KafkaConnectionProperties() {}
 
-  /** Client scopes have independently effective connection and TLS settings. */
+  /**
+   * Los ámbitos de cliente tienen configuraciones de conexión y TLS efectivas de forma
+   * independiente.
+   */
   public enum ClientKind {
     PRODUCER,
     CONSUMER,
     ADMIN
   }
 
-  /** Resolves native properties; callers validate again after their own final customizations. */
+  /**
+   * Resuelve las propiedades nativas; los invocantes vuelven a validar después de sus propias
+   * personalizaciones finales.
+   */
   public static Map<String, Object> properties(
       Environment environment, @Nullable KafkaConnectionDetails details, ClientKind kind) {
     var properties = Binder.get(environment).bindOrCreate("spring.kafka", KafkaProperties.class);

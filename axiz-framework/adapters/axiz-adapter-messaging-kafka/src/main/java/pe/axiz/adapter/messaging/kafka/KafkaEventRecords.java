@@ -6,13 +6,18 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import pe.axiz.core.messaging.CloudEventHeaders;
 import pe.axiz.core.messaging.EventEnvelope;
 
-/** Binary CloudEvents encoding shared by imperative and asynchronous Kafka publication. */
+/**
+ * Codificación binaria de CloudEvents compartida por la publicación Kafka imperativa y asíncrona.
+ */
 public final class KafkaEventRecords {
   private static final Pattern TOPIC = Pattern.compile("[A-Za-z0-9._-]{1,249}");
 
   private KafkaEventRecords() {}
 
-  /** Kafka topic syntax, shared by imperative/native routing; never claims URLs or placeholders. */
+  /**
+   * Sintaxis de tópicos Kafka, compartida por el enrutamiento imperativo y nativo; nunca reclama
+   * URL ni marcadores de posición.
+   */
   public static boolean isDestination(String destination) {
     String topic =
         destination.startsWith(KafkaEventPublisher.SCHEME)
@@ -21,7 +26,7 @@ public final class KafkaEventRecords {
     return !topic.equals(".") && !topic.equals("..") && TOPIC.matcher(topic).matches();
   }
 
-  /** Binary CloudEvent record shared by synchronous and asynchronous publication. */
+  /** Registro CloudEvent binario compartido por la publicación síncrona y asíncrona. */
   public static ProducerRecord<String, byte[]> create(String destination, EventEnvelope event) {
     String key = event.subject() != null ? event.subject() : event.id();
     String topic = KafkaEventPublisher.topic(destination);

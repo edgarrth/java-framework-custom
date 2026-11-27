@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-adapter-secrets-aws
 
-Secret resolvers for AWS Secrets Manager and Parameter Store.
+Resolvedores de secretos para AWS Secrets Manager y Parameter Store.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,22 +12,23 @@ Secret resolvers for AWS Secrets Manager and Parameter Store.
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `ParameterStoreResolver` | Resolves parameters (including SecureString) from AWS Systems Manager Parameter Store under a path such as `/axiz/prod/payments/`. |
-| `SecretsManagerResolver` | Resolves secrets from AWS Secrets Manager. |
-| `SecretsManagerAsyncResolver` | Native `SecretsManagerAsyncClient` lookup, including `name#field` JSON selection. |
-| `ParameterStoreAsyncResolver` | Native `SsmAsyncClient` SecureString lookup, mapping `#` to `/`. |
+| `ParameterStoreResolver` | Resuelve parámetros (incluido SecureString) desde AWS Systems Manager Parameter Store bajo una ruta como `/axiz/prod/payments/`. |
+| `SecretsManagerResolver` | Resuelve secretos desde AWS Secrets Manager. |
+| `SecretsManagerAsyncResolver` | Consulta nativa con `SecretsManagerAsyncClient`, incluida la selección JSON `name#field`. |
+| `ParameterStoreAsyncResolver` | Consulta nativa de SecureString con `SsmAsyncClient`, que convierte `#` en `/`. |
 
-Native resolvers return JDK `CompletionStage` values and preserve cancellation of the SDK call.
-They borrow their SDK clients; the application owns client shutdown. Only the SDK's not-found
-response allows source fallback. Transport, authorization and malformed JSON errors propagate;
-invalid JSON diagnostics do not include secret data. Structured JSON fields remain valid JSON.
+Los resolvedores nativos devuelven valores `CompletionStage` del JDK y preservan la cancelación de la llamada
+al SDK. Toman prestados sus clientes del SDK; el cierre de los clientes corresponde a la aplicación. Solo la
+respuesta de recurso no encontrado del SDK permite pasar a otra fuente. Los errores de transporte, de
+autorización y de JSON mal formado se propagan; los diagnósticos de JSON inválido no incluyen datos secretos.
+Los campos JSON estructurados se conservan como JSON válido.
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl adapters/axiz-adapter-secrets-aws verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl adapters/axiz-adapter-secrets-aws verify`.

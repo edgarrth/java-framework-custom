@@ -3,7 +3,6 @@ package pe.axiz.core.logging;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
@@ -14,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
 import pe.axiz.core.sensitive.ObjectMasker;
+import pe.axiz.core.sensitive.SensitiveField;
 
 class LoggingTest {
 
@@ -104,6 +104,7 @@ class LoggingTest {
         List.of("amount", "pin"),
         new Object[] {1, "4321", "extra"},
         new boolean[] {false, true},
+        new SensitiveField[0],
         LogOperation.Level.INFO);
 
     String line = only().message();
@@ -119,7 +120,13 @@ class LoggingTest {
     CapturedLogs.reset(Level.INFO);
     OperationLogger logger = new OperationLogger(ObjectMasker.defaults());
     logger.entry("op", LogOperation.Level.DEBUG);
-    logger.entry("op", List.of("a"), new Object[] {1}, new boolean[0], LogOperation.Level.DEBUG);
+    logger.entry(
+        "op",
+        List.of("a"),
+        new Object[] {1},
+        new boolean[0],
+        new SensitiveField[0],
+        LogOperation.Level.DEBUG);
     logger.success("op", Duration.ofMillis(5), "r", true, LogOperation.Level.DEBUG);
     assertEquals(List.of(), CapturedLogs.events());
 
@@ -134,7 +141,13 @@ class LoggingTest {
 
     CapturedLogs.reset(Level.WARN);
     logger.entry("op", LogOperation.Level.INFO);
-    logger.entry("op", List.of(), new Object[0], new boolean[0], LogOperation.Level.INFO);
+    logger.entry(
+        "op",
+        List.of(),
+        new Object[0],
+        new boolean[0],
+        new SensitiveField[0],
+        LogOperation.Level.INFO);
     logger.success("op", Duration.ofMillis(5), "r", true, LogOperation.Level.INFO);
     assertEquals(List.of(), CapturedLogs.events(), "INFO lines are not written at WARN");
   }
@@ -157,10 +170,10 @@ class LoggingTest {
   }
 
   @Test
-  void failuresAreRejectionsAtWarnOrErrorsWithTheirStackTrace() {
+  void failuresKeepErrorCodesWithoutPublishingUntrustedExceptionMessages() {
     CapturedLogs.reset(Level.INFO);
     OperationLogger logger = new OperationLogger(ObjectMasker.defaults());
-    IllegalStateException boom = new IllegalStateException("x");
+    IllegalStateException boom = new IllegalStateException("pan=4111111111111111 cvv=123");
     logger.failure("pay", Duration.ofMillis(5), boom, false, "AXZ-CORE-0500");
     logger.failure("pay", Duration.ofMillis(7), new IllegalArgumentException("y"), true, null);
 
@@ -168,8 +181,10 @@ class LoggingTest {
     assertEquals(2, events.size());
     CapturedLogs.Event error = events.get(0);
     assertEquals(Level.ERROR, error.level());
-    assertEquals("operation=pay phase=end outcome=error", error.message());
-    assertSame(boom, error.error());
+    assertEquals(
+        "operation=pay phase=end outcome=error type=IllegalStateException", error.message());
+    assertNull(error.error(), "exception text may contain card data or secrets");
+    assertFalse(error.message().contains("4111111111111111"));
     assertEquals("error", error.mdc().get(LogFields.OUTCOME));
     assertEquals("AXZ-CORE-0500", error.mdc().get(LogFields.ERROR_CODE));
 

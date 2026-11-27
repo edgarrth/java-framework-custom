@@ -1,0 +1,44 @@
+<!-- GENERADO por scripts/sync_reference.py desde axiz-framework: no editar -->
+# crypto-kms
+
+Cifrado de sobre con AWS KMS y reutilización acotada de claves de datos
+
+```bash
+axiz add crypto-kms
+```
+
+|  |  |
+|---|---|
+| Starter | `pe.axiz:axiz-crypto-kms-spring-boot-starter` |
+| Stacks del catálogo | servlet, reactive |
+| Agrega también | [`crypto`](crypto.md) |
+| Incluida por defecto en | ningún arquetipo |
+
+## Propiedades que agrega
+
+Valores por defecto seguros en `application.yaml`; los valores de cada ambiente van en el ConfigMap del servicio y los secretos en el secret store.
+
+```yaml
+axiz.crypto.kms.key-id: ${AXIZ_KMS_KEY_ID:alias/local}
+```
+
+Perfil `local` (`application-local.yaml`):
+
+```yaml
+axiz.aws.endpoint: http://localhost:4566
+```
+
+## Llaves del ConfigMap por ambiente
+
+- `axiz.crypto.kms.key-id`
+
+## Uso
+
+```java
+byte[] encrypted = envelopeEncryptor.encrypt(payload, "statements");
+```
+
+## Módulos
+
+- [`axiz-crypto-kms-spring-boot-autoconfigure`](../referencia/spring/axiz-crypto-kms-spring-boot-autoconfigure.md)
+- [`axiz-core-crypto`](../referencia/core/axiz-core-crypto.md)

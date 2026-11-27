@@ -7,12 +7,12 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Response saved for replay. Immutable: the body is copied on the way in and out, and two responses
- * are equal when status, headers and body bytes are equal.
+ * Respuesta guardada para replay. Inmutable: el cuerpo se copia a la entrada y a la salida, y dos
+ * respuestas son iguales cuando el estado, las cabeceras y los bytes del cuerpo son iguales.
  */
 public final class StoredResponse {
 
-  /** Header present on replays whose body was too large to be stored. */
+  /** Cabecera presente en los replays cuyo cuerpo era demasiado grande para almacenarse. */
   public static final String BODY_OMITTED_HEADER = "Idempotent-Body-Omitted";
 
   private final int status;
@@ -20,11 +20,11 @@ public final class StoredResponse {
   private final byte[] body;
 
   /**
-   * Creates a stored response.
+   * Crea una respuesta almacenada.
    *
-   * @param status HTTP status
-   * @param headers response headers worth replaying (content type, location)
-   * @param body response body
+   * @param status estado HTTP
+   * @param headers cabeceras de la respuesta que vale la pena reproducir (content type, location)
+   * @param body cuerpo de la respuesta
    */
   public StoredResponse(int status, Map<String, String> headers, byte[] body) {
     this.status = status;
@@ -33,8 +33,9 @@ public final class StoredResponse {
   }
 
   /**
-   * Response whose body exceeded the storage limit: the status and headers (for example {@code
-   * Location}) are kept so a retry learns the outcome, the body is not.
+   * Respuesta cuyo cuerpo superó el límite de almacenamiento: se conservan el estado y las
+   * cabeceras (por ejemplo {@code Location}) para que un reintento conozca el resultado, pero no el
+   * cuerpo.
    */
   public static StoredResponse withoutBody(int status, Map<String, String> headers) {
     Map<String, String> h = new LinkedHashMap<>(headers);
@@ -51,7 +52,7 @@ public final class StoredResponse {
     return headers;
   }
 
-  /** A copy of the body. */
+  /** Copia del cuerpo. */
   public byte[] body() {
     return body.clone();
   }
@@ -77,8 +78,8 @@ public final class StoredResponse {
   public String toString() {
     return "StoredResponse[status="
         + status
-        + ", headers="
-        + headers
+        + ", headerCount="
+        + headers.size()
         + ", "
         + body.length
         + " bytes]";

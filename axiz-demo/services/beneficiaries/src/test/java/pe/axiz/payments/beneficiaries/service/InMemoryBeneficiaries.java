@@ -5,18 +5,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.Page;
-import pe.axiz.core.commons.PageMetadata;
+import pe.axiz.core.api.Page;
+import pe.axiz.core.api.PageMetadata;
 import pe.axiz.payments.beneficiaries.model.Beneficiary;
+import pe.axiz.payments.beneficiaries.model.BeneficiaryPolicy;
 import pe.axiz.payments.beneficiaries.repository.BeneficiaryRepository;
 
-/** In-memory repository with the same semantics as DynamoDB (active only, insertion order). */
+/**
+ * Repositorio en memoria con la misma semántica que DynamoDB (solo activos, en orden de inserción).
+ */
 public final class InMemoryBeneficiaries implements BeneficiaryRepository {
 
-  /** Every stored item, removed ones included, by {@code customerId/beneficiaryId}. */
+  /**
+   * Todos los elementos almacenados, incluidos los eliminados, por {@code
+   * customerId/beneficiaryId}.
+   */
   public final Map<String, Beneficiary> rows = new LinkedHashMap<>();
 
-  /** Single-item reads served. */
+  /** Lecturas de un solo elemento atendidas. */
   public int reads;
 
   @Override
@@ -45,7 +51,8 @@ public final class InMemoryBeneficiaries implements BeneficiaryRepository {
   }
 
   @Override
-  public void insert(Beneficiary b) {
+  public synchronized void insert(Beneficiary b, int maximum) {
+    new BeneficiaryPolicy(maximum).checkRegistration(allActive(b.getCustomerId()), b.getCci());
     if (rows.putIfAbsent(b.getCustomerId() + "/" + b.getBeneficiaryId(), b) != null) {
       throw new IllegalStateException("exists");
     }

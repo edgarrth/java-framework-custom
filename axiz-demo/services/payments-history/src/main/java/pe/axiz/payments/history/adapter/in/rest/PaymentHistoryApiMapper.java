@@ -1,14 +1,16 @@
 package pe.axiz.payments.history.adapter.in.rest;
 
 import java.time.ZoneOffset;
-import pe.axiz.core.commons.Page;
+import pe.axiz.core.api.Page;
 import pe.axiz.core.money.Money;
-import pe.axiz.payments.history.api.model.PaymentHistoryItem;
-import pe.axiz.payments.history.api.model.PaymentHistoryPage;
-import pe.axiz.payments.history.api.model.PaymentStatus;
+import pe.axiz.payments.history.adapter.in.rest.model.PaymentHistoryItem;
+import pe.axiz.payments.history.adapter.in.rest.model.PaymentHistoryPage;
+import pe.axiz.payments.history.adapter.in.rest.model.PaymentStatus;
 import pe.axiz.payments.history.domain.PaymentHistory;
 
-/** Domain to API models. The creditor account always leaves masked. */
+/**
+ * Conversión del dominio a los modelos de la API. La cuenta del acreedor siempre sale enmascarada.
+ */
 final class PaymentHistoryApiMapper {
 
   private PaymentHistoryApiMapper() {}

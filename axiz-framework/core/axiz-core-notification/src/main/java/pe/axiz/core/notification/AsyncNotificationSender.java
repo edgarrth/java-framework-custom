@@ -3,9 +3,9 @@ package pe.axiz.core.notification;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Requests notification delivery through native asynchronous publication. Completion acknowledges
- * the broker, not delivery to a recipient. The delivery service owns provider retries and
- * deduplication.
+ * Solicita la entrega de notificaciones mediante publicación asíncrona nativa. La finalización
+ * confirma el broker, no la entrega a un destinatario. El servicio de entrega es dueño de los
+ * reintentos y la deduplicación del proveedor.
  */
 @FunctionalInterface
 public interface AsyncNotificationSender {

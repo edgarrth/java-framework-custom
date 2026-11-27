@@ -4,7 +4,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Publishes to several publishers; a failing one does not prevent the others. */
+/** Publica en varios publicadores; uno que falla no impide los demás. */
 public final class CompositeAuditPublisher implements AuditPublisher {
 
   private static final Logger LOG = LoggerFactory.getLogger(CompositeAuditPublisher.class);
@@ -23,7 +23,10 @@ public final class CompositeAuditPublisher implements AuditPublisher {
         p.publish(event);
       } catch (RuntimeException e) {
         LOG.error(
-            "Audit publisher {} failed for event {}", p.getClass().getSimpleName(), event.id(), e);
+            "Audit publisher {} failed for event {} type={}",
+            p.getClass().getSimpleName(),
+            event.id(),
+            e.getClass().getName());
         if (first == null) {
           first = e;
         }

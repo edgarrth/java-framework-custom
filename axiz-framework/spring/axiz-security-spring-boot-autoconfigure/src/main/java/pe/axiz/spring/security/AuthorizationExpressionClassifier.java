@@ -16,7 +16,10 @@ import org.springframework.expression.spel.ast.StringLiteral;
 import org.springframework.expression.spel.ast.VariableReference;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 
-/** Structural classification only: no evaluation context and no application bean invocation. */
+/**
+ * Solo clasificación estructural: sin contexto de evaluación ni invocación de beans de la
+ * aplicación.
+ */
 final class AuthorizationExpressionClassifier {
   enum Access {
     FALSE(0),
@@ -63,7 +66,8 @@ final class AuthorizationExpressionClassifier {
   private Access classify(SpelNode node, boolean negated) {
     if (node instanceof OperatorNot) return classify(node.getChild(0), !negated);
     if (node instanceof OpAnd || node instanceof OpOr) {
-      // Always inspect both operands, including unreachable unsupported expressions.
+      // Siempre se inspeccionan ambos operandos, incluidas las expresiones no admitidas e
+      // inalcanzables.
       Access left = classify(node.getChild(0), negated);
       Access right = classify(node.getChild(1), negated);
       boolean and = node instanceof OpAnd;

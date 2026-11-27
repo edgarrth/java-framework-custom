@@ -41,13 +41,13 @@ import pe.axiz.codegen.project.PomEditor;
 import pe.axiz.codegen.project.ProjectLayout;
 import pe.axiz.codegen.project.ProjectManifest;
 import pe.axiz.codegen.project.ProjectRename;
-import pe.axiz.core.commons.json.JsonWriter;
+import pe.axiz.core.json.JsonWriter;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
 /**
- * {@code axiz doctor}: versions, project coherence, contract, configuration and anti-patterns. Exit
- * code 1 when an error is found (usable in CI).
+ * {@code axiz doctor}: versiones, coherencia del proyecto, contrato, configuración y antipatrones.
+ * Código de salida 1 cuando se encuentra un error (utilizable en CI).
  */
 @Command(
     mixinStandardHelpOptions = true,
@@ -67,7 +67,7 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
       description = "Outbox table for the optional diagnostic report.")
   String outboxTable = "axiz_outbox";
 
-  /** Result of one check. */
+  /** Resultado de una verificación. */
   enum Level {
     OK,
     WARN,
@@ -75,10 +75,10 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
   }
 
   /**
-   * One finding.
+   * Un hallazgo.
    *
-   * @param level severity
-   * @param message what was found
+   * @param level severidad
+   * @param message lo que se encontró
    */
   record Check(Level level, String message) {}
 
@@ -293,20 +293,21 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
     var validation =
         new RequestValidator(catalog)
             .validate(
-                new ProjectRequest(
-                    manifest.name(),
-                    manifest.groupId(),
-                    manifest.basePackage(),
-                    "",
-                    manifest.archetype(),
-                    manifest.structure(),
-                    manifest.stack(),
-                    manifest.persistence(),
-                    manifest.capabilities(),
-                    api,
-                    asyncApi,
-                    manifest.axizVersion(),
-                    manifest.extensions()));
+                ProjectRequest.builder()
+                    .name(manifest.name())
+                    .groupId(manifest.groupId())
+                    .basePackage(manifest.basePackage())
+                    .description("")
+                    .archetype(manifest.archetype())
+                    .structure(manifest.structure())
+                    .stack(manifest.stack())
+                    .persistence(manifest.persistence())
+                    .capabilities(manifest.capabilities())
+                    .openApi(api)
+                    .asyncApi(asyncApi)
+                    .frameworkVersion(manifest.axizVersion())
+                    .extensions(manifest.extensions())
+                    .build());
     validation.problems().forEach(problem -> out.add(new Check(Level.ERROR, problem)));
     Path clients = dir.resolve(".axiz/clients");
     if (Files.isDirectory(clients)) {
@@ -423,10 +424,12 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
                     Level.ERROR,
                     "Reactive tests must declare @ExtendWith(BlockHoundExtension.class)"));
         }
-        if (manifest.isService()
-            && moduleDirectory.equals(layout.module())
-            && all.stream().noneMatch(p -> SafePaths.fileName(p).equals("ArchitectureTest.java"))) {
-          out.add(new Check(Level.WARN, "No ArchitectureTest: the style rules are not enforced"));
+        if (manifest.isService() && moduleDirectory.equals(layout.module())) {
+          for (String required :
+              List.of("ArchitectureTest.java", "ArchitectureSelfCheckTest.java")) {
+            if (all.stream().noneMatch(p -> SafePaths.fileName(p).equals(required)))
+              out.add(new Check(Level.ERROR, "Missing required architecture test: " + required));
+          }
         }
       }
     }
@@ -514,15 +517,9 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
           && !(imported.startsWith("java.")
               || imported.startsWith("org.jspecify.annotations.")
               || imported.startsWith(manifest.basePackage() + ".domain.")
-              || List.of(
-                      "commons",
-                      "domain",
-                      "money",
-                      "errors",
-                      "id",
-                      "identifiers",
-                      "sensitive",
-                      "time")
+              || imported.equals("pe.axiz.core.commons.ReviewedState;")
+              || neutralLanguageImport(imported)
+              || List.of("domain", "money", "errors", "id", "identifiers", "sensitive", "time")
                   .stream()
                   .anyMatch(
                       capability -> imported.startsWith("pe.axiz.core." + capability + ".")))) {
@@ -530,5 +527,13 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
       }
       if (problem != null) out.add(new Check(Level.ERROR, rel + ":" + (i + 1) + " " + problem));
     }
+  }
+
+  private static boolean neutralLanguageImport(String imported) {
+    return List.of(
+            "Checks", "Strings", "Dates", "ValueSnapshots", "Result", "Result.Ok", "Result.Err")
+        .stream()
+        .map(name -> "pe.axiz.core.lang." + name)
+        .anyMatch(name -> imported.equals(name + ";") || imported.startsWith(name + "."));
   }
 }

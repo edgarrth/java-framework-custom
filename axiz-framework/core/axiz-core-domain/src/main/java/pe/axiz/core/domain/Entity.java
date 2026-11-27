@@ -4,16 +4,21 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Domain entity with identity. Two entities are equal when they have the same type and id.
+ * Entidad de dominio con identidad. Dos entidades son iguales cuando tienen el mismo tipo e id. Se
+ * asigna una identidad estable y no null al crear la entidad, antes de colocarla en colecciones.
+ * Una identidad asignada o cambiada después invalida la pertenencia a colecciones basadas en hash;
+ * los ids null del mismo tipo concreto se consideran iguales y no se soportan para entidades
+ * transitorias distintas.
  *
- * @param <I> id type
+ * @param <I> tipo del id
  */
 public abstract class Entity<I> {
 
   protected abstract I id();
 
-  // The exact concrete type on purpose, not instanceof: a Customer and an Account with the same id
-  // are different entities although both extend Entity. equals is final, so symmetry holds.
+  // Se usa a propósito el tipo concreto exacto, no instanceof: un Customer y un Account con el
+  // mismo id son entidades distintas aunque ambos extiendan Entity. equals es final, así que se
+  // mantiene la simetría.
   @SuppressWarnings("EqualsGetClass")
   @Override
   public final boolean equals(@Nullable Object o) {

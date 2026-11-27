@@ -6,7 +6,10 @@ import org.springframework.web.server.WebFilter;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/** Identifies a compiled reactive chain, instead of trusting unused configuration properties. */
+/**
+ * Identifica una cadena reactiva compilada, en lugar de confiar en propiedades de configuración sin
+ * uso.
+ */
 final class VerifiedReactiveSecurityChain implements SecurityWebFilterChain {
   private final SecurityWebFilterChain delegate;
 

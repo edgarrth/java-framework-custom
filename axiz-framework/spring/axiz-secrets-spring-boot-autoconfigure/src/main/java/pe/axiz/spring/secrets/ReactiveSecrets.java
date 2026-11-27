@@ -6,7 +6,10 @@ import pe.axiz.core.secrets.SecretValue;
 import pe.axiz.spring.foundation.ReactiveStages;
 import reactor.core.publisher.Mono;
 
-/** Deferred secret lookup; absent values complete empty and failures retain their cause. */
+/**
+ * Búsqueda diferida de secretos; los valores ausentes completan vacío y los fallos conservan su
+ * causa.
+ */
 public final class ReactiveSecrets {
   private final AsyncSecretResolver resolver;
 

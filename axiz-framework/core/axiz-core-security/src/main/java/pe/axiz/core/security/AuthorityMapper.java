@@ -4,7 +4,7 @@ import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Set;
 
-/** Maps scopes and roles to authority names ({@code SCOPE_x}, {@code ROLE_X}). */
+/** Mapea scopes y roles a nombres de autoridad ({@code SCOPE_x}, {@code ROLE_X}). */
 public final class AuthorityMapper {
 
   private AuthorityMapper() {}

@@ -4,41 +4,36 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.postgresql.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
+import pe.axiz.quality.containers.TestContainerImages;
 
 /**
- * Containers matching the approved infrastructure: Aurora PostgreSQL, MSK (Kafka), ElastiCache
- * (Valkey) and LocalStack for DynamoDB, SQS, SNS, S3, KMS, Secrets Manager and Parameter Store.
- * Images are pinned; Renovate keeps them current.
+ * Contenedores que coinciden con la infraestructura aprobada: Aurora PostgreSQL, MSK (Kafka),
+ * ElastiCache (Valkey) y LocalStack para DynamoDB, SQS, SNS, S3, KMS, Secrets Manager y Parameter
+ * Store. Las imágenes se construyen de forma diferida a partir de las recetas centrales parcheadas
+ * y deben superar el control de vulnerabilidades.
  */
 public final class AxizContainers {
-
-  public static final DockerImageName POSTGRES = DockerImageName.parse("postgres:17.6-alpine");
-  public static final DockerImageName KAFKA = DockerImageName.parse("apache/kafka-native:4.1.0");
-  public static final DockerImageName VALKEY = DockerImageName.parse("valkey/valkey:8.1-alpine");
-  public static final DockerImageName LOCALSTACK =
-      DockerImageName.parse("localstack/localstack:4.9");
 
   private AxizContainers() {}
 
   public static PostgreSQLContainer postgres() {
-    return new PostgreSQLContainer(POSTGRES)
+    return TestContainerImages.postgres()
         .withDatabaseName("app")
         .withUsername("app")
         .withPassword("app");
   }
 
   public static KafkaContainer kafka() {
-    return new KafkaContainer(KAFKA);
+    return TestContainerImages.kafka();
   }
 
   @SuppressWarnings("resource")
   public static GenericContainer<?> valkey() {
-    return new GenericContainer<>(VALKEY).withExposedPorts(6379);
+    return TestContainerImages.valkey();
   }
 
   public static LocalStackContainer localstack() {
-    return new LocalStackContainer(LOCALSTACK)
+    return TestContainerImages.localstack()
         .withServices("dynamodb", "sqs", "sns", "s3", "kms", "secretsmanager", "ssm");
   }
 }

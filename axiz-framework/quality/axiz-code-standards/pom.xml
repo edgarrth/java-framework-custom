@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Shared configuration of every quality tool. Referenced by the parents; services never copy these files. -->
+<!-- Configuración compartida de todas las herramientas de calidad. La referencian los parents; los servicios nunca copian estos archivos. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
@@ -20,7 +20,7 @@
   </properties>
   <build>
     <plugins>
-      <!-- Resource-only bootstrap artifact: it cannot inherit a library parent using these standards. -->
+      <!-- Artefacto de bootstrap solo de recursos: no puede heredar de un parent de biblioteca que use estos estándares. -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId><artifactId>maven-jar-plugin</artifactId>
         <configuration><archive><manifestEntries>

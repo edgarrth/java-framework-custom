@@ -7,8 +7,8 @@ eventos. El código se deriva de él, nunca al revés.
 
 | Qué | Cuándo | Versionado |
 |---|---|---|
-| Modelos de request y response (`<base>.api.model`) | en cada build (openapi-generator, solo modelos) | no |
-| Controladores, uno por tag, un método por `operationId` | una vez, al crear el servicio o con `contract sync` | sí: es tu código |
+| Modelos de request y response (paquete de modelos del adaptador o capa definida por el estilo) | en cada build (openapi-generator, solo modelos) | no |
+| Controladores, uno por tag, un método por `operationId` | una vez, al crear el servicio o con `contract sync` | sí: es código propio |
 | Casos de uso, commands/queries o composiciones de cada operación | igual que los controladores | sí |
 | Clientes de otras APIs (`axiz generate http-client`) | cuando lo pides | sí (interfaz y modelos) |
 
@@ -42,7 +42,7 @@ axiz contract diff contracts/v1.yaml contracts/v1-next.yaml
 
 - **Operaciones nuevas**: genera su controlador o método y su caso de uso.
 - **Operaciones existentes que cambiaron**: escribe una propuesta junto al archivo
-  (`*.axiz-new`) sin tocar tu código; `axiz doctor` avisa mientras quede una sin resolver.
+  (`*.axiz-new`) sin tocar el código propio; `axiz doctor` avisa mientras quede una sin resolver.
 - **Operaciones borradas**: se reportan.
 - **Cambios incompatibles**: bloquean el sync salvo con `--allow-breaking`.
 

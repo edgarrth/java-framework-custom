@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FindBugsFilter>
-  <!-- Injected collaborator: identity and lifecycle are shared with the application context. -->
+  <!-- Colaborador inyectado: la identidad y el ciclo de vida se comparten con el contexto de la aplicación. -->
   <Match>
     <Class name="pe.axiz.payments.orders.adapter.out.messaging.PaymentEventsOutboxAdapter"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="events"/>
+  </Match>
+  <!-- Spring inyecta un proxy de EntityManager con ámbito de transacción. Debe conservar su identidad;
+       copiarlo perdería el contexto de persistencia actual. El campo nunca se expone. -->
+  <Match>
+    <Class name="pe.axiz.payments.orders.adapter.out.persistence.PaymentOrderPersistenceAdapter"/>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+    <Field name="entityManager"/>
   </Match>
 </FindBugsFilter>

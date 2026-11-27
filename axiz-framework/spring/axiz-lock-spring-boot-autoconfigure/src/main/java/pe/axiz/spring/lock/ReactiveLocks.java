@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.reactivestreams.Publisher;
-import pe.axiz.core.commons.LeaseTiming;
+import pe.axiz.core.concurrent.LeaseTiming;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.lock.AsyncDistributedLock;
 import pe.axiz.core.lock.AsyncLockHandle;
@@ -20,8 +20,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * Non-blocking acquisition, renewal and release; lease loss cancels work and is never reported as
- * success.
+ * Adquisición, renovación y liberación no bloqueantes; la pérdida del lease cancela el trabajo y
+ * nunca se informa como éxito.
  */
 public final class ReactiveLocks {
   private final AsyncDistributedLock locks;

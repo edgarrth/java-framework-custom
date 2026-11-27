@@ -5,9 +5,9 @@
 
   <parent>
     <groupId>pe.axiz</groupId>
-    <artifactId>axiz-parent-core</artifactId>
+    <artifactId>axiz-parent-tooling</artifactId>
     <version>${revision}</version>
-    <relativePath>../../platform/axiz-parent-core/pom.xml</relativePath>
+    <relativePath>../../platform/axiz-parent-tooling/pom.xml</relativePath>
   </parent>
 
   <artifactId>axiz-codegen</artifactId>
@@ -20,23 +20,12 @@
     <axiz.module.name>pe.axiz.codegen</axiz.module.name>
   </properties>
 
-  <build>
-    <testResources>
-      <testResource>
-        <directory>src/test/resources</directory>
-      </testResource>
-      <testResource>
-        <directory>../../../.github/policies</directory>
-        <includes>
-          <include>workflow-release-v2.json</include>
-        </includes>
-        <targetPath>workflow-contracts</targetPath>
-      </testResource>
-    </testResources>
-  </build>
 
   <dependencies>
-    <!-- Generation entry points format their output; native consumers may omit the formatter. -->
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-lang</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-json</artifactId><version>${project.version}</version></dependency>
+
+    <!-- Los puntos de entrada de la generación formatean su salida; los consumidores nativos pueden omitir el formateador. -->
     <dependency>
       <groupId>com.google.googlejavaformat</groupId>
       <artifactId>google-java-format</artifactId>

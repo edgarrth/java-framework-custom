@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-web-spring-boot-starter
 
-Correlation, header catalog validation, pagination, API versioning, CORS and OpenAPI metadata.
+Correlación, validación del catálogo de cabeceras, paginación, versionado de API, CORS y metadatos OpenAPI.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,4 +12,4 @@ Correlation, header catalog validation, pagination, API versioning, CORS and Ope
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).

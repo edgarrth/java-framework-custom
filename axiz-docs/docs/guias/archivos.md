@@ -18,9 +18,9 @@ arman con datos del usuario sin validar.
 | Tipo | Para qué |
 |---|---|
 | `CsvReader` / `CsvWriter` | RFC 4180 en streaming: comillas, comillas escapadas, saltos de línea dentro de campos |
-| `FixedWidthLayout`, `FixedField`, `FieldType` | registros de ancho fijo (legacy): parseo tipado y formateo |
+| `FixedWidthLayout`, `FixedField`, `FieldType` | registros de ancho fijo (sistemas centrales): parseo tipado y formateo |
 | `ControlTotals` | conteo y suma acumulados contra el trailer del archivo |
-| `Checksums` | integridad con sistemas legacy |
+| `Checksums` | integridad con sistemas centrales |
 | `Ebcdic` | texto EBCDIC y decimal empaquetado (COMP-3) de mainframes |
 | `FileFormatException` | registro malformado con su número de línea |
 

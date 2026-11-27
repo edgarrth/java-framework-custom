@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-crypto-spring-boot-autoconfigure
 
-Field encryption with key rotation, KMS envelope encryption, blind index, password hashing and JOSE (auto-configuration).
+Cifrado de campos con rotación de claves, cifrado de sobre con KMS, índice ciego, hash de contraseñas y JOSE (autoconfiguración).
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,19 +12,19 @@ Field encryption with key rotation, KMS envelope encryption, blind index, passwo
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `ReactiveEnvelopeEncryption` | Deferred native KMS envelope encryption for reactive applications; no synchronous client fallback. |
-| `AxizCryptoAutoConfiguration` | Field encryption with keys from the secret store, blind indexes, and password hashing (Argon2id by default). |
-| `AxizCryptoKmsAutoConfiguration` | Envelope encryption with AWS KMS data keys (cached by age and use count). |
-| `AxizCryptoProperties` | Cryptography (`axiz.crypto.*`). |
-| `EncryptionRegistrar` | Publishes the field encryptor to `EncryptionRegistry` for converters that JPA or DynamoDB instantiate outside the container. |
-| `SpringPasswordHasher` | Argon2id and BCrypt through Spring Security's encoders. |
+| `ReactiveEnvelopeEncryption` | Cifrado de sobre KMS nativo y diferido para aplicaciones reactivas; sin respaldo en un cliente síncrono. |
+| `AxizCryptoAutoConfiguration` | Cifrado de campos con claves del almacén de secretos, índices ciegos y hash de contraseñas (Argon2id por defecto). |
+| `AxizCryptoProperties` | Criptografía (`axiz.crypto.*`). |
+| `SpringPasswordHasher` | Argon2id y BCrypt mediante los encoders de Spring Security. |
 
-## Tests
+Tipos relacionados: `AxizCryptoKmsAutoConfiguration` están en `axiz-crypto-kms-spring-boot-autoconfigure`.
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-crypto-spring-boot-autoconfigure verify`.
+## Pruebas
+
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl spring/axiz-crypto-spring-boot-autoconfigure verify`.

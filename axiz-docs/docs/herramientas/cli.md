@@ -32,7 +32,7 @@ encuentra Maven, avisa qué correr.
 
 ## Servicios dentro de un reactor Maven
 
-Usa `--dir` con la raíz que contiene `.axiz/project.yaml` y el POM agregador. Los comandos
+Se usa `--dir` con la raíz que contiene `.axiz/project.yaml` y el POM agregador. Los comandos
 siguen los módulos declarados y seleccionan la aplicación que contiene la configuración base
 `application.yaml`, `application.yml` o `application.properties`. Si hay varias aplicaciones,
 las rutas de contratos del manifiesto deben identificar exactamente una; una selección

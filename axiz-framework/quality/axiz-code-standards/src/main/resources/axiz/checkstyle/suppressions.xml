@@ -3,12 +3,12 @@
     "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
     "https://checkstyle.org/dtds/suppressions_1_2.dtd">
 <suppressions>
-  <!-- Generated code is not ours to style -->
+  <!-- El estilo del código generado no es responsabilidad de este proyecto -->
   <suppress files="[\\/]target[\\/]generated-(test-)?sources[\\/]" checks=".*"/>
-  <!-- Tests: no Javadoc requirement, descriptive names allowed -->
+  <!-- Pruebas: sin requisito de Javadoc, se permiten nombres descriptivos -->
   <suppress files="[\\/]src[\\/]test[\\/]" checks="MissingJavadocType|SummaryJavadoc|AbbreviationAsWordInName|MethodName|HideUtilityClassConstructor"/>
-  <!-- CLI tools print to the console by design -->
+  <!-- Las herramientas de CLI imprimen en la consola por diseño -->
   <suppress files="[\\/]axiz-cli[\\/]" id="noSystemOut"/>
-  <!-- Build-time command line entry point run by CI (.github/scripts/samples.sh): its output is the console -->
+  <!-- Punto de entrada de línea de comandos en tiempo de build que ejecuta CI (.github/scripts/samples.sh): su salida es la consola -->
   <suppress files="[\\/]pe[\\/]axiz[\\/]codegen[\\/]tools[\\/]SampleProjects\.java$" id="noSystemOut"/>
 </suppressions>

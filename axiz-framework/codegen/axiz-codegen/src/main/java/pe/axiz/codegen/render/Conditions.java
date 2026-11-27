@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
-/** Tiny condition language of template manifests: {@code a.b && !c || d}. */
+/** Pequeño lenguaje de condiciones de los manifiestos de plantillas: {@code a.b && !c || d}. */
 final class Conditions {
 
   private Conditions() {}

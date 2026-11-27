@@ -10,7 +10,10 @@ import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.render.JavaFormatter;
 import pe.axiz.codegen.render.TemplateSet;
 
-/** Generates inbound handler skeletons and Spring AOT metadata outside the owned payload layer. */
+/**
+ * Genera esqueletos de handlers de entrada y metadatos de Spring AOT fuera de la capa de payloads
+ * propia.
+ */
 public final class EventAdapters {
   private EventAdapters() {}
 

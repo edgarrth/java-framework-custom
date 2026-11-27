@@ -1,4 +1,4 @@
-/** Spring wiring of the CQRS style: buses and pipeline behaviors. */
+/** Configuración de Spring del estilo CQRS: buses y behaviors del pipeline. */
 @NullMarked
 package pe.axiz.extension.cqrs.spring;
 

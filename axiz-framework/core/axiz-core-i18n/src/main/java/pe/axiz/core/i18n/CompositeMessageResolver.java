@@ -5,7 +5,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
-/** Chains resolvers; the first one that knows the key wins (service before framework). */
+/**
+ * Encadena resolvers; prevalece el primero que conoce la clave (el servicio antes que el
+ * framework).
+ */
 public final class CompositeMessageResolver implements MessageResolver {
 
   private final List<MessageResolver> delegates;

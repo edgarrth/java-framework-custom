@@ -8,7 +8,7 @@ import pe.axiz.codegen.model.Structure;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
-/** {@code axiz catalog [archetypes|capabilities]}: what can be generated and added. */
+/** {@code axiz catalog [archetypes|capabilities]}: lo que se puede generar y agregar. */
 @Command(
     mixinStandardHelpOptions = true,
     name = "catalog",

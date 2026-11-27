@@ -2,7 +2,7 @@ package pe.axiz.core.outbox;
 
 import java.time.Duration;
 
-/** Optional relay instrumentation; core has no dependency on a metrics backend. */
+/** Instrumentación opcional del relay; el core no depende de un backend de métricas. */
 public interface OutboxRelayListener {
   OutboxRelayListener NOOP =
       new OutboxRelayListener() {

@@ -1,6 +1,6 @@
 package pe.axiz.core.metrics;
 
-/** Standard tag keys of the generic event instruments. */
+/** Claves de tag estándar de los instrumentos genéricos de eventos. */
 public final class MetricTags {
 
   public static final String EVENT = "event";
@@ -14,10 +14,10 @@ public final class MetricTags {
   public static final String TENANT = "tenant";
   public static final String UNIT = "unit";
 
-  /** Value used when a tag does not apply, so every series has the same keys. */
+  /** Valor usado cuando un tag no aplica, para que todas las series tengan las mismas claves. */
   public static final String NONE = "none";
 
-  /** Value used when a tag exceeds its cardinality limit or is not allowed. */
+  /** Valor usado cuando un tag supera su límite de cardinalidad o no está permitido. */
   public static final String OTHER = "other";
 
   private MetricTags() {}

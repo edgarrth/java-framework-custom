@@ -1,6 +1,6 @@
 package pe.axiz.core.sensitive;
 
-/** Where a value is being written. Masking applies to all three outputs. */
+/** Destino en el que se escribe un valor. El enmascaramiento aplica a las tres salidas. */
 public enum OutputChannel {
   RESPONSE,
   LOG,

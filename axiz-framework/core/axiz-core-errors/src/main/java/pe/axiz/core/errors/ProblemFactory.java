@@ -10,8 +10,8 @@ import java.util.Optional;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Builds RFC 9457 problems from exceptions. Unknown exceptions become a generic 500 and their
- * message is never exposed.
+ * Construye problemas RFC 9457 a partir de excepciones. Las excepciones desconocidas se convierten
+ * en un 500 genérico y su mensaje nunca se expone.
  */
 public final class ProblemFactory {
 
@@ -24,11 +24,12 @@ public final class ProblemFactory {
   private final Clock clock;
 
   /**
-   * Factory settings.
+   * Configuración de la fábrica.
    *
-   * @param typeBaseUri base URI for the problem type; the code is appended. Empty means {@code
-   *     about:blank}
-   * @param exposeExternalDetail whether to include the dependency system, status and code
+   * @param typeBaseUri URI base del tipo de problema; se le agrega el código. Vacío significa
+   *     {@code about:blank}
+   * @param exposeExternalDetail indica si se incluyen el sistema, el estado y el código de la
+   *     dependencia
    */
   public record Settings(String typeBaseUri, boolean exposeExternalDetail) {
     public static Settings defaults() {
@@ -50,13 +51,13 @@ public final class ProblemFactory {
   }
 
   /**
-   * Converts any exception into a problem.
+   * Convierte cualquier excepción en un problema.
    *
-   * @param throwable the failure
-   * @param locale client locale
-   * @param instance request path
-   * @param correlationId correlation id
-   * @return the problem
+   * @param throwable el fallo
+   * @param locale locale del cliente
+   * @param instance ruta de la petición
+   * @param correlationId id de correlación
+   * @return el problema
    */
   public Problem create(
       Throwable throwable,
@@ -67,7 +68,10 @@ public final class ProblemFactory {
     return create(axiz, locale, instance, correlationId);
   }
 
-  /** Converts any throwable into an {@link AxizException}, consulting registered mappers. */
+  /**
+   * Convierte cualquier throwable en una {@link AxizException}, consultando los mappers
+   * registrados.
+   */
   public AxizException toAxizException(Throwable throwable) {
     Throwable current = throwable;
     for (int depth = 0; current != null && depth < MAX_CAUSE_DEPTH; depth++) {
@@ -79,8 +83,8 @@ public final class ProblemFactory {
         try {
           mapped = mapper.map(current);
         } catch (RuntimeException | LinkageError e) {
-          // a broken mapper must never stop the error response: it is skipped and its failure
-          // travels with the original exception, so the log shows both
+          // un mapper defectuoso nunca debe detener la respuesta de error: se omite y su fallo
+          // viaja con la excepción original, de modo que el log muestra ambos
           throwable.addSuppressed(e);
           continue;
         }
@@ -96,8 +100,8 @@ public final class ProblemFactory {
   private Problem create(
       AxizException ex, Locale locale, @Nullable String instance, @Nullable String correlationId) {
     ErrorDefinition definition = catalog.find(ex.code()).orElse(ex.definition());
-    // The category of the exception wins: a dependency error keeps the category chosen from its
-    // status
+    // Prevalece la categoría de la excepción: un error de dependencia conserva la categoría elegida
+    // según su estado
     ErrorCategory category = ex.category();
     String detail =
         messages
@@ -113,28 +117,30 @@ public final class ProblemFactory {
         external.put("code", ext.code());
       }
     }
-    return new Problem(
-        typeUri(definition.code()),
-        definition.title(),
-        category.httpStatus(),
-        detail,
-        instance,
-        definition.code().value(),
-        correlationId,
-        clock.instant(),
-        ex.violations(),
-        external);
+    return Problem.builder()
+        .type(typeUri(definition.code()))
+        .title(definition.title())
+        .status(category.httpStatus())
+        .detail(detail)
+        .instance(instance)
+        .code(definition.code().value())
+        .correlationId(correlationId)
+        .timestamp(clock.instant())
+        .violations(ex.violations())
+        .external(external)
+        .build();
   }
 
   /**
-   * Problem for an error detected by the framework itself (unknown route, missing header...).
+   * Problema para un error detectado por el propio framework (ruta desconocida, cabecera faltante,
+   * etc.).
    *
-   * @param definition definition
+   * @param definition definición
    * @param locale locale
-   * @param parameters detail parameters
-   * @param instance request path
-   * @param correlationId correlation id
-   * @return the problem
+   * @param parameters parámetros del detalle
+   * @param instance ruta de la petición
+   * @param correlationId id de correlación
+   * @return el problema
    */
   public Problem of(
       ErrorDefinition definition,

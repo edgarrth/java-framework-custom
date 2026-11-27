@@ -2,10 +2,13 @@ package pe.axiz.spring.audit;
 
 import io.micrometer.context.ContextSnapshotFactory;
 import io.micrometer.observation.contextpropagation.ObservationThreadLocalAccessor;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
+import pe.axiz.core.context.RequestContext;
 
-/** Queue submissions retain request/observation metadata, excluding transaction accessors. */
+/**
+ * Los envíos a la cola conservan los metadatos de solicitud y observación, sin los accesores de
+ * transacción.
+ */
 final class AuditDeliveryContext {
   private static final ContextSnapshotFactory SNAPSHOTS =
       ContextSnapshotFactory.builder()

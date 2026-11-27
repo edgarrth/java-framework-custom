@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.util.Currency;
 import java.util.Optional;
 
-/** Port to obtain exchange rates; implemented by the service (table, cache, external API). */
+/** Puerto para obtener tipos de cambio; lo implementa el servicio (tabla, caché, API externa). */
 @FunctionalInterface
 public interface ExchangeRateProvider {
 

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Generates the base Grafana dashboards of the platform (dashboards/*.json).
+"""Genera los dashboards base de Grafana de la plataforma (dashboards/*.json).
 
     python3 scripts/dashboards.py
 
-Every query uses the labels the framework adds to every meter (service, env, version, domain) and
-the meters it emits: the generic event instruments (axiz_events_*), the observations at
-architecture points (axiz_usecase, axiz_event_handler, axiz_outbox_relay, axiz_client,
-axiz_aws_sdk...), the outbox and saga meters and the Spring Boot / Micrometer standard ones.
-The dashboards are provisioned by the platform team (Grafana folder "axiz") and imported locally
-by the otel-lgtm container of each service.
+Cada consulta usa las etiquetas que el framework añade a cada meter (service, env, version, domain) y
+los meters que emite: los instrumentos genéricos de eventos (axiz_events_*), las observaciones en
+puntos de la arquitectura (axiz_usecase, axiz_event_handler, axiz_outbox_relay, axiz_client,
+axiz_aws_sdk...), los meters de outbox y saga y los estándar de Spring Boot / Micrometer.
+El equipo de plataforma aprovisiona los dashboards (carpeta "axiz" de Grafana) y el contenedor
+otel-lgtm de cada servicio los importa en local.
 """
 import json
 import os

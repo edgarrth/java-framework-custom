@@ -5,8 +5,9 @@ import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Resolves the tenant of an inbound request: first from the validated token claim, then (only when
- * explicitly trusted, e.g. set by the platform gateway) from a header.
+ * Resuelve el tenant de una petición entrante: primero a partir del claim del token validado y
+ * luego (solo cuando es de confianza explícita, por ejemplo fijada por el gateway de la plataforma)
+ * a partir de una cabecera.
  */
 public final class TenantResolver {
 
@@ -19,15 +20,15 @@ public final class TenantResolver {
   }
 
   /**
-   * Resolves the tenant.
+   * Resuelve el tenant.
    *
-   * @param tokenTenant tenant claim of the validated token, if any
-   * @param headers header lookup
-   * @return the tenant when present and valid
+   * @param tokenTenant claim de tenant del token validado, si existe
+   * @param headers búsqueda de cabeceras
+   * @return el tenant cuando está presente y es válido
    */
   public Optional<String> resolve(
       @Nullable String tokenTenant, Function<String, @Nullable String> headers) {
-    // explicit null checks: the null analysis (NullAway) does not look inside isValid
+    // verificaciones de null explícitas: el análisis de nulos (NullAway) no mira dentro de isValid
     if (tokenTenant != null) {
       if (!TenantContext.isValid(tokenTenant)) throw new InvalidTenantException();
       return Optional.of(tokenTenant);

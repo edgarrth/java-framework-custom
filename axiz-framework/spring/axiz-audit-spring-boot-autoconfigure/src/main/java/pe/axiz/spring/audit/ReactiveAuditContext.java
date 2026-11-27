@@ -2,11 +2,14 @@ package pe.axiz.spring.audit;
 
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.audit.AuditTrail;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import reactor.util.context.ContextView;
 
-/** Resolves custom context against the subscriber metadata and restores the executing thread. */
+/**
+ * Resuelve el contexto personalizado con los metadatos del suscriptor y restaura el hilo en
+ * ejecución.
+ */
 final class ReactiveAuditContext {
   private ReactiveAuditContext() {}
 

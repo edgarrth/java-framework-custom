@@ -7,16 +7,22 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import software.amazon.awssdk.regions.Region;
 
-/** One effective endpoint/region policy for SDK clients and S3 presigners; no Spring dependency. */
+/**
+ * Política única de endpoint y región para clientes del SDK y presigners de S3; sin dependencia de
+ * Spring.
+ */
 public record AwsClientSettings(
     @Nullable Region region, @Nullable URI endpoint, TransportSecurityPolicy transportSecurity) {
-  /** Selects SDK defaults for imperative clients or a required explicit native region. */
+  /**
+   * Selecciona los valores por defecto del SDK para clientes imperativos o una región nativa
+   * explícita obligatoria.
+   */
   public enum RegionPolicy {
     SDK_CHAIN,
     EXPLICIT
   }
 
-  /** SDK_CHAIN leaves an absent region to the builder; EXPLICIT never consults profiles or IMDS. */
+  /** SDK_CHAIN deja al builder una región ausente; EXPLICIT nunca consulta perfiles ni IMDS. */
   public static AwsClientSettings resolve(
       Function<String, @Nullable String> properties, String service, RegionPolicy policy) {
     Objects.requireNonNull(properties);

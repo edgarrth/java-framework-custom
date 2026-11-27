@@ -1,6 +1,5 @@
 package pe.axiz.structure.hexagonal.spring;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import java.util.Objects;
@@ -15,30 +14,34 @@ import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.transaction.ReactiveTransactionManager;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.util.function.SingletonSupplier;
 import pe.axiz.core.domain.EventTypes;
 import pe.axiz.structure.hexagonal.annotation.UseCase;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * Defers invocation and keeps transaction, observation, errors and cancellation in the publisher.
+ * Difiere la invocación y mantiene la transacción, la observación, los errores y la cancelación en
+ * el publisher.
  */
 public final class ReactiveUseCaseInterceptor implements MethodInterceptor {
   private final Supplier<@Nullable ReactiveTransactionManager> transactions;
 
-  @SuppressFBWarnings(
-      value = "EI_EXPOSE_REP2",
-      justification =
-          "ObservationRegistry is a borrowed collaborator; sharing its identity preserves "
-              + "lifecycle, transactions or instrumentation. The field is not an owned mutable "
-              + "value.")
-  private final ObservationRegistry observations;
+  private final SingletonSupplier<ObservationRegistry> observations;
 
+  /**
+   * Crea el interceptor.
+   *
+   * @param transactions el gestor de transacciones reactivo, si existe
+   * @param observations el registro de observaciones, resuelto en el primer uso: un advisor se crea
+   *     antes de que corran los post-processors de beans, y resolver el registro en ese momento lo
+   *     dejaría sin sus handlers de tracing y métricas
+   */
   public ReactiveUseCaseInterceptor(
       Supplier<@Nullable ReactiveTransactionManager> transactions,
-      ObservationRegistry observations) {
+      Supplier<ObservationRegistry> observations) {
     this.transactions = Objects.requireNonNull(transactions);
-    this.observations = Objects.requireNonNull(observations);
+    this.observations = SingletonSupplier.of(Objects.requireNonNull(observations));
   }
 
   @Override
@@ -54,7 +57,7 @@ public final class ReactiveUseCaseInterceptor implements MethodInterceptor {
                       ? annotation.value()
                       : EventTypes.kebab(type.getSimpleName());
               Observation observation =
-                  Observation.createNotStarted("axiz.usecase", observations)
+                  Observation.createNotStarted("axiz.usecase", observations.obtain())
                       .lowCardinalityKeyValue("operation", operation);
               Observation parent = context.getOrDefault("micrometer.observation", null);
               if (parent != null) observation.parentObservation(parent);

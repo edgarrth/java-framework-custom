@@ -35,9 +35,10 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * In-memory R2DBC driver for unit tests, reporting itself as PostgreSQL ({@code $n} bind markers):
- * statements are matched by a regular expression on their SQL and answered by scripted functions of
- * the bound values; every execution, bind and transaction event is recorded for assertions.
+ * Driver R2DBC en memoria para pruebas unitarias, que se presenta como PostgreSQL (marcadores de
+ * binding {@code $n}): las sentencias se identifican con una expresión regular sobre su SQL y se
+ * responden con funciones guionadas sobre los valores enlazados; cada ejecución, binding y evento
+ * de transacción se registra para las aserciones.
  *
  * <pre>
  * FakeR2dbc db = new FakeR2dbc()
@@ -48,12 +49,14 @@ import reactor.core.publisher.Mono;
 public final class FakeR2dbc implements ConnectionFactory {
 
   /**
-   * One executed statement.
+   * Una sentencia ejecutada.
    *
-   * @param sql the SQL as sent to the driver
-   * @param binds values by position (a typed null is {@code null}, as a driver unwraps it)
-   * @param types declared types of the binds given as {@link Parameter} or with {@code bindNull}
-   * @param connection connection that ran it
+   * @param sql el SQL tal como se envió al driver
+   * @param binds valores por posición (un null tipado es {@code null}, tal como lo desenvuelve un
+   *     driver)
+   * @param types tipos declarados de los bindings indicados como {@link Parameter} o con {@code
+   *     bindNull}
+   * @param connection conexión que la ejecutó
    */
   public record Execution(
       String sql,
@@ -78,21 +81,21 @@ public final class FakeR2dbc implements ConnectionFactory {
   private final Set<String> failing = ConcurrentHashMap.newKeySet();
 
   /**
-   * Makes a connection operation fail after being recorded: {@code begin}, {@code commit}, {@code
-   * rollback} or {@code close}.
+   * Hace que una operación de conexión falle tras registrarse: {@code begin}, {@code commit},
+   * {@code rollback} o {@code close}.
    */
   public FakeR2dbc failOn(String operation) {
     failing.add(operation);
     return this;
   }
 
-  /** Answers matching statements with an update count. */
+  /** Responde las sentencias coincidentes con una cantidad de actualizaciones. */
   public FakeR2dbc onUpdate(String regex, Function<Map<Integer, @Nullable Object>, Long> answer) {
     rules.add(new Rule(Pattern.compile(regex, Pattern.DOTALL), answer, null));
     return this;
   }
 
-  /** Answers matching statements with rows (column name to value). */
+  /** Responde las sentencias coincidentes con filas (nombre de columna a valor). */
   public FakeR2dbc onQuery(
       String regex, Function<Map<Integer, @Nullable Object>, List<Map<String, Object>>> answer) {
     rules.add(new Rule(Pattern.compile(regex, Pattern.DOTALL), null, answer));
@@ -103,12 +106,14 @@ public final class FakeR2dbc implements ConnectionFactory {
     return List.copyOf(executions);
   }
 
-  /** Transaction and connection events: {@code open:1}, {@code begin:1}, {@code commit:1}... */
+  /**
+   * Eventos de transacción y de conexión: {@code open:1}, {@code begin:1}, {@code commit:1}, etc.
+   */
   public List<String> events() {
     return List.copyOf(events);
   }
 
-  /** The last execution whose SQL contains the text. */
+  /** La última ejecución cuyo SQL contiene el texto. */
   public Execution last(String sqlFragment) {
     for (int i = executions.size() - 1; i >= 0; i--) {
       if (executions.get(i).sql().contains(sqlFragment)) {
@@ -125,7 +130,7 @@ public final class FakeR2dbc implements ConnectionFactory {
 
   @Override
   public ConnectionFactoryMetadata getMetadata() {
-    // PostgreSQL, so Spring resolves $n bind markers and the Postgres dialect
+    // PostgreSQL, para que Spring resuelva los marcadores de binding $n y el dialecto de Postgres
     return () -> "PostgreSQL";
   }
 
@@ -275,7 +280,8 @@ public final class FakeR2dbc implements ConnectionFactory {
 
     @Override
     public Statement bind(int index, Object value) {
-      // Spring binds typed values, null ones included, as Parameter: unwrap it like a driver does
+      // Spring enlaza los valores tipados, incluidos los null, como Parameter: se desenvuelve como
+      // lo hace un driver
       if (value instanceof Parameter p) {
         binds.put(index, p.getValue());
         types.put(index, p.getType().getJavaType());

@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-core</artifactId><version>${revision}</version><relativePath>../axiz-parent-core/pom.xml</relativePath></parent>
+  <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent</artifactId><version>${revision}</version><relativePath>../../pom.xml</relativePath></parent>
   <artifactId>axiz-schema</artifactId>
   <name>axiz :: platform :: schema resources</name>
   <description>Canonical SQL resources; no runtime, database driver or automatic DDL execution</description>
   <properties><axiz.module.name>pe.axiz.schema</axiz.module.name></properties>
+  <build><plugins><plugin>
+    <groupId>org.apache.maven.plugins</groupId><artifactId>maven-jar-plugin</artifactId>
+    <configuration><archive><manifestEntries><Automatic-Module-Name>${axiz.module.name}</Automatic-Module-Name></manifestEntries></archive></configuration>
+  </plugin></plugins></build>
 </project>

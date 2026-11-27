@@ -1,28 +1,31 @@
-# Local dependencies of payment-orders (docker compose up -d, or axiz local up).
-# Development only: no value here is a real credential.
+# Dependencias locales de payment-orders (docker compose up -d, o axiz local up).
+# Solo para desarrollo: ningún valor de este archivo es una credencial real.
 name: payment-orders
 
 services:
-  # Grafana, Tempo, Loki, Prometheus and an OpenTelemetry collector (OTLP 4317/4318)
+  # Grafana, Tempo, Loki, Prometheus y un colector de OpenTelemetry (OTLP 4317/4318)
   otel-lgtm:
-    image: grafana/otel-lgtm:0.11.10
-    ports: ["3000:3000", "4317:4317", "4318:4318"]
+    image: axiz-local/otel-lgtm:2026.11-r1
+    build: {context: ../../local/images/otel-lgtm}
+    ports: ["127.0.0.1:3000:3000", "127.0.0.1:4317:4317", "127.0.0.1:4318:4318"]
 
   postgres:
-    image: postgres:17.6-alpine
+    image: axiz-local/postgres:17.12-r2
+    build: {context: ../../local/images/postgres}
     environment:
       POSTGRES_DB: payment_orders
       POSTGRES_USER: app
       POSTGRES_HOST_AUTH_METHOD: trust
-    ports: ["5432:5432"]
+    ports: ["127.0.0.1:5432:5432"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U app -d payment_orders"]
       interval: 5s
       retries: 10
 
   kafka:
-    image: apache/kafka-native:4.1.0
-    ports: ["9092:9092"]
+    image: axiz-local/kafka:4.2.2-r1
+    build: {context: ../../local/images/kafka}
+    ports: ["127.0.0.1:9092:9092"]
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
@@ -37,21 +40,23 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
 
   localstack:
-    image: localstack/localstack:4.9
-    ports: ["4566:4566"]
+    image: axiz-local/localstack:4.14.0-r1
+    build: {context: ../../local/images/localstack}
+    ports: ["127.0.0.1:4566:4566"]
     environment:
       SERVICES: kms,secretsmanager,ssm
       AWS_DEFAULT_REGION: us-east-1
     volumes:
       - ./local/localstack:/etc/localstack/init/ready.d:ro
 
-  # OIDC provider for local tokens (realm axiz, client local-client)
+  # Proveedor OIDC para tokens locales (realm axiz, cliente local-client)
   keycloak:
-    image: quay.io/keycloak/keycloak:26.4
+    image: axiz-local/keycloak:26.8.2-r1
+    build: {context: ../../local/images/keycloak}
     command: ["start-dev", "--import-realm"]
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: local-only
-    ports: ["8180:8080"]
+    ports: ["127.0.0.1:8180:8080"]
     volumes:
       - ./local/keycloak:/opt/keycloak/data/import:ro

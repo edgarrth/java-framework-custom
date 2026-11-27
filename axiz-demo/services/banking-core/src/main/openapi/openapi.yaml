@@ -7,6 +7,7 @@ info:
   x-axiz-archetype: core
 tags:
 - name: movements
+security: [{oauth2: [payments:process]}]
 paths:
   /v1/debits:
     post:
@@ -117,6 +118,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
 components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      description: Bearer access token issued by the payments identity provider (Keycloak in the demo).
+      flows:
+        authorizationCode:
+          authorizationUrl: http://localhost:8180/realms/axiz/protocol/openid-connect/auth
+          tokenUrl: http://localhost:8180/realms/axiz/protocol/openid-connect/token
+          scopes:
+            payments:channel: Customer channel operations on the caller's own data
+        clientCredentials:
+          tokenUrl: http://localhost:8180/realms/axiz/protocol/openid-connect/token
+          scopes:
+            payments:channel: Channel applications acting for customers
+            payments:read: Read-only access to payment data
+            payments:process: Payment processing between internal services
   parameters:
     IdempotencyKey:
       name: Idempotency-Key
@@ -128,6 +145,7 @@ components:
   schemas:
     MovementRequest:
       type: object
+      additionalProperties: false
       required:
       - accountId
       - amount
@@ -140,6 +158,8 @@ components:
         amount:
           type: number
           minimum: 0.01
+          maximum: 9999999999999999.99
+          multipleOf: 0.01
         currency:
           type: string
           pattern: ^(PEN|USD)$
@@ -153,6 +173,7 @@ components:
             the debit otherwise'
     Movement:
       type: object
+      additionalProperties: true
       properties:
         movementId:
           type: string
@@ -162,6 +183,7 @@ components:
           type: string
     Problem:
       type: object
+      additionalProperties: true
       properties:
         type:
           type: string

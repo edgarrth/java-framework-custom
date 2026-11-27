@@ -2,20 +2,21 @@ package pe.axiz.payments.ux.composition;
 
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.errors.CoreErrors;
 import pe.axiz.core.featureflags.EvaluationContext;
 import reactor.core.publisher.Mono;
 
 /**
- * The signed-in customer, taken from the Reactor context the security filters fill: the customer id
- * is the token subject. Channel APIs never accept a customer id from the request.
+ * El cliente autenticado, tomado del contexto de Reactor que completan los filtros de seguridad: el
+ * id del cliente es el subject del token. Las API de canales nunca aceptan un id de cliente desde
+ * la solicitud.
  *
- * @param id customer id (token subject)
- * @param channel channel header, if sent
- * @param tenant tenant, if any
+ * @param id id del cliente (subject del token)
+ * @param channel cabecera del canal, si se envía
+ * @param tenant tenant, si existe
  */
 record Customer(String id, @Nullable String channel, @Nullable String tenant) {
 
@@ -32,7 +33,9 @@ record Customer(String id, @Nullable String channel, @Nullable String tenant) {
         });
   }
 
-  /** Context for feature flags: targeting by customer, restrictions by channel and tenant. */
+  /**
+   * Contexto para los feature flags: segmentación por cliente y restricciones por canal y tenant.
+   */
   EvaluationContext flags() {
     return new EvaluationContext(id, channel, tenant, Map.of());
   }

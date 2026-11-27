@@ -1,7 +1,8 @@
-# Central monorepo release orchestration. Each component has an independent version and
-# <component>-v<x.y.z> tag. GitHub App tokens allow the resulting tags to trigger publication.
-# Root release-please-config.json and .release-please-manifest.json are the only release state.
+# Workflow reutilizable de versionado con release-please: mantiene el pull request de release y, al
+# fusionarlo, crea el tag y la release. Usa un token de GitHub App para que el tag dispare los
+# workflows de publicación (los tags creados con GITHUB_TOKEN no los disparan).
 name: release
+
 on:
   workflow_call:
     inputs:
@@ -18,40 +19,34 @@ on:
         required: true
     outputs:
       released:
-        description: Whether a release was created by this run
+        description: Si esta ejecución creó una release
         value: ${{ jobs.release.outputs.released }}
       paths-released:
-        description: JSON list of released components
+        description: Lista JSON de los componentes publicados
         value: ${{ jobs.release.outputs.paths-released }}
 
 permissions: {}
 
 jobs:
   release:
-    permissions:
-      contents: write
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
     outputs:
       released: ${{ steps.please.outputs.releases_created }}
       paths-released: ${{ steps.please.outputs.paths_released }}
     steps:
-      - name: Token (GitHub App, short-lived)
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         id: token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ secrets.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
-          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
-      - name: Release pull request or release
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: please
-        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
           token: ${{ steps.token.outputs.token }}
           config-file: ${{ inputs.config-file }}
           manifest-file: ${{ inputs.manifest-file }}
-      - name: Summary
-        if: steps.please.outputs.releases_created == 'true'
-        env:
-          COMPONENTS: ${{ steps.please.outputs.paths_released }}
-        run: echo "Released components are recorded in the Release Please outputs" >> "$GITHUB_STEP_SUMMARY"

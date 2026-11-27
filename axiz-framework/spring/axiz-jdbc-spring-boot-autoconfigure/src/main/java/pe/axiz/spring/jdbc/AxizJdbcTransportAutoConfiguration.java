@@ -22,8 +22,11 @@ import org.springframework.util.ClassUtils;
 import pe.axiz.core.commons.net.DataTransportSecurityPolicy;
 import pe.axiz.kit.jdbc.JdbcTransportSecurity;
 
-/** Validates managed JDBC pools and Flyway's final connection before their first managed use. */
-// Spring instantiates the configuration; infrastructure BeanPostProcessors must be static.
+/**
+ * Valida los pools JDBC gestionados y la conexión final de Flyway antes de su primer uso
+ * gestionado.
+ */
+// Spring instancia la configuración; los BeanPostProcessor de infraestructura deben ser estáticos.
 @SuppressWarnings("checkstyle:HideUtilityClassConstructor")
 @AutoConfiguration(
     beforeName = {
@@ -84,7 +87,8 @@ public class AxizJdbcTransportAutoConfiguration {
           validators.orderedStream().filter(candidate -> candidate.supports(source)).findFirst();
       if (validator.isEmpty())
         throw new IllegalStateException(
-            "Custom DataSource requires a JdbcDataSourceTlsValidator and pre-construction validation: "
+            "Custom DataSource requires a JdbcDataSourceTlsValidator and pre-construction"
+                + " validation: "
                 + source.getClass().getName());
       validator.get().validate(source, policy);
       checked.add(source);
@@ -96,7 +100,7 @@ public class AxizJdbcTransportAutoConfiguration {
     }
   }
 
-  /** Datasource-micrometer decorates the verified pool after bean initialization. */
+  /** Datasource-micrometer decora el pool verificado después de la inicialización del bean. */
   private static final class ObservedSource {
     private ObservedSource() {}
 
@@ -141,7 +145,10 @@ public class AxizJdbcTransportAutoConfiguration {
     }
   }
 
-  /** Boot's separate migration source is lazy and exposes its effective driver options. */
+  /**
+   * La fuente de migración separada de Boot es diferida y expone las opciones efectivas de su
+   * driver.
+   */
   private static final class SimpleSource {
     private SimpleSource() {}
 

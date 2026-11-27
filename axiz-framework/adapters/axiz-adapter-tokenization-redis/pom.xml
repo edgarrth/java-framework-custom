@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-technology</artifactId><version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-technology/pom.xml</relativePath></parent>
+  <artifactId>axiz-adapter-tokenization-redis</artifactId>
+  <name>axiz :: adapter :: tokenization :: redis</name>
+  <description>Distributed fail-closed token budgets with native Redis admission and owned concurrency permits</description>
+  <properties><axiz.module.name>pe.axiz.adapter.tokenization.redis</axiz.module.name><axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity></properties>
+  <dependencies>
+    <dependency><groupId>org.slf4j</groupId><artifactId>slf4j-api</artifactId></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-security</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-tokenization</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-crypto</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-errors</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>io.lettuce</groupId><artifactId>lettuce-core</artifactId></dependency>
+    <dependency><groupId>org.mockito</groupId><artifactId>mockito-core</artifactId><scope>test</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-security-redis</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-tokenization-vault</artifactId><version>${project.version}</version></dependency>
+</dependencies>
+</project>

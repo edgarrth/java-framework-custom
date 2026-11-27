@@ -12,14 +12,15 @@ import reactor.core.publisher.Mono;
 {{/stack.reactive}}
 
 /**
- * {{artifact.title}} endpoints. Contract first: declare them in src/main/openapi/openapi.yaml and
- * prefer {@code axiz contract sync}, which generates controllers from the contract.
+ * Endpoints de {{artifact.titleJavadoc}}. Contrato primero: se declaran en
+ * src/main/openapi/openapi.yaml y se prefiere {@code axiz contract sync}, que genera los
+ * controladores a partir del contrato.
  */
 @RestController
 @RequestMapping("/v1/{{artifact.plural}}")
 public class {{artifact.className}}Controller {
 
-  /** Gets one {{artifact.kebab}}. */
+  /** Obtiene un {{artifact.kebab}}. */
   @GetMapping("/{id}")
 {{#stack.servlet}}
   public ResponseEntity<String> get(@PathVariable("id") String id) {

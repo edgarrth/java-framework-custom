@@ -1,5 +1,6 @@
 package pe.axiz.spring.lock;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Clock;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -17,15 +18,12 @@ import pe.axiz.core.lock.AsyncDistributedLock;
 import pe.axiz.core.lock.DistributedLock;
 import pe.axiz.core.lock.InMemoryAsyncDistributedLock;
 import pe.axiz.core.lock.InMemoryDistributedLock;
+import pe.axiz.core.lock.LockObserver;
 import pe.axiz.core.lock.LockTemplate;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 
-/** Leased locks with renewal ({@link LockTemplate}) on Redis or DynamoDB. */
-@AutoConfiguration(
-    afterName = {
-      "pe.axiz.spring.lock.AxizLockRedisAutoConfiguration",
-      "pe.axiz.spring.lock.AxizLockDynamoDbAutoConfiguration"
-    })
+/** Locks con lease y renovación ({@link LockTemplate}) sobre Redis o DynamoDB. */
+@AutoConfiguration
 @ConditionalOnBooleanProperty(name = "axiz.lock.enabled", matchIfMissing = true)
 @EnableConfigurationProperties(AxizLockProperties.class)
 public class AxizLockAutoConfiguration {
@@ -46,7 +44,8 @@ public class AxizLockAutoConfiguration {
         "axiz.lock.store=memory",
         "redis or dynamodb",
         "a lock held in one replica does not exclude the others");
-    // allowed only where one process runs (local, test): the check above fails anywhere else
+    // permitido solo donde se ejecuta un único proceso (local, test): la comprobación anterior
+    // falla en cualquier otro lugar
     LoggerFactory.getLogger(AxizLockAutoConfiguration.class)
         .info("Locks are kept in memory (single process); replicas need redis or dynamodb");
     return new InMemoryDistributedLock(clock.getIfAvailable(Clock::systemUTC));
@@ -55,8 +54,15 @@ public class AxizLockAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean
   @ConditionalOnImperativeApplication
-  LockTemplate axizLockTemplate(DistributedLock lock, AxizLockProperties p) {
-    return new LockTemplate(lock, p.pollInterval());
+  LockTemplate axizLockTemplate(DistributedLock lock, AxizLockProperties p, LockObserver observer) {
+    return new LockTemplate(lock, p.pollInterval(), observer);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  LockObserver axizLockObserver(ObjectProvider<MeterRegistry> meters) {
+    return (resource, failure) ->
+        meters.ifAvailable(registry -> registry.counter("axiz.lock.release.failures").increment());
   }
 
   @Configuration(proxyBeanMethods = false)

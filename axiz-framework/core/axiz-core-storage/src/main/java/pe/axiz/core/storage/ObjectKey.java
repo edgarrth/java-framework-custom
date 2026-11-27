@@ -2,7 +2,7 @@ package pe.axiz.core.storage;
 
 import java.util.regex.Pattern;
 
-/** Validated object key: relative, no {@code ..} segments, no control characters. */
+/** Clave de objeto validada: relativa, sin segmentos {@code ..} ni caracteres de control. */
 public final class ObjectKey {
 
   private static final Pattern SAFE = Pattern.compile("^[A-Za-z0-9!_.*'()/=-]{1,1024}$");

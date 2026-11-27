@@ -1,6 +1,6 @@
 package pe.axiz.core.errors;
 
-/** Authentication or authorization failure. */
+/** Fallo de autenticación o de autorización. */
 public class AccessException extends AxizException {
 
   private static final long serialVersionUID = 1L;

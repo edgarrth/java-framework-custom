@@ -5,36 +5,109 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Properties;
 import org.junit.jupiter.api.Test;
+import pe.axiz.codegen.ArtifactGenerator.Options;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.project.ProjectManifest;
 
 class ArtifactGeneratorTest {
 
+  @Test
+  void rejectsUnsafeSubpackagesAndQualifiedMapperTypesBeforeRendering() throws Exception {
+    var project = project(Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of());
+    for (String invalid :
+        List.of("a;evil", "a*/evil", "a\\u002e", "class", "a..b", "../outside", "1invalid")) {
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> generator.generate(project, "test", invalid + ".Payment", Options.none(), null));
+      for (boolean source : List.of(false, true)) {
+        var options =
+            new ArtifactGenerator.Options(
+                null,
+                null,
+                source ? invalid + ".Source" : "example.Source",
+                source ? "example.Target" : invalid + ".Target");
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> generator.generate(project, "mapper", "payment", options, null));
+      }
+    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> generator.generate(project, "test", ".Payment", Options.none(), null));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> generator.generate(project, "test", "example.", Options.none(), null));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> generator.generate(project, "dto", "123payment", Options.none(), null));
+    var valid = generator.generate(project, "test", "account.payment", Options.none(), null);
+    assertTrue(
+        valid.created().keySet().stream()
+            .anyMatch(path -> path.endsWith("account/PaymentTest.java")));
+    JavaSourceSafetyTest.assertJavaSyntax(valid.created());
+    assertEquals("example.Source", ArtifactGenerator.typeName(" example.Source "));
+    assertEquals("CreatePayment", ArtifactGenerator.typeName("create-payment"));
+  }
+
+  @Test
+  void artifactTitlesAreEncodedForJavaAndPropertyBundles() throws Exception {
+    var project = project(Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of());
+    for (String title : JavaSourceSafetyTest.COMMENT_INPUTS) {
+      var options = new ArtifactGenerator.Options(null, title, null, null);
+      for (String type : List.of("usecase", "dto", "controller", "entity", "error-code")) {
+        var generated = generator.generate(project, type, "safe-artifact", options, null);
+        JavaSourceSafetyTest.assertJavaSyntax(generated.created());
+        if (type.equals("error-code")) {
+          var properties = new Properties();
+          properties.load(
+              new StringReader(generated.appended().get("src/main/resources/messages.properties")));
+          assertEquals(title, properties.getProperty("error.ORDERS-ORDERS-0001"));
+          String errors = text(generated, "OrdersErrors.java");
+          var appended = generator.generate(project, type, "second-artifact", options, errors);
+          JavaSourceSafetyTest.assertJavaSyntax(appended.updated());
+        }
+      }
+    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            generator.generate(
+                project,
+                "migration",
+                "unsafe",
+                new ArtifactGenerator.Options(null, "title\nDROP TABLE test", null, null),
+                null));
+  }
+
   private final ArtifactGenerator generator =
       new ArtifactGenerator(Clock.fixed(Instant.parse("2026-10-01T10:00:00Z"), ZoneOffset.UTC));
 
   private static ProjectManifest project(
       Structure f, Stack s, String persistence, List<String> caps) {
-    return new ProjectManifest(
-        "orders",
-        "pe.axiz.orders",
-        "pe.axiz.orders.business",
-        "business",
-        f,
-        s,
-        persistence,
-        "2.0.0",
-        "src/main/openapi/openapi.yaml",
-        null,
-        caps,
-        List.of());
+    return ProjectManifest.builder()
+        .name("orders")
+        .groupId("pe.axiz.orders")
+        .basePackage("pe.axiz.orders.business")
+        .archetype("business")
+        .structure(f)
+        .stack(s)
+        .persistence(persistence)
+        .axizVersion("2.0.0")
+        .openapi("src/main/openapi/openapi.yaml")
+        .asyncapi(null)
+        .capabilities(caps)
+        .operations(List.of())
+        .extensions(List.of())
+        .build();
   }
 
   private static String text(ArtifactGenerator.Result r, String suffix) {
@@ -73,6 +146,23 @@ class ArtifactGeneratorTest {
                 (path, bytes) ->
                     assertFalse(new String(bytes, StandardCharsets.UTF_8).contains("{{"), path));
       }
+    }
+  }
+
+  @Test
+  void persistentEntitiesAndRepositoriesStayInTheGovernedDataAccessLayer() {
+    for (var structure : List.of(Structure.LAYERED, Structure.EDA, Structure.BATCH)) {
+      var manifest = project(structure, Stack.SERVLET, "aurora", List.of());
+      var entity =
+          generator.generate(manifest, "entity", "payment", ArtifactGenerator.Options.none(), null);
+      var repository =
+          generator.generate(
+              manifest, "repository", "payment", ArtifactGenerator.Options.none(), null);
+      assertTrue(
+          text(entity, "repository/entity/PaymentEntity.java").contains("extends AuditableEntity"));
+      assertTrue(
+          text(repository, "repository/PaymentRepository.java")
+              .contains("import pe.axiz.orders.business.repository.entity.PaymentEntity;"));
     }
   }
 
@@ -159,7 +249,7 @@ class ArtifactGeneratorTest {
     assertTrue(
         text(hexHandler, "adapter/in/messaging/PaymentApprovedHandler.java")
             .contains("implements EventHandler<PaymentApproved>"));
-    // without a messaging capability the handler would not compile: generation is refused
+    // sin una capacidad de mensajería el handler no compilaría: se rechaza la generación
     ProjectManifest noMessaging = project(Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of());
     IllegalArgumentException refused =
         assertThrows(
@@ -169,7 +259,7 @@ class ArtifactGeneratorTest {
                     noMessaging, "handler", "x", ArtifactGenerator.Options.none(), null));
     assertTrue(refused.getMessage().contains("axiz add messaging-kafka"));
 
-    // reactive services on Aurora get Spring Data R2DBC types, never JPA
+    // los servicios reactivos sobre Aurora reciben tipos de Spring Data R2DBC, nunca JPA
     ArtifactGenerator.Result reactiveEntity =
         generator.generate(
             project(Structure.EDA, Stack.REACTIVE, "aurora", List.of("messaging-kafka")),

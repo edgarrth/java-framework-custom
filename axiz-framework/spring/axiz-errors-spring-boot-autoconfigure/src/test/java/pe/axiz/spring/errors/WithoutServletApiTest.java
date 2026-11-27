@@ -14,9 +14,10 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 /**
- * Reactive services have no servlet API on the classpath. The exception mappers serve both stacks,
- * so they must work when {@code jakarta.servlet} classes cannot be loaded: a missing class inside
- * the error handler leaves the client without any response.
+ * Los servicios reactivos no tienen la API de servlet en el classpath. Los mapeadores de
+ * excepciones sirven a ambas pilas, por lo que deben funcionar cuando las clases {@code
+ * jakarta.servlet} no pueden cargarse: una clase ausente dentro del manejador de errores deja al
+ * cliente sin respuesta.
  */
 class WithoutServletApiTest {
 
@@ -32,12 +33,13 @@ class WithoutServletApiTest {
       Object mapper = factory.invoke(null);
       Method map =
           loader.loadClass("pe.axiz.core.errors.ExceptionMapper").getMethod("map", Throwable.class);
-      // an exception no mapper knows goes through every check, the servlet ones included
+      // una excepción que ningún mapeador conoce pasa por todas las comprobaciones, incluidas las
+      // de servlet
       assertEquals(Optional.empty(), map.invoke(mapper, new IllegalStateException("boom")));
     }
   }
 
-  /** The test classpath, loaded again in isolation, without {@code jakarta.servlet}. */
+  /** El classpath de prueba, cargado de nuevo de forma aislada, sin {@code jakarta.servlet}. */
   private static URLClassLoader withoutServletApi() {
     URL[] urls =
         Arrays.stream(System.getProperty("java.class.path").split(File.pathSeparator))

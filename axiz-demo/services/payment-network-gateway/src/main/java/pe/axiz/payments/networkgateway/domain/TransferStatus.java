@@ -1,6 +1,6 @@
 package pe.axiz.payments.networkgateway.domain;
 
-/** Result of an inter-bank transfer at the network. */
+/** Resultado de una transferencia interbancaria en la red. */
 public enum TransferStatus {
   SETTLED,
   PENDING

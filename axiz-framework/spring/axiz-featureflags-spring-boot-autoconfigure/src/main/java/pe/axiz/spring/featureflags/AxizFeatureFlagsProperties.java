@@ -11,10 +11,10 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 import pe.axiz.core.featureflags.FlagDefinition;
 
 /**
- * Feature flags ({@code axiz.feature-flags.flags.<name>}) from the service ConfigMap or Parameter
- * Store (both reach the environment as properties).
+ * Feature flags ({@code axiz.feature-flags.flags.<name>}) tomados del ConfigMap del servicio o de
+ * Parameter Store (ambos llegan al entorno como propiedades).
  *
- * @param flags flags by name
+ * @param flags flags por nombre
  */
 @ConfigurationProperties("axiz.feature-flags")
 public record AxizFeatureFlagsProperties(@DefaultValue Map<String, Flag> flags) {
@@ -23,14 +23,14 @@ public record AxizFeatureFlagsProperties(@DefaultValue Map<String, Flag> flags) 
   }
 
   /**
-   * One flag.
+   * Un flag.
    *
-   * @param enabled master switch
-   * @param percentage rollout percentage (stable per user or client)
-   * @param channels allowed channels; empty allows any
-   * @param tenants allowed tenants; empty allows any
-   * @param rules attribute name to allowed values
-   * @param variant value returned when the flag is on
+   * @param enabled interruptor general
+   * @param percentage porcentaje de despliegue (estable por usuario o cliente)
+   * @param channels canales permitidos; vacío permite cualquiera
+   * @param tenants tenants permitidos; vacío permite cualquiera
+   * @param rules nombre de atributo asociado a los valores permitidos
+   * @param variant valor devuelto cuando el flag está activo
    */
   public record Flag(
       @DefaultValue("false") boolean enabled,

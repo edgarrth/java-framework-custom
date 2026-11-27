@@ -5,12 +5,13 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 
 /**
- * Executes an operation with a retry policy. Used where Spring's {@code @Retryable} is not
- * available (layer 1, batch readers). Sleeping uses the injected sleeper so tests do not wait.
+ * Ejecuta una operación con una política de reintentos. Se usa donde no está disponible
+ * {@code @Retryable} de Spring (capa 1, lectores batch). Las esperas usan el sleeper inyectado para
+ * que las pruebas no esperen.
  */
 public final class Retry {
 
-  /** Pauses between attempts. */
+  /** Pausa entre intentos. */
   @FunctionalInterface
   public interface Sleeper {
     void sleep(Duration duration) throws InterruptedException;
@@ -20,7 +21,7 @@ public final class Retry {
     }
   }
 
-  /** Observer of retries (metrics, logs). */
+  /** Observador de reintentos (métricas, logs). */
   @FunctionalInterface
   public interface Listener {
     void onRetry(int attempt, Throwable failure, Duration delay);
@@ -45,11 +46,11 @@ public final class Retry {
   }
 
   /**
-   * Runs the operation, retrying as the policy allows.
+   * Ejecuta la operación, reintentando según lo permita la política.
    *
-   * @param operation the operation
-   * @return its result
-   * @throws Exception the last failure when attempts are exhausted or it is not retryable
+   * @param operation la operación
+   * @return su resultado
+   * @throws Exception el último fallo cuando se agotan los intentos o no es reintentable
    */
   public <T> T call(Callable<T> operation) throws Exception {
     int attempt = 1;

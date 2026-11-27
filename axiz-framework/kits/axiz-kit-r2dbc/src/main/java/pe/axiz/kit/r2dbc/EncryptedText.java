@@ -3,11 +3,11 @@ package pe.axiz.kit.r2dbc;
 import java.util.Objects;
 
 /**
- * A text column stored encrypted (AES-256-GCM with the field encryption keys of the service). The
- * value held here is the plain text; the R2DBC converters of the Spring starter encrypt it on write
- * and decrypt it on read. {@link #toString()} never reveals it.
+ * Columna de texto almacenada cifrada (AES-256-GCM con las claves de cifrado de campos del
+ * servicio). El valor que se guarda aquí es el texto plano; los conversores R2DBC del starter de
+ * Spring lo cifran al escribir y lo descifran al leer. {@link #toString()} nunca lo revela.
  *
- * @param value plain text
+ * @param value texto plano
  */
 public record EncryptedText(String value) {
 

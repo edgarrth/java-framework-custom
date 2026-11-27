@@ -5,7 +5,10 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 import software.amazon.awssdk.enhanced.dynamodb.extensions.annotations.DynamoDbVersionAttribute;
 
-/** {{artifact.title}} item of the {@code {{artifact.plural}}} table (optimistic locking by version). */
+/**
+ * Elemento {{artifact.titleJavadoc}} de la tabla {@code {{artifact.plural}}} (bloqueo optimista por
+ * versión).
+ */
 @DynamoDbBean
 public class {{artifact.className}}Item {
 

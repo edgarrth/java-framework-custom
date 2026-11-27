@@ -1,21 +1,23 @@
 package pe.axiz.core.sensitive;
 
-/** Masking strategies. */
+/** Estrategias de enmascaramiento. */
 public enum MaskType {
-  /** Keep the value. */
+  /** Conserva el valor. */
   NONE,
   /** {@code a****@domain.com}. */
   EMAIL,
-  /** Keep the last 3 digits. */
+  /** Conserva los últimos 3 dígitos. */
   PHONE,
-  /** Keep the last 4 characters. */
+  /** Conserva los últimos 4 caracteres. */
   DOCUMENT,
-  /** PCI: first 6 and last 4 digits at most. */
+  /** PCI: como máximo los primeros 6 y los últimos 4 dígitos. */
   CARD,
-  /** Keep the first and last character. */
+  /** Conserva el primer y el último carácter. */
   PARTIAL,
-  /** Person names: keep the initial of each word ({@code Ana Torres -> A** T*****}). */
+  /**
+   * Nombres de personas: conserva la inicial de cada palabra ({@code Ana Torres -> A** T*****}).
+   */
   NAME,
-  /** Replace everything with a fixed mask. */
+  /** Reemplaza todo por una máscara fija. */
   FULL
 }

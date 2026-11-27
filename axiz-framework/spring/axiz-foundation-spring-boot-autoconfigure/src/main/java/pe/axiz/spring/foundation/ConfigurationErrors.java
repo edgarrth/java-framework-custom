@@ -4,13 +4,18 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.regex.Pattern;
 
-/** Safe configuration diagnostics shared by infrastructure auto-configurations. */
+/**
+ * Diagnósticos de configuración seguros compartidos por las autoconfiguraciones de infraestructura.
+ */
 public final class ConfigurationErrors {
   private static final Pattern PLACEHOLDER = Pattern.compile("\\$\\{([A-Za-z_][A-Za-z0-9_.-]*)");
 
   private ConfigurationErrors() {}
 
-  /** Describes logical/physical routing and missing variables, excluding URI credentials/query. */
+  /**
+   * Describe el enrutamiento lógico y físico y las variables ausentes, excluyendo las credenciales
+   * y la query de la URI.
+   */
   public static String destination(String logical, String resolved) {
     var missing =
         PLACEHOLDER.matcher(resolved).results().map(match -> match.group(1)).distinct().toList();
@@ -22,7 +27,10 @@ public final class ConfigurationErrors {
         + (missing.isEmpty() ? "" : "; unresolved variables: " + missing);
   }
 
-  /** A safe property hint; display syntax does not dictate how scalar maps are bound. */
+  /**
+   * Pista segura de propiedad; la sintaxis mostrada no determina cómo se enlazan los mapas
+   * escalares.
+   */
   public static String destinationProperty(String prefix, String logical) {
     if (!logical.matches("[A-Za-z0-9_.-]+")) return prefix + " (see destination above)";
     return logical.contains(".") ? prefix + "[" + logical + "]" : prefix + "." + logical;

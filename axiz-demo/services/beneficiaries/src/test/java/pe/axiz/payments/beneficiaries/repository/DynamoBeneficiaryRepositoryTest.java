@@ -11,7 +11,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import pe.axiz.core.commons.Page;
+import org.junit.jupiter.api.TestReporter;
+import pe.axiz.core.api.Page;
+import pe.axiz.core.crypto.AesGcm;
+import pe.axiz.core.crypto.CryptoException;
+import pe.axiz.core.crypto.FieldEncryptor;
+import pe.axiz.core.crypto.StaticKeyProvider;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.kit.dynamodb.CursorCodec;
 import pe.axiz.payments.beneficiaries.model.Beneficiary;
@@ -27,30 +32,40 @@ import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.PutItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsResponse;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse;
 
 /**
- * The DynamoDB repository over the real Enhanced Client and a scripted low-level client: the
- * requests it sends (table, key, filter of removed items, limit, start key) and how a cursor of
- * another customer is refused before any read.
+ * El repositorio DynamoDB sobre el Enhanced Client real y un cliente de bajo nivel guionado: las
+ * solicitudes que envía (tabla, clave, filtro de elementos eliminados, límite, clave de inicio) y
+ * cómo se rechaza el cursor de otro cliente sin realizar ninguna lectura.
  */
 class DynamoBeneficiaryRepositoryTest {
 
   static final Instant NOW = Instant.parse("2026-10-12T15:00:00Z");
 
-  /** Low-level client that records requests and answers from a script. */
+  /** Cliente de bajo nivel que registra las solicitudes y responde según un guion. */
   static final class Scripted implements DynamoDbClient {
     final List<Object> requests = new ArrayList<>();
     final Deque<QueryResponse> pages = new ArrayDeque<>();
     Map<String, AttributeValue> item = Map.of();
+    Map<String, AttributeValue> directory = Map.of();
 
     @Override
     public GetItemResponse getItem(GetItemRequest r) {
       requests.add(r);
-      return item.isEmpty()
-          ? GetItemResponse.builder().build()
-          : GetItemResponse.builder().item(item).build();
+      var found = DirectoryVersion.KEY.equals(r.key().get("beneficiaryId").s()) ? directory : item;
+      return GetItemResponse.builder().item(found).build();
+    }
+
+    @Override
+    public TransactWriteItemsResponse transactWriteItems(TransactWriteItemsRequest request) {
+      requests.add(request);
+      directory = request.transactItems().getFirst().put().item();
+      item = request.transactItems().get(1).put().item();
+      return TransactWriteItemsResponse.builder().build();
     }
 
     @Override
@@ -103,20 +118,29 @@ class DynamoBeneficiaryRepositoryTest {
               "test", Map.of("test", pe.axiz.core.crypto.AesGcm.newKey())),
           false);
   final Scripted dynamo = new Scripted();
+  final FieldEncryptor encryptor =
+      new FieldEncryptor(new StaticKeyProvider("test", Map.of("test", AesGcm.newKey())));
   final DynamoBeneficiaryRepository repository =
       new DynamoBeneficiaryRepository(
           new DynamoRepositories(
               DynamoDbEnhancedClient.builder().dynamoDbClient(dynamo).build(),
               "local-",
-              () -> cursors));
+              () -> cursors),
+          encryptor);
 
-  static Map<String, AttributeValue> row(String customer, String id, boolean removed) {
+  Map<String, AttributeValue> row(String customer, String id, boolean removed) {
     Map<String, AttributeValue> row = new HashMap<>();
     row.put("customerId", AttributeValue.fromS(customer));
     row.put("beneficiaryId", AttributeValue.fromS(id));
     row.put("alias", AttributeValue.fromS("Landlord"));
     row.put("holderName", AttributeValue.fromS("Ana Torres"));
-    row.put("cci", AttributeValue.fromS("00219100123456789053"));
+    row.put(
+        "cci",
+        AttributeValue.fromS(
+            encryptor.encrypt(
+                "00219100123456789053",
+                "beneficiaries.cci",
+                DynamoBeneficiaryRepository.accountBinding(customer, id))));
     row.put("currency", AttributeValue.fromS("PEN"));
     row.put("createdAt", AttributeValue.fromS(NOW.toString()));
     row.put("updatedAt", AttributeValue.fromS(NOW.toString()));
@@ -160,7 +184,7 @@ class DynamoBeneficiaryRepositoryTest {
   }
 
   @Test
-  void listsOnePageWithoutRemovedItemsAndAnOpaqueCursor() {
+  void listsOnePageWithoutRemovedItemsAndAnOpaqueCursor(TestReporter evidence) {
     dynamo.pages.add(page(key("C-1", "B-1"), List.of(row("C-1", "B-1", false))));
 
     Page<Beneficiary> first = repository.listActive("C-1", 1, null);
@@ -168,7 +192,8 @@ class DynamoBeneficiaryRepositoryTest {
     QueryRequest q = dynamo.last(QueryRequest.class);
     assertThat(q.tableName()).isEqualTo("local-beneficiaries");
     assertThat(q.limit()).isEqualTo(1);
-    assertThat(q.filterExpression()).isEqualTo("attribute_not_exists(deletedAt)");
+    assertThat(q.filterExpression())
+        .isEqualTo("attribute_not_exists(deletedAt) AND attribute_exists(cci)");
     assertThat(q.exclusiveStartKey()).isEmpty();
     assertThat(q.expressionAttributeValues()).containsValue(AttributeValue.fromS("C-1"));
     assertThat(first.content()).extracting(Beneficiary::getBeneficiaryId).containsExactly("B-1");
@@ -182,6 +207,30 @@ class DynamoBeneficiaryRepositoryTest {
     assertThat(dynamo.last(QueryRequest.class).exclusiveStartKey()).isEqualTo(key("C-1", "B-1"));
     assertThat(second.content()).extracting(Beneficiary::getBeneficiaryId).containsExactly("B-2");
     assertThat(second.nextCursor()).isNull();
+
+    evidence.publishEntry("axiz.capability.dynamodb", "default");
+    evidence.publishEntry("axiz.capability.dynamodb-cursor", "default");
+  }
+
+  @Test
+  void aPageIsFilledAcrossRoundsAndNeverReadsTheDirectoryBarrier() {
+    // Primera ronda: DynamoDB evaluó una fila eliminada y la filtró; aún hay más claves.
+    dynamo.pages.add(page(key("C-1", "B-0"), List.of()));
+    dynamo.pages.add(page(key("C-1", "B-1"), List.of(row("C-1", "B-1", false))));
+
+    Page<Beneficiary> first = repository.listActive("C-1", 1, null);
+
+    assertThat(first.content()).extracting(Beneficiary::getBeneficiaryId).containsExactly("B-1");
+    assertThat(dynamo.queries()).hasSize(2);
+    QueryRequest second = dynamo.last(QueryRequest.class);
+    assertThat(second.exclusiveStartKey()).isEqualTo(key("C-1", "B-0"));
+    assertThat(second.limit()).isEqualTo(1);
+    assertThat(second.keyConditionExpression()).contains(">");
+    assertThat(second.expressionAttributeValues())
+        .containsValue(AttributeValue.fromS(DirectoryVersion.KEY));
+    assertThat(
+            cursors.decode(first.nextCursor(), "local-beneficiaries/primary/active/customer=C-1"))
+        .isEqualTo(key("C-1", "B-1"));
   }
 
   @Test
@@ -217,7 +266,7 @@ class DynamoBeneficiaryRepositoryTest {
         .containsExactly("B-1", "B-2");
     assertThat(dynamo.queries()).hasSize(2);
     assertThat(dynamo.queries().getFirst().filterExpression())
-        .isEqualTo("attribute_not_exists(deletedAt)");
+        .isEqualTo("attribute_not_exists(deletedAt) AND attribute_exists(cci)");
     assertThat(dynamo.queries().get(1).exclusiveStartKey()).isEqualTo(key("C-1", "B-1"));
   }
 
@@ -230,21 +279,52 @@ class DynamoBeneficiaryRepositoryTest {
             new NewBeneficiary("Landlord", "Ana Torres", "00219100123456789053", "PEN"),
             NOW);
 
-    repository.insert(b);
-    PutItemRequest put = dynamo.last(PutItemRequest.class);
+    repository.insert(b, 50);
+    var transaction = dynamo.last(TransactWriteItemsRequest.class);
+    assertThat(transaction.transactItems()).hasSize(2);
+    assertThat(transaction.transactItems().getFirst().put().conditionExpression())
+        .contains("attribute_not_exists");
+    var put = transaction.transactItems().get(1).put();
     assertThat(put.tableName()).isEqualTo("local-beneficiaries");
     assertThat(put.conditionExpression()).contains("attribute_not_exists(#pk)");
     assertThat(put.expressionAttributeNames()).containsEntry("#pk", "customerId");
-    assertThat(put.item()).containsEntry("cci", AttributeValue.fromS("00219100123456789053"));
+    String stored = put.item().get("cci").s();
+    assertThat(stored).startsWith("axz1:").doesNotContain("00219100123456789053");
+    assertThat(
+            encryptor.decrypt(
+                stored,
+                "beneficiaries.cci",
+                DynamoBeneficiaryRepository.accountBinding("C-1", "B-1")))
+        .isEqualTo("00219100123456789053");
 
     dynamo.item = row("C-1", "B-1", false);
     b.setVersion(1L);
     b.rename("Rent", NOW);
     Beneficiary saved = repository.update(b);
-    UpdateItemRequest update = dynamo.last(UpdateItemRequest.class);
+    var update = dynamo.last(TransactWriteItemsRequest.class).transactItems().get(1).put();
     assertThat(update.tableName()).isEqualTo("local-beneficiaries");
-    assertThat(update.key()).isEqualTo(key("C-1", "B-1"));
+    assertThat(update.item()).containsAllEntriesOf(key("C-1", "B-1"));
     assertThat(update.conditionExpression()).isNotBlank();
     assertThat(saved.getBeneficiaryId()).isEqualTo("B-1");
+  }
+
+  @Test
+  void plaintextAndCiphertextsCopiedAcrossRecordsAreRejected() {
+    var original = row("C-1", "B-1", false);
+    for (var destination : List.of(key("C-2", "B-1"), key("C-1", "B-2"))) {
+      var changed = new HashMap<>(original);
+      changed.putAll(destination);
+      dynamo.item = changed;
+      assertThatThrownBy(
+              () ->
+                  repository.findActive(
+                      destination.get("customerId").s(), destination.get("beneficiaryId").s()))
+          .isInstanceOf(CryptoException.class);
+    }
+    var plaintext = new HashMap<>(original);
+    plaintext.put("cci", AttributeValue.fromS("00219100123456789053"));
+    dynamo.item = plaintext;
+    assertThatThrownBy(() -> repository.findActive("C-1", "B-1"))
+        .isInstanceOf(CryptoException.class);
   }
 }

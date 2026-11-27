@@ -12,18 +12,24 @@
 
   <artifactId>axiz-core-outbox</artifactId>
   <name>axiz :: core :: outbox</name>
-  <description>Transactional outbox: JDBC store and relay to any EventPublisher, at-least-once</description>
+  <description>Transactional outbox contracts and provider-independent at-least-once relay</description>
 
   <properties>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
-    <!-- M10: measured locally; floor of branch 32/38 and detected mutations 54/62. -->
+    <!-- Umbrales mínimos del módulo: ramas 32/38 y mutaciones detectadas 54/62. -->
     <axiz.coverage.branch>0.84</axiz.coverage.branch>
     <axiz.mutation.threshold>87</axiz.mutation.threshold>
     <axiz.module.name>pe.axiz.core.outbox</axiz.module.name>
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-crypto</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-concurrent</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-json</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-errors</artifactId><version>${project.version}</version></dependency>
+
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-core-commons</artifactId>

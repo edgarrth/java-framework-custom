@@ -1,17 +1,17 @@
 package pe.axiz.core.saga;
 
-/** Saga lifecycle. */
+/** Ciclo de vida de la saga. */
 public enum SagaStatus {
   RUNNING,
   COMPLETED,
   COMPENSATING,
   COMPENSATED,
   /**
-   * A step failed with an uncertain outcome (the effect may exist): nothing is compensated or
-   * declared until verification answers; recovery asks again.
+   * Un paso falló con un resultado incierto (el efecto puede existir): no se compensa ni se declara
+   * nada hasta que la verificación responda; la recuperación vuelve a consultar.
    */
   IN_DOUBT,
-  /** Compensation failed: needs manual intervention. */
+  /** La compensación falló: requiere intervención manual. */
   FAILED;
 
   public boolean terminal() {

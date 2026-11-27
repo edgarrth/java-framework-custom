@@ -7,10 +7,10 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.http.server.PathContainer;
 import org.springframework.web.util.pattern.PathPattern;
 import org.springframework.web.util.pattern.PathPatternParser;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.tenancy.TenantResolver;
 
-/** Shared logic of the servlet and reactive tenant filters. */
+/** Lógica compartida por los filtros de tenant servlet y reactivo. */
 public final class TenantFilterSupport {
 
   private final TenantResolver resolver;
@@ -29,7 +29,10 @@ public final class TenantFilterSupport {
     return excluded.stream().anyMatch(x -> x.matches(c));
   }
 
-  /** Tenant from the token (already in the request metadata) or the trusted header. */
+  /**
+   * Tenant tomado del token (ya presente en los metadatos de la solicitud) o de la cabecera de
+   * confianza.
+   */
   public Optional<String> resolve(
       @Nullable RequestMetadata metadata, Function<String, @Nullable String> headers) {
     return resolver.resolve(metadata != null ? metadata.tenantId() : null, headers);

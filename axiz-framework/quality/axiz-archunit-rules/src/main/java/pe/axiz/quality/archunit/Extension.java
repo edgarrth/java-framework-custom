@@ -2,7 +2,7 @@ package pe.axiz.quality.archunit;
 
 import java.util.Locale;
 
-/** Service extension. */
+/** Extensión de servicio. */
 public enum Extension {
   CQRS;
 

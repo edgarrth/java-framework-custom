@@ -10,22 +10,25 @@ import javax.crypto.spec.PBEKeySpec;
 import org.jspecify.annotations.Nullable;
 
 /**
- * PBKDF2-HMAC-SHA256 password hasher available in any JDK (FIPS friendly). Format: {@code
- * $pbkdf2-sha256$i=<iterations>$<salt>$<hash>}.
+ * Hasher de contraseñas PBKDF2-HMAC-SHA256 disponible en cualquier JDK (compatible con FIPS).
+ * Formato: {@code $pbkdf2-sha256$i=<iterations>$<salt>$<hash>}.
  *
- * <p>Stored values are parsed by one validating reader: an unknown or corrupt format, a salt or
- * hash of an unexpected size, or an iteration count outside {@link #MIN_ITERATIONS}..{@link
- * #MAX_ITERATIONS} never matches and always asks for an upgrade, instead of throwing or letting a
- * tampered record burn CPU on every login.
+ * <p>Los valores almacenados se parsean con un único lector que valida: un formato desconocido o
+ * corrupto, un salt o hash de tamaño inesperado, o un número de iteraciones fuera de {@link
+ * #MIN_ITERATIONS}..{@link #MAX_ITERATIONS} nunca coincide y siempre pide actualización, en lugar
+ * de lanzar una excepción o dejar que un registro alterado consuma CPU en cada inicio de sesión.
  */
 public final class Pbkdf2PasswordHasher implements PasswordHasher {
 
   public static final int DEFAULT_ITERATIONS = 600_000;
 
-  /** Fewest iterations accepted for new hashes and for stored ones. */
+  /** Mínimo de iteraciones aceptado para hashes nuevos y almacenados. */
   public static final int MIN_ITERATIONS = 100_000;
 
-  /** Most iterations accepted from a stored hash (cost cap against tampered records). */
+  /**
+   * Máximo de iteraciones aceptado de un hash almacenado (tope de costo frente a registros
+   * alterados).
+   */
   public static final int MAX_ITERATIONS = 10_000_000;
 
   static final int SALT_BYTES = 16;
@@ -67,7 +70,7 @@ public final class Pbkdf2PasswordHasher implements PasswordHasher {
     return parse(encoded).map(s -> s.iterations() < iterations).orElse(true);
   }
 
-  /** A stored hash, only when every part is well formed and within bounds. */
+  /** Hash almacenado, solo cuando todas sus partes están bien formadas y dentro de los límites. */
   static Optional<Stored> parse(@Nullable String encoded) {
     if (encoded == null || !encoded.startsWith(PREFIX)) {
       return Optional.empty();
@@ -97,7 +100,7 @@ public final class Pbkdf2PasswordHasher implements PasswordHasher {
     }
   }
 
-  /** A parsed stored hash; its arrays are owned by this class and never handed out. */
+  /** Hash almacenado ya parseado; sus arrays son propiedad de esta clase y nunca se entregan. */
   static final class Stored {
     private final int iterations;
     private final byte[] salt;

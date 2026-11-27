@@ -5,7 +5,7 @@ import java.time.Duration;
 import java.util.Objects;
 import pe.axiz.core.cache.AsyncByteCache;
 
-/** Shared cache identity, TTLs and native asynchronous byte store. */
+/** Identidad de caché compartida, TTL y almacén de bytes asíncrono nativo. */
 public class AsyncCacheSettings {
   private final String prefix;
 
@@ -31,7 +31,8 @@ public class AsyncCacheSettings {
   @SuppressFBWarnings(
       value = "EI_EXPOSE_REP",
       justification =
-          "The accessor returns the configured borrowed cache collaborator; it does not transfer ownership.")
+          "The accessor returns the configured borrowed cache collaborator; it does not transfer"
+              + " ownership.")
   public AsyncByteCache store() {
     return store;
   }

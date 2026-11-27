@@ -26,20 +26,21 @@ class AsyncContractsTest {
           new String(java.util.Objects.requireNonNull(in).readAllBytes(), StandardCharsets.UTF_8));
     }
     ProjectManifest m = ProjectManifest.read(directory);
-    new ProjectManifest(
-            m.name(),
-            "pe.axiz",
-            m.basePackage(),
-            m.archetype(),
-            m.structure(),
-            m.stack(),
-            m.persistence(),
-            m.axizVersion(),
-            m.openapi(),
-            "src/main/asyncapi/asyncapi.yaml",
-            m.capabilities(),
-            m.operations(),
-            m.extensions())
+    ProjectManifest.builder()
+        .name(m.name())
+        .groupId("pe.axiz")
+        .basePackage(m.basePackage())
+        .archetype(m.archetype())
+        .structure(m.structure())
+        .stack(m.stack())
+        .persistence(m.persistence())
+        .axizVersion(m.axizVersion())
+        .openapi(m.openapi())
+        .asyncapi("src/main/asyncapi/asyncapi.yaml")
+        .capabilities(m.capabilities())
+        .operations(m.operations())
+        .extensions(m.extensions())
+        .build()
         .write(directory);
     CapabilityAdder.mergeYaml(
         directory.resolve("src/main/resources/application.yaml"),
@@ -69,6 +70,10 @@ class AsyncContractsTest {
     assertTrue(source.contains("@HandlesEvent(\"pe.axiz.order.created.v1\")"));
     assertTrue(source.contains("TypedEventHandler<OrderCreatedV1>"));
     assertTrue(source.contains("UnsupportedOperationException"));
+    assertTrue(
+        cli.output().contains("Implement the event handler before consuming live messages"),
+        cli.output());
+    assertTrue(cli.output().contains("Created src/main/java/"), cli.output());
     Files.writeString(handler, source + "\n// Implemented by the service owner\n");
     assertEquals(
         0,
@@ -133,20 +138,21 @@ class AsyncContractsTest {
         </project>
         """);
     ProjectManifest m = ProjectManifest.read(directory);
-    new ProjectManifest(
-            m.name(),
-            m.groupId(),
-            m.basePackage(),
-            m.archetype(),
-            m.structure(),
-            m.stack(),
-            m.persistence(),
-            m.axizVersion(),
-            "application/" + m.openapi(),
-            "application/" + m.asyncapi(),
-            m.capabilities(),
-            m.operations(),
-            m.extensions())
+    ProjectManifest.builder()
+        .name(m.name())
+        .groupId(m.groupId())
+        .basePackage(m.basePackage())
+        .archetype(m.archetype())
+        .structure(m.structure())
+        .stack(m.stack())
+        .persistence(m.persistence())
+        .axizVersion(m.axizVersion())
+        .openapi("application/" + m.openapi())
+        .asyncapi("application/" + m.asyncapi())
+        .capabilities(m.capabilities())
+        .operations(m.operations())
+        .extensions(m.extensions())
+        .build()
         .write(directory);
     var errors =
         DoctorCommandTest.messages(
@@ -168,11 +174,24 @@ class AsyncContractsTest {
   void syncGenerateLintAndDoctorUseTheSameAsyncApiSource(@TempDir Path temporary) throws Exception {
     Path directory = service(temporary);
     CliHarness h = new CliHarness();
+    h.javaFormatter = false;
     assertEquals(
         0,
         h.run("contract", "sync", "--type", "asyncapi", "--dir", directory.toString()),
         h.output());
     assertTrue(Files.exists(directory.resolve(AsyncContractSync.SNAPSHOT)));
+    assertTrue(h.output().contains("Created src/main/java/"), h.output());
+    assertTrue(
+        h.output().contains("AsyncAPI payloads and generation snapshot synchronized"), h.output());
+    assertEquals(1, h.processes.commands.size());
+    assertTrue(h.processes.commands.getFirst().contains("spotless:apply"));
+    var same = new CliHarness();
+    same.javaFormatter = false;
+    assertEquals(
+        0,
+        same.run("contract", "sync", "--type", "asyncapi", "--dir", directory.toString()),
+        same.output());
+    assertTrue(same.processes.commands.isEmpty(), "Unchanged sources need no formatter process");
     Path record;
     try (var files = Files.walk(directory.resolve("src/main/java"))) {
       record =
@@ -291,22 +310,67 @@ class AsyncContractsTest {
   void asyncOnlyProjectsDoNotRequireTheTypeSwitch(@TempDir Path temporary) throws Exception {
     Path directory = service(temporary);
     ProjectManifest m = ProjectManifest.read(directory);
-    new ProjectManifest(
-            m.name(),
-            m.groupId(),
-            m.basePackage(),
-            m.archetype(),
-            m.structure(),
-            m.stack(),
-            m.persistence(),
-            m.axizVersion(),
-            null,
-            m.asyncapi(),
-            m.capabilities(),
-            m.operations(),
-            m.extensions())
+    ProjectManifest.builder()
+        .name(m.name())
+        .groupId(m.groupId())
+        .basePackage(m.basePackage())
+        .archetype(m.archetype())
+        .structure(m.structure())
+        .stack(m.stack())
+        .persistence(m.persistence())
+        .axizVersion(m.axizVersion())
+        .openapi(null)
+        .asyncapi(m.asyncapi())
+        .capabilities(m.capabilities())
+        .operations(m.operations())
+        .extensions(m.extensions())
+        .build()
         .write(directory);
     assertEquals(0, new CliHarness().run("contract", "sync", "--dir", directory.toString()));
     assertEquals(0, new CliHarness().run("contract", "lint", "--dir", directory.toString()));
+  }
+
+  @Test
+  void
+      compatibleEventChangesProduceReviewableProposalsAndFormattingWithoutOverwritingImplementation(
+          @TempDir Path temporary) throws Exception {
+    Path directory = service(temporary);
+    var initial = new CliHarness();
+    assertEquals(
+        0, initial.run("contract", "sync", "--type", "asyncapi", "--dir", directory.toString()));
+    Path record;
+    try (var files = Files.walk(directory.resolve("src/main/java"))) {
+      record =
+          files
+              .filter(path -> path.getFileName().toString().equals("OrderCreatedV1.java"))
+              .findFirst()
+              .orElseThrow();
+    }
+    String before = Files.readString(record);
+    Path contract = directory.resolve("src/main/asyncapi/asyncapi.yaml");
+    Files.writeString(
+        contract,
+        Files.readString(contract)
+            .replace(
+                "        id: {type: string}",
+                "        id: {type: string}\n        note: {type: string}"));
+    var sync = new CliHarness();
+    sync.javaFormatter = false;
+    assertEquals(
+        0,
+        sync.run("contract", "sync", "--type", "asyncapi", "--dir", directory.toString()),
+        sync.output());
+    assertEquals(before, Files.readString(record));
+    Path proposal = record.resolveSibling(record.getFileName() + ".axiz-new");
+    assertTrue(Files.readString(proposal).contains("String note"));
+    assertTrue(sync.output().contains("Review and merge "), sync.output());
+    assertTrue(sync.output().contains("OrderCreatedV1.java.axiz-new"), sync.output());
+    assertTrue(sync.output().contains("AsyncAPI payloads and generation snapshot synchronized"));
+    assertTrue(
+        sync.processes.commands.stream().anyMatch(command -> command.contains("spotless:apply")));
+    var lint = new CliHarness();
+    assertEquals(
+        0, lint.run("contract", "lint", "--type", "asyncapi", "--dir", directory.toString()));
+    assertTrue(lint.output().contains("1 published types, 1 consumed types"), lint.output());
   }
 }

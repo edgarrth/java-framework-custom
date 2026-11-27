@@ -5,7 +5,7 @@ import pe.axiz.core.messaging.EventEnvelope;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName;
 
-/** Maps SQS messages (including SNS-delivered raw messages) to envelopes. */
+/** Convierte mensajes SQS (incluidos los mensajes raw entregados por SNS) en envelopes. */
 public final class SqsEnvelopes {
 
   private SqsEnvelopes() {}
@@ -14,7 +14,7 @@ public final class SqsEnvelopes {
     return CloudEventJson.read(message.body());
   }
 
-  /** Delivery attempt from {@code ApproximateReceiveCount} (1 when absent). */
+  /** Intento de entrega a partir de {@code ApproximateReceiveCount} (1 cuando falta). */
   public static int attempt(Message message) {
     String count = message.attributes().get(MessageSystemAttributeName.APPROXIMATE_RECEIVE_COUNT);
     try {

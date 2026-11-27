@@ -7,6 +7,7 @@ import io.micrometer.core.instrument.binder.MeterBinder;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
@@ -31,12 +32,14 @@ import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Role;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.PropertySourcesPropertyResolver;
 import pe.axiz.core.audit.AsyncAuditPublisher;
+import pe.axiz.core.audit.AuditIntegrityMetrics;
 import pe.axiz.core.audit.AuditPublisher;
 import pe.axiz.core.audit.AuditQueueMetrics;
 import pe.axiz.core.audit.AuditTrail;
@@ -44,6 +47,7 @@ import pe.axiz.core.audit.Auditable;
 import pe.axiz.core.audit.CompositeAuditPublisher;
 import pe.axiz.core.audit.ConfirmedAuditPublisher;
 import pe.axiz.core.audit.LoggingAuditPublisher;
+import pe.axiz.core.audit.SealingAuditPublisher;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.outbox.OutboxRelay;
 import pe.axiz.core.sensitive.ObjectMasker;
@@ -52,21 +56,31 @@ import pe.axiz.spring.foundation.ConfigurationErrors;
 import pe.axiz.spring.foundation.DispatchBoundary;
 
 /**
- * Audit: {@link Auditable} through an infrastructure advisor, sanitized immutable events, real
- * asynchronous publication (bounded queue, virtual thread, log fallback) and optional HTTP audit.
- * Sinks come from adapter auto-configurations (MSK, SQS); without sinks events go to the log.
+ * Auditoría: {@link Auditable} mediante un advisor de infraestructura, eventos inmutables saneados,
+ * publicación asíncrona real (cola acotada, hilo virtual, respaldo en log) y auditoría HTTP
+ * opcional. Los destinos provienen de las autoconfiguraciones de adaptadores (MSK, SQS); sin
+ * destinos, los eventos van al log.
  */
 @AutoConfiguration(
     afterName = {
       "org.springframework.boot.transaction.autoconfigure.TransactionAutoConfiguration",
       "pe.axiz.spring.sensitive.AxizSensitiveAutoConfiguration",
-      "pe.axiz.spring.foundation.AxizFoundationAutoConfiguration",
-      "pe.axiz.spring.audit.AxizAuditKafkaAutoConfiguration",
-      "pe.axiz.spring.audit.AxizAuditSqsAutoConfiguration"
+      "pe.axiz.spring.foundation.AxizFoundationAutoConfiguration"
     })
 @ConditionalOnBooleanProperty(name = "axiz.audit.enabled", matchIfMissing = true)
 @EnableConfigurationProperties(AxizAuditProperties.class)
 public class AxizAuditAutoConfiguration {
+
+  @Bean
+  @Lazy
+  AuditIntegritySupport axizAuditIntegritySupport(
+      AxizAuditProperties properties,
+      Environment environment,
+      BeanFactory beans,
+      ObjectProvider<Clock> clocks) {
+    return new AuditIntegritySupport(
+        properties.integrity(), environment, beans, clocks.getIfAvailable(Clock::systemUTC));
+  }
 
   @Bean
   @ConditionalOnImperativeApplication
@@ -110,10 +124,16 @@ public class AxizAuditAutoConfiguration {
         ConfigurableListableBeanFactory beans,
         Environment environment) {
       return () -> {
-        if (properties.effectiveMode() != AxizAuditProperties.Mode.DURABLE
-            || !AuditModeSelection.managed(beans)) return;
+        boolean durable =
+            properties.effectiveMode() == AxizAuditProperties.Mode.DURABLE
+                && AuditModeSelection.managed(beans);
+        boolean strict =
+            properties.strict().enabled()
+                && properties.strict().mode() == AxizAuditProperties.StrictMode.DURABLE
+                && AuditModeSelection.strictManaged(beans);
+        if (!durable && !strict) return;
         var relay = beans.getBeanProvider(OutboxRelay.class).getIfAvailable();
-        // A writer-only service must explicitly disable its local relay.
+        // Un servicio que solo escribe debe desactivar explícitamente su relay local.
         if (!environment.getProperty("axiz.outbox.relay.enabled", Boolean.class, true)) return;
         if (relay == null)
           throw new IllegalStateException(
@@ -132,7 +152,8 @@ public class AxizAuditAutoConfiguration {
     if (environment instanceof ConfigurableEnvironment configurable) {
       var resolver = new PropertySourcesPropertyResolver(configurable.getPropertySources());
       resolver.setIgnoreUnresolvableNestedPlaceholders(true);
-      // Bind the same scalar map as messaging: both dotted and bracketed keys are legal.
+      // Se enlaza el mismo mapa escalar que en mensajería: las claves con puntos y con corchetes
+      // son válidas.
       var binder =
           new Binder(
               ConfigurationPropertySources.get(configurable),
@@ -155,7 +176,10 @@ public class AxizAuditAutoConfiguration {
   @ConditionalOnMissingBean
   @ConditionalOnImperativeApplication
   AuditPublisher axizAuditPublisher(
-      AxizAuditProperties properties, ObjectProvider<AuditSink> sinks, BeanFactory beans) {
+      AxizAuditProperties properties,
+      ObjectProvider<AuditSink> sinks,
+      BeanFactory beans,
+      AuditIntegritySupport integrity) {
     List<AuditPublisher> delegates = sinks.orderedStream().map(AuditSink::publisher).toList();
     LoggingAuditPublisher log = new LoggingAuditPublisher();
     AuditPublisher target =
@@ -175,21 +199,23 @@ public class AxizAuditAutoConfiguration {
             : target;
     if (properties.effectiveMode() == AxizAuditProperties.Mode.DURABLE) {
       try {
-        return DurableAudit.wrap(beans, properties.durable(), delivery);
+        return DurableAudit.wrap(beans, properties.durable(), delivery, integrity);
       } catch (RuntimeException | Error failure) {
         if (delivery instanceof AsyncAuditPublisher async) async.close();
         throw failure;
       }
     }
-    return properties.effectiveMode() == AxizAuditProperties.Mode.SYNC
-        ? new ConfirmedAuditPublisher(target)
-        : delivery;
+    return new SealingAuditPublisher(
+        integrity.memory(properties.effectiveMode().name().toLowerCase(Locale.ROOT)),
+        properties.effectiveMode() == AxizAuditProperties.Mode.SYNC
+            ? new ConfirmedAuditPublisher(target)
+            : delivery);
   }
 
   /**
-   * Health of the asynchronous publisher as metrics: {@code axiz.audit.pending}, {@code
-   * axiz.audit.lost} (alert when it grows), {@code axiz.audit.fallback}, {@code
-   * axiz.audit.failures} and {@code axiz.audit.worker.alive} (1 or 0).
+   * Salud del publicador asíncrono como métricas: {@code axiz.audit.pending}, {@code
+   * axiz.audit.lost} (alertar cuando crece), {@code axiz.audit.fallback}, {@code
+   * axiz.audit.failures} y {@code axiz.audit.worker.alive} (1 o 0).
    */
   @Bean
   @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
@@ -229,7 +255,9 @@ public class AxizAuditAutoConfiguration {
                   TransactionalAuditPublisher::notConfirmedCount)
               .description("Durable audit writes degraded to the asynchronous fallback")
               .register(registry);
-        if (actual instanceof ConfirmedAuditPublisher sync)
+        ConfirmedAuditPublisher sync =
+            AuditPublisherLookup.find(actual, ConfirmedAuditPublisher.class);
+        if (sync != null)
           FunctionCounter.builder(
                   "axiz.audit.persistence.unconfirmed",
                   sync,
@@ -237,7 +265,23 @@ public class AxizAuditAutoConfiguration {
               .description("Destination acknowledgements that failed after business completion")
               .register(registry);
         bindQueue(registry, asyncOf(actual));
+        bindIntegrity(registry, AuditPublisherLookup.find(actual, AuditIntegrityMetrics.class));
       };
+    }
+
+    static void bindIntegrity(MeterRegistry registry, @Nullable AuditIntegrityMetrics metrics) {
+      if (metrics == null) return;
+      FunctionCounter.builder(
+              "axiz.audit.details.sanitized", metrics, AuditIntegrityMetrics::detailsSanitizedCount)
+          .description("Audit detail substitutions and omissions counted at admission")
+          .register(registry);
+      for (String lane : metrics.chainSequences().keySet()) {
+        Gauge.builder(
+                "axiz.audit.chain.sequence", metrics, value -> value.chainSequences().get(lane))
+            .tag("lane", lane)
+            .description("Highest locally assigned sequence; not a committed checkpoint")
+            .register(registry);
+      }
     }
 
     static void bindQueue(MeterRegistry registry, @Nullable AuditQueueMetrics async) {
@@ -265,13 +309,7 @@ public class AxizAuditAutoConfiguration {
     }
 
     static @Nullable AsyncAuditPublisher asyncOf(@Nullable AuditPublisher publisher) {
-      if (publisher instanceof AsyncAuditPublisher async) {
-        return async;
-      }
-      if (publisher instanceof TransactionalAuditPublisher durable) {
-        return asyncOf(durable.fallback());
-      }
-      return null;
+      return AuditPublisherLookup.find(publisher, AsyncAuditPublisher.class);
     }
   }
 

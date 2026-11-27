@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FindBugsFilter>
-  <!-- Injected collaborator: identity and lifecycle are shared with the application context. -->
+  <!-- Colaborador inyectado: la identidad y el ciclo de vida se comparten con el contexto de la aplicación. -->
   <Match>
     <Class name="pe.axiz.payments.settlement.job.ControlTotalsTasklet"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="storage"/>
   </Match>
-  <!-- Immutable BusinessCalendar is safe to share. -->
+  <!-- BusinessCalendar es inmutable y se puede compartir de forma segura. -->
   <Match>
     <Class name="pe.axiz.payments.settlement.job.SettlementRunner"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="calendar"/>
   </Match>
-  <!-- Injected collaborator: identity and lifecycle are shared with the application context. -->
+  <!-- Colaborador inyectado: la identidad y el ciclo de vida se comparten con el contexto de la aplicación. -->
   <Match>
     <Class name="pe.axiz.payments.settlement.job.SettlementRunner"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="summary"/>
   </Match>
-  <!-- Injected collaborator: identity and lifecycle are shared with the application context. -->
+  <!-- Colaborador inyectado: la identidad y el ciclo de vida se comparten con el contexto de la aplicación. -->
   <Match>
     <Class name="pe.axiz.payments.settlement.job.SettlementSummaryTasklet"/>
     <Bug pattern="EI_EXPOSE_REP2"/>

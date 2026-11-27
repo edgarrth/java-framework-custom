@@ -17,18 +17,13 @@
   <properties>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
-    <!-- M10: measured locally; floor of branch 60/66 and detected mutations 104/106. -->
+    <!-- Umbrales mínimos del módulo: ramas 60/66 y mutaciones detectadas 104/106. -->
     <axiz.coverage.branch>0.90</axiz.coverage.branch>
     <axiz.mutation.threshold>98</axiz.mutation.threshold>
     <axiz.module.name>pe.axiz.core.money</axiz.module.name>
   </properties>
 
   <dependencies>
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-commons</artifactId>
-      <version>${project.version}</version>
-    </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-core-errors</artifactId>

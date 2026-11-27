@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-/** In-memory counters for tests and local runs. */
+/** Contadores en memoria para pruebas y ejecuciones locales. */
 public final class InMemorySequenceStore implements SequenceStore {
 
   private final Map<String, AtomicLong> counters = new ConcurrentHashMap<>();

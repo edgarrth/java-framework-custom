@@ -1,0 +1,149 @@
+# Herramientas: CLI, Initializr y recetas. Se compilan contra el framework del mismo commit. Con el
+# tag axiz-tools-v* se publican los artefactos Maven, la imagen del Initializr y los binarios
+# nativos de la CLI en la release, todos con procedencia atestiguada.
+name: tools
+
+on:
+  pull_request:
+    paths: ['axiz-tools/**', 'axiz-framework/**', '.github/workflows/tools.yaml',
+            '.github/workflows/lib-build.yaml', '.github/workflows/service-build.yaml',
+            '.github/workflows/framework-snapshot.yaml']
+  push:
+    branches: [main]
+    paths: ['axiz-tools/**', 'axiz-framework/**', '.github/workflows/tools.yaml',
+            '.github/workflows/lib-build.yaml', '.github/workflows/service-build.yaml',
+            '.github/workflows/framework-snapshot.yaml']
+    tags: ['axiz-tools-v*']
+  workflow_dispatch:
+
+permissions: {}
+
+# Maven Central responde 429 cuando muchos jobs descargan a la vez: el resolver reintenta con espera
+# exponencial (respeta Retry-After). setup-java conserva este valor y le agrega -ntp.
+env:
+  MAVEN_ARGS: >-
+    -Daether.connector.http.retryHandler.count=8
+    -Daether.connector.http.retryHandler.interval=10000
+    -Daether.connector.http.retryHandler.intervalMax=120000
+
+concurrency:
+  group: tools-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  framework:
+    uses: ./.github/workflows/framework-snapshot.yaml
+    permissions:
+      contents: read
+
+  build:
+    needs: framework
+    uses: ./.github/workflows/lib-build.yaml
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    with:
+      working-directory: axiz-tools
+      maven-artifact: ${{ needs.framework.outputs.artifact }}
+      publish: ${{ startsWith(github.ref, 'refs/tags/axiz-tools-v') }}
+
+  initializr:
+    needs: framework
+    uses: ./.github/workflows/service-build.yaml
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    with:
+      service: axiz-initializr
+      working-directory: axiz-tools
+      module: axiz-initializr
+      chart: axiz-initializr/deploy/helm/axiz-initializr
+      maven-artifact: ${{ needs.framework.outputs.artifact }}
+      publish: ${{ github.event_name == 'push' }}
+
+  cli-native:
+    if: startsWith(github.ref, 'refs/tags/axiz-tools-v')
+    needs: [framework, build]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-24.04, suffix: linux-x64, binary: axiz}
+          - {os: macos-15, suffix: macos-arm64, binary: axiz}
+          - {os: windows-2025, suffix: windows-x64, binary: axiz.exe}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: graalvm/setup-graalvm@27b360dbb857524eaf0b4c4cef364d38e5b4f173 # v1.6.7
+        with:
+          java-version: '25'
+          distribution: graalvm-community
+      - name: Framework del mismo commit
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ needs.framework.outputs.artifact }}
+          path: ${{ runner.temp }}/maven-artifact
+      - name: Framework copiado al repositorio Maven local
+        run: mkdir -p ~/.m2/repository && cp -r "$RUNNER_TEMP/maven-artifact/." ~/.m2/repository/
+      - name: Binario nativo de la CLI
+        working-directory: axiz-tools
+        env:
+          BINARY: ${{ matrix.binary }}
+          SUFFIX: ${{ matrix.suffix }}
+        run: |
+          ./mvnw -B -ntp -pl axiz-cli -am -Pnative -DskipTests package
+          mkdir -p "$RUNNER_TEMP/dist"
+          cp "axiz-cli/target/$BINARY" "$RUNNER_TEMP/dist/axiz-$SUFFIX${BINARY#axiz}"
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: ${{ runner.temp }}/dist/*
+      - name: Binario adjunto a la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: gh release upload "$TAG" "$RUNNER_TEMP"/dist/* --clobber --repo "$GITHUB_REPOSITORY"
+
+  deploy-dev:
+    if: github.ref == 'refs/heads/main' && vars.AXIZ_GITOPS_REPOSITORY != ''
+    needs: initializr
+    uses: ./.github/workflows/service-deploy.yaml
+    permissions:
+      contents: write
+      packages: read
+      attestations: read
+    with:
+      service: axiz-initializr
+      environment: dev
+      image: ${{ needs.initializr.outputs.image }}
+      digest: ${{ needs.initializr.outputs.digest }}
+      chart: ${{ needs.initializr.outputs.chart }}
+      version: ${{ needs.initializr.outputs.version }}
+      gitops-repository: ${{ vars.AXIZ_GITOPS_REPOSITORY }}
+    secrets:
+      GITOPS_APP_CLIENT_ID: ${{ secrets.GITOPS_APP_CLIENT_ID }}
+      GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
+
+  axiz-tools-pr:
+    if: always()
+    needs: [framework, build, initializr]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - name: Todos los jobs de las herramientas terminaron bien
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1

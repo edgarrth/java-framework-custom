@@ -47,10 +47,15 @@ class AuditResourcesGenerationTest {
                     : "axiz.messaging.destinations.audit"));
         assertTrue(
             project
-                .text("src/test/java/pe/axiz/orders/orders/OrdersApplicationTest.java")
+                .text("src/test/java/pe/axiz/orders/orders/OrdersApplicationTestSupport.java")
                 .contains("AuditTestConfiguration.class"));
         String consumerTest =
             project.text("src/test/java/pe/axiz/orders/orders/OrdersApplicationTest.java");
+        assertTrue(consumerTest.contains("extends OrdersApplicationTestSupport"));
+        assertTrue(
+            project
+                .text("src/test/java/pe/axiz/orders/orders/SensitiveDataCanaryTest.java")
+                .contains("extends OrdersApplicationTestSupport"));
         assertFalse(consumerTest.contains("@Isolated"));
         assertFalse(consumerTest.contains("autoConfiguresTheNativeAuditTransport"));
         assertFalse(consumerTest.contains("axiz.transport.pending"));
@@ -77,7 +82,8 @@ class AuditResourcesGenerationTest {
           outbox,
           project
               .text("src/main/resources/application.yaml")
-              .contains("Configure the logical audit destination and the outbox relay transport"));
+              .contains(
+                  "se configuran el destino lógico de auditoría y el transporte del relay del outbox"));
     }
   }
 

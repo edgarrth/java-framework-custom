@@ -40,10 +40,15 @@ config:
         - v1
     messaging:
       kafka:
+        authentication: msk
         iam: true
       destinations:
         payments: kafka:payments
     audit:
+      integrity:
+        mode: HMAC
+        hmac-secret: audit-hmac-key
+        hmac-key-id: v1
       kafka:
         topic: axiz-audit
   management:

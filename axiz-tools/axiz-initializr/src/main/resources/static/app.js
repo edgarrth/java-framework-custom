@@ -1,4 +1,4 @@
-// axiz initializr web UI: no structure, no inline code (strict CSP), CSRF via the XSRF-TOKEN cookie.
+// Interfaz web de axiz initializr: sin estructura, sin código en línea (CSP estricta), CSRF mediante la cookie XSRF-TOKEN.
 (() => {
   'use strict';
   const form = document.getElementById('project');
@@ -37,7 +37,7 @@
     document.getElementById('openapi-required').hidden = !a.rest;
     document.getElementById('included').textContent = a.starters.join(', ') || 'nada';
     const service = a.kind === 'service';
-    // Aurora from the reactive stack is reached over R2DBC: capabilities declare that store apart
+    // Aurora desde el stack reactivo se alcanza mediante R2DBC: las capacidades declaran ese almacén por separado
     const store = form.persistence.value === 'aurora' && form.stack.value === 'reactive'
       ? 'r2dbc' : form.persistence.value;
     document.querySelectorAll('#capabilities label').forEach((label) => {
@@ -75,10 +75,10 @@
     asyncApi: await readFile(form.asyncapiFile),
   });
 
-  const post = (url, body) => fetch(url, {
+  const post = (url, body, headers = {}) => fetch(url, {
     method: 'POST',
     credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': csrf() },
+    headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': csrf(), ...headers },
     body: JSON.stringify(body),
   });
 
@@ -132,16 +132,36 @@
     });
   });
 
+  const publicationKey = 'axiz-initializr-publication';
+  let resumeAfterAuthorization = new URLSearchParams(window.location.search).get('github') === 'authorized';
+  form.addEventListener('input', () => { resumeAfterAuthorization = false; });
   document.getElementById('github').addEventListener('click', () => busy(async () => {
-    const response = await post('/v1/projects/github', await request());
-    // GitHub not authorized yet: 403 with the URL that starts the authorization; the browser comes
-    // back to /?github=authorized and the user creates the repository again
+    let pending;
+    try { pending = JSON.parse(sessionStorage.getItem(publicationKey) || 'null'); }
+    catch { sessionStorage.removeItem(publicationKey); }
+    const body = resumeAfterAuthorization && pending ? pending.body : await request();
+    if (body.description && body.description.length > 160) {
+      show('Para publicar en GitHub, la descripción debe tener como máximo 160 caracteres.', true);
+      return;
+    }
+    const operationId = pending && JSON.stringify(pending.body) === JSON.stringify(body)
+      ? pending.operationId : crypto.randomUUID();
+    try { sessionStorage.setItem(publicationKey, JSON.stringify({ operationId, body })); }
+    catch {
+      show('No hay espacio para conservar esta publicación durante OAuth. Reduce los contratos o libera almacenamiento de esta pestaña y reintenta.', true);
+      return;
+    }
+    const response = await post('/v1/projects/github', body, { 'Idempotency-Key': operationId });
+    // GitHub aún no autorizado: 403 con la URL que inicia la autorización; el navegador vuelve
+    // a /?github=authorized y el usuario crea el repositorio de nuevo
     if (response.status === 403) {
       const body = await response.clone().json().catch(() => ({}));
       if (body.authorize) { window.location.assign(body.authorize); return; }
     }
     if (!response.ok) return problem(response);
     const r = await response.json();
+    sessionStorage.removeItem(publicationKey);
+    resumeAfterAuthorization = false;
     result.replaceChildren();
     const p = document.createElement('p');
     p.className = 'ok';

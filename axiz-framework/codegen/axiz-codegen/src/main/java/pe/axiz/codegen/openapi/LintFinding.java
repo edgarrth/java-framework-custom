@@ -1,12 +1,12 @@
 package pe.axiz.codegen.openapi;
 
 /**
- * A contract rule violation.
+ * Una infracción de una regla del contrato.
  *
- * @param rule rule id (same ids as the Spectral ruleset)
- * @param severity {@code error} or {@code warn}
- * @param location JSON-path-like location
- * @param message explanation
+ * @param rule id de la regla (los mismos ids que el ruleset de Spectral)
+ * @param severity {@code error} o {@code warn}
+ * @param location ubicación con formato similar a JSONPath
+ * @param message explicación
  */
 public record LintFinding(String rule, String severity, String location, String message) {
 

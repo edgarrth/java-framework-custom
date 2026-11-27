@@ -1,4 +1,4 @@
-/** Inbox persistence and schema resources over JDBC. */
+/** Persistencia del inbox y recursos de esquema sobre JDBC. */
 @NullMarked
 package pe.axiz.adapter.inbox.jdbc;
 

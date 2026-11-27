@@ -44,7 +44,9 @@ import pe.axiz.core.errors.ExternalErrorDetail;
 import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.core.errors.Problem;
 
-/** Each Spring failure becomes the catalogued problem, and each kind is logged at its level. */
+/**
+ * Cada fallo de Spring se convierte en el problema catalogado, y cada tipo se registra en su nivel.
+ */
 @ExtendWith(OutputCaptureExtension.class)
 class ExceptionMappingTest {
 
@@ -52,7 +54,7 @@ class ExceptionMappingTest {
       new ApplicationContextRunner()
           .withConfiguration(AutoConfigurations.of(AxizErrorsAutoConfiguration.class));
 
-  /** A handler whose parameters the exceptions refer to. */
+  /** Handler cuyos parámetros mencionan las excepciones. */
   static final class Handler {
     @SuppressWarnings("unused")
     void transfer(String account, String amount) {}
@@ -173,25 +175,25 @@ class ExceptionMappingTest {
     runner.run(
         ctx -> {
           ProblemResponder responder = ctx.getBean(ProblemResponder.class);
-          // the dependency answered an error: no transport cause to report
+          // la dependencia respondió con un error: no hay causa de transporte que informar
           Problem rejected =
               problem(
                   responder,
                   ExternalServiceException.from(
                       new ExternalErrorDetail("core-banking", 503, null, null, "")));
           assertThat(rejected.status()).isGreaterThanOrEqualTo(500);
-          // a transport failure without message is named by its type
+          // un fallo de transporte sin mensaje se nombra por su tipo
           problem(
               responder,
               ExternalServiceException.from(
                   new ExternalErrorDetail("ledger", -1, "ConnectException", null, ""),
                   new IllegalStateException(new ConnectException())));
-          // a technical failure of this service keeps its cause
+          // los diagnósticos conservan la clasificación, nunca el texto del proveedor ni las causas
           problem(
               responder,
               new AxizException(
                   CoreErrors.UNEXPECTED, "ledger posting failed", new IllegalStateException("db")));
-          // a client mistake is only visible at debug level
+          // un error del cliente solo es visible en nivel debug
           problem(responder, new ResponseStatusException(HttpStatus.NOT_FOUND));
 
           MDC.put("correlationId", "corr-from-mdc");
@@ -205,11 +207,19 @@ class ExceptionMappingTest {
           }
         });
     assertThat(output.getOut())
-        .contains("path=/transfers error=Call to core-banking")
-        .contains("cause=-")
-        .contains("cause=ConnectException")
-        .contains("ERROR")
-        .contains("error=ledger posting failed");
+        .contains(
+            "WARN", "status=503", "exceptionType=pe.axiz.core.errors.ExternalServiceException")
+        .contains("ERROR", "status=500", "exceptionType=pe.axiz.core.errors.AxizException")
+        .contains("correlationId=corr-12345678")
+        // la cadena de tipos y los frames de origen ubican la causa; los mensajes nunca aparecen
+        .contains("| caused by java.net.ConnectException at ")
+        .doesNotContain(
+            "path=/transfers",
+            "Call to core-banking",
+            "cause=",
+            "ledger posting failed",
+            "IllegalStateException: db",
+            "\"db\"");
   }
 
   @Test

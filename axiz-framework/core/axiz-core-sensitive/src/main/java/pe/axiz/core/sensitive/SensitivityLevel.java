@@ -1,13 +1,16 @@
 package pe.axiz.core.sensitive;
 
-/** How harmful the disclosure of a value would be. */
+/** Grado de daño que causaría revelar un valor. */
 public enum SensitivityLevel {
-  /** Internal but harmless (e.g. a product code). */
+  /** Interno pero inofensivo (por ejemplo, un código de producto). */
   LOW,
-  /** Personal data (name, email, phone). */
+  /** Datos personales (nombre, email, teléfono). */
   MEDIUM,
-  /** Identifying or financial data (document, account, partial card). */
+  /** Datos identificatorios o financieros (documento, cuenta, tarjeta parcial). */
   HIGH,
-  /** Secrets and full card data (password, PIN, CVV, PAN, tokens). Never shown anywhere. */
+  /**
+   * Secretos y datos completos de tarjeta (contraseña, PIN, CVV, PAN, tokens). Nunca se muestran en
+   * ningún lugar.
+   */
   CRITICAL
 }

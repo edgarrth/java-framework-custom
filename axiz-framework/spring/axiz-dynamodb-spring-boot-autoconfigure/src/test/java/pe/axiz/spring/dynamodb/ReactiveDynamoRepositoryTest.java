@@ -20,9 +20,9 @@ import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.core.crypto.AesGcm;
 import pe.axiz.core.crypto.StaticKeyProvider;
 import pe.axiz.kit.dynamodb.CursorCodec;
+import pe.axiz.spring.aws.AxizAwsIdentityAutoConfiguration;
 import pe.axiz.spring.dynamodb.AxizDynamoDbAutoConfigurationTest.Item;
 import pe.axiz.spring.dynamodb.AxizDynamoDbAutoConfigurationTest.Movement;
-import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import reactor.test.StepVerifier;
 import software.amazon.awssdk.enhanced.dynamodb.model.TransactPutItemEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
@@ -78,7 +78,8 @@ class ReactiveDynamoRepositoryTest {
             })
         .verifyComplete();
     assertEquals(6, raw.calls.get());
-    // Invalid keys/indexes and cursor limits must fail only upon subscription and submit no I/O.
+    // Las claves o índices inválidos y los límites de cursor deben fallar solo al suscribirse y no
+    // deben enviar E/S.
     StepVerifier.create(repository.findById("C-1", "S-1"))
         .expectError(IllegalArgumentException.class)
         .verify();

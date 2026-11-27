@@ -1,18 +1,18 @@
 package pe.axiz.structure.layered;
 
 /**
- * Write operations of a resource. Implementations are transactional.
- *
- * @param <T> resource type
- * @param <I> id type
+ * Operaciones de escritura con tipos de petición y de respuesta separados. Las implementaciones son
+ * transaccionales.
  */
-public interface CommandService<T, I> {
+public interface CommandService<RequestT, ResponseT, I> {
+  ResponseT create(RequestT request);
 
-  T create(T resource);
+  /** Actualiza un recurso autorizado existente usando la versión esperada de la petición. */
+  ResponseT update(I id, RequestT request);
 
-  /** Replaces the resource; a missing id is a 404 problem. */
-  T update(I id, T resource);
-
-  /** Deletes the resource; deleting a missing id is a 404 problem. */
-  void delete(I id);
+  /**
+   * Borra un recurso autorizado solo en la versión esperada; un recurso inexistente o prohibido
+   * responde como ausente.
+   */
+  void delete(I id, String expectedVersion);
 }

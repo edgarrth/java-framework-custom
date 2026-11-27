@@ -23,7 +23,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.kafka.clients.producer.MockProducer;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.aop.Advisor;
@@ -33,7 +32,6 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import org.springframework.http.HttpStatus;
-import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -42,29 +40,29 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.pattern.PathPatternParser;
 import pe.axiz.core.audit.AsyncAuditPublisher;
+import pe.axiz.core.audit.AuditChainState;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.AuditPolicy;
 import pe.axiz.core.audit.AuditPublisher;
 import pe.axiz.core.audit.AuditTrail;
 import pe.axiz.core.audit.Auditable;
 import pe.axiz.core.audit.ConfirmedAuditPublisher;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
 import pe.axiz.core.commons.TransactionOutcome;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.outbox.OutboxStore;
 import pe.axiz.core.outbox.OutboxWriter;
-import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/** Which events {@code @Auditable} and the HTTP audit record, and how they are delivered. */
+/** Qué eventos registran {@code @Auditable} y la auditoría HTTP, y cómo se entregan. */
 class AuditBehaviourTest {
 
   private final List<AuditEvent> events = new CopyOnWriteArrayList<>();
 
   private ApplicationContextRunner sync() {
     return new ApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues("spring.application.name=payments", "axiz.audit.mode=SYNC")
         .withBean(AuditSink.class, () -> new AuditSink("memory", events::add));
@@ -75,7 +73,7 @@ class AuditBehaviourTest {
     var interrupted = new CountDownLatch(1);
     var release = new CountDownLatch(1);
     new ApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues("axiz.audit.mode=ASYNC", "axiz.audit.async.delivery-timeout=200ms")
         .withBean(
@@ -94,31 +92,41 @@ class AuditBehaviourTest {
         .run(
             ctx -> {
               try {
-                var publisher = (AsyncAuditPublisher) ctx.getBean(AuditPublisher.class);
+                var publisher = ctx.getBean(AuditPublisher.class);
                 publisher.publish(
-                    new AuditEvent(
-                        "event",
-                        Instant.EPOCH,
-                        "test",
-                        "op",
-                        "account",
-                        null,
-                        new AuditEvent.Actor(null, null, null),
-                        AuditEvent.Outcome.SUCCESS,
-                        null,
-                        null,
-                        null,
-                        null,
-                        Map.of(),
-                        TransactionOutcome.UNKNOWN,
-                        TransactionOutcome.UNKNOWN));
+                    AuditEvent.builder()
+                        .id("event")
+                        .occurredAt(Instant.EPOCH)
+                        .service("test")
+                        .action("op")
+                        .resourceType("account")
+                        .resourceId(null)
+                        .actor(new AuditEvent.Actor(null, null, null))
+                        .outcome(AuditEvent.Outcome.SUCCESS)
+                        .errorCode(null)
+                        .correlationId(null)
+                        .channel(null)
+                        .tenant(null)
+                        .details(Map.of())
+                        .transactionOutcome(TransactionOutcome.UNKNOWN)
+                        .operationOutcome(TransactionOutcome.UNKNOWN)
+                        .persistence(null)
+                        .integrity(null)
+                        .detailsSanitized(0)
+                        .build());
                 assertTrue(interrupted.await(2, TimeUnit.SECONDS));
                 await()
                     .atMost(Duration.ofSeconds(2))
                     .untilAsserted(
                         () -> {
-                          assertEquals(1, publisher.failureCount());
-                          assertEquals(1, publisher.fallbackCount());
+                          assertEquals(
+                              1,
+                              AuditPublisherLookup.find(publisher, AsyncAuditPublisher.class)
+                                  .failureCount());
+                          assertEquals(
+                              1,
+                              AuditPublisherLookup.find(publisher, AsyncAuditPublisher.class)
+                                  .fallbackCount());
                         });
               } finally {
                 release.countDown();
@@ -206,21 +214,24 @@ class AuditBehaviourTest {
         .withBean("second", AuditSink.class, () -> new AuditSink("second", second::add))
         .run(
             ctx -> {
-              assertThat(ctx.getBean(AuditPublisher.class))
-                  .isInstanceOf(ConfirmedAuditPublisher.class);
+              assertThat(
+                      AuditPublisherLookup.find(
+                          ctx.getBean(AuditPublisher.class), ConfirmedAuditPublisher.class))
+                  .isNotNull();
               ctx.getBean(AuditTrail.class).record("probe", "test").success();
             });
     assertEquals(1, events.size());
     assertEquals(1, second.size());
 
     new ApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues("axiz.config.environment=test")
         .run(
             ctx -> {
               AuditPublisher publisher = ctx.getBean(AuditPublisher.class);
-              assertThat(publisher).isInstanceOf(AsyncAuditPublisher.class);
+              assertThat(AuditPublisherLookup.find(publisher, AsyncAuditPublisher.class))
+                  .isNotNull();
               SimpleMeterRegistry registry = new SimpleMeterRegistry();
               ctx.getBean(MeterBinder.class).bindTo(registry);
               assertTrue(registry.find("axiz.audit.pending").gauge() != null);
@@ -243,13 +254,16 @@ class AuditBehaviourTest {
         Proxy.newProxyInstance(
             OutboxStore.class.getClassLoader(),
             new Class<?>[] {OutboxStore.class},
-            (proxy, method, args) -> null);
+            (proxy, method, args) ->
+                method.getName().equals("transactionResource")
+                    ? AuditTestTransactions.RESOURCE
+                    : null);
   }
 
   @Test
   void durableAuditNeedsTheOutboxAndKeepsTheQueueAsFallback() {
     new ApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues("axiz.audit.mode=DURABLE", "axiz.outbox.relay.enabled=false")
         .run(
@@ -260,7 +274,7 @@ class AuditBehaviourTest {
                     .hasStackTraceContaining("needs the outbox capability"));
 
     new ApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues(
             "axiz.audit.mode=DURABLE",
@@ -268,13 +282,14 @@ class AuditBehaviourTest {
             "axiz.audit.durable.destination=audit-events",
             "axiz.audit.durable.outside-transaction=fail")
         .withBean(OutboxWriter.class, () -> new OutboxWriter(outbox(), Clock.systemUTC()))
+        .withBean(AuditChainState.class, AuditTestTransactions::state)
         .withBean(
             PlatformTransactionManager.class, () -> Mockito.mock(PlatformTransactionManager.class))
         .run(
             ctx -> {
               AuditPublisher publisher = ctx.getBean(AuditPublisher.class);
               assertThat(publisher).isInstanceOf(TransactionalAuditPublisher.class);
-              assertThat(((TransactionalAuditPublisher) publisher).fallback())
+              assertThat(((TransactionalAuditPublisher) publisher).delegate())
                   .isInstanceOf(AsyncAuditPublisher.class);
               SimpleMeterRegistry registry = new SimpleMeterRegistry();
               ctx.getBean(MeterBinder.class).bindTo(registry);
@@ -294,11 +309,17 @@ class AuditBehaviourTest {
         closed.set(true);
       }
     }
-    new TransactionalAuditPublisher(
-            new OutboxWriter(outbox(), Clock.systemUTC()),
-            "audit",
-            new ClosingPublisher(),
-            AuditOutsideTransaction.ASYNC)
+    TransactionalAuditPublisher.builder()
+        .outbox(new OutboxWriter(outbox(), Clock.systemUTC()))
+        .destination("audit")
+        .fallback(new ClosingPublisher())
+        .outside(AuditOutsideTransaction.ASYNC)
+        .transactions(new AuditTestTransactions.Jdbc())
+        .timeout(Duration.ofSeconds(2))
+        .concurrency(1)
+        .durable(AuditTestTransactions.durable())
+        .degradation(AuditTestTransactions.fallback())
+        .build()
         .close();
     assertTrue(closed.get());
   }
@@ -329,7 +350,7 @@ class AuditBehaviourTest {
   @Test
   void theServletAuditRecordsChangesByRoutePatternAndStatus() throws Exception {
     new WebApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues("axiz.audit.mode=SYNC", "axiz.audit.http.enabled=true")
         .withBean(AuditSink.class, () -> new AuditSink("memory", events::add))
@@ -376,7 +397,7 @@ class AuditBehaviourTest {
   @Test
   void theReactiveAuditRecordsTheCallerAddressAndStatus() {
     new ReactiveWebApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(
             AutoConfigurations.of(
                 AxizAuditAutoConfiguration.class, AxizNativeAuditAutoConfiguration.class))
@@ -401,7 +422,7 @@ class AuditBehaviourTest {
                   .filter(
                       ok,
                       ex -> {
-                        // the reactive attribute: its name differs from the servlet one
+                        // el atributo reactivo: su nombre difiere del de servlet
                         ex.getAttributes()
                             .put(
                                 org.springframework.web.reactive.HandlerMapping
@@ -430,37 +451,5 @@ class AuditBehaviourTest {
     assertEquals("10.0.0.7", events.get(0).actor().ip());
     assertEquals(AuditEvent.Outcome.FAILURE, events.get(1).outcome());
     assertEquals("HTTP-422", events.get(1).errorCode());
-  }
-
-  @Test
-  void kafkaAndSqsSinksAreAddedOnlyWhenConfigured() {
-    ProducerFactory<String, String> producers = MockProducer::new;
-    new ApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
-        .withConfiguration(
-            AutoConfigurations.of(
-                AxizAuditKafkaAutoConfiguration.class,
-                AxizAuditSqsAutoConfiguration.class,
-                AxizAuditAutoConfiguration.class))
-        .withBean(ProducerFactory.class, () -> producers)
-        .withPropertyValues(
-            "axiz.audit.mode=ASYNC",
-            "axiz.audit.kafka.topic=audit",
-            "axiz.config.environment=test",
-            "axiz.transport.allow-plain-http=true",
-            "axiz.transport.allow-insecure-data-stores=true",
-            "axiz.audit.sqs.queue-url=http://localhost:4566/000000000000/audit",
-            "axiz.aws.region=us-east-1")
-        .run(
-            ctx -> {
-              assertThat(ctx).hasNotFailed();
-              assertThat(ctx.getBeansOfType(AuditSink.class).values().stream().map(AuditSink::name))
-                  .containsExactlyInAnyOrder("kafka", "sqs");
-            });
-    new ApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
-        .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
-        .withPropertyValues("axiz.audit.enabled=false")
-        .run(ctx -> assertThat(ctx).doesNotHaveBean(AuditTrail.class));
   }
 }

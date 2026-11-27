@@ -21,9 +21,10 @@ import pe.axiz.core.errors.ExternalErrorDetail;
 import pe.axiz.core.errors.ExternalServiceException;
 
 /**
- * Calls several dependencies in parallel on virtual threads and composes the result. Required parts
- * fail the composition; optional parts degrade to their fallback and are reported, so the channel
- * can show partial data. Every part shares one deadline.
+ * Llama a varias dependencias en paralelo sobre hilos virtuales y compone el resultado. Las partes
+ * obligatorias hacen fallar la composición; las partes opcionales degradan a su valor alternativo y
+ * se informan, para que el canal pueda mostrar datos parciales. Todas las partes comparten un único
+ * plazo.
  */
 public final class Composer {
 
@@ -38,12 +39,12 @@ public final class Composer {
   }
 
   /**
-   * Starts a composition.
+   * Inicia una composición.
    *
-   * @param timeout deadline of the whole composition
-   * @param contextPropagation wraps each task so request context and traces follow it (the Spring
-   *     starter supplies Micrometer context-propagation)
-   * @return the composer
+   * @param timeout plazo de toda la composición
+   * @param contextPropagation envuelve cada tarea para que el contexto de la petición y las trazas
+   *     la acompañen (el starter de Spring suministra context-propagation de Micrometer)
+   * @return el compositor
    */
   public static Composer within(
       Duration timeout, Function<Callable<Object>, Callable<Object>> contextPropagation) {
@@ -77,7 +78,7 @@ public final class Composer {
     return this;
   }
 
-  /** Runs all parts and waits until they finish or the deadline passes. */
+  /** Ejecuta todas las partes y espera hasta que terminen o venza el plazo. */
   public Composition run() {
     long deadline = System.nanoTime() + timeout.toNanos();
     Map<String, @Nullable Object> values = new LinkedHashMap<>();

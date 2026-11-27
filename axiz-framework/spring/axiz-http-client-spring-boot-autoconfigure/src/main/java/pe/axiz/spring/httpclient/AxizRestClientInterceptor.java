@@ -13,17 +13,18 @@ import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.StandardHeaders;
+import pe.axiz.core.api.StandardHeaders;
+import pe.axiz.core.context.RequestContext;
 import pe.axiz.core.errors.ExternalErrorDetail;
 import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.core.http.AuthType;
 import pe.axiz.core.http.ClientSettings;
 
 /**
- * Per-client behavior of a {@code RestClient}: header propagation, outbound authentication,
- * bulkhead and circuit breaker, retries only for idempotent calls within the total timeout, and one
- * log line per attempt (path only, never the query string). Must be the last interceptor.
+ * Comportamiento por cliente de un {@code RestClient}: propagación de cabeceras, autenticación
+ * saliente, bulkhead y circuit breaker, reintentos solo para llamadas idempotentes dentro del
+ * timeout total y una línea de log por intento (solo la ruta, nunca la query string). Debe ser el
+ * último interceptor.
  */
 public final class AxizRestClientInterceptor implements ClientHttpRequestInterceptor {
 
@@ -82,7 +83,8 @@ public final class AxizRestClientInterceptor implements ClientHttpRequestInterce
         } catch (IOException | RuntimeException | Error problem) {
           failure = problem;
         }
-        // One notification per successful acquisition, even when status decoding fails.
+        // Una notificación por adquisición exitosa, incluso cuando falla la decodificación del
+        // estado.
         resilience.release(start, failure, status);
         log(settings, method, request, status, start, attempt);
         if (failure != null) {
@@ -96,7 +98,7 @@ public final class AxizRestClientInterceptor implements ClientHttpRequestInterce
           delivered = true;
           return Objects.requireNonNull(response);
         }
-        // Return the connection before backoff, not after waiting for the next attempt.
+        // Se devuelve la conexión antes del backoff, no después de esperar el siguiente intento.
         var abandoned = response;
         response = null;
         close(abandoned, failure);

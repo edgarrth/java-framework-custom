@@ -5,6 +5,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.codegen.asyncapi.AsyncApiDocument;
 import pe.axiz.codegen.model.Archetype;
+import pe.axiz.codegen.model.ArchitectureScopes;
 import pe.axiz.codegen.model.Capability;
 import pe.axiz.codegen.model.Catalog;
 import pe.axiz.codegen.model.ProjectRequest;
@@ -26,12 +28,13 @@ import pe.axiz.codegen.openapi.ApiOperation;
 import pe.axiz.codegen.openapi.OpenApiDocument;
 import pe.axiz.codegen.output.GeneratedProject;
 import pe.axiz.codegen.render.JavaFormatter;
+import pe.axiz.codegen.render.JavaSourceText;
 import pe.axiz.codegen.render.TemplateSet;
 import pe.axiz.codegen.render.YamlProperties;
 
 /**
- * Generates a complete project (service, library or starter) from a request: validation, context
- * and templates. Used identically by the initializr and the CLI.
+ * Genera un proyecto completo (servicio, biblioteca o starter) a partir de una solicitud:
+ * validación, contexto y plantillas. Lo usan de forma idéntica el initializr y la CLI.
  */
 public final class ProjectGenerator {
 
@@ -62,9 +65,9 @@ public final class ProjectGenerator {
   }
 
   /**
-   * Generates the project.
+   * Genera el proyecto.
    *
-   * @throws GenerationException with every problem when the request is not valid
+   * @throws GenerationException con todos los problemas cuando la solicitud no es válida
    */
   public GeneratedProject generate(ProjectRequest request) {
     RequestValidator.Result result = validator.validate(request);
@@ -94,7 +97,7 @@ public final class ProjectGenerator {
     return new GeneratedProject(request.name(), JavaFormatter.formatAll(files));
   }
 
-  /** Template context; also used by the artifact generators of the CLI. */
+  /** Contexto de las plantillas; también lo usan los generadores de artefactos de la CLI. */
   public Map<String, Object> context(
       ProjectRequest r, Archetype a, @Nullable OpenApiDocument contract) {
     Map<String, Object> c = new LinkedHashMap<>();
@@ -105,8 +108,9 @@ public final class ProjectGenerator {
     project.put("basePackage", r.basePackage());
     project.put("packagePath", Names.packagePath(r.basePackage()));
     String description = r.description().isBlank() ? a.role() : r.description().strip();
-    // descriptions land in Markdown, Javadoc, XML (content and comments) and YAML: each format
-    // gets its own escaping, so ordinary punctuation never breaks a generated file
+    // las descripciones terminan en Markdown, Javadoc, XML (contenido y comentarios) y YAML: cada
+    // formato recibe su propio escape, de modo que la puntuación ordinaria nunca rompe un archivo
+    // generado
     String text =
         description.endsWith(".")
             ? description.substring(0, description.length() - 1)
@@ -200,7 +204,8 @@ public final class ProjectGenerator {
     persistence.put("dynamodb", "dynamodb".equals(r.persistence()));
     persistence.put("none", "none".equals(r.persistence()));
     c.put("persistence", persistence);
-    // reactive styles get non-blocking handlers unless the store only has a blocking client
+    // los estilos reactivos reciben handlers no bloqueantes salvo que el almacén solo tenga un
+    // cliente bloqueante
     fw.put("reactiveHandlers", r.stack() == Stack.REACTIVE);
 
     List<Capability> resolved = catalog.resolve(capabilityNames(catalog, r, a), store);
@@ -219,11 +224,6 @@ public final class ProjectGenerator {
       configMapKeys.addAll(cap.configMapKeys());
       secrets.addAll(cap.secrets());
     }
-    if (Catalog.AURORA.equals(store)) {
-      for (String table : catalog.style(r.structure()).jdbcTables())
-        if (Set.of("outbox", "inbox", "saga", "sequence").contains(table))
-          dependencyIds.add("pe.axiz:axiz-adapter-" + table + "-jdbc");
-    }
     List<Map<String, Object>> starters = new ArrayList<>();
     starterIds.forEach(id -> starters.add(Map.of("artifactId", id)));
     if (r.structure() != Structure.NONE) {
@@ -237,9 +237,11 @@ public final class ProjectGenerator {
           Map.of(
               "groupId", ga[0], "artifactId", ga[1], "runtime", ga[1].startsWith("axiz-adapter-")));
     }
-    caps.put("technicalinboxdynamodb", caps.containsKey("inbox") && "none".equals(r.persistence()));
+    ArchitectureScopes scopes = ArchitectureScopes.of(resolved);
+    c.put("tokenizationScope", scopes.tokenization());
+    c.put("cardDataScope", scopes.cardData());
     c.put("caps", caps);
-    c.put("schema", schema(catalog.style(r.structure()), caps, Catalog.AURORA.equals(store)));
+    c.put("schema", schema(caps));
     c.put("capabilities", capabilityRows);
     c.put("starters", starters);
     c.put("dependencies", dependencies);
@@ -249,6 +251,17 @@ public final class ProjectGenerator {
 
     Map<String, Object> api = new LinkedHashMap<>();
     api.put("present", contract != null);
+    String apiModelPackage =
+        r.basePackage()
+            + switch (r.structure()) {
+              case HEXAGONAL -> ".adapter.in.rest.model";
+              case LAYERED -> ".model.api";
+              case BFF -> ".composition.model";
+              case EDA -> ".event.model";
+              case BATCH -> ".job.model";
+              case NONE -> ".api.model";
+            };
+    api.put("modelPackage", apiModelPackage);
     String openApi = r.openApi();
     api.put("text", openApi == null ? "" : openApi);
     api.put("title", contract == null ? "" : contract.title());
@@ -260,6 +273,10 @@ public final class ProjectGenerator {
 
     List<Map<String, Object>> operations = new ArrayList<>();
     Map<String, List<Map<String, Object>>> byTag = new LinkedHashMap<>();
+    var applicationModels =
+        r.structure() == Structure.HEXAGONAL && contract != null
+            ? ApplicationModels.records(contract)
+            : List.<Map<String, Object>>of();
     if (contract != null) {
       for (ApiOperation op : contract.operations()) {
         if (!op.scopes().isEmpty()
@@ -271,15 +288,53 @@ public final class ProjectGenerator {
                   + op.operationId()
                   + " requires a request example for its generated denial test");
         Map<String, Object> o = operation(op, r.basePackage());
+        o.put("modelPackage", apiModelPackage);
         if (r.cqrs()) {
           o.put("modelPackage", r.basePackage() + ".application.model");
         }
+        String responsePackage =
+            r.structure() == Structure.HEXAGONAL
+                ? r.basePackage() + ".application.model"
+                : apiModelPackage;
+        String responseModel = String.valueOf(o.get("responseModel"));
+        String responseType =
+            responseModel.isEmpty() ? "java.lang.Void" : responsePackage + "." + responseModel;
+        o.put(
+            "responseTypeQualified",
+            Boolean.TRUE.equals(o.get("responseIsList"))
+                ? "java.util.List<" + responseType + ">"
+                : responseType);
+        o.put("responseFixtureJson", ResponseExamples.json(contract, op.responseSchema()));
+        String mockTarget;
+        String mockCall;
+        if (r.cqrs()) {
+          mockTarget = op.readOnly() ? "queryBus" : "commandBus";
+          String role = op.readOnly() ? "query" : "command";
+          String type = String.valueOf(o.get(op.readOnly() ? "queryName" : "commandName"));
+          mockCall =
+              (op.readOnly() ? "ask" : "send")
+                  + "(any("
+                  + r.basePackage()
+                  + ".application."
+                  + role
+                  + "."
+                  + type
+                  + ".class))";
+        } else if (r.structure() == Structure.HEXAGONAL) {
+          mockTarget = o.get("methodName") + "UseCase";
+          mockCall = "execute(any())";
+        } else {
+          mockTarget = r.structure() == Structure.BFF ? "composition" : "service";
+          mockCall = o.get("methodName") + "(" + o.get("mockArguments") + ")";
+        }
+        o.put("mockTarget", mockTarget);
+        o.put("mockCall", mockCall);
         operations.add(o);
         byTag.computeIfAbsent(op.tag(), t -> new ArrayList<>()).add(o);
       }
     }
     if ((r.structure() == Structure.HEXAGONAL) && contract != null) {
-      c.put("applicationModels", ApplicationModels.records(contract));
+      c.put("applicationModels", applicationModels);
     }
     c.put("operations", operations);
     c.put(
@@ -325,7 +380,7 @@ public final class ProjectGenerator {
             }
           }
           t.put("models", models.stream().map(m -> Map.of("name", m)).toList());
-          t.put("modelPackage", r.basePackage() + ".api.model");
+          t.put("modelPackage", apiModelPackage);
           List<String[]> fields = new ArrayList<>();
           switch (r.structure()) {
             case HEXAGONAL -> {
@@ -347,7 +402,7 @@ public final class ProjectGenerator {
             case LAYERED -> fields.add(new String[] {Names.pascal(tag) + "Service", "service"});
             case BFF -> fields.add(new String[] {Names.pascal(tag) + "Composition", "composition"});
             default -> {
-              // no REST adapter
+              // sin adaptador REST
             }
           }
           List<Map<String, Object>> fieldRows = new ArrayList<>();
@@ -416,35 +471,43 @@ public final class ProjectGenerator {
     return e;
   }
 
-  /** Packages of each style with their role (package-info files of the skeleton). */
+  /** Paquetes de cada estilo con su rol (archivos package-info del esqueleto). */
   static List<Map<String, Object>> packages(Structure structure) {
-    // name and role, in order; an exhaustive switch expression: a new style must declare its own
+    // nombre y rol, en orden; una expresión switch exhaustiva: un estilo nuevo debe declarar los
+    // suyos
     List<String> p =
         switch (structure) {
           case HEXAGONAL ->
               List.of(
-                  "domain", "Domain model: plain Java, no structure dependencies.",
-                  "application.usecase", "Use cases: one class per operation, transactional.",
-                  "application.model", "Owned application contracts independent of HTTP models.",
-                  "application.port.out", "Outbound ports implemented by adapters.",
-                  "adapter.in.rest", "REST adapter generated from the OpenAPI contract.",
-                  "adapter.out", "Outbound adapters: persistence, HTTP clients, messaging.",
-                  "config", "Wiring of use cases, ports and adapters.");
+                  "domain", "Modelo de dominio: Java plano, sin dependencias de la estructura.",
+                  "application.usecase", "Casos de uso: una clase por operación, transaccionales.",
+                  "application.model",
+                      "Contratos propios de la aplicación, independientes de los modelos HTTP.",
+                  "application.port.out", "Puertos de salida implementados por los adaptadores.",
+                  "adapter.in.rest", "Adaptador REST generado a partir del contrato OpenAPI.",
+                  "adapter.out", "Adaptadores de salida: persistencia, clientes HTTP, mensajería.",
+                  "config", "Cableado de casos de uso, puertos y adaptadores.");
           case LAYERED ->
               List.of(
-                  "controller", "REST controllers generated from the OpenAPI contract.",
-                  "service", "Business services, transactional.",
-                  "repository", "Data access.",
-                  "model", "Entities and items.");
+                  "controller", "Controladores REST generados a partir del contrato OpenAPI.",
+                  "service", "Servicios de negocio, transaccionales.",
+                  "repository", "Acceso a datos, entidades persistentes y elementos.",
+                  "model",
+                      "Valores de aplicación y modelos de API, independientes de la persistencia.");
           case BFF ->
               List.of(
-                  "controller", "Channel API generated from the OpenAPI contract.",
-                  "composition", "Compositions of downstream calls, one per API tag.",
-                  "client", "HTTP clients of downstream services.");
+                  "controller", "API del canal generada a partir del contrato OpenAPI.",
+                  "composition",
+                      "Composiciones de llamadas a servicios dependientes, una por tag de la API.",
+                  "client", "Clientes HTTP de los servicios dependientes.");
           case EDA ->
-              List.of("handler", "Event handlers, one per event type.", "event", "Event payloads.");
-          case BATCH -> List.of("job", "Jobs, steps, readers, processors and writers.");
-          // platform archetypes have their own layout
+              List.of(
+                  "handler",
+                  "Handlers de eventos, uno por tipo de evento.",
+                  "event",
+                  "Payloads de eventos.");
+          case BATCH -> List.of("job", "Jobs, steps, readers, processors y writers.");
+          // los arquetipos de plataforma tienen su propia disposición
           case NONE -> List.of();
         };
     List<Map<String, Object>> out = new ArrayList<>();
@@ -459,18 +522,25 @@ public final class ProjectGenerator {
     return ops.stream().anyMatch(o -> Boolean.TRUE.equals(o.get(key)));
   }
 
-  /** Archetype starters, persistence and the requested capabilities (before requirements). */
+  /**
+   * Starters del arquetipo, persistencia y las capacidades solicitadas (sin resolver los
+   * requisitos).
+   */
   static List<String> capabilityNames(Catalog catalog, ProjectRequest r, Archetype a) {
-    Set<String> names = new LinkedHashSet<>(a.starters());
+    Set<String> names = new LinkedHashSet<>();
     String store = Catalog.store(r.persistence(), r.stack());
-    // what the style starter brings: the service gets its tables, properties and resources too
+    for (String starter : a.starters()) {
+      if (catalog.capability(starter).map(c -> c.supports(store)).orElse(false)) names.add(starter);
+    }
+    // lo que aporta el starter del estilo: el servicio también recibe sus tablas, propiedades y
+    // recursos
     for (String implied : catalog.style(r.structure()).capabilities()) {
       if (catalog.capability(implied).map(c -> c.supports(store)).orElse(false)) {
         names.add(implied);
       }
     }
     if ("aurora".equals(r.persistence())) {
-      // JPA on servlet; R2DBC on the reactive stack, where JDBC would block the event loop
+      // JPA en servlet; R2DBC en el stack reactivo, donde JDBC bloquearía el event loop
       names.add(r.stack() == Stack.REACTIVE ? "r2dbc" : "jpa");
     }
     if ("dynamodb".equals(r.persistence())) {
@@ -480,14 +550,14 @@ public final class ProjectGenerator {
     return List.copyOf(names);
   }
 
-  /** XML element content: the markup characters become entities. */
+  /** Contenido de un elemento XML: los caracteres de marcado se convierten en entidades. */
   static String xmlText(String text) {
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
   }
 
   /**
-   * Inside an XML comment: no {@code --} anywhere (whatever the run of hyphens) and no hyphen right
-   * before the closing {@code -->}.
+   * Dentro de un comentario XML: ningún {@code --} en ninguna parte (sea cual sea la secuencia de
+   * guiones) y ningún guion justo previo al cierre {@code -->}.
    */
   static String xmlComment(String text) {
     StringBuilder b = new StringBuilder(text.length() + 4);
@@ -504,58 +574,56 @@ public final class ProjectGenerator {
     return b.toString();
   }
 
-  /** Javadoc text: HTML-escaped (doclint) and without a comment terminator. */
+  /** Texto Javadoc: con escape HTML (doclint) y sin terminador de comentario. */
   static String javadoc(String text) {
-    return xmlText(text).replace("*/", "*&#47;").replace("@", "&#64;");
+    return JavaSourceText.javadoc(text);
   }
 
   /**
-   * Structure tables the initial migration creates: those of the chosen capabilities, plus those
-   * the style starter wires on its own when the service has a JDBC database. A store that is wired
-   * always has its table, so nothing fails later on the first write or poll.
+   * Tablas de estructura que crea la migración inicial: las de las capacidades elegidas, más las
+   * que el starter del estilo cablea por su cuenta cuando el servicio tiene una base de datos JDBC.
+   * Un almacén cableado siempre tiene su tabla, por lo que nada falla más tarde en la primera
+   * escritura o consulta periódica.
    */
-  static Map<String, Object> schema(Style style, Map<String, Object> caps, boolean jdbc) {
+  static Map<String, Object> schema(Map<String, Object> caps) {
     Map<String, Object> schema = new LinkedHashMap<>();
     for (String table : Style.TABLES) {
       String capability = "shedlock".equals(table) ? "scheduling" : table;
-      schema.put(
-          table, caps.containsKey(capability) || (jdbc && style.jdbcTables().contains(table)));
+      schema.put(table, caps.containsKey(capability));
     }
     return schema;
   }
 
-  /** Local infrastructure the service needs (Docker Compose, Testcontainers, README). */
+  /** Infraestructura local que necesita el servicio (Docker Compose, Testcontainers, README). */
   static Map<String, Object> infrastructure(List<Capability> caps, ProjectRequest r) {
-    Set<String> artifacts = new LinkedHashSet<>();
     Set<String> names = new LinkedHashSet<>();
     for (Capability c : caps) {
       names.add(c.name());
-      artifacts.add(c.starter());
-      c.dependencies(Catalog.store(r.persistence(), r.stack()))
-          .forEach(d -> artifacts.add(d.substring(d.indexOf(':') + 1)));
     }
     boolean postgres =
         names.contains("jpa") || names.contains("r2dbc") || "aurora".equals(r.persistence());
-    boolean kafka = artifacts.contains("spring-boot-starter-kafka");
-    boolean redis = artifacts.contains("spring-boot-starter-data-redis");
+    boolean kafka = names.contains("messaging-kafka");
+    boolean redis = names.stream().anyMatch(name -> name.endsWith("-redis"));
     List<String> localstack = new ArrayList<>();
     if (names.contains("dynamodb")) {
       localstack.add("dynamodb");
     }
-    if (artifacts.contains("s3")) {
+    if (names.contains("storage-s3")) {
       localstack.add("s3");
     }
-    if (artifacts.contains("sqs")) {
+    if (names.contains("messaging-sqs") || names.contains("audit-sqs")) {
       localstack.add("sqs");
     }
-    if (artifacts.contains("sns")) {
+    if (names.contains("messaging-sns")) {
       localstack.add("sns");
     }
-    if (artifacts.contains("kms")) {
+    if (names.contains("crypto-kms")) {
       localstack.add("kms");
     }
-    if (artifacts.contains("secretsmanager")) {
+    if (names.contains("secrets-aws")) {
       localstack.add("secretsmanager");
+    }
+    if (names.contains("secrets-aws") || names.contains("config-aws")) {
       localstack.add("ssm");
     }
     Map<String, Object> infra = new LinkedHashMap<>();
@@ -593,7 +661,7 @@ public final class ProjectGenerator {
     return infra;
   }
 
-  /** application.yaml, application-local.yaml and Helm config values. */
+  /** application.yaml, application-local.yaml y los valores de configuración de Helm. */
   static Map<String, Object> configuration(
       ProjectRequest r,
       Archetype a,
@@ -686,7 +754,7 @@ public final class ProjectGenerator {
     if (caps.stream().anyMatch(cap -> cap.name().equals("r2dbc"))) {
       local.put("spring.r2dbc.url", "r2dbc:postgresql://localhost:5432/" + Names.snake(r.name()));
       local.put("spring.r2dbc.username", "app");
-      // the local PostgreSQL container has no TLS
+      // el contenedor local de PostgreSQL no tiene TLS
       local.put("spring.r2dbc.properties.sslMode", "disable");
     }
     caps.forEach(cap -> local.putAll(cap.localProperties()));
@@ -765,7 +833,7 @@ public final class ProjectGenerator {
     o.put("mapping", Names.pascal(op.method().toLowerCase(Locale.ROOT)) + "Mapping");
     o.put("path", op.path());
     o.put("tag", op.tag());
-    o.put("summary", op.summary().replace("*/", "* /"));
+    o.put("summary", JavaSourceText.javadoc(op.summary()));
     o.put("readOnly", op.readOnly());
     o.put("write", !op.readOnly());
     o.put("authorizationExpression", op.authorizationExpression());
@@ -824,7 +892,8 @@ public final class ProjectGenerator {
       String p = op.pathParams().get(i);
       String javaName = Names.identifier(p);
       params.add(Map.of("name", p, "javaName", javaName, "last", i == op.pathParams().size() - 1));
-      declarations.add("@PathVariable(\"" + p + "\") String " + javaName);
+      declarations.add(
+          "@PathVariable(" + JavaSourceText.parameterLiteral(p) + ") String " + javaName);
       components.add("String " + javaName);
       arguments.add(javaName);
     }
@@ -833,9 +902,9 @@ public final class ProjectGenerator {
       String javaName = Names.identifier(q.name());
       query.add(Map.of("name", q.name(), "javaName", javaName, "required", q.required()));
       declarations.add(
-          "@RequestParam(name = \""
-              + q.name()
-              + "\", required = "
+          "@RequestParam(name = "
+              + JavaSourceText.parameterLiteral(q.name())
+              + ", required = "
               + q.required()
               + ") "
               + (q.required() ? "" : "@Nullable ")
@@ -862,6 +931,7 @@ public final class ProjectGenerator {
     o.put("controllerParams", String.join(", ", declarations));
     o.put("inputComponents", String.join(", ", components));
     o.put("inputArguments", String.join(", ", arguments));
+    o.put("mockArguments", String.join(", ", Collections.nCopies(arguments.size(), "any()")));
     List<String> hexagonalArguments = new ArrayList<>(arguments);
     if (request != null) {
       String applicationType =
@@ -878,6 +948,7 @@ public final class ProjectGenerator {
     o.put("queryName", className + "Query");
     String example = op.requestExample();
     o.put("hasExample", example != null);
+    o.put("boundaryTestable", request == null || example != null);
     o.put("exampleJson", example == null ? "" : example);
     o.put("exampleTestable", example != null && request != null && !request.startsWith("List<"));
     o.put("example", example == null ? "" : example.replace("\\", "\\\\").replace("\"", "\\\""));

@@ -4,10 +4,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
- * Configuration of {{project.name}} ({@code {{platform.prefix}}.*}).
+ * Configuración de {{project.name}} ({@code {{platform.prefix}}.*}).
  *
- * @param enabled whether the capability is active
- * @param name name used by the example bean
+ * @param enabled indica si la capacidad está activa
+ * @param name nombre que usa el bean de ejemplo
  */
 @ConfigurationProperties("{{platform.prefix}}")
 public record {{platform.propertiesClass}}(

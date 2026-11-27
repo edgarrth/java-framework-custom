@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-core-tenancy
 
-Tenant context, resolution and propagation.
+Contexto, resolución y propagación del tenant.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,16 +12,16 @@ Tenant context, resolution and propagation.
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `TenantContext` | Tenant of the current unit of work, bound for the duration of a call. |
-| `TenantRequiredException` | The operation needs a tenant but none is bound. |
-| `TenantResolver` | Resolves the tenant of an inbound request: first from the validated token claim, then (only when explicitly trusted, e.g. |
+| `TenantContext` | Tenant de la unidad de trabajo actual, vinculado durante una llamada. |
+| `TenantRequiredException` | La operación necesita un tenant, pero no hay ninguno vinculado. |
+| `TenantResolver` | Resuelve el tenant de una petición entrante: primero desde el claim del token validado y, solo cuando se confía de forma explícita, desde una cabecera. |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-tenancy verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl core/axiz-core-tenancy verify`.

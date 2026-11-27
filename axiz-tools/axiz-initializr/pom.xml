@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  axiz-initializr: web generator and REST API of axiz projects (the CLI's online mode).
-  It is itself an axiz service: built on axiz-parent-service and the platform starters.
+  axiz-initializr: generador web y API REST de proyectos axiz (el modo online de la CLI).
+  Es en sí un servicio axiz: construido sobre axiz-parent-service y los starters de la plataforma.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -20,12 +20,17 @@
   <description>Generates axiz services from an OpenAPI contract: web UI and REST API with corporate SSO</description>
 
   <properties>
-    <!-- renovate: datasource=docker depName=eclipse-temurin -->
-    <axiz.initializr.base-image>eclipse-temurin:25-jdk-noble</axiz.initializr.base-image>
+    <!-- renovate: datasource=docker depName=azul/zulu-openjdk-alpine -->
+    <axiz.initializr.base-image>azul/zulu-openjdk-alpine:25@sha256:fe4cdf0a179283ac4b6a6c262cce2282e39208c3cf869cb2f627288bac4127e0</axiz.initializr.base-image>
     <axiz.base-package>pe.axiz.initializr</axiz.base-package>
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-security</artifactId></dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-security-redis-spring-boot-starter</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-webmvc</artifactId>
@@ -42,7 +47,7 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-restclient</artifactId>
     </dependency>
-    <!-- platform capabilities (the initializr dogfoods axiz) -->
+    <!-- capacidades de la plataforma (el initializr usa axiz para sí mismo) -->
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-foundation-spring-boot-starter</artifactId>
@@ -71,12 +76,12 @@
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-audit-spring-boot-starter</artifactId>
     </dependency>
-    <!-- client secrets mounted by the ExternalSecret become properties (config tree) -->
+    <!-- los client secrets montados por el ExternalSecret se convierten en propiedades (config tree) -->
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-secrets-spring-boot-starter</artifactId>
     </dependency>
-    <!-- generation engine and the formatter of generated code -->
+    <!-- motor de generación y formateador del código generado -->
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-codegen</artifactId>
@@ -114,7 +119,7 @@
         <artifactId>jib-maven-plugin</artifactId>
         <configuration>
           <container>
-            <!-- google-java-format needs the compiler internals -->
+            <!-- google-java-format necesita los internos del compilador -->
             <jvmFlags combine.children="append">
               <jvmFlag>--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</jvmFlag>
               <jvmFlag>--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</jvmFlag>
@@ -125,7 +130,7 @@
               <jvmFlag>--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</jvmFlag>
             </jvmFlags>
           </container>
-          <!-- the formatter needs jdk.compiler: full JDK base image instead of the JRE -->
+          <!-- el formateador necesita jdk.compiler: imagen base con JDK completo en lugar del JRE -->
           <from>
             <image>${axiz.initializr.base-image}</image>
           </from>

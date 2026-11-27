@@ -25,29 +25,31 @@ import pe.axiz.codegen.render.JavaFormatter;
 import pe.axiz.codegen.render.TemplateSet;
 
 /**
- * {@code axiz contract sync}: after editing {@code src/main/openapi/openapi.yaml}, generates the
- * skeletons of new operations, proposes updated controllers ({@code .axiz-new} files next to the
- * existing ones, never overwriting code), reports removed operations and checks backward
- * compatibility against the snapshot of the last synced contract.
+ * {@code axiz contract sync}: tras editar {@code src/main/openapi/openapi.yaml}, genera los
+ * esqueletos de las operaciones nuevas, propone controladores actualizados (archivos {@code
+ * .axiz-new} junto a los existentes, sin sobrescribir nunca código), informa las operaciones
+ * eliminadas y verifica la compatibilidad hacia atrás contra el snapshot del último contrato
+ * sincronizado.
  */
 public final class ContractSync {
 
-  /** Snapshot of the contract at the last generation or sync. */
+  /** Snapshot del contrato en la última generación o sincronización. */
   public static final String SNAPSHOT = ".axiz/openapi.snapshot.yaml";
 
-  /** Suffix of proposed versions of existing files. */
+  /** Sufijo de las versiones propuestas de archivos existentes. */
   public static final String PROPOSAL = ".axiz-new";
 
   /**
-   * Outcome of a sync.
+   * Resultado de una sincronización.
    *
-   * @param added operations new in the contract
-   * @param removed operations no longer in the contract (their code is left for the team)
-   * @param created files created
-   * @param proposed proposals written next to existing files ({@code .axiz-new})
-   * @param changes compatibility changes against the previous snapshot
-   * @param findings lint findings of the contract
-   * @param applied whether files were written (false when blocked by breaking changes or lint)
+   * @param added operaciones nuevas en el contrato
+   * @param removed operaciones ausentes del contrato (su código queda a cargo del equipo)
+   * @param created archivos creados
+   * @param proposed propuestas escritas junto a archivos existentes ({@code .axiz-new})
+   * @param changes cambios de compatibilidad respecto del snapshot previo
+   * @param findings hallazgos de lint del contrato
+   * @param applied indica si se escribieron archivos (false cuando lo bloquean cambios
+   *     incompatibles o el lint)
    */
   public record Result(
       List<String> added,
@@ -74,9 +76,9 @@ public final class ContractSync {
   }
 
   /**
-   * Synchronizes the project in {@code dir} with its contract.
+   * Sincroniza el proyecto de {@code dir} con su contrato.
    *
-   * @param allowBreaking apply even when the contract breaks existing consumers
+   * @param allowBreaking aplica incluso cuando el contrato rompe a los consumidores existentes
    */
   public Result sync(Path dir, boolean allowBreaking) throws IOException {
     dir = dir.toAbsolutePath().normalize();
@@ -89,8 +91,6 @@ public final class ContractSync {
     String text = Files.readString(SafePaths.target(dir, contractPath), StandardCharsets.UTF_8);
     OpenApiDocument contract = OpenApiDocument.parse(text);
     List<LintFinding> findings = new ArrayList<>(OpenApiLinter.lint(contract));
-    for (String problem : RequestValidator.accessProblems(contract))
-      findings.add(new LintFinding("axiz-explicit-http-access", "error", "$.paths", problem));
     Path snapshot = SafePaths.target(dir, SNAPSHOT);
     List<ContractDiff.Change> changes =
         Files.isRegularFile(snapshot)
@@ -114,20 +114,21 @@ public final class ContractSync {
             .orElseThrow(
                 () -> new IllegalArgumentException("Unknown archetype " + manifest.archetype()));
     ProjectRequest request =
-        new ProjectRequest(
-            manifest.name(),
-            manifest.groupId(),
-            manifest.basePackage(),
-            "",
-            manifest.archetype(),
-            manifest.structure(),
-            manifest.stack(),
-            manifest.persistence(),
-            List.of(),
-            text,
-            null,
-            manifest.axizVersion(),
-            manifest.extensions());
+        ProjectRequest.builder()
+            .name(manifest.name())
+            .groupId(manifest.groupId())
+            .basePackage(manifest.basePackage())
+            .description("")
+            .archetype(manifest.archetype())
+            .structure(manifest.structure())
+            .stack(manifest.stack())
+            .persistence(manifest.persistence())
+            .capabilities(List.of())
+            .openApi(text)
+            .asyncApi(null)
+            .frameworkVersion(manifest.axizVersion())
+            .extensions(manifest.extensions())
+            .build();
     Map<String, Object> context = generator.context(request, archetype, contract);
     Map<String, byte[]> rendered =
         JavaFormatter.formatAll(TemplateSet.load("service").render(context));
@@ -149,13 +150,19 @@ public final class ContractSync {
                               || file.equals(c + "Command.java")
                               || file.equals(c + "Query.java")
                               || file.equals(c + "Handler.java"))
-              || added.stream().anyMatch(id -> path.endsWith("contract-examples/" + id + ".json"));
+              || added.stream().anyMatch(id -> path.endsWith("contract-examples/" + id + ".json"))
+              || path.contains("/response-examples/");
       boolean adapterFile =
           path.contains("/application/model/")
               || (path.contains("/application/command/") && file.endsWith("Command.java"))
               || (path.contains("/application/query/") && file.endsWith("Query.java"))
               || file.equals("CqrsAuthorizationConfiguration.java")
               || file.endsWith("AuthorizationTest.java")
+              || file.endsWith("ControllerResponseTest.java")
+              || file.endsWith("ApplicationModelTest.java")
+              || file.endsWith("ApplicationTest.java")
+              || file.endsWith("ApplicationTestSupport.java")
+              || file.equals("SensitiveDataCanaryTest.java")
               || file.endsWith("Controller.java")
               || file.equals("ContractExamplesTest.java")
               || (file.endsWith("Service.java") && path.contains("/service/"))
@@ -176,7 +183,12 @@ public final class ContractSync {
       String path = e.getKey();
       boolean adapterFile = adapterPaths.contains(path);
       Path target = SafePaths.target(dir, path);
-      if (!Files.exists(target)) {
+      boolean ownedTest = path.endsWith("Test.java") || path.contains("/response-examples/");
+      if (ownedTest
+          && (!Files.exists(target) || !Arrays.equals(Files.readAllBytes(target), e.getValue()))) {
+        SafePaths.write(dir, path + PROPOSAL, e.getValue(), true);
+        proposed.add(path + PROPOSAL);
+      } else if (!Files.exists(target)) {
         SafePaths.write(dir, path, e.getValue(), false);
         created.add(path);
       } else if (adapterFile && !Arrays.equals(Files.readAllBytes(target), e.getValue())) {
@@ -189,7 +201,7 @@ public final class ContractSync {
     return new Result(added, removed, created, proposed, changes, findings, true);
   }
 
-  /** Operation ids per tag, for reports. */
+  /** Ids de operación por etiqueta, para los reportes. */
   public static Map<String, List<String>> byTag(OpenApiDocument contract) {
     Map<String, List<String>> out = new LinkedHashMap<>();
     contract

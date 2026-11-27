@@ -4,15 +4,15 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.RequestMetadata;
-import pe.axiz.core.commons.StandardHeaders;
+import pe.axiz.core.api.StandardHeaders;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.http.ClientSettings;
 import pe.axiz.core.http.HeaderPropagation;
 
 /**
- * Headers forwarded to a dependency from the current request: correlation id, language and the
- * catalog headers in the client's allow-list. Trace context is propagated by the observation
- * instrumentation, never by hand.
+ * Cabeceras reenviadas a una dependencia desde la solicitud actual: id de correlación, idioma y las
+ * cabeceras del catálogo en la lista permitida del cliente. El contexto de traza lo propaga la
+ * instrumentación de observación, nunca se hace a mano.
  */
 public final class OutboundHeaders {
 

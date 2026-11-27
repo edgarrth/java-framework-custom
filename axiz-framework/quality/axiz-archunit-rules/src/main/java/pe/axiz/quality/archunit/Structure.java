@@ -2,7 +2,7 @@ package pe.axiz.quality.archunit;
 
 import java.util.Locale;
 
-/** Service structure. */
+/** Estructura del servicio. */
 public enum Structure {
   LAYERED,
   HEXAGONAL,

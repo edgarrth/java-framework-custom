@@ -13,24 +13,27 @@ contract:
   openapi: src/main/openapi/openapi.yaml
   asyncapi: null
 capabilities:
-- foundation
-- web
-- errors
-- logging
-- observability
-- metrics
-- config
-- i18n
-- sensitive
-- security
-- resilience
-- http-client
-- secrets
-- soap
-- lock
-- lock-redis
-- audit
-- audit-sqs
+  - config-aws
+  - secrets-file
+  - secrets-aws
+  - foundation
+  - web
+  - errors
+  - logging
+  - observability
+  - metrics
+  - config
+  - i18n
+  - sensitive
+  - security
+  - resilience
+  - http-client
+  - secrets
+  - soap
+  - lock
+  - lock-redis
+  - audit
+  - audit-sqs
 operations:
 - debitAccount
 - reverseDebit

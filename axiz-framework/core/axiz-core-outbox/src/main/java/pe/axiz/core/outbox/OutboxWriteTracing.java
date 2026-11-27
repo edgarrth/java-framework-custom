@@ -4,23 +4,24 @@ import java.util.function.Consumer;
 import pe.axiz.core.messaging.EventEnvelope;
 
 /**
- * Keeps the trace of the caller with each event written to the outbox. The relay publishes the
- * event later, outside the request: with the trace context stored in the event ({@link
- * EventEnvelope#OUTBOX_TRACEPARENT}) the publication and its consumers continue the trace of the
- * request instead of starting one of their own.
+ * Conserva la traza de quien llama con cada evento escrito en el outbox. El relay publica el evento
+ * más tarde, fuera de la petición: con el contexto de traza almacenado en el evento ({@link
+ * EventEnvelope#OUTBOX_TRACEPARENT}), la publicación y sus consumidores continúan la traza de la
+ * petición en lugar de iniciar una propia.
  */
 @FunctionalInterface
 public interface OutboxWriteTracing {
 
-  /** No tracing: the event is stored as it is. */
+  /** Sin tracing: el evento se almacena tal cual. */
   OutboxWriteTracing NONE = (destination, event, write) -> write.accept(event);
 
   /**
-   * Stores the event through {@code write}, after adding the trace context of the caller.
+   * Almacena el evento mediante {@code write}, después de agregar el contexto de traza de quien
+   * llama.
    *
-   * @param destination logical destination
-   * @param event event to store
-   * @param write stores the (possibly stamped) event
+   * @param destination destino lógico
+   * @param event evento a almacenar
+   * @param write almacena el evento (posiblemente marcado)
    */
   void traced(String destination, EventEnvelope event, Consumer<EventEnvelope> write);
 }

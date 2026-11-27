@@ -7,14 +7,14 @@ import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.messaging.PublishException;
 import pe.axiz.core.messaging.PublishResult;
 
-/** Publisher that records events; can be switched to fail to test retries. */
+/** Publisher que registra eventos; puede configurarse para fallar y así probar los reintentos. */
 public final class RecordingEventPublisher implements EventPublisher {
 
   /**
-   * A recorded publication.
+   * Una publicación registrada.
    *
-   * @param destination destination
-   * @param event event
+   * @param destination destino
+   * @param event evento
    */
   public record Published(String destination, EventEnvelope event) {}
 

@@ -12,7 +12,7 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
 
-/** RSA with OAEP-SHA256 encryption and RSASSA-PSS-SHA256 signatures. PKCS#1 v1.5 is not offered. */
+/** RSA con cifrado OAEP-SHA256 y firmas RSASSA-PSS-SHA256. No se ofrece PKCS#1 v1.5. */
 public final class Rsa {
 
   private static final String OAEP = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";

@@ -1,4 +1,4 @@
--- Read-only diagnosis of the current v2 schema. Never changes event status.
+-- Diagnóstico de solo lectura del esquema v2 vigente. Nunca modifica el estado de los eventos.
 WITH events AS (
   SELECT id, status, attempts, last_error, destination, created_at, aggregate_seq,
     aggregate_type AS kind, aggregate_id AS aggregate

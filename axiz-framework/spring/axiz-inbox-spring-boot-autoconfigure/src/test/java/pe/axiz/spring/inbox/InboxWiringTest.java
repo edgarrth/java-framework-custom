@@ -1,11 +1,9 @@
 package pe.axiz.spring.inbox;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -18,17 +16,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.autoconfigure.AutoConfigurations;
-import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import pe.axiz.adapter.inbox.dynamodb.DynamoDbInboxStore;
 import pe.axiz.core.inbox.InboxStore;
-import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-/** The purge of expired inbox rows and the DynamoDB store. */
+/** La purga de las filas expiradas del inbox y el almacén DynamoDB. */
 class InboxWiringTest {
 
-  /** Counts purges; it can fail on demand. */
+  /** Cuenta las purgas; puede fallar bajo demanda. */
   static class PurgeCounter implements InboxStore {
     final AtomicInteger purges = new AtomicInteger();
     final AtomicBoolean failing = new AtomicBoolean();
@@ -105,7 +98,8 @@ class InboxWiringTest {
             try {
               new CountDownLatch(1).await();
             } catch (InterruptedException e) {
-              // like some JDBC drivers: the interrupt is consumed and the call just returns
+              // como algunos drivers JDBC: la interrupción se consume y la llamada simplemente
+              // retorna
             }
             return 0;
           }
@@ -118,31 +112,5 @@ class InboxWiringTest {
     active.join(Duration.ofSeconds(2));
     assertFalse(active.isAlive(), "the purge worker must terminate after stop");
     assertEquals(1, calls.get(), "the stop flag ends the loop even without the interrupt");
-  }
-
-  @Test
-  void theDynamoDbStoreUsesTheConfiguredTableAndEndpoint() {
-    new ApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
-        .withConfiguration(AutoConfigurations.of(AxizInboxDynamoDbAutoConfiguration.class))
-        .withPropertyValues(
-            "axiz.inbox.store=dynamodb",
-            "axiz.inbox.table=payments_inbox",
-            "axiz.aws.region=us-east-1",
-            "axiz.aws.endpoint=https://localhost:4566")
-        .run(
-            ctx -> {
-              assertThat(ctx.getBean(InboxStore.class)).isInstanceOf(DynamoDbInboxStore.class);
-              assertEquals(
-                  URI.create("https://localhost:4566"),
-                  ctx.getBean(DynamoDbClient.class)
-                      .serviceClientConfiguration()
-                      .endpointOverride()
-                      .orElseThrow());
-            });
-    new ApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
-        .withConfiguration(AutoConfigurations.of(AxizInboxDynamoDbAutoConfiguration.class))
-        .run(ctx -> assertThat(ctx).doesNotHaveBean(InboxStore.class));
   }
 }

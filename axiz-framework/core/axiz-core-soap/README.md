@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-core-soap
 
-Lightweight SOAP 1.1/1.2 client support: envelopes, WS-Security UsernameToken, fault mapping.
+Soporte ligero para clientes SOAP 1.1 y 1.2: sobres, WS-Security UsernameToken y mapeo de faults.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,20 +12,20 @@ Lightweight SOAP 1.1/1.2 client support: envelopes, WS-Security UsernameToken, f
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `SafeXml` | XML parsing hardened against XXE and entity expansion, plus serialization helpers. |
-| `SoapClient` | Minimal SOAP client over `HttpClient` with mandatory timeouts, WS-Security, fault mapping and masked logging. |
-| `SoapEnvelope` | Builds SOAP envelopes around a payload XML fragment. |
-| `SoapException` | Technical SOAP failure (malformed XML, serialization). |
-| `SoapResponse` | Parses SOAP responses: extracts the body payload or turns a Fault into an external error. |
-| `SoapVersion` | SOAP protocol versions. |
-| `WsSecurity` | WS-Security UsernameToken header. |
+| `SafeXml` | Parseo XML protegido contra XXE y expansión de entidades, más utilidades de serialización. |
+| `SoapClient` | Cliente SOAP mínimo sobre `HttpClient` con timeouts obligatorios, WS-Security, mapeo de faults y logs enmascarados. |
+| `SoapEnvelope` | Construye sobres SOAP alrededor de un fragmento XML de payload. |
+| `SoapException` | Fallo técnico de SOAP (XML mal formado o serialización). |
+| `SoapResponse` | Procesa respuestas SOAP: extrae el payload del cuerpo o convierte un Fault en un error externo. |
+| `SoapVersion` | Versiones del protocolo SOAP. |
+| `WsSecurity` | Cabecera WS-Security UsernameToken. |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-soap verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl core/axiz-core-soap verify`.

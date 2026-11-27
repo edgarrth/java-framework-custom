@@ -6,6 +6,7 @@ import io.micrometer.observation.ObservationRegistry;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,12 +14,15 @@ import org.springframework.context.SmartLifecycle;
 import pe.axiz.core.observability.AxizObservations;
 import pe.axiz.core.outbox.OutboxRelay;
 import pe.axiz.core.outbox.OutboxStore;
+import pe.axiz.spring.foundation.lifecycle.WorkerLifecycle;
+import pe.axiz.spring.foundation.lifecycle.WorkerStatus;
 
 /**
- * Background relay on a virtual thread: polls, publishes in batches while there is work, sleeps
- * otherwise, and purges published records periodically. Each run is an observation.
+ * Relay en segundo plano sobre un hilo virtual: sondea, publica por lotes mientras hay trabajo,
+ * duerme en caso contrario y purga periódicamente los registros publicados. Cada ejecución es una
+ * observación.
  */
-public final class OutboxRelayRunner implements SmartLifecycle {
+public final class OutboxRelayRunner implements SmartLifecycle, WorkerStatus {
 
   private static final Logger LOG = LoggerFactory.getLogger(OutboxRelayRunner.class);
 
@@ -40,8 +44,7 @@ public final class OutboxRelayRunner implements SmartLifecycle {
 
   private final AxizOutboxProperties.Relay settings;
   private final Clock clock;
-  private volatile boolean running;
-  private Thread worker = Thread.ofVirtual().unstarted(() -> {});
+  private final WorkerLifecycle lifecycle;
 
   public OutboxRelayRunner(
       OutboxRelay relay,
@@ -54,26 +57,42 @@ public final class OutboxRelayRunner implements SmartLifecycle {
     this.observations = Objects.requireNonNull(observations);
     this.settings = Objects.requireNonNull(settings);
     this.clock = Objects.requireNonNull(clock);
+    this.lifecycle =
+        new WorkerLifecycle(
+            "axiz-outbox-relay", settings.shutdownGrace(), () -> List.of(this::loop), () -> {});
+  }
+
+  @Override
+  public WorkerStatus.Snapshot workerSnapshot() {
+    return lifecycle.workerSnapshot();
+  }
+
+  @Override
+  public Duration shutdownGrace() {
+    return lifecycle.shutdownGrace();
   }
 
   @Override
   public void start() {
-    running = true;
-    worker = Thread.ofVirtual().name("axiz-outbox-relay").start(this::loop);
+    lifecycle.start();
   }
 
   @Override
   public void stop() {
-    running = false;
-    worker.interrupt();
+    lifecycle.stop();
+  }
+
+  @Override
+  public void stop(Runnable callback) {
+    lifecycle.stop(callback);
   }
 
   @Override
   public boolean isRunning() {
-    return running;
+    return lifecycle.isRunning();
   }
 
-  /** Runs one batch; returns how many records were handled. */
+  /** Ejecuta un lote; devuelve cuántos registros se procesaron. */
   public int runOnce() {
     return Observation.createNotStarted(AxizObservations.OUTBOX_RELAY, observations)
         .observe(() -> relay.relayOnce().total());
@@ -81,7 +100,7 @@ public final class OutboxRelayRunner implements SmartLifecycle {
 
   private void loop() {
     Instant nextPurge = clock.instant().plus(settings.purgeInterval());
-    while (running && !Thread.currentThread().isInterrupted()) {
+    while (lifecycle.accepting() && !Thread.currentThread().isInterrupted()) {
       try {
         int handled = runOnce();
         if (clock.instant().isAfter(nextPurge)) {
@@ -93,7 +112,7 @@ public final class OutboxRelayRunner implements SmartLifecycle {
           sleep(settings.pollInterval());
         }
       } catch (RuntimeException e) {
-        LOG.warn("Outbox relay run failed: {}", e.toString());
+        LOG.warn("Outbox relay run failed; failureType={}", e.getClass().getSimpleName());
         sleep(settings.pollInterval().multipliedBy(5));
       }
     }

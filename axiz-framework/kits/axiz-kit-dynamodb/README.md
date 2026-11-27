@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-kit-dynamodb
 
-Generic DynamoDB repository over the Enhanced Client with cursor pagination and converters.
+Repositorio genérico de DynamoDB sobre el Enhanced Client, con paginación por cursor y convertidores.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,47 +12,83 @@ Generic DynamoDB repository over the Enhanced Client with cursor pagination and 
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `CursorCodec` | Authenticated, query-bound pagination cursor with keyed rotation and optional AES-GCM encryption (string, number and binary keys). |
-| `DynamoRepository` | Generic repository over the DynamoDB Enhanced Client: get by partition key (and sort key), conditional and plain writes, deletes, queries on the table, GSIs and LSIs with cursor pagination, and transactions. |
-| `DynamoAsyncRepository` | Native CompletionStage API with SDK optimistic locking and cancellation of the exact low-level request; queries fetch one bounded page. |
-| `EncryptedAttributeConverter` | Encrypts String attributes with the registered field encryptor: `@DynamoDbConvertedBy(EncryptedAttributeConverter.class)`. |
-| `MoneyAttributeConverter` | Stores `Money` as its text form (`"PEN 150.00"`), never as a binary float. |
+| `CursorCodec` | Cursor de paginación autenticado y ligado a la consulta, con rotación por identificador de clave y cifrado AES-GCM opcional (claves de tipo cadena, número y binario). |
+| `DynamoRepository` | Repositorio genérico sobre el DynamoDB Enhanced Client: lectura por clave de partición (y de ordenamiento), escrituras condicionales y simples, borrados, consultas sobre la tabla, GSI y LSI con paginación por cursor, y transacciones. |
+| `DynamoAsyncRepository` | API nativa con CompletionStage, bloqueo optimista del SDK y cancelación de la petición exacta de bajo nivel; las consultas obtienen una página acotada. |
+| `EncryptedAttributeConverter` | Convertidor de String inyectado por columna, con un contexto de cifrado explícito. |
+| `EncryptedTableSchema` | Construye un esquema del Enhanced Client con convertidores inyectados y contextos de columna únicos. |
+| `MoneyAttributeConverter` | Guarda `Money` en su forma de texto (`"PEN 150.00"`), nunca como flotante binario. |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl kits/axiz-kit-dynamodb verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl kits/axiz-kit-dynamodb verify`.
 
-## Asynchronous use
+## Uso asíncrono
 
-Supply an application-owned `DynamoDbAsyncClient` and construct the schema at startup. The
-repository does not close that client. Mapping and attribute converters run on the caller or SDK
-completion thread and must perform CPU-only work; a converter that calls synchronous KMS is not
-appropriate for this API. Queries preserve the same opaque cursor format as the synchronous
-repository. The returned `table()` is an SDK escape hatch for transaction descriptions; direct
-SDK operations have the SDK's own cancellation semantics.
+Se entrega un `DynamoDbAsyncClient` propiedad de la aplicación y el esquema se construye al arrancar.
+El repositorio no cierra ese cliente. El mapeo y los convertidores de atributos se ejecutan en el hilo
+del llamador o en el de finalización del SDK y deben hacer solo trabajo de CPU; un convertidor que
+llama a KMS de forma síncrona no es adecuado para esta API. Las consultas conservan el mismo formato
+opaco de cursor que el repositorio síncrono. El `table()` devuelto es una vía de escape al SDK para
+describir transacciones; las operaciones directas del SDK tienen su propia semántica de cancelación.
 
-## Authenticated pagination cursors
+## Cifrado de campos inyectado
 
-Use `DynamoRepositories.cursors()` (or the reactive repository factory) with the `dynamodb-cursor`
-capability. Configure `axiz.dynamodb.cursor.current-key-id`, `key-ids`, `secret-prefix` (default
-`cursor-key-`) and `encrypt` (default `false`). Key material is resolved from secrets once at
-startup. Provision the same keys on all replicas; deploy a new key to every replica before making
-it current, then retire the old key only after its cursor lifetime policy allows it.
+El esquema se construye en el adaptador de persistencia al arrancar y recibe el `FieldEncryptor`
+propiedad de ese contexto de aplicación. `EncryptedAttributeConverter` no tiene constructor sin
+argumentos: no se registra mediante `@DynamoDbConvertedBy` ni en un registro global.
 
-The format is `v1.<kid>.<payload>.<mac>`. HMAC authenticates the version, key ID, payload and
-caller's binding. The repository binds table/index, operation, partition and sort prefix; custom
-queries must bind all their filters and authorization scope. A signature does not authorize a
-query: derive tenant/customer constraints from the authenticated caller and validate returned keys.
-Set `encrypt=true` when key attributes in the cursor must also remain confidential.
+```java
+TableSchema<Customer> schema =
+    new EncryptedTableSchema<>(Customer.class, Customer::new, fieldEncryptor)
+        .attribute(StaticAttribute.builder(Customer.class, String.class)
+            .name("id").getter(Customer::getId).setter(Customer::setId)
+            .tags(StaticAttributeTags.primaryPartitionKey()).build())
+        .encryptedString("dni", "customer.dni", Customer::getDni, Customer::setDni)
+        .build();
+```
 
-For custom queries, use `codec.encode(lastEvaluatedKey, binding)` and
-`codec.decode(cursor, binding)`. Repositories constructed without a codec can perform CRUD, but
-paginated queries fail with an actionable configuration error. There is no unsigned compatibility
-mode: malformed, altered, cross-query, unsigned or retired-key cursors raise `INVALID_CURSOR`
-(BAD_REQUEST/400). Clients restart pagination rather than trying another tenant's cursor.
+El modelo aporta el constructor, los getters y los setters referenciados arriba. El esquema
+resultante se pasa a `DynamoRepositories.create(table, schema)` o a su equivalente reactivo; la
+sobrecarga que recibe solo la clase usa el descubrimiento por anotaciones del SDK y no puede inyectar
+este convertidor. Un proveedor de convertidores seleccionado solo por tipo Java cifraría todos los
+String con un único contexto, por eso los atributos cifrados se registran uno por uno. Los nombres y
+los contextos de las columnas cifradas no pueden repetirse.
+
+El mapeo usa claves locales y no hace ninguna petición a KMS. La utilidad impide sustituir texto
+cifrado entre columnas. Los convertidores de atributos no pueden ligar un texto cifrado al ID de fila
+de otro atributo; cuando se requiere esa protección, se usa `FieldProtector` con un binding explícito
+de fila antes de construir el ítem de persistencia. Su texto cifrado codificado se guarda sin aplicar
+otro convertidor.
+
+`EncryptedTableSchemaTest` ejercita `itemToMap`/`mapToItem` del SDK, la sustitución entre columnas,
+proveedores de claves independientes y tipos de atributo mal formados; no requiere un servidor DynamoDB.
+
+## Cursores de paginación autenticados
+
+Se usa `DynamoRepositories.cursors()` (o la fábrica del repositorio reactivo) con la capacidad
+`dynamodb-cursor`. Se configuran `axiz.dynamodb.cursor.current-key-id`, `key-ids`, `secret-prefix`
+(por defecto `cursor-key-`) y `encrypt` (por defecto `false`). El material de clave se resuelve desde
+los secretos una sola vez al arrancar. Las mismas claves se aprovisionan en todas las réplicas; una
+clave nueva se despliega en cada réplica antes de hacerla vigente, y la clave anterior se retira solo
+cuando la política de vida de sus cursores lo permite.
+
+El formato es `v1.<kid>.<payload>.<mac>`. HMAC autentica la versión, el ID de clave, el payload y el
+binding del llamador. El repositorio liga la tabla o el índice, la operación, la partición y el prefijo
+de ordenamiento; las consultas personalizadas deben ligar todos sus filtros y su ámbito de
+autorización. Una firma no autoriza una consulta: las restricciones de tenant o de cliente se derivan
+del llamador autenticado y las claves devueltas se validan. Se configura `encrypt=true` cuando los
+atributos de clave del cursor también deben ser confidenciales.
+
+Para consultas personalizadas se usan `codec.encode(lastEvaluatedKey, binding)` y
+`codec.decode(cursor, binding)`. Los repositorios construidos sin codec pueden hacer CRUD, pero las
+consultas paginadas fallan con un error de configuración que indica cómo corregirlo. No existe un modo
+sin firma: los cursores mal formados, alterados, de otra consulta, sin firma o con una clave retirada
+producen `INVALID_CURSOR` (BAD_REQUEST/400). Los clientes reinician la paginación en lugar de probar
+el cursor de otro tenant.

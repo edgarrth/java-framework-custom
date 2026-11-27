@@ -8,7 +8,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.zip.CRC32;
 
-/** File checksums for integrity controls with legacy systems. */
+/** Checksums de archivos para controles de integridad con sistemas heredados. */
 public final class Checksums {
 
   private Checksums() {}

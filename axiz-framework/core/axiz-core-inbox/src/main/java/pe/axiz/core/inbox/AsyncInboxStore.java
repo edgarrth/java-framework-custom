@@ -4,7 +4,10 @@ import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-/** Native asynchronous inbox port. Owner tokens and lease semantics match {@link InboxStore}. */
+/**
+ * Puerto de inbox asíncrono nativo. Los tokens de propietario y la semántica del lease coinciden
+ * con {@link InboxStore}.
+ */
 public interface AsyncInboxStore {
   CompletionStage<InboxStore.Acquisition> tryAcquire(
       String consumer,
@@ -21,7 +24,10 @@ public interface AsyncInboxStore {
 
   CompletionStage<Integer> purgeExpired(Instant now);
 
-  /** Schema checks complete before consumers start; implementations must preserve cancellation. */
+  /**
+   * Las verificaciones de esquema terminan antes de que arranquen los consumidores; las
+   * implementaciones deben preservar la cancelación.
+   */
   default CompletionStage<Void> verifySchema() {
     return CompletableFuture.completedFuture(null);
   }

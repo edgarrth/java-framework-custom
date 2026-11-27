@@ -27,7 +27,9 @@ import pe.axiz.core.security.AuthenticatedAccess;
 import pe.axiz.core.security.PublicEndpoint;
 import pe.axiz.spring.security.AuthorizationExpressionClassifier.Access;
 
-/** Coverage inspects each mapped bean's own proxy, after startup has completed. */
+/**
+ * La cobertura inspecciona el propio proxy de cada bean mapeado, una vez completado el arranque.
+ */
 final class HttpAuthorizationCoverage {
   record Endpoint(HandlerMethod handler, Set<String> paths, Set<String> methods) {}
 
@@ -230,7 +232,9 @@ final class HttpAuthorizationCoverage {
     return combined;
   }
 
-  /** Conservative inclusion proof: equal patterns or a literal parent with a recursive wildcard. */
+  /**
+   * Prueba conservadora de inclusión: patrones iguales o un padre literal con un comodín recursivo.
+   */
   static boolean covers(String rule, String mapping) {
     if (rule.equals(mapping)) return true;
     if (rule.equals("/**")) return true;

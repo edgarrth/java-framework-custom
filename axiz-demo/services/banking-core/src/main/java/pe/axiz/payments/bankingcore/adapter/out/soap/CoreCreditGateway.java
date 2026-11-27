@@ -14,9 +14,9 @@ import pe.axiz.payments.bankingcore.domain.MovementStatus;
 import pe.axiz.spring.soap.SoapClients;
 
 /**
- * Credit service of the core (SOAP 1.1, contract in contracts/external/core-credit.wsdl.xml),
- * through the axiz SOAP client {@code core-credit}: WS-Security, timeouts, masked logs and faults
- * turned into dependency errors.
+ * Servicio de abonos del core (SOAP 1.1, contrato en contracts/external/core-credit.wsdl.xml),
+ * mediante el cliente SOAP de axiz {@code core-credit}: WS-Security, timeouts, logs enmascarados y
+ * faults convertidos en errores de dependencia.
  */
 @Component
 public class CoreCreditGateway {
@@ -41,7 +41,7 @@ public class CoreCreditGateway {
         order.reference());
   }
 
-  /** Builds the payload with DOM, so values are always escaped. */
+  /** Construye el payload con DOM, de modo que los valores siempre se escapan. */
   static String request(MovementOrder order) {
     Document doc = SafeXml.newDocument();
     Element root = doc.createElementNS(NS, "cc:CreditRequest");

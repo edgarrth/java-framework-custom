@@ -1,296 +1,256 @@
+# Workflow reutilizable para proyectos Maven (librerías, starters, el framework y las herramientas).
+# verify compila con el perfil quality, ejecuta las pruebas y escanea el grafo de dependencias
+# resuelto. publish (solo cuando se pide) despliega en GitHub Packages y atestigua la procedencia
+# de cada jar con las atestaciones nativas de GitHub.
 name: lib-build
+
 on:
   workflow_call:
     inputs:
-      project-directory:
-        description: Canonical relative Maven reactor path in the checkout
+      working-directory:
+        description: Raíz del proyecto Maven dentro del repositorio
         type: string
         default: '.'
-      version:
-        description: Final Maven release coordinate, including for candidates
+      java-version:
         type: string
-        required: true
-      source-sha:
-        description: Full commit equal to the producer run commit
-        type: string
-        required: true
-      candidate:
-        description: Optional readable final-version/attempt label
-        type: string
-        default: ''
+        default: '25'
+      bootstrap:
+        description: Ejecuta el wrapper con --bootstrap (instala primero los BOM y parents locales)
+        type: boolean
+        default: false
       maven-args:
-        description: JSON array of allowlisted public Maven properties
-        type: string
-        default: '[]'
-      axiz-version:
-        description: Framework dependency version for tools; omit for the framework itself
+        description: Argumentos adicionales para la verificación
         type: string
         default: ''
-      native-module:
-        description: Optional module with signed native components built earlier in this producer run
+      maven-artifact:
+        description: Artefacto del mismo run con un fragmento del repositorio Maven local, por ejemplo el framework del mismo commit
         type: string
         default: ''
-      native-binary:
+      setup-command:
+        description: Comando previo, por ejemplo instalar el framework del mismo commit
         type: string
         default: ''
-      native-platforms:
-        description: JSON array of required native targets; empty for JVM-only builds
-        type: string
-        default: '[]'
-      candidate-repository:
-        description: Producer repository of the framework candidate consumed by tools
+      modules:
+        description: Directorios a construir, relativos a working-directory y separados por espacios; vacío construye todo el proyecto
         type: string
         default: ''
-      candidate-build-run-id:
+      cache-key:
+        description: Distingue el caché de dependencias cuando varias llamadas comparten working-directory
         type: string
         default: ''
-      candidate-build-run-attempt:
+      maven-threads:
+        description: Hilos de Maven para construir módulos en paralelo (-T), por ejemplo 1C; vacío construye en secuencia
         type: string
         default: ''
-      candidate-manifest-sha256:
-        type: string
-        default: ''
-      runner:
-        type: string
-        default: ubuntu-24.04
-    secrets:
-      AXIZ_WORKFLOWS_READ_TOKEN:
-        required: false
-      NEXUS_URL:
-        required: true
-      NEXUS_READ_USERNAME:
-        required: true
-      NEXUS_READ_PASSWORD:
-        required: true
-      CANDIDATE_READ_TOKEN:
-        required: false
-      SONAR_HOST_URL:
-        required: false
-      SONAR_TOKEN:
-        required: false
-    outputs:
-      manifest-sha256:
-        description: External build identity for independent promotion
-        value: ${{ jobs.sign.outputs.manifest-sha256 }}
-      build-run-id:
-        description: Producer run
-        value: ${{ github.run_id }}
-      build-run-attempt:
-        description: Producer attempt
-        value: ${{ github.run_attempt }}
+      scan-dependencies:
+        description: Escanea el SBOM del proyecto completo; en una matriz basta con una entrada
+        type: boolean
+        default: true
+      verify:
+        description: Ejecuta la verificación; se omite al publicar lo que ya verificó otra llamada
+        type: boolean
+        default: true
+      publish:
+        description: Despliega en GitHub Packages con procedencia atestiguada
+        type: boolean
+        default: false
 
 permissions: {}
 
-jobs:
-  axiz-workflows-trust:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 3
-    permissions:
-      contents: read
-    steps:
-      - name: Verify immutable Axiz workflow release
-        env:
-          GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
-          GH_HOST: github.com
-          AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0 # x-release-please-version
-        shell: bash
-        run: |
-          set -euo pipefail
-          release=$(gh api "repos/edgarrth/java-framework-custom/releases/tags/$AXIZ_WORKFLOWS_VERSION")
-          jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
+# Maven Central responde 429 cuando muchos jobs descargan a la vez: el resolver reintenta con espera
+# exponencial (respeta Retry-After). setup-java conserva este valor y le agrega -ntp.
+env:
+  MAVEN_ARGS: >-
+    -Daether.connector.http.retryHandler.count=8
+    -Daether.connector.http.retryHandler.interval=10000
+    -Daether.connector.http.retryHandler.intervalMax=120000
 
-  build:
-    name: maven:${{ inputs.project-directory }}
+jobs:
+  verify:
+    if: inputs.verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
     permissions:
       contents: read
-      actions: read
-    needs: axiz-workflows-trust
+      packages: read
     defaults:
       run:
-        working-directory: ${{ inputs.project-directory }}
-    runs-on: ${{ inputs.runner }}
-    timeout-minutes: 120
+        working-directory: ${{ inputs.working-directory }}
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      BOOTSTRAP: ${{ inputs.bootstrap && '--bootstrap' || '' }}
+      MAVEN_ARGS_EXTRA: ${{ inputs.maven-args }}
+      MODULES: ${{ inputs.modules }}
+      MAVEN_THREADS: ${{ inputs.maven-threads }}
+      SETUP_COMMAND: ${{ inputs.setup-command }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
-          ref: ${{ inputs.source-sha }}
-          fetch-depth: 0
           persist-credentials: false
-      # Immutable internal release: axiz-workflows-trust must succeed first.
-      # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-      - uses: edgarrth/java-framework-custom/.github/actions/consume-build@axiz-workflows-v2.0.0 # x-release-please-version
-        id: candidate
-        if: inputs.candidate-manifest-sha256 != '' || inputs.candidate-repository != '' || inputs.candidate-build-run-id != '' || inputs.candidate-build-run-attempt != ''
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
-          repository: ${{ inputs.candidate-repository }}
-          build-run-id: ${{ inputs.candidate-build-run-id }}
-          build-run-attempt: ${{ inputs.candidate-build-run-attempt }}
-          manifest-sha256: ${{ inputs.candidate-manifest-sha256 }}
-          kind: maven-library
-          token: ${{ secrets.CANDIDATE_READ_TOKEN || github.token }}
-      # Immutable internal release: axiz-workflows-trust must succeed first.
-      # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-      - uses: edgarrth/java-framework-custom/.github/actions/build-inputs@axiz-workflows-v2.0.0 # x-release-please-version
-        id: inputs
-        with:
-          project-directory: ${{ inputs.project-directory }}
-          version: ${{ inputs.version }}
-          source-sha: ${{ inputs.source-sha }}
-          candidate: ${{ inputs.candidate }}
-          native-module: ${{ inputs.native-module }}
-          native-binary: ${{ inputs.native-binary }}
-          native-platforms: ${{ inputs.native-platforms }}
-          maven-args: ${{ inputs.maven-args }}
-          axiz-version: ${{ inputs.axiz-version }}
-          token: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
-          candidate-bundle: ${{ steps.candidate.outputs.bundle-path }}
-          candidate-manifest-sha256: ${{ inputs.candidate-manifest-sha256 }}
-      # Immutable internal release: axiz-workflows-trust must succeed first.
-      # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-      - uses: edgarrth/java-framework-custom/.github/actions/setup-maven@axiz-workflows-v2.0.0 # x-release-please-version
-        with:
-          nexus-url: ${{ secrets.NEXUS_URL }}
-          candidate-bundle: ${{ steps.candidate.outputs.bundle-path }}
-          candidate-manifest-sha256: ${{ inputs.candidate-manifest-sha256 }}
-          candidate-source-repository: ${{ inputs.candidate-repository }}
-      - name: Compile, test, quality, mutation and local Maven staging
-        env:
-          NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
-          NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
-          VERSION: ${{ inputs.version }}
-          ARGUMENTS: ${{ steps.inputs.outputs.arguments }}
-          PYTHON: ${{ steps.inputs.outputs.python }}
-          TOOLS: ${{ steps.inputs.outputs.tools }}
+          distribution: temurin
+          java-version: ${{ inputs.java-version }}
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
+      # Maven consulta primero el espejo oficial de Maven Central en Google Cloud Storage, que no limita
+      # por IP, y recurre a Central solo cuando un artefacto todavía no llega al espejo.
+      - name: Espejo oficial de Maven Central
         run: |
-          set -euo pipefail
-          mkdir -p target/build-reports
-          "$PYTHON" "$TOOLS/maven_version.py" --version "$VERSION" 2>&1 | tee target/build-reports/coordinates.log
-          mapfile -d '' -t extra < "$ARGUMENTS"
-          maven=mvn
-          if [[ -x ./mvnw ]]; then maven=./mvnw; fi
-          bootstrap=()
-          if [[ -f platform/axiz-dependencies/pom.xml && -f platform/axiz-bom/pom.xml ]]; then
-            [[ "$maven" == ./mvnw ]]
-            bootstrap=(--bootstrap)
+          cat > "$RUNNER_TEMP/maven-central-mirror.xml" <<'EOF'
+          <settings>
+            <profiles>
+              <profile>
+                <id>maven-central-mirror</id>
+                <repositories>
+                  <repository>
+                    <id>maven-central-mirror</id>
+                    <url>https://maven-central.storage-download.googleapis.com/maven2</url>
+                    <snapshots><enabled>false</enabled></snapshots>
+                  </repository>
+                </repositories>
+                <pluginRepositories>
+                  <pluginRepository>
+                    <id>maven-central-mirror</id>
+                    <url>https://maven-central.storage-download.googleapis.com/maven2</url>
+                    <snapshots><enabled>false</enabled></snapshots>
+                  </pluginRepository>
+                </pluginRepositories>
+              </profile>
+            </profiles>
+            <activeProfiles>
+              <activeProfile>maven-central-mirror</activeProfile>
+            </activeProfiles>
+          </settings>
+          EOF
+          echo "MAVEN_ARGS=$MAVEN_ARGS -gs $RUNNER_TEMP/maven-central-mirror.xml" >> "$GITHUB_ENV"
+      # Caché propio de este job: la clave restaura el anterior aunque cambie un pom.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.m2/wrapper
+          key: maven-lib-${{ inputs.working-directory }}-${{ inputs.cache-key }}-${{ hashFiles(format('{0}/**/pom.xml', inputs.working-directory)) }}
+          restore-keys: maven-lib-${{ inputs.working-directory }}-${{ inputs.cache-key }}-
+      - name: Artefactos Maven del mismo run
+        if: inputs.maven-artifact != ''
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ inputs.maven-artifact }}
+          path: ${{ runner.temp }}/maven-artifact
+      - name: Fragmento copiado al repositorio Maven local
+        if: inputs.maven-artifact != ''
+        working-directory: .
+        run: mkdir -p ~/.m2/repository && cp -r "$RUNNER_TEMP/maven-artifact/." ~/.m2/repository/
+      - name: Preparación
+        if: inputs.setup-command != ''
+        working-directory: .
+        run: bash -euo pipefail -c "$SETUP_COMMAND"
+      - name: Compilación, pruebas y controles de calidad
+        run: |
+          select=()
+          if [[ -n "$MODULES" ]]; then
+            # Cada directorio aporta todos sus proyectos Maven; los demás se resuelven del repositorio local.
+            # shellcheck disable=SC2086 # los directorios se separan a propósito
+            projects=$(find $MODULES -name pom.xml -not -path '*/target/*' -not -path '*/src/*' -printf '%h\n' | sort | paste -sd, -)
+            select=(-pl "$projects")
           fi
-          "$maven" "${bootstrap[@]}" -B -ntp deploy -Pquality,release "${extra[@]}" \
-            "-DaltDeploymentRepository=staging::file://$PWD/target/staging-repo" \
-            2>&1 | tee target/build-reports/verify.log
-      - name: Verify mutation workers and encapsulation
-        env:
-          PYTHON: ${{ steps.inputs.outputs.python }}
-          TOOLS: ${{ steps.inputs.outputs.tools }}
-        run: |
-          set -euo pipefail
-          "$PYTHON" "$TOOLS/../check-mutations/check_mutations.py" . 2>&1 | tee target/build-reports/mutation.log
-          "$PYTHON" "$TOOLS/../check-encapsulation/check_encapsulation.py" . 2>&1 | tee target/build-reports/encapsulation.log
-      - name: Sonar quality gate
-        env:
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
-          NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
-          VERSION: ${{ inputs.version }}
-        run: |
-          set -euo pipefail
-          if [[ -n "$SONAR_TOKEN" ]]; then
-            mvn -B -ntp org.sonarsource.scanner.maven:sonar-maven-plugin:5.7.0.6970:sonar \
-              "-Drevision=$VERSION" "-Dsonar.host.url=$SONAR_HOST_URL" -Dsonar.qualitygate.wait=true
-          fi
-      - name: SBOM of the complete staged reactor
-        env:
-          PYTHON: ${{ steps.inputs.outputs.python }}
-          NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
-          NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
-          VERSION: ${{ inputs.version }}
-          TOOLS: ${{ steps.inputs.outputs.tools }}
-        run: |
-          set -euo pipefail
-          mvn -B -ntp org.cyclonedx:cyclonedx-maven-plugin:2.9.2:makeAggregateBom \
-            "-Drevision=$VERSION" -DoutputFormat=json -Dcyclonedx.skipNotDeployed=false
-          "$PYTHON" "$TOOLS/../check-sbom/check_sbom.py" target/bom.json pom.xml
-          cp target/bom.json target/build-reports/bom.json
-      - name: Scan the dependency inventory
+          threads=()
+          [[ -z "$MAVEN_THREADS" ]] || threads=(-T "$MAVEN_THREADS")
+          # shellcheck disable=SC2086 # los argumentos adicionales se separan a propósito
+          ./mvnw $BOOTSTRAP -B -ntp "${threads[@]}" -Pquality "${select[@]}" verify $MAVEN_ARGS_EXTRA
+      - name: SBOM del grafo de dependencias resuelto
+        if: inputs.scan-dependencies
+        run: ./mvnw -B -ntp -DskipTests org.cyclonedx:cyclonedx-maven-plugin:2.9.2:makeAggregateBom -DoutputFormat=json -DincludeTestScope=true
+      - name: Vulnerabilidades MEDIUM, HIGH y CRITICAL bloquean
+        if: inputs.scan-dependencies
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          version: v0.70.0
+          version: v0.76.2
           scan-type: sbom
-          scan-ref: ${{ inputs.project-directory }}/target/build-reports/bom.json
-          format: json
-          output: ${{ inputs.project-directory }}/target/build-reports/scan.json
-          severity: HIGH,CRITICAL
+          scan-ref: ${{ inputs.working-directory }}/target/bom.json
+          severity: MEDIUM,HIGH,CRITICAL
           exit-code: '1'
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        if: inputs.native-module != ''
-        with:
-          pattern: native-component-${{ github.run_attempt }}-*
-          path: ${{ runner.temp }}/native-components
-      - uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
-      - name: Verify and bind native components to the Maven product
-        if: inputs.native-module != ''
-        env:
-          PYTHON: ${{ steps.inputs.outputs.python }}
-          TOOLS: ${{ steps.inputs.outputs.tools }}
-          METADATA: ${{ steps.inputs.outputs.metadata }}
-          COMPONENTS: ${{ runner.temp }}/native-components
-        run: |
-          set -euo pipefail
-          "$PYTHON" "$TOOLS/native_components.py" merge --metadata "$METADATA" --components "$COMPONENTS" \
-            --staging target/staging-repo --reports target/build-reports
-      - name: Record exact artifacts, evidence and parameters
-        id: bundle
-        env:
-          PYTHON: ${{ steps.inputs.outputs.python }}
-          TOOLS: ${{ steps.inputs.outputs.tools }}
-          METADATA: ${{ steps.inputs.outputs.metadata }}
-        run: |
-          set -euo pipefail
-          "$PYTHON" "$TOOLS/build_bundle.py" --metadata "$METADATA" --staging target/staging-repo \
-            --reports target/build-reports --bundle target/build-bundle --complete
-      - name: Retain unsigned Maven product
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: unsigned-maven-${{ github.run_attempt }}
-          path: ${{ inputs.project-directory }}/target/build-bundle
-          retention-days: 90
-          if-no-files-found: error
 
-  sign:
-    needs: [axiz-workflows-trust, build]
+  publish:
+    if: ${{ !cancelled() && inputs.publish && (needs.verify.result == 'success' || needs.verify.result == 'skipped') }}
+    needs: verify
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 90
     permissions:
       contents: read
-      actions: read
+      packages: write
       id-token: write
-    outputs:
-      manifest-sha256: ${{ steps.sign.outputs.manifest-sha256 }}
+      attestations: write
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      BOOTSTRAP: ${{ inputs.bootstrap && '--bootstrap' || '' }}
+      SETUP_COMMAND: ${{ inputs.setup-command }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
-          repository: edgarrth/java-framework-custom
-          ref: axiz-workflows-v2.0.0 # x-release-please-version
-          path: .axiz-trusted-workflows
           persist-credentials: false
-          token: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
-      - uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
-      - name: Verify producer authority and sign exact product data
-        id: sign
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_HOST: github.com
-          BUILD_INPUTS_JSON: ${{ toJSON(inputs) }}
-        run: |
-          set -euo pipefail
-          python3 -m venv "$RUNNER_TEMP/axiz-signer-python"
-          python="$RUNNER_TEMP/axiz-signer-python/bin/python"
-          tools="$GITHUB_WORKSPACE/.axiz-trusted-workflows/.github/actions/build-manifest"
-          "$python" -m pip install --require-hashes --quiet -r "$tools/requirements.txt"
-          "$python" "$tools/sign_product.py" --kind maven-library --output "$RUNNER_TEMP/signed-product"
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
-          name: build-bundle-${{ steps.sign.outputs.manifest-sha256 }}
-          path: ${{ runner.temp }}/signed-product
-          retention-days: 90
-          if-no-files-found: error
+          distribution: temurin
+          java-version: ${{ inputs.java-version }}
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
+      # Maven consulta primero el espejo oficial de Maven Central en Google Cloud Storage, que no limita
+      # por IP, y recurre a Central solo cuando un artefacto todavía no llega al espejo.
+      - name: Espejo oficial de Maven Central
+        run: |
+          cat > "$RUNNER_TEMP/maven-central-mirror.xml" <<'EOF'
+          <settings>
+            <profiles>
+              <profile>
+                <id>maven-central-mirror</id>
+                <repositories>
+                  <repository>
+                    <id>maven-central-mirror</id>
+                    <url>https://maven-central.storage-download.googleapis.com/maven2</url>
+                    <snapshots><enabled>false</enabled></snapshots>
+                  </repository>
+                </repositories>
+                <pluginRepositories>
+                  <pluginRepository>
+                    <id>maven-central-mirror</id>
+                    <url>https://maven-central.storage-download.googleapis.com/maven2</url>
+                    <snapshots><enabled>false</enabled></snapshots>
+                  </pluginRepository>
+                </pluginRepositories>
+              </profile>
+            </profiles>
+            <activeProfiles>
+              <activeProfile>maven-central-mirror</activeProfile>
+            </activeProfiles>
+          </settings>
+          EOF
+          echo "MAVEN_ARGS=$MAVEN_ARGS -gs $RUNNER_TEMP/maven-central-mirror.xml" >> "$GITHUB_ENV"
+      - name: Artefactos Maven del mismo run
+        if: inputs.maven-artifact != ''
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ inputs.maven-artifact }}
+          path: ${{ runner.temp }}/maven-artifact
+      - name: Fragmento copiado al repositorio Maven local
+        if: inputs.maven-artifact != ''
+        working-directory: .
+        run: mkdir -p ~/.m2/repository && cp -r "$RUNNER_TEMP/maven-artifact/." ~/.m2/repository/
+      - name: Preparación
+        if: inputs.setup-command != ''
+        working-directory: .
+        run: bash -euo pipefail -c "$SETUP_COMMAND"
+      - name: Despliegue en GitHub Packages
+        run: |
+          # shellcheck disable=SC2086 # BOOTSTRAP vacío o --bootstrap
+          ./mvnw $BOOTSTRAP -B -ntp -Prelease -DskipTests deploy
+      - name: Procedencia de los jars publicados
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: ${{ inputs.working-directory }}/**/target/*.jar

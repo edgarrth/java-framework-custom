@@ -24,7 +24,8 @@ import java.util.TreeSet;
 import pe.axiz.codegen.output.SafePaths;
 
 /**
- * Isolates recipe writes, detects concurrent edits and retains a baseline for failed application.
+ * Aísla las escrituras de las recetas, detecta ediciones concurrentes y conserva una línea base
+ * ante una aplicación fallida.
  */
 final class WorkingProject implements AutoCloseable {
   private static final Set<String> EXCLUDED =

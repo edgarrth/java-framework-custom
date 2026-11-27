@@ -15,6 +15,9 @@ externalSecret:
   remotePrefix: qa/settlement-batch
 config:
   axiz.config.environment: qa
+  axiz.audit.integrity.mode: HMAC
+  axiz.audit.integrity.hmac-secret: audit-hmac-key
+  axiz.audit.integrity.hmac-key-id: v1
   management.tracing.sampling.probability: '1.0'
   axiz.storage.bucket: axiz-demo-settlement-qa
   spring.datasource.url: jdbc:aws-wrapper:postgresql://payments-qa.cluster-demo.us-east-1.rds.amazonaws.com:5432/settlement_batch

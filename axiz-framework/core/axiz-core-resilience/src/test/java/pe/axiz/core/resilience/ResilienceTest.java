@@ -10,14 +10,41 @@ import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
+import pe.axiz.core.commons.tx.CommittedTransactionOutcome;
+import pe.axiz.core.commons.tx.UnknownTransactionOutcome;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.CoreErrors;
 import pe.axiz.core.errors.ExternalErrorDetail;
 import pe.axiz.core.errors.ExternalServiceException;
 
 class ResilienceTest {
+
+  @Test
+  void confirmedCommitVetoesRetriesEvenWhenAnOuterWrapperLooksTransient() {
+    class Committed extends RuntimeException implements CommittedTransactionOutcome {}
+    var failure = new SocketTimeoutException();
+    failure.initCause(new Committed());
+    assertFalse(RetryDecider.shouldRetry("POST", "idempotency-key", failure));
+    assertFalse(RetryDecider.isTransient(new CompletionException(new Committed())));
+  }
+
+  @Test
+  void unknownCommitMarkerVetoesRetriesDespiteItsTransportCause() {
+    class UnknownCommit extends RuntimeException implements UnknownTransactionOutcome {
+      UnknownCommit() {
+        super(new SocketTimeoutException("synthetic commit response lost"));
+      }
+    }
+    var unknown = new UnknownCommit();
+    assertFalse(RetryDecider.isTransient(unknown));
+    assertFalse(RetryDecider.shouldRetry("POST", "key", new CompletionException(unknown)));
+    var outerTimeout = new SocketTimeoutException();
+    outerTimeout.initCause(unknown);
+    assertFalse(RetryDecider.isTransient(outerTimeout));
+  }
 
   @Test
   void backoffGrowsAndIsCapped() {
@@ -54,6 +81,32 @@ class ResilienceTest {
             ExternalServiceException.from(new ExternalErrorDetail("s", 400, null, null, ""))));
     assertTrue(RetryDecider.isTransient(new RuntimeException(new IOException("reset"))));
     assertFalse(RetryDecider.isTransient(new IllegalStateException()));
+  }
+
+  @Test
+  void uncertainMutationVetoesAutomaticRetriesEvenThroughWrappersOrTimeouts() {
+    var unknown = new BusinessException(CoreErrors.OUTCOME_UNKNOWN, "synthetic uncertainty");
+    assertFalse(RetryDecider.shouldRetry("POST", "synthetic-idempotency-key", unknown));
+    assertFalse(RetryDecider.isTransient(new CompletionException(unknown)));
+    var timeout = new SocketTimeoutException();
+    timeout.initCause(unknown);
+    assertFalse(RetryDecider.isTransient(timeout));
+    var first = new RuntimeException();
+    var second = new RuntimeException();
+    first.initCause(second);
+    second.initCause(first);
+    assertFalse(RetryDecider.isTransient(first));
+    var calls = new AtomicInteger();
+    var retry = new Retry(RetryPolicy.transientFailures(3, Backoff.fixed(Duration.ZERO)));
+    assertThrows(
+        BusinessException.class,
+        () ->
+            retry.call(
+                () -> {
+                  calls.incrementAndGet();
+                  throw unknown;
+                }));
+    assertEquals(1, calls.get());
   }
 
   @Test

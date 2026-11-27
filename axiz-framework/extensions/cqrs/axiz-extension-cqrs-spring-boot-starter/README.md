@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-extension-cqrs-spring-boot-starter
 
-CQRS on top of hexagonal: commands, queries, buses with an ordered pipeline and projections.
+CQRS sobre hexagonal: comandos, consultas, buses con un pipeline ordenado y proyecciones.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,41 +12,40 @@ CQRS on top of hexagonal: commands, queries, buses with an ordered pipeline and 
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `AuditBehavior` | Records `AuditedCommand` executions with their outcome (details are sanitized). |
-| `AuthorizationBehavior` | Authorization stage of the pipeline: `RequiresAuthority` on the request type (403 when the caller lacks it), then every matching `AccessPolicy` (object-level checks). |
-| `AxizCqrsAutoConfiguration` | CQRS buses over all `CommandHandler` and `QueryHandler` beans with the ordered pipeline: observation, validation, authorization, idempotency, transaction, audit and metrics. |
-| `AxizReactiveCqrsAutoConfiguration` | Reactive CQRS: `ReactiveCommandBus` and `ReactiveQueryBus` over all `ReactiveCommandHandler` and `ReactiveQueryHandler` beans, with the same ordered pipeline as the blocking buses built from non-blocking behaviors (the transaction is reactive, over the R2DBC transaction manager). |
-| `IdempotencyBehavior` | Idempotent commands: the first result is stored (JSON) and returned again for the same key, the same command and the same caller; a different command with the same key is a 422 problem. |
-| `MetricsBehavior` | Counts and times every command and query as a generic event named after the request (`create-card`); requests and results implementing `MetricSource` add amounts and tags. |
-| `ObservationBehavior` | Outermost step: a span `axiz.command` or `axiz.query` around the whole pipeline. |
-| `ReactiveAccessPolicy` | Deprecated compatibility bridge; application policies implement `pe.axiz.extension.cqrs.ReactiveAccessPolicy` from the API module. |
-| `ReactiveBehaviors` | The standard reactive pipeline behaviors, one per cross-cutting concern. |
-| `ReactiveBuses` | Reactive command and query buses: the same pipeline as the blocking buses (observation, validation, authorization, idempotency, transaction, audit, metrics) composed as operators on the handler's `Mono`, so no step blocks an event loop. |
-| `ReactiveCommandBus` | Sends commands through the reactive pipeline to their `ReactiveCommandHandler`. |
-| `ReactivePipelineBehavior` | Cross-cutting step around reactive handlers, with the same order constants as `PipelineBehavior`. |
-| `ReactiveQueryBus` | Asks queries through the reactive pipeline to their `ReactiveQueryHandler`. |
-| `TransactionBehavior` | Commands run in a read-write transaction, queries in a read-only one. |
-| `ValidationBehavior` | Bean Validation of commands and queries before anything else runs (400 on violations). |
+| `AuditBehavior` | Registra las ejecuciones de `AuditedCommand` con su resultado (los detalles se sanean). |
+| `AuthorizationBehavior` | Etapa de autorización del pipeline: `RequiresAuthority` sobre el tipo de petición (403 cuando el llamador no la tiene) y luego cada `AccessPolicy` correspondiente (comprobaciones a nivel de objeto). |
+| `AxizCqrsAutoConfiguration` | Buses CQRS sobre todos los beans `CommandHandler` y `QueryHandler` con el pipeline ordenado: observación, validación, autorización, idempotencia, transacción, auditoría y métricas. |
+| `AxizReactiveCqrsAutoConfiguration` | CQRS reactivo: `ReactiveCommandBus` y `ReactiveQueryBus` sobre todos los beans `ReactiveCommandHandler` y `ReactiveQueryHandler`, con el mismo pipeline ordenado que los buses bloqueantes, construido con comportamientos no bloqueantes (la transacción es reactiva, sobre el gestor de transacciones R2DBC). |
+| `IdempotencyBehavior` | Comandos idempotentes: el primer resultado se guarda (JSON) y se devuelve de nuevo para la misma clave, el mismo comando y el mismo llamador; un comando distinto con la misma clave produce un problema 422. |
+| `MetricsBehavior` | Cuenta y mide el tiempo de cada comando y consulta como un evento genérico con el nombre de la petición (`create-card`); las peticiones y los resultados que implementan `MetricSource` añaden importes y etiquetas. |
+| `ObservationBehavior` | Paso más externo: un span `axiz.command` o `axiz.query` alrededor de todo el pipeline. |
+| `ReactiveBehaviors` | Comportamientos estándar del pipeline reactivo, uno por cada aspecto transversal. |
+| `ReactiveBuses` | Buses reactivos de comandos y consultas: el mismo pipeline que los buses bloqueantes (observación, validación, autorización, idempotencia, transacción, auditoría, métricas) compuesto como operadores sobre el `Mono` del handler, de modo que ningún paso bloquea un event loop. |
+| `ReactiveCommandBus` | Envía los comandos a su `ReactiveCommandHandler` a través del pipeline reactivo. |
+| `ReactivePipelineBehavior` | Paso transversal alrededor de los handlers reactivos, con las mismas constantes de orden que `PipelineBehavior`. |
+| `ReactiveQueryBus` | Envía las consultas a su `ReactiveQueryHandler` a través del pipeline reactivo. |
+| `TransactionBehavior` | Los comandos se ejecutan en una transacción de lectura y escritura; las consultas, en una de solo lectura. |
+| `ValidationBehavior` | Bean Validation de comandos y consultas antes de ejecutar cualquier otra cosa (400 ante violaciones). |
 
-## Native pipeline
+## Pipeline nativo
 
-Reactive authorization accepts only API `ReactiveAccessPolicy` implementations. Imperative access
-policies are rejected when reactive handlers are registered; they remain valid for imperative buses.
-Idempotency requires `AsyncIdempotencyService`; audited commands require `ReactiveAuditTrail`.
-Missing native ports fail startup rather than silently omitting a behavior.
+La autorización reactiva acepta solo implementaciones de `ReactiveAccessPolicy` de la API. Las
+políticas de acceso imperativas se rechazan cuando hay handlers reactivos registrados; siguen siendo
+válidas para los buses imperativos. La idempotencia requiere `AsyncIdempotencyService`; los comandos
+auditados requieren `ReactiveAuditTrail`. Si faltan los puertos nativos, el arranque falla en lugar
+de omitir un comportamiento en silencio.
 
-The pipeline performs no elastic scheduler offload. Native completion cancellation reaches the
-active transport, and cancelled idempotency executions release their owner-fenced lease without
-removing completed replay records. Audit executes inside the reactive transaction and waits for
-delivery. Old constructors taking imperative services retain their descriptors but reject those
-arguments explicitly; migrate callers to the native overloads.
+El pipeline no delega trabajo en el scheduler elástico. La cancelación de la finalización nativa
+llega al transporte activo, y las ejecuciones de idempotencia canceladas liberan su lease protegido
+por propietario sin eliminar los registros de repetición completados. La auditoría se ejecuta dentro
+de la transacción reactiva y espera la entrega.
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl extensions/cqrs/axiz-extension-cqrs-spring-boot-starter verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl extensions/cqrs/axiz-extension-cqrs-spring-boot-starter verify`.

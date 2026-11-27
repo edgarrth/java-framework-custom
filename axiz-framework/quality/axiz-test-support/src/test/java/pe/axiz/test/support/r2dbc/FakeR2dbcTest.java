@@ -19,7 +19,10 @@ import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-/** The fake driver itself: what other tests rely on when they assert SQL, binds and events. */
+/**
+ * El propio driver fake: aquello en lo que confían otras pruebas cuando verifican SQL, bindings y
+ * eventos.
+ */
 class FakeR2dbcTest {
 
   @Test
@@ -124,7 +127,7 @@ class FakeR2dbcTest {
     assertTrue(c.isAutoCommit());
     assertEquals(IsolationLevel.READ_COMMITTED, c.getTransactionIsolationLevel());
     assertTrue(Mono.from(c.validate(ValidationDepth.LOCAL)).block());
-    // settings are accepted and ignored
+    // la configuración se acepta y se ignora
     Mono.from(c.setAutoCommit(false)).block();
     Mono.from(c.setLockWaitTimeout(Duration.ofSeconds(1))).block();
     Mono.from(c.setStatementTimeout(Duration.ofSeconds(1))).block();

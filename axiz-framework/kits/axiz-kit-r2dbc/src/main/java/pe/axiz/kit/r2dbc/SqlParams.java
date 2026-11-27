@@ -7,8 +7,8 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Named parameters of a statement with their types, so null values can be bound (R2DBC needs the
- * type of a null). Names are referenced in SQL as {@code :name}.
+ * Parámetros con nombre de una sentencia con sus tipos, para poder enlazar valores null (R2DBC
+ * necesita el tipo de un null). Los nombres se referencian en el SQL como {@code :name}.
  *
  * <pre>
  * SqlParams.of().bind("id", id).bind("error", error, String.class)
@@ -17,11 +17,11 @@ import org.jspecify.annotations.Nullable;
 public final class SqlParams {
 
   /**
-   * One parameter.
+   * Un parámetro.
    *
-   * @param name name without the colon
-   * @param value value, or null
-   * @param type Java type used to bind a null value
+   * @param name nombre sin los dos puntos
+   * @param value valor, o null
+   * @param type tipo Java usado para enlazar un valor null
    */
   public record Param(String name, @Nullable Object value, Class<?> type) {
     public Param {
@@ -38,13 +38,13 @@ public final class SqlParams {
     return new SqlParams();
   }
 
-  /** Binds a non-null value; its class is the bind type. */
+  /** Enlaza un valor no null; su clase es el tipo de enlace. */
   public SqlParams bind(String name, Object value) {
     Objects.requireNonNull(value, () -> "value of " + name + " (use bind(name, value, type))");
     return bind(name, value, value.getClass());
   }
 
-  /** Binds a value that may be null. */
+  /** Enlaza un valor que puede ser null. */
   public SqlParams bind(String name, @Nullable Object value, Class<?> type) {
     if (params.stream().anyMatch(p -> p.name().equals(name))) {
       throw new IllegalArgumentException("Parameter " + name + " bound twice");
@@ -57,7 +57,7 @@ public final class SqlParams {
     return Collections.unmodifiableList(params);
   }
 
-  /** The parameter called {@code name}. */
+  /** Parámetro llamado {@code name}. */
   public Param get(String name) {
     return params.stream()
         .filter(p -> p.name().equals(name))
@@ -67,7 +67,7 @@ public final class SqlParams {
 
   @Override
   public String toString() {
-    // values are never printed: they may hold personal data
+    // los valores nunca se imprimen: pueden contener datos personales
     return "SqlParams" + params.stream().map(Param::name).toList();
   }
 }

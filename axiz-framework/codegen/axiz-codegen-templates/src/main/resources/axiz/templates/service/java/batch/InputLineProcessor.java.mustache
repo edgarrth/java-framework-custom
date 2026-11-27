@@ -5,8 +5,8 @@ import org.springframework.batch.infrastructure.item.ItemProcessor;
 import org.springframework.stereotype.Component;
 
 /**
- * Normalizes each record; returning {@code null} filters it out (counted as filtered in the job
- * metrics). Business validation that must stop the job throws instead.
+ * Normaliza cada registro; devolver {@code null} lo filtra (se cuenta como filtrado en las métricas
+ * del job). La validación de negocio que debe detener el job lanza una excepción en su lugar.
  */
 @Component
 public class InputLineProcessor implements ItemProcessor<InputLine, InputLine> {

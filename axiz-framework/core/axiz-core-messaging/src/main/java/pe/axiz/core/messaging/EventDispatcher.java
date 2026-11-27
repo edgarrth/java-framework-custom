@@ -8,12 +8,14 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pe.axiz.core.errors.Failures;
 
 /**
- * Routes envelopes to handlers by type, decoding the payload and deduplicating through the inbox.
- * Every outcome is explicit: ACK (processed, already processed or unknown type when ignoring),
- * RETRY (handler or inbox failure), DEFER (another delivery holds the message) or DEAD_LETTER. A
- * missing handler for a subscribed type is a startup error, not a runtime surprise.
+ * Encamina envelopes a los handlers por tipo, decodificando el payload y deduplicando mediante el
+ * inbox. Cada resultado es explícito: ACK (procesado, ya procesado o tipo desconocido cuando se
+ * ignora), RETRY (fallo del handler o del inbox), DEFER (otra entrega tiene el mensaje) o
+ * DEAD_LETTER. Que falte un handler para un tipo suscrito es un error de arranque, no una sorpresa
+ * en ejecución.
  */
 public final class EventDispatcher {
 
@@ -47,7 +49,7 @@ public final class EventDispatcher {
     this.ignoreUnknownTypes = ignoreUnknownTypes;
   }
 
-  /** Fails at startup when a subscribed type has no handler. */
+  /** Falla al arrancar cuando un tipo suscrito no tiene handler. */
   public void verifySubscriptions(Collection<String> subscribedTypes) {
     for (String t : subscribedTypes) {
       if (!handlers.containsKey(t)) {
@@ -58,29 +60,41 @@ public final class EventDispatcher {
   }
 
   /**
-   * Dispatches one delivery.
+   * Despacha una entrega.
    *
-   * @param envelope received event
-   * @param attempt delivery attempt (1-based, from the broker receive count)
-   * @return what to do with the message
+   * @param envelope evento recibido
+   * @param attempt intento de entrega (desde 1, según el conteo de recepciones del broker)
+   * @return qué hacer con el mensaje
    */
   public DeliveryDecision dispatch(EventEnvelope envelope, int attempt) {
     return dispatchWithDelay(envelope, attempt).decision();
   }
 
   /**
-   * A decision and, for {@link DeliveryDecision#DEFER}, how long to wait before redelivering.
+   * Decisión y, para {@link DeliveryDecision#DEFER}, cuánto esperar antes de reentregar.
    *
-   * @param decision what to do
-   * @param retryAfter suggested delay (zero when not deferred)
+   * @param decision qué hacer
+   * @param retryAfter retraso sugerido (cero cuando no se difiere)
+   * @param failure descripción apta para logs del fallo detrás de un RETRY o DEAD_LETTER ({@link
+   *     Failures#describe}), para transportes que registran por qué un mensaje fue a dead-letter;
+   *     null en otro caso
    */
-  public record Outcome(DeliveryDecision decision, Duration retryAfter) {
+  public record Outcome(DeliveryDecision decision, Duration retryAfter, @Nullable String failure) {
+
+    public Outcome(DeliveryDecision decision, Duration retryAfter) {
+      this(decision, retryAfter, null);
+    }
+
     static Outcome of(DeliveryDecision decision) {
       return new Outcome(decision, Duration.ZERO);
     }
+
+    static Outcome failed(DeliveryDecision decision, String failure) {
+      return new Outcome(decision, Duration.ZERO, failure);
+    }
   }
 
-  /** Like {@link #dispatch} with the delay of deferred deliveries. */
+  /** Como {@link #dispatch}, con el retraso de las entregas diferidas. */
   public Outcome dispatchWithDelay(EventEnvelope envelope, int attempt) {
     EventHandler<?> handler = handlers.get(envelope.type());
     if (handler == null) {
@@ -89,19 +103,20 @@ public final class EventDispatcher {
         return Outcome.of(DeliveryDecision.ACK);
       }
       LOG.warn("No handler for event type {}; dead-lettering {}", envelope.type(), envelope.id());
-      return Outcome.of(DeliveryDecision.DEAD_LETTER);
+      return Outcome.failed(
+          DeliveryDecision.DEAD_LETTER, "no handler for event type " + envelope.type());
     }
-    // CloudEvents identity is source + id: the same id from another producer is another event
+    // la identidad de CloudEvents es source + id: el mismo id de otro productor es otro evento
     String key = MessageKeys.of(envelope);
     Deduplicator.Claim claim;
     try {
       claim = deduplicator.claim(consumer, key);
     } catch (RuntimeException e) {
-      // the inbox is unavailable: the message is fine, try again later
-      LOG.warn("Inbox unavailable for event {}: {}", envelope.id(), e.toString());
+      // el inbox no está disponible: el mensaje está bien, se reintenta más tarde
+      LOG.warn("Inbox unavailable for event {}: {}", envelope.id(), Failures.describe(e));
       return Outcome.of(DeliveryDecision.RETRY);
     }
-    // exhaustive: a new claim status must decide here what happens to the delivery
+    // exhaustivo: un nuevo estado de claim debe decidir aquí qué pasa con la entrega
     @Nullable Outcome early =
         switch (claim.status()) {
           case ALREADY_PROCESSED -> {
@@ -115,7 +130,7 @@ public final class EventDispatcher {
                 consumer);
             yield new Outcome(DeliveryDecision.DEFER, claim.retryAfter());
           }
-          case ACQUIRED -> null; // processed below
+          case ACQUIRED -> null; // se procesa más abajo
         };
     if (early != null) {
       return early;
@@ -125,14 +140,15 @@ public final class EventDispatcher {
     } catch (Exception e) {
       release(envelope, key, claim);
       DeliveryDecision decision = retryPolicy.onFailure(e, attempt);
+      String failure = Failures.describe(e);
       LOG.warn(
           "Event {} type {} failed on attempt {}: {} -> {}",
           envelope.id(),
           envelope.type(),
           attempt,
-          e.toString(),
+          failure,
           decision);
-      return Outcome.of(decision);
+      return Outcome.failed(decision, failure);
     }
     if (handler instanceof CompletesInTransaction<?> atomic && atomic.completesInTransaction())
       return Outcome.of(DeliveryDecision.ACK);
@@ -145,8 +161,8 @@ public final class EventDispatcher {
             consumer);
       }
     } catch (RuntimeException e) {
-      // the effects happened: acknowledge; the registration expires with its retention
-      LOG.warn("Could not mark event {} processed: {}", envelope.id(), e.toString());
+      // los efectos ocurrieron: se confirma; el registro expira con su retención
+      LOG.warn("Could not mark event {} processed: {}", envelope.id(), Failures.describe(e));
     }
     return Outcome.of(DeliveryDecision.ACK);
   }
@@ -155,8 +171,9 @@ public final class EventDispatcher {
     try {
       deduplicator.failed(consumer, key, claim.token());
     } catch (RuntimeException e) {
-      // the lease expires on its own; a redelivery then takes it over
-      LOG.warn("Could not release inbox claim of event {}: {}", envelope.id(), e.toString());
+      // el lease expira por sí solo; luego una reentrega lo toma
+      LOG.warn(
+          "Could not release inbox claim of event {}: {}", envelope.id(), Failures.describe(e));
     }
   }
 

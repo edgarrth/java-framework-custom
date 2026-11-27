@@ -102,6 +102,12 @@ nav:
       - Errores: guias/errores.md
       - Seguridad: guias/seguridad.md
       - Datos sensibles y auditoría: guias/datos-sensibles.md
+      - Clasificación de claves sensibles: referencia/clasificacion-sensible.md
+      - Datos de tarjeta: guias/datos-de-tarjeta.md
+      - Tokenización: guias/tokenizacion.md
+      - Protección de campos: guias/proteccion-de-campos.md
+      - Protección de almacenes técnicos: guias/proteccion-de-almacenes-tecnicos.md
+      - Integridad de auditoría: guias/integridad-de-auditoria.md
       - Clientes HTTP y SOAP: guias/clientes.md
       - Eventos, outbox e inbox: guias/eventos.md
       - Idempotencia: guias/idempotencia.md

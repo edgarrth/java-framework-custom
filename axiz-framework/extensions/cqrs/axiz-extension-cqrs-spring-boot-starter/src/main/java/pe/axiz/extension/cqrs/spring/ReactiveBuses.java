@@ -16,19 +16,19 @@ import pe.axiz.extension.cqrs.Request;
 import reactor.core.publisher.Mono;
 
 /**
- * Reactive command and query buses: the same pipeline as the blocking buses (observation,
- * validation, authorization, idempotency, transaction, audit, metrics) composed as operators on the
- * handler's {@code Mono}, so no step blocks an event loop. The transaction is a reactive one
- * (R2DBC), read-only for queries.
+ * Buses reactivos de comandos y consultas: el mismo pipeline que los buses bloqueantes
+ * (observación, validación, autorización, idempotencia, transacción, auditoría, métricas) compuesto
+ * como operadores sobre el {@code Mono} del handler, de modo que ningún paso bloquea un event loop.
+ * La transacción es reactiva (R2DBC) y de solo lectura para las consultas.
  */
 public final class ReactiveBuses implements ReactiveCommandBus, ReactiveQueryBus {
 
   /**
-   * A reactive handler and the types it serves.
+   * Handler reactivo y los tipos que atiende.
    *
-   * @param requestType request class
-   * @param resultType result class
-   * @param handler handler function
+   * @param requestType clase de la petición
+   * @param resultType clase del resultado
+   * @param handler función del handler
    */
   public record Registration(
       Class<?> requestType, Class<?> resultType, Function<Object, Publisher<?>> handler) {}

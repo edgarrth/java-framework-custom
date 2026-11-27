@@ -1,0 +1,716 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Axiz central token vault schema v1 and separate IAM capabilities; no runtime provisioning.",
+  "Parameters": {
+    "TableName": {
+      "Type": "String",
+      "MinLength": 3,
+      "MaxLength": 255,
+      "AllowedPattern": "[a-zA-Z0-9_.-]+"
+    },
+    "StorageKeyArn": {
+      "Type": "String",
+      "AllowedPattern": "arn:[a-z0-9-]+:kms:[a-z0-9-]+:[0-9]{12}:key/[a-zA-Z0-9-]+",
+      "Description": "Customer-managed DynamoDB SSE key; distinct from envelope and HMAC keys."
+    },
+    "EnvelopeKeyArns": {
+      "Type": "CommaDelimitedList",
+      "AllowedPattern": "arn:[a-z0-9-]+:kms:[a-z0-9-]+:[0-9]{12}:key/[a-zA-Z0-9-]+",
+      "Description": "Exact current and retained envelope key ARNs, without aliases or wildcard keys."
+    },
+    "RecoveryDays": {
+      "Type": "Number",
+      "Default": 35,
+      "MinValue": 1,
+      "MaxValue": 35
+    },
+    "EnvelopeKeyContexts": {
+      "Type": "CommaDelimitedList",
+      "AllowedPattern": "axiz-keyring-v1/[A-Za-z0-9_-]{1,32}/cHVycG9zZTp0b2tlbi12YXVsdA",
+      "Description": "Exact routed contexts for current and retained wrapping route IDs; purpose:token-vault encoded as base64url."
+    }
+  },
+  "Resources": {
+    "VaultTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "TableName": {
+          "Ref": "TableName"
+        },
+        "BillingMode": "PAY_PER_REQUEST",
+        "DeletionProtectionEnabled": true,
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "pk",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "pk",
+            "KeyType": "HASH"
+          }
+        ],
+        "SSESpecification": {
+          "SSEEnabled": true,
+          "SSEType": "KMS",
+          "KMSMasterKeyId": {
+            "Ref": "StorageKeyArn"
+          }
+        },
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true,
+          "RecoveryPeriodInDays": {
+            "Ref": "RecoveryDays"
+          }
+        },
+        "Tags": [
+          {
+            "Key": "axiz:capability",
+            "Value": "tokenization-vault"
+          },
+          {
+            "Key": "axiz:schema",
+            "Value": "1"
+          },
+          {
+            "Key": "axiz:data-classification",
+            "Value": "restricted"
+          }
+        ]
+      }
+    },
+    "OperationalPolicy": {
+      "Type": "AWS::IAM::ManagedPolicy",
+      "Properties": {
+        "Description": "Axiz vault operational table access; attach only to the vault service role",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "ReadRecordsAndControls",
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:GetItem"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VaultTable",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "ForAllValues:StringLike": {
+                  "dynamodb:LeadingKeys": [
+                    "T#*",
+                    "F#*",
+                    "C#*",
+                    "E#*"
+                  ]
+                },
+                "Null": {
+                  "dynamodb:LeadingKeys": "false"
+                }
+              }
+            },
+            {
+              "Sid": "ValidateSchema",
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:DescribeTable",
+                "dynamodb:DescribeTimeToLive"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VaultTable",
+                  "Arn"
+                ]
+              }
+            },
+            {
+              "Sid": "CheckControlsAndReferences",
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:ConditionCheckItem"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VaultTable",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "ForAllValues:StringLike": {
+                  "dynamodb:LeadingKeys": [
+                    "C#*",
+                    "E#*",
+                    "F#*"
+                  ]
+                },
+                "Null": {
+                  "dynamodb:LeadingKeys": "false"
+                },
+                "StringEquals": {
+                  "dynamodb:EnclosingOperation": "TransactWriteItems"
+                }
+              }
+            },
+            {
+              "Sid": "MutateAssociationsAtomically",
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:PutItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VaultTable",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "ForAllValues:StringLike": {
+                  "dynamodb:LeadingKeys": [
+                    "T#*",
+                    "F#*"
+                  ]
+                },
+                "Null": {
+                  "dynamodb:LeadingKeys": "false"
+                },
+                "StringEquals": {
+                  "dynamodb:EnclosingOperation": "TransactWriteItems"
+                }
+              }
+            },
+            {
+              "Sid": "NoOtherTableActions",
+              "Effect": "Deny",
+              "NotAction": [
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeTable",
+                "dynamodb:DescribeTimeToLive",
+                "dynamodb:GetItem",
+                "dynamodb:PutItem"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VaultTable",
+                  "Arn"
+                ]
+              }
+            },
+            {
+              "Sid": "NoNontransactionalMutation",
+              "Effect": "Deny",
+              "Action": [
+                "dynamodb:DeleteItem",
+                "dynamodb:PutItem"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VaultTable",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "StringNotEqualsIfExists": {
+                  "dynamodb:EnclosingOperation": "TransactWriteItems"
+                }
+              }
+            },
+            {
+              "Sid": "NoDeletionOfControlOrPermanentReservations",
+              "Effect": "Deny",
+              "Action": [
+                "dynamodb:DeleteItem"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VaultTable",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "ForAnyValue:StringNotLike": {
+                  "dynamodb:LeadingKeys": [
+                    "T#*",
+                    "F#*"
+                  ]
+                }
+              }
+            },
+            {
+              "Sid": "NoControlWrites",
+              "Effect": "Deny",
+              "Action": [
+                "dynamodb:PutItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VaultTable",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "ForAnyValue:StringNotLike": {
+                  "dynamodb:LeadingKeys": [
+                    "T#*",
+                    "F#*"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "MaintenancePolicy": {
+      "Type": "AWS::IAM::ManagedPolicy",
+      "Properties": {
+        "Description": "Axiz separately authorized key migration and bootstrap job",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "ReadRecordsAndControls",
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:GetItem"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VaultTable",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "ForAllValues:StringLike": {
+                  "dynamodb:LeadingKeys": [
+                    "T#*",
+                    "F#*",
+                    "C#*",
+                    "E#*"
+                  ]
+                },
+                "Null": {
+                  "dynamodb:LeadingKeys": "false"
+                }
+              }
+            },
+            {
+              "Sid": "ValidateSchema",
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:DescribeTable",
+                "dynamodb:DescribeTimeToLive"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VaultTable",
+                  "Arn"
+                ]
+              }
+            },
+            {
+              "Sid": "CheckControlsAndReferences",
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:ConditionCheckItem"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VaultTable",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "ForAllValues:StringLike": {
+                  "dynamodb:LeadingKeys": [
+                    "C#*",
+                    "E#*",
+                    "F#*"
+                  ]
+                },
+                "Null": {
+                  "dynamodb:LeadingKeys": "false"
+                },
+                "StringEquals": {
+                  "dynamodb:EnclosingOperation": "TransactWriteItems"
+                }
+              }
+            },
+            {
+              "Sid": "BoundedAdministrativeTraversal",
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:Scan"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VaultTable",
+                  "Arn"
+                ]
+              }
+            },
+            {
+              "Sid": "GovernedBootstrapAndRotation",
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:PutItem"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VaultTable",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "ForAllValues:StringLike": {
+                  "dynamodb:LeadingKeys": [
+                    "T#*",
+                    "F#*",
+                    "C#*",
+                    "E#*",
+                    "R#*",
+                    "I#*"
+                  ]
+                },
+                "Null": {
+                  "dynamodb:LeadingKeys": "false"
+                },
+                "StringEquals": {
+                  "dynamodb:EnclosingOperation": "TransactWriteItems"
+                }
+              }
+            },
+            {
+              "Sid": "DeleteOwnedAssociations",
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:DeleteItem"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VaultTable",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "ForAllValues:StringLike": {
+                  "dynamodb:LeadingKeys": [
+                    "T#*",
+                    "F#*"
+                  ]
+                },
+                "Null": {
+                  "dynamodb:LeadingKeys": "false"
+                },
+                "StringEquals": {
+                  "dynamodb:EnclosingOperation": "TransactWriteItems"
+                }
+              }
+            },
+            {
+              "Sid": "NoOtherTableActions",
+              "Effect": "Deny",
+              "NotAction": [
+                "dynamodb:ConditionCheckItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeTable",
+                "dynamodb:DescribeTimeToLive",
+                "dynamodb:GetItem",
+                "dynamodb:PutItem",
+                "dynamodb:Scan"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VaultTable",
+                  "Arn"
+                ]
+              }
+            },
+            {
+              "Sid": "NoNontransactionalMutation",
+              "Effect": "Deny",
+              "Action": [
+                "dynamodb:DeleteItem",
+                "dynamodb:PutItem"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VaultTable",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "StringNotEqualsIfExists": {
+                  "dynamodb:EnclosingOperation": "TransactWriteItems"
+                }
+              }
+            },
+            {
+              "Sid": "NoDeletionOfControlOrPermanentReservations",
+              "Effect": "Deny",
+              "Action": [
+                "dynamodb:DeleteItem"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VaultTable",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "ForAnyValue:StringNotLike": {
+                  "dynamodb:LeadingKeys": [
+                    "T#*",
+                    "F#*"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "RetentionPolicy": {
+      "Type": "AWS::IAM::ManagedPolicy",
+      "Properties": {
+        "Description": "Axiz retention job; no encryption, control or token creation permission",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "ReadRecordsAndControls",
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:GetItem"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VaultTable",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "ForAllValues:StringLike": {
+                  "dynamodb:LeadingKeys": [
+                    "T#*",
+                    "F#*",
+                    "C#*",
+                    "E#*"
+                  ]
+                },
+                "Null": {
+                  "dynamodb:LeadingKeys": "false"
+                }
+              }
+            },
+            {
+              "Sid": "ValidateSchema",
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:DescribeTable",
+                "dynamodb:DescribeTimeToLive"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VaultTable",
+                  "Arn"
+                ]
+              }
+            },
+            {
+              "Sid": "BoundedRetentionTraversal",
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:Scan"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VaultTable",
+                  "Arn"
+                ]
+              }
+            },
+            {
+              "Sid": "DeleteExpiredOwnedAssociations",
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:DeleteItem"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VaultTable",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "ForAllValues:StringLike": {
+                  "dynamodb:LeadingKeys": [
+                    "T#*",
+                    "F#*"
+                  ]
+                },
+                "Null": {
+                  "dynamodb:LeadingKeys": "false"
+                },
+                "StringEquals": {
+                  "dynamodb:EnclosingOperation": "TransactWriteItems"
+                }
+              }
+            },
+            {
+              "Sid": "NoOtherTableActions",
+              "Effect": "Deny",
+              "NotAction": [
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeTable",
+                "dynamodb:DescribeTimeToLive",
+                "dynamodb:GetItem",
+                "dynamodb:Scan"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VaultTable",
+                  "Arn"
+                ]
+              }
+            },
+            {
+              "Sid": "NoNontransactionalMutation",
+              "Effect": "Deny",
+              "Action": [
+                "dynamodb:DeleteItem"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VaultTable",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "StringNotEqualsIfExists": {
+                  "dynamodb:EnclosingOperation": "TransactWriteItems"
+                }
+              }
+            },
+            {
+              "Sid": "NoDeletionOfControlOrPermanentReservations",
+              "Effect": "Deny",
+              "Action": [
+                "dynamodb:DeleteItem"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "VaultTable",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "ForAnyValue:StringNotLike": {
+                  "dynamodb:LeadingKeys": [
+                    "T#*",
+                    "F#*"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "EnvelopeUsePolicy": {
+      "Type": "AWS::IAM::ManagedPolicy",
+      "Properties": {
+        "Description": "Attach only to vault and rotation roles, never consumers or retention.",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "UseEnvelopeKeysForVaultOnly",
+              "Effect": "Allow",
+              "Action": [
+                "kms:GenerateDataKey",
+                "kms:Decrypt"
+              ],
+              "Resource": {
+                "Ref": "EnvelopeKeyArns"
+              },
+              "Condition": {
+                "StringEquals": {
+                  "kms:EncryptionContext:axiz-context": {
+                    "Ref": "EnvelopeKeyContexts"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "TableName": {
+      "Value": {
+        "Ref": "VaultTable"
+      }
+    },
+    "TableArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "VaultTable",
+          "Arn"
+        ]
+      }
+    },
+    "OperationalPolicyArn": {
+      "Value": {
+        "Ref": "OperationalPolicy"
+      }
+    },
+    "MaintenancePolicyArn": {
+      "Value": {
+        "Ref": "MaintenancePolicy"
+      }
+    },
+    "RetentionPolicyArn": {
+      "Value": {
+        "Ref": "RetentionPolicy"
+      }
+    },
+    "EnvelopeUsePolicyArn": {
+      "Value": {
+        "Ref": "EnvelopeUsePolicy"
+      }
+    }
+  },
+  "Rules": {
+    "SeparateStorageAndEnvelopeKeys": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  {
+                    "Ref": "EnvelopeKeyArns"
+                  },
+                  {
+                    "Ref": "StorageKeyArn"
+                  }
+                ]
+              }
+            ]
+          },
+          "AssertDescription": "The storage encryption key must differ from every envelope key."
+        }
+      ]
+    }
+  }
+}

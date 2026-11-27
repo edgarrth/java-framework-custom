@@ -6,16 +6,17 @@ import pe.axiz.extension.cqrs.AuditedCommand;
 import pe.axiz.payments.orders.domain.PaymentOrder;
 
 /**
- * Registers a payment order.
+ * Registra una orden de pago.
  *
- * @param customerId customer
- * @param debtorAccount account to debit
- * @param creditorCci inter-bank account (CCI) to credit
- * @param amount amount
- * @param currency ISO 4217 code
- * @param description free text for the creditor
- * @param requestKey the client's key of this request (its Idempotency-Key): unique per customer, so
- *     a retried request returns the order already registered instead of creating another one
+ * @param customerId cliente
+ * @param debtorAccount cuenta que se debita
+ * @param creditorCci cuenta interbancaria (CCI) que se abona
+ * @param amount monto
+ * @param currency código ISO 4217
+ * @param description texto libre para el acreedor
+ * @param requestKey la clave del cliente para esta solicitud (su Idempotency-Key): única por
+ *     cliente, de modo que una solicitud reintentada devuelve la orden ya registrada en lugar de
+ *     crear otra
  */
 public record CreatePaymentOrderCommand(
     String customerId,

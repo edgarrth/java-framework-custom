@@ -2,6 +2,6 @@ apiVersion: v2
 name: payment-network-gateway
 description: "Facade and security for external systems"
 type: application
-# chart version follows the chart; appVersion is replaced by the image tag in the pipeline
+# la versión del chart sigue al chart; el pipeline reemplaza appVersion por el tag de la imagen
 version: 0.1.0
 appVersion: "2.0.0"

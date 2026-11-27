@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-core-identifiers
 
-Generic identifier SPI with validators (national documents, bank accounts, cards, contact data).
+SPI genérica de identificadores con validadores (documentos nacionales, cuentas bancarias, tarjetas y datos de contacto).
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,22 +12,22 @@ Generic identifier SPI with validators (national documents, bank accounts, cards
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `CheckDigits` | Check digit algorithms shared by identifier types. |
-| `Identifier` | Validated identifier value object. |
-| `IdentifierRegistry` | Registry of identifier types: built-in packs, ServiceLoader providers and custom types. |
-| `IdentifierType` | Service provider interface for any kind of identifier (document, account, card, contact...). |
-| `IdentifierTypeProvider` | Discovered with `java.util.ServiceLoader` to register packs of identifier types. |
-| `InvalidIdentifierException` | Thrown when a value is not a valid identifier of the requested type. |
-| `PeruIdentifiers` | Peruvian national documents: DNI, RUC and foreigner card (CE). |
-| `ContactIdentifiers` | Contact data: E.164 phone numbers and email addresses. |
-| `BankingIdentifiers` | Banking identifiers: inter-bank account code (CCI), card number (PAN) and IBAN. |
+| `CheckDigits` | Algoritmos de dígito verificador compartidos por los tipos de identificador. |
+| `Identifier` | Objeto de valor de identificador validado. |
+| `IdentifierRegistry` | Registro de tipos de identificador: paquetes incluidos, proveedores por ServiceLoader y tipos propios. |
+| `IdentifierType` | Interfaz de proveedor de servicio para cualquier tipo de identificador (documento, cuenta, tarjeta, contacto, etc.). |
+| `IdentifierTypeProvider` | Se descubre con `java.util.ServiceLoader` para registrar paquetes de tipos de identificador. |
+| `InvalidIdentifierException` | Se lanza cuando un valor no es un identificador válido del tipo solicitado. |
+| `PeruIdentifiers` | Documentos nacionales peruanos: DNI, RUC y carné de extranjería (CE). |
+| `ContactIdentifiers` | Datos de contacto: números de teléfono E.164 y correos electrónicos. |
+| `BankingIdentifiers` | Identificadores bancarios: código de cuenta interbancario (CCI), número de tarjeta (PAN) e IBAN. |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-identifiers verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl core/axiz-core-identifiers verify`.

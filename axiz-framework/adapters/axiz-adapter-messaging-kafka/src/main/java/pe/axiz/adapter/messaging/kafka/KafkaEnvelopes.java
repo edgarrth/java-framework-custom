@@ -8,7 +8,7 @@ import org.apache.kafka.common.header.Header;
 import pe.axiz.core.messaging.CloudEventHeaders;
 import pe.axiz.core.messaging.EventEnvelope;
 
-/** Maps consumed Kafka records back to envelopes. */
+/** Convierte los registros Kafka consumidos de vuelta en envelopes. */
 public final class KafkaEnvelopes {
 
   private KafkaEnvelopes() {}

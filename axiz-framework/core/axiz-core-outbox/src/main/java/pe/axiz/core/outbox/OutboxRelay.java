@@ -7,29 +7,34 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.function.LongSupplier;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pe.axiz.core.commons.LeaseTiming;
 import pe.axiz.core.commons.tx.TransactionRunner;
+import pe.axiz.core.concurrent.LeaseTiming;
+import pe.axiz.core.crypto.PayloadProtector;
+import pe.axiz.core.errors.Failures;
 import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.resilience.Backoff;
 
 /**
- * Moves outbox entries to the broker (at-least-once). Each run locks a batch, publishes in order
- * and marks every entry as published or schedules a retry with backoff; after {@code maxAttempts}
- * the entry is marked FAILED and reported. Concurrent relays on PostgreSQL skip locked rows.
+ * Mueve las entradas del outbox al broker (al menos una vez). Cada ejecución bloquea un lote,
+ * publica en orden y marca cada entrada como publicada o programa un reintento con backoff; tras
+ * {@code maxAttempts} la entrada se marca como FAILED y se informa. Los relays concurrentes en
+ * PostgreSQL omiten las filas bloqueadas.
  *
- * <p>A monotonic deadline, captured before obtaining the claim connection, prevents starting a
- * publication without enough remaining lease for its declared budget. This is an admission
- * guarantee: process pauses and broker operations continuing after a timeout can still exceed the
- * lease. Owner fencing and idempotent consumers remain necessary for uncertain outcomes and
- * physical duplicate deliveries.
+ * <p>Un plazo monotónico, capturado antes de obtener la conexión del claim, impide iniciar una
+ * publicación sin lease restante suficiente para su presupuesto declarado. Es una garantía de
+ * admisión: las pausas del proceso y las operaciones del broker que continúan después de un timeout
+ * aún pueden exceder el lease. El fencing por propietario y los consumidores idempotentes siguen
+ * siendo necesarios para los resultados inciertos y las entregas duplicadas físicas.
  */
 public final class OutboxRelay {
 
   private static final Logger LOG = LoggerFactory.getLogger(OutboxRelay.class);
 
   private final OutboxStore store;
+  private final PayloadProtector protector;
 
   private final EventPublisher publisher;
   private final TransactionRunner transactions;
@@ -42,71 +47,102 @@ public final class OutboxRelay {
   private final LongSupplier nanoTime;
   private final OutboxRelayListener listener;
 
-  /** Declared routing compatibility of the effective publisher; does not query the broker. */
+  /** Compatibilidad de enrutamiento declarada por el publicador efectivo; no consulta al broker. */
   public boolean supportsDestination(String destination) {
     return publisher.supports(destination);
   }
 
-  public OutboxRelay(
-      OutboxStore store,
-      EventPublisher publisher,
-      TransactionRunner transactions,
-      Clock clock,
-      int batchSize,
-      int maxAttempts,
-      Backoff backoff,
-      Duration lease,
-      Duration publishBudget) {
-    this(
-        store,
-        publisher,
-        transactions,
-        clock,
-        batchSize,
-        maxAttempts,
-        backoff,
-        lease,
-        publishBudget,
-        OutboxRelayListener.NOOP);
+  /**
+   * Inicia la construcción explícita; deben suministrarse los presupuestos de lote, reintento y
+   * publicación.
+   */
+  public static Builder builder(
+      OutboxStore store, EventPublisher publisher, TransactionRunner transactions, Clock clock) {
+    return new Builder(store, publisher, transactions, clock);
   }
 
-  public OutboxRelay(
-      OutboxStore store,
-      EventPublisher publisher,
-      TransactionRunner transactions,
-      Clock clock,
-      int batchSize,
-      int maxAttempts,
-      Backoff backoff,
-      Duration lease,
-      Duration publishBudget,
-      OutboxRelayListener listener) {
-    this(
-        store,
-        publisher,
-        transactions,
-        clock,
-        batchSize,
-        maxAttempts,
-        backoff,
-        lease,
-        publishBudget,
-        listener,
-        System::nanoTime);
+  /** Estado mutable de construcción; build valida y crea un valor inmutable independiente. */
+  public static final class Builder {
+    private final OutboxStore store;
+    private final EventPublisher publisher;
+    private final TransactionRunner transactions;
+    private final Clock clock;
+    private int batchSize = 0;
+    private int maxAttempts = 0;
+    private @Nullable Backoff backoff = null;
+    private @Nullable Duration lease = null;
+    private @Nullable Duration publishBudget = null;
+    private OutboxRelayListener listener = OutboxRelayListener.NOOP;
+    private LongSupplier nanoTime = System::nanoTime;
+    private PayloadProtector protector = PayloadProtector.NONE;
+
+    private Builder(
+        OutboxStore store, EventPublisher publisher, TransactionRunner transactions, Clock clock) {
+      this.store = Objects.requireNonNull(store);
+      this.publisher = Objects.requireNonNull(publisher);
+      this.transactions = Objects.requireNonNull(transactions);
+      this.clock = Objects.requireNonNull(clock);
+    }
+
+    public Builder batchSize(int value) {
+      this.batchSize = value;
+      return this;
+    }
+
+    public Builder maxAttempts(int value) {
+      this.maxAttempts = value;
+      return this;
+    }
+
+    public Builder backoff(Backoff value) {
+      this.backoff = value;
+      return this;
+    }
+
+    public Builder lease(Duration value) {
+      this.lease = value;
+      return this;
+    }
+
+    public Builder publishBudget(Duration value) {
+      this.publishBudget = value;
+      return this;
+    }
+
+    public Builder listener(OutboxRelayListener value) {
+      this.listener = value;
+      return this;
+    }
+
+    Builder ticker(LongSupplier value) {
+      this.nanoTime = value;
+      return this;
+    }
+
+    public Builder protector(PayloadProtector value) {
+      this.protector = value;
+      return this;
+    }
+
+    public OutboxRelay build() {
+      return new OutboxRelay(this);
+    }
   }
 
-  OutboxRelay(
-      OutboxStore store,
-      EventPublisher publisher,
-      TransactionRunner transactions,
-      Clock clock,
-      int batchSize,
-      int maxAttempts,
-      Backoff backoff,
-      Duration lease,
-      Duration publishBudget,
-      OutboxRelayListener listener,
-      LongSupplier nanoTime) {
+  private OutboxRelay(Builder builder) {
+    OutboxStore store = builder.store;
+    EventPublisher publisher = builder.publisher;
+    TransactionRunner transactions = builder.transactions;
+    Clock clock = builder.clock;
+    int batchSize = builder.batchSize;
+    int maxAttempts = builder.maxAttempts;
+    Backoff backoff = Objects.requireNonNull(builder.backoff, "backoff");
+    Duration lease = Objects.requireNonNull(builder.lease, "lease");
+    Duration publishBudget = Objects.requireNonNull(builder.publishBudget, "publishBudget");
+    OutboxRelayListener listener = builder.listener;
+    LongSupplier nanoTime = builder.nanoTime;
+    PayloadProtector protector = builder.protector;
+    this.protector = Objects.requireNonNull(protector);
     this.store = Objects.requireNonNull(store);
     this.publisher = Objects.requireNonNull(publisher);
     this.transactions = Objects.requireNonNull(transactions);
@@ -128,7 +164,7 @@ public final class OutboxRelay {
     this.listener = Objects.requireNonNull(listener);
   }
 
-  /** Result of one relay run. */
+  /** Resultado de una ejecución del relay. */
   public record RunResult(int published, int retried, int failed) {
     public int total() {
       return published + retried + failed;
@@ -176,7 +212,12 @@ public final class OutboxRelay {
       }
       remaining--;
       try {
-        publisher.publish(r.destination(), r.event());
+        var event = r.event(protector);
+        if (deadline - nanoTime.getAsLong() < publishBudget.toNanos()) {
+          listener.onBudgetExhausted(remaining + 1);
+          break;
+        }
+        publisher.publish(r.destination(), event);
         if (transaction(() -> store.markPublished(r.id(), owner, clock.instant()))) published++;
       } catch (RuntimeException e) {
         int attempts = r.attempts() + 1;
@@ -185,16 +226,20 @@ public final class OutboxRelay {
         if (!transaction(
             () ->
                 store.markFailed(
-                    r.id(), owner, attempts, clock.instant().plus(delay), e.toString(), giveUp)))
-          continue;
+                    r.id(),
+                    owner,
+                    attempts,
+                    clock.instant().plus(delay),
+                    e.getClass().getSimpleName(),
+                    giveUp))) continue;
         if (giveUp) {
           failed++;
           LOG.error(
-              "Outbox entry {} ({}) failed permanently after {} attempts",
+              "Outbox entry {} ({}) failed permanently after {} attempts; failure={}",
               r.id(),
               r.eventType(),
               attempts,
-              e);
+              Failures.describe(e));
         } else {
           retried++;
           LOG.warn(
@@ -209,7 +254,10 @@ public final class OutboxRelay {
     return new RunResult(published, retried, failed);
   }
 
-  /** Runs until a batch comes back smaller than the batch size (drains the backlog). */
+  /**
+   * Se ejecuta hasta que un lote vuelve con menos elementos que el tamaño de lote (drena el
+   * atraso).
+   */
   public int drain() {
     int total = 0;
     RunResult r;

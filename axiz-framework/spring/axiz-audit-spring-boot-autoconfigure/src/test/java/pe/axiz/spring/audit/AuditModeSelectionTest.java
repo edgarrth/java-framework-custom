@@ -10,21 +10,31 @@ import org.springframework.boot.test.context.runner.ReactiveWebApplicationContex
 import pe.axiz.core.audit.AsyncAuditEventPublisher;
 import pe.axiz.core.audit.AuditPublisher;
 import pe.axiz.core.audit.LoggingAuditPublisher;
-import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
+import pe.axiz.core.secrets.SecretResolver;
 import reactor.core.publisher.Mono;
 
 class AuditModeSelectionTest {
+  /** Fuera de local/test/ci la cadena de auditoría debe tener clave. */
+  private static final String[] HMAC = {
+    "axiz.audit.integrity.mode=HMAC",
+    "axiz.audit.integrity.hmac-secret=audit-hmac-key",
+    "axiz.audit.integrity.hmac-key-id=v1"
+  };
+
+  private static SecretResolver secrets() {
+    String key = java.util.Base64.getEncoder().encodeToString(new byte[32]);
+    return name -> java.util.Optional.of(pe.axiz.core.secrets.SecretValue.of(key));
+  }
+
   private ApplicationContextRunner imperative() {
     return new ApplicationContextRunner()
         .withPropertyValues("axiz.config.environment=")
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class));
   }
 
   private ReactiveWebApplicationContextRunner reactive() {
     return new ReactiveWebApplicationContextRunner()
         .withPropertyValues("axiz.config.environment=")
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
             AutoConfigurations.of(
                 AxizAuditAutoConfiguration.class, AxizNativeAuditAutoConfiguration.class));
@@ -67,8 +77,16 @@ class AuditModeSelectionTest {
                 assertThat(ctx.getStartupFailure())
                     .hasStackTraceContaining("Declare axiz.audit.mode"));
     for (String selection : new String[] {"axiz.audit.mode=ASYNC", "axiz.audit.mode=SYNC"}) {
-      imperative().withPropertyValues(selection).run(ctx -> assertThat(ctx).hasNotFailed());
-      reactive().withPropertyValues(selection).run(ctx -> assertThat(ctx).hasNotFailed());
+      imperative()
+          .withPropertyValues(selection)
+          .withPropertyValues(HMAC)
+          .withBean(SecretResolver.class, AuditModeSelectionTest::secrets)
+          .run(ctx -> assertThat(ctx).hasNotFailed());
+      reactive()
+          .withPropertyValues(selection)
+          .withPropertyValues(HMAC)
+          .withBean(SecretResolver.class, AuditModeSelectionTest::secrets)
+          .run(ctx -> assertThat(ctx).hasNotFailed());
     }
   }
 
@@ -83,12 +101,17 @@ class AuditModeSelectionTest {
     imperative()
         .withBean(AuditPublisher.class, LoggingAuditPublisher::new)
         .run(ctx -> assertThat(ctx).hasNotFailed());
+    // el framework sigue sellando lo que publica la aplicación: su cadena debe tener clave
     reactive()
         .withBean(
             AsyncAuditEventPublisher.class, () -> event -> CompletableFuture.completedFuture(null))
+        .withPropertyValues(HMAC)
+        .withBean(SecretResolver.class, AuditModeSelectionTest::secrets)
         .run(ctx -> assertThat(ctx).hasNotFailed());
     reactive()
         .withBean(ReactiveAuditPublisher.class, () -> event -> Mono.empty())
+        .withPropertyValues(HMAC)
+        .withBean(SecretResolver.class, AuditModeSelectionTest::secrets)
         .run(ctx -> assertThat(ctx).hasNotFailed());
   }
 }

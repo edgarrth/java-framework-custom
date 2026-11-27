@@ -1,5 +1,5 @@
 /**
- * Package pe.axiz.adapter.idempotency.dynamodb. Types are non-null unless annotated
+ * Paquete pe.axiz.adapter.idempotency.dynamodb. Los tipos no admiten null salvo que se anoten con
  * {@code @Nullable}.
  */
 @NullMarked

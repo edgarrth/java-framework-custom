@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-core-errors
 
-Error model: types, categories with HTTP mapping, AxizException, RFC 9457 problem, externalized catalog.
+Modelo de errores: tipos, categorías con su mapeo HTTP, AxizException, problema RFC 9457 y catálogo externalizado.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,33 +12,33 @@ Error model: types, categories with HTTP mapping, AxizException, RFC 9457 proble
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `AccessException` | Authentication or authorization failure. |
-| `AxizException` | Base exception of the framework. |
-| `BusinessException` | A business rule rejected the operation. |
-| `CoreErrors` | Error definitions owned by the framework itself (prefix `AXZ`). |
-| `ErrorCatalog` | Externalized error catalog. |
-| `ErrorCategory` | Error categories with their HTTP status. |
-| `ErrorCode` | Error code with the form `PREFIX-CAPABILITY-NNNN`, for example `AXZ-HTTP-0001`. |
-| `ErrorDefinition` | Catalog entry describing an error. |
-| `ErrorMessageResolver` | Resolves localized messages for error detail; implemented by the i18n capability. |
-| `ErrorType` | Nature of an error, independent of its HTTP representation. |
-| `ExceptionMapper` | Translates third-party exceptions (persistence, serialization, ...) into axiz exceptions. |
-| `ExternalErrorDetail` | What a dependency answered when it failed. |
-| `ExternalServiceException` | A dependency failed or rejected the call. |
-| `FieldViolation` | A validation failure on a single field. |
-| `NotFoundException` | The requested resource does not exist. |
-| `Problem` | RFC 9457 problem details plus axiz extension members (`code`, `correlationId`, `timestamp`, `violations`, `external`). |
-| `ProblemFactory` | Builds RFC 9457 problems from exceptions. |
-| `ProblemJson` | Serializes problems to `application/problem+json`. |
-| `TechnicalException` | Unexpected failure inside the service. |
-| `ValidationException` | The input is invalid; carries one violation per field. |
+| `AccessException` | Fallo de autenticación o de autorización. |
+| `AxizException` | Excepción base del framework. |
+| `BusinessException` | Una regla de negocio rechazó la operación. |
+| `CoreErrors` | Definiciones de error propias del framework (prefijo `AXZ`). |
+| `ErrorCatalog` | Catálogo de errores externalizado. |
+| `ErrorCategory` | Categorías de error con su estado HTTP. |
+| `ErrorCode` | Código de error con la forma `PREFIX-CAPABILITY-NNNN`, por ejemplo `AXZ-HTTP-0001`. |
+| `ErrorDefinition` | Entrada del catálogo que describe un error. |
+| `ErrorMessageResolver` | Resuelve mensajes localizados para el detalle del error; lo implementa la capacidad i18n. |
+| `ErrorType` | Naturaleza de un error, independiente de su representación HTTP. |
+| `ExceptionMapper` | Traduce excepciones de terceros (persistencia, serialización, etc.) a excepciones de axiz. |
+| `ExternalErrorDetail` | Lo que respondió una dependencia al fallar. |
+| `ExternalServiceException` | Una dependencia falló o rechazó la llamada. |
+| `FieldViolation` | Un fallo de validación en un solo campo. |
+| `NotFoundException` | El recurso solicitado no existe. |
+| `Problem` | Detalles de problema RFC 9457 más los miembros de extensión de axiz (`code`, `correlationId`, `timestamp`, `violations`, `external`). |
+| `ProblemFactory` | Construye problemas RFC 9457 a partir de excepciones. |
+| `ProblemJson` | Serializa problemas a `application/problem+json`. |
+| `TechnicalException` | Fallo inesperado dentro del servicio. |
+| `ValidationException` | La entrada es inválida; lleva una violación por campo. |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-errors verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl core/axiz-core-errors verify`.

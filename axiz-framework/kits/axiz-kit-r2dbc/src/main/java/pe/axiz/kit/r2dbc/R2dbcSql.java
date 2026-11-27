@@ -9,22 +9,29 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
+import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 import reactor.util.context.ContextView;
 
 /**
- * {@link ReactiveSql} directly over an R2DBC {@link ConnectionFactory} (normally the pool). A call
- * uses, in order: the connection of {@link #inTransaction} (Reactor context), the connection bound
- * to the thread by {@link R2dbcTransactionRunner}, or a new connection closed after the call.
+ * {@link ReactiveSql} directamente sobre una {@link ConnectionFactory} de R2DBC (normalmente el
+ * pool). Una llamada usa, en orden: la conexión de {@link #inTransaction} (contexto de Reactor), la
+ * conexión ligada al hilo por {@link R2dbcTransactionRunner} o una conexión nueva cerrada tras la
+ * llamada.
  */
 public final class R2dbcSql implements ReactiveSql {
 
-  /** Reactor context key of factory-scoped bindings, managed by {@link #inTransaction}. */
+  /**
+   * Clave del contexto de Reactor para los enlaces con alcance de fábrica, gestionados por {@link
+   * #inTransaction}.
+   */
   public static final String CONNECTION_KEY = "pe.axiz.r2dbc.connection";
 
   private final ConnectionFactory connections;
@@ -36,6 +43,15 @@ public final class R2dbcSql implements ReactiveSql {
   @Override
   public Object transactionResource() {
     return connections;
+  }
+
+  @Override
+  public Mono<Boolean> isTransactionActive() {
+    return Mono.deferContextual(
+        context -> {
+          Connection connection = shared(context);
+          return Mono.just(connection != null && !connection.isAutoCommit());
+        });
   }
 
   @Override
@@ -56,32 +72,67 @@ public final class R2dbcSql implements ReactiveSql {
   }
 
   /**
-   * Runs the work in one transaction: commit when it completes, rollback on error or cancel. Calls
-   * of this instance inside the work use the transaction connection.
+   * Ejecuta el trabajo en una transacción: commit cuando termina, rollback ante error o
+   * cancelación. Las llamadas de esta instancia dentro del trabajo usan la conexión de la
+   * transacción.
    *
-   * <p>The connection is closed exactly once in every outcome. A failed commit is the error of the
-   * returned {@code Mono}; a rollback or close failure after an error is added to that error as
-   * suppressed instead of replacing it.
+   * <p>La conexión se cierra una vez en cada resultado. Un commit no confirmado tiene un resultado
+   * desconocido explícito y nunca se informa como rollback. La limpieza no puede cambiar un
+   * resultado confirmado. El trabajo anidado para la misma fábrica se une a la transacción; solo su
+   * propietario hace commit.
    */
   public <T> Mono<T> inTransaction(Function<ReactiveSql, Mono<T>> work) {
-    return Mono.usingWhen(
-        Mono.from(connections.create()),
-        c ->
-            Mono.from(c.beginTransaction())
-                .then(Mono.defer(() -> work.apply(this)))
-                .contextWrite(ctx -> bind(ctx, c))
-                .map(Optional::of)
-                .defaultIfEmpty(Optional.empty())
-                .flatMap(result -> Mono.from(c.commitTransaction()).then(Mono.justOrEmpty(result))),
-        c -> Mono.from(c.close()),
-        (c, error) -> rollbackAndClose(c, error),
-        c -> rollbackAndClose(c, null));
+    return transaction(work, true);
   }
 
   /**
-   * Carries the transaction of an imperative worker through the entire reactive composition. Call
-   * only at the blocking boundary, on the thread owned by R2dbcTransactionRunner. Capturing each
-   * statement separately loses the binding when flatMap resumes on a driver thread.
+   * Usa una conexión y un commit independientes incluso dentro de una transacción existente. Para
+   * reservas durables como los bloques de secuencias; se preservan la transacción de quien llama y
+   * el resto del contexto.
+   */
+  public <T> Mono<T> inIndependentTransaction(Function<ReactiveSql, Mono<T>> work) {
+    return transaction(work, false);
+  }
+
+  private <T> Mono<T> transaction(Function<ReactiveSql, Mono<T>> work, boolean join) {
+    Objects.requireNonNull(work);
+    return Mono.deferContextual(
+        context -> {
+          if (join && shared(context) != null) return Mono.defer(() -> work.apply(this));
+          var committing = new AtomicBoolean();
+          return Mono.usingWhen(
+              Mono.defer(() -> Mono.from(connections.create())),
+              c ->
+                  Mono.defer(() -> Mono.from(c.beginTransaction()))
+                      .then(Mono.defer(() -> work.apply(this)))
+                      .contextWrite(ctx -> bind(ctx, c))
+                      .map(Optional::of)
+                      .defaultIfEmpty(Optional.empty())
+                      .flatMap(
+                          result ->
+                              Mono.defer(
+                                      () -> {
+                                        committing.set(true);
+                                        return Mono.from(c.commitTransaction());
+                                      })
+                                  .onErrorMap(CommitFailures::classify)
+                                  .then(Mono.justOrEmpty(result))),
+              c -> quietly(c::close, null),
+              (c, error) ->
+                  committing.get()
+                      ? quietly(() -> DiscardConnection.close(c), error)
+                      : rollbackAndClose(c, error),
+              c ->
+                  committing.get()
+                      ? quietly(() -> DiscardConnection.close(c), null)
+                      : rollbackAndClose(c, null));
+        });
+  }
+
+  /**
+   * Lleva la transacción de un worker imperativo a través de toda la composición reactiva. Se llama
+   * solo en la frontera bloqueante, en el hilo propiedad de R2dbcTransactionRunner. Capturar cada
+   * sentencia por separado pierde el enlace cuando flatMap se reanuda en un hilo del driver.
    */
   public <T> Mono<T> withCallingTransaction(Mono<T> work) {
     Connection connection = BoundConnection.current(connections);
@@ -89,17 +140,29 @@ public final class R2dbcSql implements ReactiveSql {
   }
 
   static Mono<Void> rollbackAndClose(Connection c, @Nullable Throwable error) {
-    return quietly(c.rollbackTransaction(), error)
-        .then(Mono.defer(() -> quietly(c.close(), error)));
+    return Mono.defer(() -> Mono.from(c.rollbackTransaction()))
+        .thenReturn(true)
+        .onErrorResume(
+            failure -> {
+              if (error != null && error != failure) error.addSuppressed(failure);
+              LoggerFactory.getLogger(R2dbcSql.class)
+                  .warn("R2DBC rollback failed; discarding connection");
+              return Mono.just(false);
+            })
+        .flatMap(
+            rolledBack ->
+                quietly(() -> rolledBack ? c.close() : DiscardConnection.close(c), error));
   }
 
-  private static Mono<Void> quietly(Publisher<Void> step, @Nullable Throwable error) {
-    return Mono.from(step)
+  private static Mono<Void> quietly(Supplier<Publisher<Void>> step, @Nullable Throwable error) {
+    return Mono.defer(() -> Mono.from(step.get()))
         .onErrorResume(
             e -> {
               if (error != null && error != e) {
                 error.addSuppressed(e);
               }
+              LoggerFactory.getLogger(R2dbcSql.class)
+                  .warn("R2DBC cleanup failed; transaction outcome unchanged");
               return Mono.empty();
             });
   }
@@ -111,7 +174,12 @@ public final class R2dbcSql implements ReactiveSql {
           if (shared != null) {
             return work.apply(shared);
           }
-          return Flux.usingWhen(connections.create(), work, Connection::close);
+          return Flux.usingWhen(
+              connections.create(),
+              work,
+              c -> quietly(c::close, null),
+              (c, error) -> quietly(c::close, error),
+              c -> quietly(c::close, null));
         });
   }
 

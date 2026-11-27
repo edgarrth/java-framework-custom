@@ -1,4 +1,4 @@
-/** Client of the beneficiaries API. */
+/** Cliente de la API beneficiaries. */
 @NullMarked
 package pe.axiz.payments.ux.client.beneficiaries;
 

@@ -9,7 +9,9 @@ import pe.axiz.codegen.project.CapabilityAdder;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
-/** {@code axiz add <capability>...}: starter, properties, ConfigMap keys, tables and an example. */
+/**
+ * {@code axiz add <capability>...}: starter, propiedades, claves de ConfigMap, tablas y un ejemplo.
+ */
 @Command(
     mixinStandardHelpOptions = true,
     name = "add",
@@ -22,28 +24,21 @@ class AddCommand extends BaseCommand implements Callable<Integer> {
   @Override
   public Integer call() throws IOException {
     CapabilityAdder adder = new CapabilityAdder(Catalog.load());
-    boolean changed = false;
-    for (String capability : capabilities) {
-      CapabilityAdder.Result r = adder.add(project(), capability);
-      if (r.added().isEmpty()) {
-        ok(capability + " is already in the project");
-        continue;
-      }
-      changed = true;
-      ok("Added " + String.join(", ", r.added()));
-      r.changed().forEach(f -> out().println("    " + f));
-      if (!r.configMapKeys().isEmpty()) {
-        warn(
-            "Set these keys in the ConfigMap of every environment"
-                + " (deploy/helm/*/values-<env>.yaml):");
-        r.configMapKeys().forEach(k -> out().println("    " + k));
-      }
-      out().println("  Example:");
-      r.example().lines().forEach(l -> out().println("    " + l));
+    CapabilityAdder.Result r = adder.add(project(), capabilities);
+    if (r.added().isEmpty()) {
+      ok("Requested capabilities are already in the project");
+      return ExitCodes.OK;
     }
-    if (changed) {
-      formatSources(project());
+    ok("Added " + String.join(", ", r.added()));
+    r.changed().forEach(f -> out().println("    " + f));
+    if (!r.configMapKeys().isEmpty()) {
+      warn(
+          "Set these keys in the ConfigMap of every environment (deploy/helm/*/values-<env>.yaml):");
+      r.configMapKeys().forEach(k -> out().println("    " + k));
     }
+    out().println("  Example:");
+    r.example().lines().forEach(l -> out().println("    " + l));
+    formatSources(project());
     return ExitCodes.OK;
   }
 }

@@ -1,15 +1,20 @@
 package pe.axiz.codegen;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import javax.lang.model.SourceVersion;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.codegen.openapi.Json;
 import pe.axiz.codegen.openapi.OpenApiDocument;
 
-/** Generates owned application records; transport annotations remain in the HTTP models. */
+/**
+ * Genera records de aplicación propios; las anotaciones de transporte permanecen en los modelos
+ * HTTP.
+ */
 final class ApplicationModels {
   private ApplicationModels() {}
 
@@ -43,6 +48,10 @@ final class ApplicationModels {
             Map.of(
                 "name",
                 name,
+                "record",
+                false,
+                "imports",
+                "",
                 "declaration",
                 "public enum "
                     + name
@@ -56,6 +65,9 @@ final class ApplicationModels {
       }
       List<String> fields = new ArrayList<>();
       List<String> copies = new ArrayList<>();
+      List<Map<String, Object>> collections = new ArrayList<>();
+      Map<String, Object> requiredCollections = new LinkedHashMap<>();
+      Map<String, Object> allCollections = new LinkedHashMap<>();
       Set<String> imports = new TreeSet<>();
       for (var property : mapping(schema.get("properties")).entrySet()) {
         String propertyName = property.getKey().toString();
@@ -69,19 +81,17 @@ final class ApplicationModels {
         boolean nullable =
             propertySchema.get("type") instanceof List<?> types && types.contains("null");
         String javaType = imported(type(propertySchema), schemas, imports);
-        String copy = null;
-        if (javaType.startsWith("java.util.List<") || javaType.startsWith("List<")) {
-          copy = imported("java.util.List.copyOf(" + propertyName + ")", schemas, imports);
-        } else if (javaType.startsWith("java.util.Map<") || javaType.startsWith("Map<")) {
-          copy =
-              imported(
-                  "java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>("
-                      + propertyName
-                      + "))",
-                  schemas,
-                  imports);
-        }
+        if (nullableAnnotations)
+          javaType = javaType.replace("Map<String, Object>", "Map<String, @Nullable Object>");
+        String copy = collectionCopy(propertySchema, propertyName, schemas, imports, 0);
         if (copy != null) {
+          Object empty =
+              javaType.startsWith("java.util.List<") || javaType.startsWith("List<")
+                  ? List.of()
+                  : Map.of();
+          allCollections.put(propertyName, empty);
+          if (required && !nullable) requiredCollections.put(propertyName, empty);
+          collections.add(Map.of("name", propertyName, "nullable", !required || nullable));
           copies.add(
               propertyName
                   + " = "
@@ -102,6 +112,14 @@ final class ApplicationModels {
           Map.of(
               "name",
               name,
+              "record",
+              true,
+              "collections",
+              collections,
+              "requiredCollectionsJson",
+              Json.write(requiredCollections).replace("\"", "\\\""),
+              "allCollectionsJson",
+              Json.write(allCollections).replace("\"", "\\\""),
               "imports",
               String.join("\n", imports.stream().map(value -> "import " + value + ";").toList()),
               "declaration",
@@ -122,6 +140,32 @@ final class ApplicationModels {
     return result;
   }
 
+  private static @Nullable String collectionCopy(
+      Map<?, ?> schema, String expression, Map<?, ?> schemas, Set<String> imports, int depth) {
+    String type = type(schema);
+    if (type.startsWith("java.util.Map<"))
+      return imported("pe.axiz.core.lang.ValueSnapshots.map(" + expression + ")", schemas, imports);
+    if (type.startsWith("java.util.List<")) {
+      String element = "element" + depth;
+      String nested =
+          collectionCopy(mapping(schema.get("items")), element, schemas, imports, depth + 1);
+      if (nested != null)
+        return expression
+            + ".stream().map("
+            + element
+            + " -> "
+            + element
+            + " == null ? null : "
+            + nested
+            + ").toList()";
+      return imported(
+          "java.util.Collections.unmodifiableList(new java.util.ArrayList<>(" + expression + "))",
+          schemas,
+          imports);
+    }
+    return null;
+  }
+
   private static String imported(String value, Map<?, ?> schemas, Set<String> imports) {
     String result = value;
     for (String qualified :
@@ -133,7 +177,9 @@ final class ApplicationModels {
             "java.util.List",
             "java.util.Map",
             "java.util.Collections",
-            "java.util.LinkedHashMap")) {
+            "java.util.LinkedHashMap",
+            "java.util.ArrayList",
+            "pe.axiz.core.lang.ValueSnapshots")) {
       String simple = qualified.substring(qualified.lastIndexOf('.') + 1);
       if (result.contains(qualified)
           && schemas.keySet().stream()

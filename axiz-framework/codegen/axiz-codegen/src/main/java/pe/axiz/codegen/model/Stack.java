@@ -2,7 +2,7 @@ package pe.axiz.codegen.model;
 
 import java.util.Locale;
 
-/** Web stack of a service. */
+/** Stack web de un servicio. */
 public enum Stack {
   SERVLET,
   REACTIVE;

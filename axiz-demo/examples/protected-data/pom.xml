@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-spring</artifactId><version>2.0.0</version><relativePath/></parent>
+  <groupId>pe.axiz.payments</groupId><artifactId>protected-data-example</artifactId><version>2.0.0</version>
+  <name>axiz demo: executable protected-data examples</name>
+  <properties>
+    <axiz.module.name>pe.axiz.demo.protecteddata</axiz.module.name>
+    <maven.deploy.skip>true</maven.deploy.skip>
+    <maven.jar.forceCreation>true</maven.jar.forceCreation>
+    <spotbugs.includeTests>true</spotbugs.includeTests>
+  </properties>
+  <dependencies>
+    <!-- Los eventos estándar de ejecución de JUnit conservan la evidencia de capacidades de TestReporter. -->
+    <dependency><groupId>org.junit.platform</groupId><artifactId>junit-platform-reporting</artifactId><scope>test</scope></dependency>
+
+    <dependency><groupId>org.springframework</groupId><artifactId>spring-webflux</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-messaging</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-audit</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-test-spring-boot-starter</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-crypto</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-secrets</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-tokenization</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-tokenization-vault</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-json</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-audit-sqs</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-tokenization-dynamodb</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-aws-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-secrets-spring-boot-starter</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-secrets-aws-spring-boot-starter</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-crypto-spring-boot-starter</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-crypto-kms-spring-boot-starter</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-audit-spring-boot-starter</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-tokenization-vault-spring-boot-starter</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-tokenization-vault-dynamodb-spring-boot-starter</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-tokenization-vault-redis-spring-boot-starter</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-tokenization-pan-spring-boot-starter</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>dynamodb</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>kms</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>sqs</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>secretsmanager</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>auth</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>regions</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>url-connection-client</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-test</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>org.testcontainers</groupId><artifactId>testcontainers</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>org.testcontainers</groupId><artifactId>testcontainers-localstack</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-crypto-kms</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+  </dependencies>
+  <build><plugins>
+      <!-- Eventos del launcher separados: Failsafe nunca debe sobrescribir la evidencia de capacidades de Surefire. -->
+      <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId>
+        <configuration><properties><configurationParameters>
+          junit.platform.reporting.output.dir = ${project.build.directory}/surefire-reports
+        </configurationParameters></properties></configuration>
+      </plugin>
+      <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-failsafe-plugin</artifactId>
+        <configuration><properties><configurationParameters>
+          junit.platform.reporting.output.dir = ${project.build.directory}/failsafe-reports
+        </configurationParameters></properties></configuration>
+      </plugin>
+  </plugins></build>
+</project>

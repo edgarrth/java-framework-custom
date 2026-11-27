@@ -202,7 +202,7 @@ class DynamoAsyncRepositoryTest {
     private <R> CompletableFuture<R> request(Object request) {
       requests.add(request);
       CompletableFuture<R> response = new CompletableFuture<>();
-      // Retain the actual SDK-returned future, without a thenApply cancellation boundary.
+      // Se retiene el future real devuelto por el SDK, sin una frontera de cancelación thenApply.
       pending = cast(response);
       return response;
     }

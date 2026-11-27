@@ -4,34 +4,35 @@ import pe.axiz.core.errors.ErrorCategory;
 import pe.axiz.core.errors.ErrorDefinition;
 
 /**
- * Errors of the channel API (codes {@code PAYMENTS-PAYMENTSUX-NNNN}). Downstream business errors
- * are translated to these, so channels never depend on internal service codes.
+ * Errores de la API de canales (códigos {@code PAYMENTS-PAYMENTSUX-NNNN}). Los errores de negocio
+ * aguas abajo se traducen a estos, de modo que los canales nunca dependen de códigos internos de
+ * los servicios.
  */
 public final class ChannelErrors {
 
-  /** The payment currency differs from the beneficiary account currency. */
+  /** La moneda del pago difiere de la moneda de la cuenta del beneficiario. */
   public static final ErrorDefinition CURRENCY_MISMATCH =
       ErrorDefinition.of(
           "PAYMENTS-PAYMENTSUX-0001",
           ErrorCategory.UNPROCESSABLE,
           "Currency does not match the beneficiary");
 
-  /** Payments in that currency are not enabled for this customer or channel (feature flag). */
+  /** Los pagos en esa moneda no están habilitados para este cliente o canal (feature flag). */
   public static final ErrorDefinition CURRENCY_NOT_AVAILABLE =
       ErrorDefinition.of(
           "PAYMENTS-PAYMENTSUX-0002", ErrorCategory.UNPROCESSABLE, "Currency not available");
 
-  /** The daily limit would be exceeded. */
+  /** Se excedería el límite diario. */
   public static final ErrorDefinition LIMIT_EXCEEDED =
       ErrorDefinition.of(
           "PAYMENTS-PAYMENTSUX-0003", ErrorCategory.UNPROCESSABLE, "Daily limit exceeded");
 
-  /** A payment with the same data was already registered today. */
+  /** Hoy ya se registró un pago con los mismos datos. */
   public static final ErrorDefinition DUPLICATE_PAYMENT =
       ErrorDefinition.of(
           "PAYMENTS-PAYMENTSUX-0004", ErrorCategory.CONFLICT, "Possible duplicate payment");
 
-  /** The beneficiary account was rejected. */
+  /** Se rechazó la cuenta del beneficiario. */
   public static final ErrorDefinition INVALID_BENEFICIARY =
       ErrorDefinition.of(
           "PAYMENTS-PAYMENTSUX-0005",

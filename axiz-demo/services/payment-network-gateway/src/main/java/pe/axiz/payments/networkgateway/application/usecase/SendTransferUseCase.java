@@ -15,18 +15,18 @@ import pe.axiz.payments.networkgateway.domain.TransferOrder;
 import pe.axiz.structure.hexagonal.annotation.UseCase;
 
 /**
- * Sends an inter-bank transfer. The CCI check digits are verified here, so obviously wrong accounts
- * never cost a network call.
+ * Envía una transferencia interbancaria. Los dígitos de control del CCI se verifican aquí, de modo
+ * que las cuentas claramente erróneas nunca cuestan una llamada a la red.
  */
 @UseCase
 public class SendTransferUseCase
     implements pe.axiz.structure.hexagonal.UseCase<SendTransferUseCase.Input, Transfer> {
 
   /**
-   * Input of the use case.
+   * Entrada del caso de uso.
    *
-   * @param order transfer to send
-   * @param idempotencyKey caller key, forwarded to the network
+   * @param order transferencia que se envía
+   * @param idempotencyKey clave del invocador, reenviada a la red
    */
   public record Input(TransferOrder order, String idempotencyKey) {}
 

@@ -14,8 +14,8 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.data.domain.Pageable;
-import pe.axiz.core.commons.Page;
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.Page;
+import pe.axiz.core.api.PageRequest;
 import pe.axiz.core.money.Money;
 import pe.axiz.payments.history.domain.PaymentHistory;
 import pe.axiz.payments.history.domain.PaymentStatus;
@@ -24,8 +24,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * The R2DBC adapter over an in-memory reactive repository: changes applied to the stored row (or a
- * new one), the creditor account kept as an encrypted column and pages with or without status.
+ * El adaptador R2DBC sobre un repositorio reactivo en memoria: cambios aplicados a la fila
+ * almacenada (o a una nueva), la cuenta del acreedor conservada como columna cifrada y páginas con
+ * o sin estado.
  */
 @ExtendWith(BlockHoundExtension.class)
 class PaymentHistoryR2dbcAdapterTest {
@@ -33,7 +34,7 @@ class PaymentHistoryR2dbcAdapterTest {
   static final Duration T = Duration.ofSeconds(5);
   static final Instant AT = Instant.parse("2026-10-09T15:00:00Z");
 
-  /** Rows by payment id; answers the derived queries the adapter uses. */
+  /** Filas por id de pago; responde las consultas derivadas que usa el adaptador. */
   static final class Rows {
     final Map<String, PaymentHistoryRow> rows = new LinkedHashMap<>();
     final List<String> calls = new ArrayList<>();

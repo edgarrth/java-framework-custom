@@ -8,14 +8,14 @@ import java.sql.SQLException;
 import java.util.Objects;
 import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.SqlIdentifiers;
 import pe.axiz.core.outbox.OutboxException;
+import pe.axiz.kit.sql.SqlIdentifiers;
 
-/** Read-only diagnosis of failed events and their successors in the current v2 schema. */
+/** Diagnóstico de solo lectura de los eventos fallidos y sus sucesores en el esquema v2. */
 public final class JdbcOutboxPreflight {
   private JdbcOutboxPreflight() {}
 
-  /** A failure and the successors that require an explicit operational decision. */
+  /** Fallo y sucesores que requieren una decisión operativa explícita. */
   public record Failure(
       String id,
       String aggregateType,
@@ -24,9 +24,86 @@ public final class JdbcOutboxPreflight {
       int attempts,
       @Nullable String error,
       boolean publishedSuccessors,
-      boolean pendingSuccessors) {}
+      boolean pendingSuccessors) {
+    /** Construcción nominal; build verifica los valores obligatorios y las invariantes. */
+    public static Builder builder() {
+      return new Builder();
+    }
 
-  /** Streams the canonical SQL report without changing statuses or retaining all rows in memory. */
+    /**
+     * Estado mutable de construcción; se usa un builder por operación, nunca como estado
+     * compartido.
+     */
+    public static final class Builder {
+      private @Nullable String id = null;
+      private @Nullable String aggregateType = null;
+      private @Nullable String aggregateId = null;
+      private @Nullable String destination = null;
+      private int attempts = 0;
+      private @Nullable String error = null;
+      private boolean publishedSuccessors = false;
+      private boolean pendingSuccessors = false;
+
+      private Builder() {}
+
+      public Builder id(String value) {
+        this.id = value;
+        return this;
+      }
+
+      public Builder aggregateType(String value) {
+        this.aggregateType = value;
+        return this;
+      }
+
+      public Builder aggregateId(String value) {
+        this.aggregateId = value;
+        return this;
+      }
+
+      public Builder destination(String value) {
+        this.destination = value;
+        return this;
+      }
+
+      public Builder attempts(int value) {
+        this.attempts = value;
+        return this;
+      }
+
+      public Builder error(@Nullable String value) {
+        this.error = value;
+        return this;
+      }
+
+      public Builder publishedSuccessors(boolean value) {
+        this.publishedSuccessors = value;
+        return this;
+      }
+
+      public Builder pendingSuccessors(boolean value) {
+        this.pendingSuccessors = value;
+        return this;
+      }
+
+      public Failure build() {
+        return new Failure(
+            Objects.requireNonNull(id, "id"),
+            Objects.requireNonNull(aggregateType, "aggregateType"),
+            Objects.requireNonNull(aggregateId, "aggregateId"),
+            Objects.requireNonNull(destination, "destination"),
+            attempts,
+            error,
+            publishedSuccessors,
+            pendingSuccessors);
+      }
+    }
+  }
+
+  /**
+   * Emite en streaming el reporte SQL canónico sin cambiar estados ni retener todas las filas en
+   * memoria.
+   */
   @SuppressFBWarnings(
       value = "SQL_INJECTION_JDBC",
       justification =
@@ -55,15 +132,16 @@ public final class JdbcOutboxPreflight {
       try (var rows = statement.executeQuery()) {
         while (rows.next()) {
           result.accept(
-              new Failure(
-                  rows.getString("id"),
-                  rows.getString("aggregate_type"),
-                  rows.getString("aggregate_id"),
-                  rows.getString("destination"),
-                  rows.getInt("attempts"),
-                  rows.getString("last_error"),
-                  rows.getBoolean("published_successors"),
-                  rows.getBoolean("pending_successors")));
+              Failure.builder()
+                  .id(rows.getString("id"))
+                  .aggregateType(rows.getString("aggregate_type"))
+                  .aggregateId(rows.getString("aggregate_id"))
+                  .destination(rows.getString("destination"))
+                  .attempts(rows.getInt("attempts"))
+                  .error(rows.getString("last_error"))
+                  .publishedSuccessors(rows.getBoolean("published_successors"))
+                  .pendingSuccessors(rows.getBoolean("pending_successors"))
+                  .build());
           count++;
         }
       }

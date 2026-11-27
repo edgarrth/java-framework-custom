@@ -14,8 +14,8 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.structure.bff.Composition;
 import reactor.core.publisher.Mono;
@@ -72,7 +72,7 @@ class BffTest {
 
   @Test
   void theConfiguredTimeoutBoundsAComposition() {
-    // "50ms" is converted as Spring Boot does, also outside a SpringApplication
+    // "50ms" se convierte como lo hace Spring Boot, también fuera de una SpringApplication
     new ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(AxizBffAutoConfiguration.class))
         .withPropertyValues("axiz.bff.timeout=50ms")

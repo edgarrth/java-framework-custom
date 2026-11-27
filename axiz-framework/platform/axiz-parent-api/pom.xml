@@ -3,5 +3,5 @@
  <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-core</artifactId><version>${revision}</version><relativePath>../axiz-parent-core/pom.xml</relativePath></parent>
  <artifactId>axiz-parent-api</artifactId><packaging>pom</packaging><name>axiz :: parent :: api</name>
  <description>Neutral structure and extension APIs: core contracts plus the Reactive Streams interoperability standard; no Reactor or runtime.</description>
- <build><plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-enforcer-plugin</artifactId><executions><execution><id>axiz-core-layer-rules</id><configuration><rules><bannedDependencies><includes><include>org.reactivestreams:reactive-streams</include></includes></bannedDependencies></rules></configuration></execution></executions></plugin></plugins></build>
+ <build><plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-enforcer-plugin</artifactId><executions><execution><id>axiz-core-layer-rules</id><configuration><rules><bannedDependencies><includes combine.children="append"><include>pe.axiz:axiz-structure-*-api</include><include>pe.axiz:axiz-extension-*-api</include><include>org.reactivestreams:reactive-streams</include></includes></bannedDependencies></rules></configuration></execution></executions></plugin></plugins></build>
 </project>

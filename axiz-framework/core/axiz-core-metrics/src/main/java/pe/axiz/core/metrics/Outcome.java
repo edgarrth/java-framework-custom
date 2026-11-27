@@ -2,7 +2,7 @@ package pe.axiz.core.metrics;
 
 import java.util.Locale;
 
-/** Standard outcome tag values. */
+/** Valores estándar del tag de resultado. */
 public enum Outcome {
   SUCCESS,
   REJECTED,

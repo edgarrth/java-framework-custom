@@ -7,7 +7,7 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.json.JsonMapper;
 
-/** JSON payloads with the application's Jackson mapper (same modules as the HTTP API). */
+/** Payloads JSON con el mapper de Jackson de la aplicación (los mismos módulos que la API HTTP). */
 public final class JacksonPayloadCodec implements PayloadCodec {
 
   private final JsonMapper mapper;
@@ -17,7 +17,8 @@ public final class JacksonPayloadCodec implements PayloadCodec {
         Objects.requireNonNull(mapper)
             .rebuild()
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-            // Nested schema objects use Map/List values; binary floating point would lose amounts.
+            // Los objetos de esquema anidados usan valores Map/List; el punto flotante binario
+            // perdería montos.
             .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
             .build();
   }

@@ -13,8 +13,9 @@ import pe.axiz.core.messaging.EventHandler;
 {{/fw.eda}}
 
 /**
- * Reacts to {@code {{artifact.eventType}}}. Delivery is at least once: keep it idempotent (the
- * inbox capability de-duplicates by event id); failures are retried and then dead-lettered.
+ * Reacciona a {@code {{artifact.eventType}}}. La entrega es al menos una vez: debe ser idempotente
+ * (la capacidad inbox deduplica por id de evento); las fallas se reintentan y luego se envían a
+ * dead-letter.
  */
 @Component
 {{#fw.eda}}

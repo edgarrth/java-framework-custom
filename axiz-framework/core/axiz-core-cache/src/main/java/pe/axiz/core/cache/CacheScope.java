@@ -1,28 +1,31 @@
 package pe.axiz.core.cache;
 
 /**
- * Who shares the entries of an {@link AxizCacheable} method, on top of its arguments.
+ * Quién comparte las entradas de un método {@link AxizCacheable}, además de sus argumentos.
  *
- * <p>The default is {@link #TENANT}: in a multi-tenant service two tenants never read each other's
- * entries, even when a method takes a tenant-local id (a customer code, a page number) and reads
- * the tenant from the context. {@link #GLOBAL} is a deliberate choice for data that is the same for
- * everyone (a catalog, a list of banks).
+ * <p>El valor por defecto es {@link #TENANT}: en un servicio multi-tenant dos tenants nunca leen
+ * las entradas del otro, incluso cuando un método recibe un id local al tenant (un código de
+ * cliente, un número de página) y lee el tenant del contexto. {@link #GLOBAL} es una elección
+ * deliberada para datos iguales para todos (un catálogo, una lista de bancos).
  */
 public enum CacheScope {
 
   /**
-   * Entries are shared only by calls of the same tenant (the one bound to the call, or none in a
-   * single-tenant service).
+   * Las entradas se comparten solo entre llamadas del mismo tenant (el ligado a la llamada, o
+   * ninguno en un servicio de un solo tenant).
    */
   TENANT,
 
   /**
-   * Entries are shared only by calls of the same tenant and the same authenticated caller, for
-   * results that depend on who asks. Without an authenticated caller the method runs without the
-   * cache.
+   * Las entradas se comparten solo entre llamadas del mismo tenant y del mismo llamador
+   * autenticado, para resultados que dependen de quién pregunta. Sin un llamador autenticado el
+   * método se ejecuta sin caché.
    */
   CALLER,
 
-  /** Entries are shared by every caller and tenant: only for data that is truly global. */
+  /**
+   * Las entradas se comparten entre todos los llamadores y tenants: solo para datos realmente
+   * globales.
+   */
   GLOBAL
 }

@@ -16,6 +16,13 @@ class LeaseAndFingerprintInvariantsTest {
   @Test
   void everyRequestAndCallerComponentParticipatesInTheFingerprint() {
     byte[] body = "amount=10".getBytes(StandardCharsets.UTF_8);
+    assertNotEquals(
+        IdempotencyService.fingerprint("COMMAND", "/payments", "v=1", body),
+        IdempotencyService.fingerprint("COMMAND/", "payments", "v=1", body));
+    assertNotEquals(
+        IdempotencyService.fingerprint("POST", "/payments", "v=1", body),
+        IdempotencyService.fingerprint(
+            "POST", "/payments", "v=1amount=", "10".getBytes(StandardCharsets.UTF_8)));
     String expected = IdempotencyService.fingerprint("POST", "/payments", "v=1", body);
     assertEquals(
         expected, IdempotencyService.fingerprint("POST", "/payments", "v=1", body.clone()));
@@ -45,6 +52,7 @@ class LeaseAndFingerprintInvariantsTest {
     try (var lease =
         IdempotencyLease.start(
             Duration.ofMillis(1),
+            Duration.ofSeconds(5),
             () -> {
               entered.countDown();
               return renewal;
@@ -67,6 +75,7 @@ class LeaseAndFingerprintInvariantsTest {
       try (var lease =
           IdempotencyLease.start(
               Duration.ofMillis(1),
+              Duration.ofSeconds(5),
               () -> {
                 entered.countDown();
                 if (synchronousFailure) throw new IllegalStateException("driver unavailable");

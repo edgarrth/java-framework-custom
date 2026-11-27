@@ -10,8 +10,9 @@ import pe.axiz.structure.hexagonal.AggregateEvent;
 import pe.axiz.structure.hexagonal.DomainEventSink;
 
 /**
- * Writes domain events to the outbox in the use case transaction, so they are published if and only
- * if the business change commits. The event id becomes the CloudEvents id.
+ * Escribe los eventos de dominio en el outbox dentro de la transacción del caso de uso, de modo que
+ * se publican si y solo si el cambio de negocio hace commit. El id del evento se convierte en el id
+ * de CloudEvents.
  */
 public final class OutboxDomainEventSink implements DomainEventSink {
 

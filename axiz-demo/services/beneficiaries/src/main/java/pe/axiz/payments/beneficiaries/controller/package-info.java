@@ -1,4 +1,4 @@
-/** REST controllers generated from the OpenAPI contract. */
+/** Controladores REST generados a partir del contrato OpenAPI. */
 @NullMarked
 package pe.axiz.payments.beneficiaries.controller;
 

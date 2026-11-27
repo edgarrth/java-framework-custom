@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-structure-layered-api
 
-Layered style for simple CRUD services: controller, service and repository (contracts, plain Java).
+Estilo en capas para servicios CRUD simples: controller, service y repository (contratos, Java simple).
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,17 +12,19 @@ Layered style for simple CRUD services: controller, service and repository (cont
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `CommandService` | Write operations of a resource. |
-| `CrudService` | Read and write operations of a simple resource (catalogs, parameters, maintenance tables). |
-| `InMemoryCrudService` | Map-backed `CrudService` for tests, prototypes and the local profile. |
-| `QueryService` | Read operations of a resource. |
+| `CommandService` | Operaciones de escritura de un recurso. |
+| `CrudService` | Operaciones de lectura y escritura de un recurso simple (catálogos, parámetros, tablas de mantenimiento). |
+| `QueryService` | Operaciones de lectura de un recurso. |
 
-## Tests
+Los dobles de prueba como `pe.axiz.test.support.layered.InMemoryCrudService` los proporciona
+`axiz-test-support`; ese módulo se declara con scope test.
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl structures/layered/axiz-structure-layered-api verify`.
+## Pruebas
+
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl structures/layered/axiz-structure-layered-api verify`.

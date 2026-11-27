@@ -14,7 +14,7 @@ import org.jspecify.annotations.Nullable;
  * @param status status
  * @param amount amount
  * @param currency currency
- * @param creditorCci masked
+ * @param creditorCci enmascarada
  * @param processingDate processingDate
  * @param createdAt createdAt
  */

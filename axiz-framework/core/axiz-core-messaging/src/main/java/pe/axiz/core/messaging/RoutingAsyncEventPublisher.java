@@ -3,12 +3,12 @@ package pe.axiz.core.messaging;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 
 /**
- * Selects the first native publisher supporting a destination. A failed selected publisher never
- * triggers delivery to another broker; that could duplicate an event. Cancellation reaches its
- * stage.
+ * Selecciona el primer publicador nativo que soporta un destino. Un fallo del publicador
+ * seleccionado nunca dispara la entrega a otro broker, porque podría duplicar un evento. La
+ * cancelación llega a su etapa.
  */
 public final class RoutingAsyncEventPublisher implements AsyncEventPublisher {
   private final List<AsyncEventPublisher> delegates;

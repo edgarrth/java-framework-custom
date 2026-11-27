@@ -1,85 +1,109 @@
 package pe.axiz.core.crypto;
 
-import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Encrypts individual values (database fields) with AES-256-GCM. Text form: {@code
- * axz1:<keyId>:<base64url(iv||ciphertext)>}. The field context (for example {@code
- * customer.document}) is bound as AAD, so a value copied to another column fails to decrypt.
+ * Cifra valores individuales (campos de base de datos) con AES-256-GCM. Forma de texto: {@code
+ * axz1:<keyId>:<base64url(iv||ciphertext)>}. El contexto del campo (por ejemplo {@code
+ * customer.document}) se enlaza como AAD, de modo que un valor copiado a otra columna no se puede
+ * descifrar.
  */
 public final class FieldEncryptor {
 
   private static final String PREFIX = "axz1:";
 
+  private static final Logger LOG = LoggerFactory.getLogger(FieldEncryptor.class);
   private final KeyProvider keys;
+  private final ConcurrentHashMap<String, AtomicLong> uses = new ConcurrentHashMap<>();
 
   public FieldEncryptor(KeyProvider keys) {
     this.keys = Objects.requireNonNull(keys);
+    AesGcm.initialize();
   }
 
   public @Nullable String encrypt(@Nullable String plaintext, String context) {
+    return encrypt(plaintext, context, null);
+  }
+
+  public @Nullable String encrypt(
+      @Nullable String plaintext, String context, @Nullable String binding) {
     if (plaintext == null) {
       return null;
     }
     String keyId = keys.currentKeyId();
-    byte[] ct =
-        AesGcm.encrypt(
-            keys.key(keyId), plaintext.getBytes(StandardCharsets.UTF_8), aad(context, keyId));
-    return PREFIX + keyId + ":" + Base64.getUrlEncoder().withoutPadding().encodeToString(ct);
+    if (!keyId.matches("[A-Za-z0-9_-]{1,32}")) throw new CryptoException("Invalid key id");
+    byte[] clear = StrictUtf8.encode(plaintext, EncryptedValue.MAX_PLAINTEXT_BYTES);
+    try {
+      var key = keys.key(keyId);
+      byte[] contextBytes = aad(context, keyId, binding);
+      if (uses.computeIfAbsent(keyId, ignored -> new AtomicLong()).incrementAndGet() == (1L << 31))
+        LOG.warn("Field encryption key reached its rotation warning threshold");
+      byte[] ct = AesGcm.encrypt(key, clear, contextBytes);
+      return PREFIX + keyId + ":" + Base64.getUrlEncoder().withoutPadding().encodeToString(ct);
+    } finally {
+      Arrays.fill(clear, (byte) 0);
+    }
   }
 
   public @Nullable String decrypt(@Nullable String value, String context) {
+    return decrypt(value, context, null);
+  }
+
+  public @Nullable String decrypt(
+      @Nullable String value, String context, @Nullable String binding) {
     if (value == null) {
       return null;
     }
-    Parsed p = parse(value);
-    byte[] pt = AesGcm.decrypt(keys.key(p.keyId), p.payload, aad(context, p.keyId));
-    return new String(pt, StandardCharsets.UTF_8);
+    EncryptedValue parsed = EncryptedValue.parse(value);
+    byte[] pt =
+        AesGcm.decrypt(
+            keys.key(parsed.keyId()), parsed.payload(), aad(context, parsed.keyId(), binding));
+    try {
+      return StrictUtf8.decode(pt, EncryptedValue.MAX_PLAINTEXT_BYTES);
+    } finally {
+      Arrays.fill(pt, (byte) 0);
+    }
   }
 
-  /** Rebinds authenticated context even when the encryption key is still current. */
+  /**
+   * Vuelve a enlazar el contexto autenticado incluso cuando la clave de cifrado sigue siendo la
+   * actual.
+   */
   public @Nullable String reencrypt(@Nullable String value, String oldContext, String newContext) {
     return encrypt(decrypt(value, oldContext), newContext);
   }
 
-  /** Whether the value was encrypted with an old key and should be re-encrypted. */
+  /** Indica si el valor se cifró con una clave que no es la actual y debería volver a cifrarse. */
   public boolean needsRotation(String value) {
-    return !parse(value).keyId.equals(keys.currentKeyId());
+    return !EncryptedValue.parse(value).keyId().equals(keys.currentKeyId());
   }
 
   public boolean isEncrypted(@Nullable String value) {
-    return value != null && value.startsWith(PREFIX) && value.indexOf(':', PREFIX.length()) > 0;
-  }
-
-  private static byte[] aad(String context, String keyId) {
-    return (context + "|" + keyId).getBytes(StandardCharsets.UTF_8);
-  }
-
-  private Parsed parse(String value) {
-    if (!isEncrypted(value)) {
-      throw new CryptoException("Value is not an axiz encrypted field");
-    }
-    int sep = value.indexOf(':', PREFIX.length());
+    if (value == null) return false;
     try {
-      return new Parsed(
-          value.substring(PREFIX.length(), sep),
-          Base64.getUrlDecoder().decode(value.substring(sep + 1)));
-    } catch (IllegalArgumentException e) {
-      throw new CryptoException("Malformed encrypted field", e);
+      EncryptedValue.parse(value);
+      return true;
+    } catch (CryptoException malformed) {
+      return false;
     }
   }
 
-  /** Internal holder; a class rather than a record because it holds an array. */
-  private static final class Parsed {
-    private final String keyId;
-    private final byte[] payload;
+  private static byte[] aad(String context, String keyId, @Nullable String binding) {
+    EncryptionContext.require(context);
+    return binding == null
+        ? Aad.of(Aad.FIELD, context, keyId)
+        : Aad.of(Aad.FIELD, context, keyId, binding);
+  }
 
-    Parsed(String keyId, byte[] payload) {
-      this.keyId = keyId;
-      this.payload = payload;
-    }
+  public long encryptions(String keyId) {
+    AtomicLong count = uses.get(keyId);
+    return count == null ? 0 : count.get();
   }
 }

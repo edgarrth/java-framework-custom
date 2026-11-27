@@ -75,21 +75,33 @@ class AdaptersAsRuntimeTest implements RewriteTest {
         <project>
           <dependencyManagement>
             <dependencies>
-              <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-cache-redis</artifactId><scope>compile</scope></dependency>
+              <dependency>
+                <groupId>pe.axiz</groupId>
+                <artifactId>axiz-adapter-cache-redis</artifactId>
+                <scope>compile</scope>
+              </dependency>
             </dependencies>
           </dependencyManagement>
           <build><plugins><plugin><dependencies>
-            <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-cache-redis</artifactId><scope>compile</scope></dependency>
+            <dependency>
+                <groupId>pe.axiz</groupId>
+                <artifactId>axiz-adapter-cache-redis</artifactId>
+                <scope>compile</scope>
+              </dependency>
           </dependencies></plugin></plugins></build>
           <profiles><profile><dependencies>
-            <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-cache-redis</artifactId><scope>compile</scope></dependency>
+            <dependency>
+                <groupId>pe.axiz</groupId>
+                <artifactId>axiz-adapter-cache-redis</artifactId>
+                <scope>compile</scope>
+              </dependency>
           </dependencies></profile></profiles>
         </project>
         """;
+    int profile = before.indexOf("<profiles>");
     String after =
-        before.replace(
-            "<profiles><profile><dependencies>\n    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-cache-redis</artifactId><scope>compile</scope>",
-            "<profiles><profile><dependencies>\n    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-cache-redis</artifactId><scope>runtime</scope>");
+        before.substring(0, profile)
+            + before.substring(profile).replace("<scope>compile</scope>", "<scope>runtime</scope>");
     rewriteRun(
         spec -> spec.recipe(new AdaptersAsRuntime()),
         xml(before, after, source -> source.path("pom.xml")));
@@ -101,7 +113,9 @@ class AdaptersAsRuntimeTest implements RewriteTest {
         spec -> spec.recipe(new AdaptersAsRuntime()),
         xml(
             """
-        <project><dependencies><dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-cache-redis</artifactId></dependency></dependencies></project>
+        <project><dependencies><dependency>
+          <groupId>pe.axiz</groupId><artifactId>axiz-adapter-cache-redis</artifactId>
+        </dependency></dependencies></project>
         """,
             source -> source.path("metadata.xml")));
   }

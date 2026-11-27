@@ -7,20 +7,24 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Paging rules of a {@code PageRequest} controller parameter. Sorting is restricted to the listed
- * fields; without this annotation only plain identifiers are accepted as sort fields.
+ * Reglas de paginación de un parámetro {@code PageRequest} de un controlador. El ordenamiento se
+ * restringe a los campos listados; sin esta anotación, solo se aceptan identificadores simples como
+ * campos de ordenamiento.
  */
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Paging {
 
-  /** Fields the client may sort by. */
+  /** Campos por los que el cliente puede ordenar. */
   String[] sortable() default {};
 
-  /** Default sort, e.g. {@code "createdAt,desc"}. */
+  /** Ordenamiento por defecto, p. ej. {@code "createdAt,desc"}. */
   String[] defaultSort() default {};
 
-  /** Page size when the client sends none; 0 uses {@code axiz.web.pagination.default-size}. */
+  /**
+   * Tamaño de página cuando el cliente no envía ninguno; 0 usa {@code
+   * axiz.web.pagination.default-size}.
+   */
   int defaultSize() default 0;
 }

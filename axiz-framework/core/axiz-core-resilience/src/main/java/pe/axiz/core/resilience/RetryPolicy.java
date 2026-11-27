@@ -5,11 +5,11 @@ import java.util.Objects;
 import java.util.function.Predicate;
 
 /**
- * How an operation is retried.
+ * Forma de reintentar una operación.
  *
- * @param maxAttempts total attempts including the first (1 means no retry)
- * @param backoff delay between attempts
- * @param retryOn which failures are retried
+ * @param maxAttempts intentos totales incluido el primero (1 significa sin reintento)
+ * @param backoff retraso entre intentos
+ * @param retryOn qué fallos se reintentan
  */
 public record RetryPolicy(int maxAttempts, Backoff backoff, Predicate<Throwable> retryOn) {
 

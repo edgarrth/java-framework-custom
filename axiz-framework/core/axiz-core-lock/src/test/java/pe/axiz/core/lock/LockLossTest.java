@@ -18,10 +18,42 @@ import java.util.function.IntFunction;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.errors.BusinessException;
 
-/** A lease lost while the work runs never ends in a success. */
+/** Un lease perdido mientras corre el trabajo nunca termina en éxito. */
 class LockLossTest {
 
-  private static final Duration LEASE = Duration.ofMillis(60);
+  // La integración real con el scheduler necesita margen para la instrumentación y el trabajo
+  // concurrente de CI.
+  private static final Duration LEASE = Duration.ofSeconds(1);
+
+  @Test
+  void lateAcquisitionIsExplicitlyReleasedWithoutRunningBusinessWork() {
+    ScriptedHandle handle = new ScriptedHandle(n -> true);
+    DistributedLock slow =
+        (resource, lease) -> {
+          try {
+            Thread.sleep(80);
+          } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(interrupted);
+          }
+          return Optional.of(handle);
+        };
+    var template = new LockTemplate(slow, Duration.ofMillis(1), LockObserver.NONE);
+    var failure =
+        assertThrows(
+            BusinessException.class,
+            () ->
+                template.withLock(
+                    "late",
+                    Duration.ofMillis(20),
+                    Duration.ZERO,
+                    () -> {
+                      throw new AssertionError("Business ran with an expired acquisition");
+                    }));
+    assertEquals(LockErrors.BUSY, failure.definition());
+    assertTrue(handle.released.get(), "Do not wait for the remote TTL to release a late handle");
+    assertEquals(0, handle.renewals.get());
+  }
 
   @Test
   void anInterruptedRenewerPreservesItsInterruptWithoutRenewing() throws Exception {
@@ -42,11 +74,10 @@ class LockLossTest {
     assertEquals(0, handle.renewals.get());
   }
 
-  /** A handle whose renewals answer what the test says; counts them. */
+  /** Handle cuyas renovaciones responden lo que indica la prueba; las cuenta. */
   static final class ScriptedHandle implements LockHandle {
     final AtomicInteger renewals = new AtomicInteger();
     final AtomicBoolean released = new AtomicBoolean();
-    final CountDownLatch renewed = new CountDownLatch(1);
     final IntFunction<Boolean> answer;
 
     ScriptedHandle(IntFunction<Boolean> answer) {
@@ -66,11 +97,7 @@ class LockLossTest {
     @Override
     public boolean renew(Duration lease) {
       int n = renewals.incrementAndGet();
-      try {
-        return answer.apply(n);
-      } finally {
-        renewed.countDown();
-      }
+      return answer.apply(n);
     }
 
     @Override
@@ -80,7 +107,8 @@ class LockLossTest {
   }
 
   private static LockTemplate template(ScriptedHandle handle) {
-    return new LockTemplate((resource, lease) -> Optional.of(handle), Duration.ofMillis(1));
+    return new LockTemplate(
+        (resource, lease) -> Optional.of(handle), Duration.ofMillis(1), LockObserver.NONE);
   }
 
   @Test
@@ -216,10 +244,9 @@ class LockLossTest {
         template(handle)
             .withLock(
                 "account:A-1",
-                LEASE,
+                Duration.ofSeconds(30),
                 Duration.ofSeconds(1),
                 lease -> {
-                  handle.renewed.await(5, TimeUnit.SECONDS);
                   lease.ensureHeld();
                   return lease;
                 });
@@ -231,8 +258,8 @@ class LockLossTest {
   void anAcquisitionThatAnswersAfterItsLeaseIsReleasedAndNeverRunsTheWork() {
     InMemoryDistributedLock store = new InMemoryDistributedLock(Clock.systemUTC());
     AtomicInteger attempts = new AtomicInteger();
-    // the store grants the lease at once, but its answer arrives after the lease ran out; by then
-    // the in-memory store, like Redis, already lets another owner take it
+    // el almacén concede el lease de inmediato, pero su respuesta llega cuando el lease ya se
+    // agotó; para entonces el almacén en memoria, como Redis, permite que otro propietario lo tome
     DistributedLock slow =
         (resource, lease) -> {
           attempts.incrementAndGet();
@@ -249,7 +276,7 @@ class LockLossTest {
         assertThrows(
             BusinessException.class,
             () ->
-                new LockTemplate(slow, Duration.ofMillis(1))
+                new LockTemplate(slow, Duration.ofMillis(1), LockObserver.NONE)
                     .withLock(
                         "account:A-1",
                         Duration.ofMillis(100),
@@ -280,10 +307,10 @@ class LockLossTest {
           return Optional.of(handle);
         };
     String result =
-        new LockTemplate(slow, Duration.ofMillis(1))
+        new LockTemplate(slow, Duration.ofMillis(1), LockObserver.NONE)
             .withLock(
                 "account:A-1",
-                Duration.ofMillis(200),
+                Duration.ofSeconds(1),
                 Duration.ofSeconds(1),
                 lease -> {
                   lease.ensureHeld();

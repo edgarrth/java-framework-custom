@@ -3,10 +3,10 @@ package pe.axiz.core.identifiers;
 import java.util.Objects;
 
 /**
- * Validated identifier value object.
+ * Objeto de valor de identificador validado.
  *
- * @param type type name
- * @param value normalized value
+ * @param type nombre del tipo
+ * @param value valor normalizado
  */
 public record Identifier(String type, String value) {
 
@@ -15,7 +15,7 @@ public record Identifier(String type, String value) {
     Objects.requireNonNull(value, "value");
   }
 
-  /** Masked text, safe for logs. */
+  /** Texto enmascarado, seguro para logs. */
   public String masked(IdentifierRegistry registry) {
     return registry.require(type).mask(value);
   }

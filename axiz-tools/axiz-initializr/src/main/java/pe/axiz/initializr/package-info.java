@@ -1,4 +1,4 @@
-/** axiz initializr. Types are non-null unless annotated {@code @Nullable}. */
+/** axiz initializr. Los tipos no son nulos salvo que se anoten con {@code @Nullable}. */
 @NullMarked
 package pe.axiz.initializr;
 

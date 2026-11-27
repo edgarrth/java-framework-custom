@@ -75,7 +75,8 @@ class CachedPendingCountConcurrencyTest {
     try {
       assertTrue(Double.isNaN(pending.value()));
       assertTrue(entered.await(5, TimeUnit.SECONDS));
-      // The next scrape reads the old sample, then the first refresh completes before it can act.
+      // El siguiente scraping lee la muestra anterior y luego el primer refresco completa antes de
+      // que pueda actuar.
       pauseNextRead.set(true);
       assertEquals(41.0, pending.value());
       assertEquals(41.0, pending.value());

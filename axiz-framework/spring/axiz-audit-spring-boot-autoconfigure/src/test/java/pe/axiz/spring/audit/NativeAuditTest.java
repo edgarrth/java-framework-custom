@@ -13,6 +13,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -25,26 +26,23 @@ import org.springframework.boot.test.context.runner.ReactiveWebApplicationContex
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
-import org.springframework.transaction.reactive.TransactionContextManager;
 import org.springframework.transaction.reactive.TransactionSynchronizationManager;
-import pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxStore;
-import pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter;
+import org.springframework.transaction.reactive.TransactionalOperator;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.AuditPublishException;
 import pe.axiz.core.audit.AuditPublisher;
+import pe.axiz.core.audit.AuditSealCalculator;
+import pe.axiz.core.audit.AuditSealer;
 import pe.axiz.core.audit.AuditTrail;
 import pe.axiz.core.audit.Auditable;
 import pe.axiz.core.audit.QueuedAsyncAuditPublisher;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.id.IdGenerator;
+import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.sensitive.ObjectMasker;
-import pe.axiz.kit.r2dbc.ReactiveSql;
-import pe.axiz.kit.r2dbc.RowMapper;
-import pe.axiz.kit.r2dbc.SqlParams;
-import pe.axiz.kit.r2dbc.SqlRow;
+import pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
-import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -345,8 +343,8 @@ class NativeAuditTest {
         .expectNoEvent(Duration.ofMillis(30))
         .thenCancel()
         .verify(T);
-    // The subscriber's cancellation runs async cleanup; verify the event, not just downstream
-    // cancel.
+    // La cancelación del suscriptor ejecuta una limpieza asíncrona; se verifica el evento, no solo
+    // la cancelación aguas abajo.
     assertTrue(cleanup.await(5, TimeUnit.SECONDS));
     assertEquals(4, events.size());
     assertEquals("CancellationException", events.getLast().errorCode());
@@ -356,7 +354,6 @@ class NativeAuditTest {
   void reactiveConfigurationRejectsImperativeSinksAndHonorsDisableAndNativeOverrides() {
     var runner =
         new ReactiveWebApplicationContextRunner()
-            .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
             .withPropertyValues("axiz.config.environment=test")
             .withConfiguration(
                 AutoConfigurations.of(
@@ -390,63 +387,77 @@ class NativeAuditTest {
   void durableFacadeRetainsReactorTransactionAndFailureFallback() {
     AtomicInteger writes = new AtomicInteger();
     AtomicInteger fallbacks = new AtomicInteger();
-    ReactiveSql sql =
-        new ReactiveSql() {
-          public Mono<Long> update(String statement, SqlParams params) {
+    ReactiveOutboxWriter outbox =
+        new ReactiveOutboxWriter() {
+          @Override
+          public Object transactionResource() {
+            return AuditTestTransactions.RESOURCE;
+          }
+
+          @Override
+          public Mono<Void> write(
+              String destination, EventEnvelope event, @Nullable String aggregateType) {
             return TransactionSynchronizationManager.forCurrentTransaction()
-                .map(
+                .doOnNext(
                     manager -> {
                       assertTrue(manager.isActualTransactionActive());
                       writes.incrementAndGet();
-                      return 1L;
-                    });
-          }
-
-          public <T> Flux<T> query(String statement, SqlParams params, RowMapper<T> mapper) {
-            return Flux.defer(
-                () ->
-                    Flux.just(
-                        mapper.map(
-                            new SqlRow() {
-                              public <V> V get(String column, Class<V> type) {
-                                return type.cast(1L);
-                              }
-                            })));
+                    })
+                .then();
           }
         };
+    var transactions = new AuditTestTransactions.Reactive();
     var publisher =
-        new ReactiveTransactionalAuditPublisher(
-            new ReactiveOutboxWriter(
-                new R2dbcOutboxStore(sql, "axiz_outbox", T), Clock.systemUTC()),
-            "audit",
-            event -> Mono.fromRunnable(fallbacks::incrementAndGet),
-            AuditOutsideTransaction.FAIL);
+        ReactiveTransactionalAuditPublisher.builder()
+            .outbox(outbox)
+            .destination("audit")
+            .fallback(event -> Mono.fromRunnable(fallbacks::incrementAndGet))
+            .outside(AuditOutsideTransaction.FAIL)
+            .transactions(transactions)
+            .failureTimeout(T)
+            .failureConcurrency(1)
+            .state(AuditTestTransactions.reactiveState())
+            .chain("durable")
+            .calculator(new AuditSealCalculator(AuditSealer.Mode.HASH, null, null))
+            .degradation(AuditTestTransactions.fallback())
+            .build();
     var trail = trail(publisher);
     StepVerifier.create(trail.record("a", "r").success())
         .expectError(AuditPublishException.class)
         .verify(T);
-    Mono<Void> active =
-        TransactionSynchronizationManager.forCurrentTransaction()
-            .doOnNext(manager -> manager.setActualTransactionActive(true))
-            .then(trail.record("a", "r").success())
-            .then(trail.record("a", "r").failure("BUSINESS"));
     StepVerifier.create(
-            active
-                .contextWrite(TransactionContextManager.createTransactionContext())
+            TransactionalOperator.create(transactions)
+                .transactional(
+                    trail
+                        .record("a", "r")
+                        .success()
+                        .then(Mono.fromRunnable(() -> assertEquals(0, writes.get()))))
                 .subscribeOn(Schedulers.parallel()))
         .expectComplete()
         .verify(T);
     assertEquals(1, writes.get());
-    assertEquals(1, fallbacks.get());
+    StepVerifier.create(
+            trail.record("a", "r").failure("BUSINESS").subscribeOn(Schedulers.parallel()))
+        .expectComplete()
+        .verify(T);
+    assertEquals(2, writes.get());
+    assertEquals(0, fallbacks.get());
     var fallback =
-        new ReactiveTransactionalAuditPublisher(
-            new ReactiveOutboxWriter(
-                new R2dbcOutboxStore(sql, "axiz_outbox", T), Clock.systemUTC()),
-            "audit",
-            event -> Mono.fromRunnable(fallbacks::incrementAndGet),
-            AuditOutsideTransaction.ASYNC);
+        ReactiveTransactionalAuditPublisher.builder()
+            .outbox(outbox)
+            .destination("audit")
+            .fallback(event -> Mono.fromRunnable(fallbacks::incrementAndGet))
+            .outside(AuditOutsideTransaction.ASYNC)
+            .transactions(transactions)
+            .failureTimeout(T)
+            .failureConcurrency(1)
+            .state(AuditTestTransactions.reactiveState())
+            .chain("durable")
+            .calculator(new AuditSealCalculator(AuditSealer.Mode.HASH, null, null))
+            .degradation(AuditTestTransactions.fallback())
+            .build();
     StepVerifier.create(trail(fallback).record("a", "r").success()).expectComplete().verify(T);
-    assertEquals(2, fallbacks.get());
+    assertEquals(1, fallbacks.get());
   }
 
   private static RequestMetadata metadata(String correlation) {

@@ -1,4 +1,6 @@
-/** Package pe.axiz.codegen.output. Types are non-null unless annotated {@code @Nullable}. */
+/**
+ * Paquete pe.axiz.codegen.output. Los tipos no son nulos salvo que se anoten con {@code @Nullable}.
+ */
 @NullMarked
 package pe.axiz.codegen.output;
 

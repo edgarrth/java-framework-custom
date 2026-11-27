@@ -39,19 +39,19 @@ import pe.axiz.core.tenancy.TenantContext;
 import reactor.core.publisher.Mono;
 
 /**
- * The cache never replaces method authorization: a caller without the authority is rejected with a
- * cold and with a warm cache, a caller with it still reads from the cache.
+ * La caché nunca reemplaza la autorización de métodos: un invocante sin la autoridad se rechaza con
+ * la caché fría y con la caché caliente, y un invocante con ella sigue leyendo de la caché.
  */
 class CacheAuthorizationTest {
 
   private static final String SECRET = UUID.randomUUID().toString();
   private static final Duration T = Duration.ofSeconds(5);
 
-  /** Blocking methods protected before and after the call. */
+  /** Métodos bloqueantes protegidos antes y después de la llamada. */
   public static class Accounts {
     private final AtomicInteger calls = new AtomicInteger();
 
-    // read through the proxy: a field of a class-based proxy is not the target's
+    // se lee a través del proxy: un campo de un proxy basado en clases no es el del objetivo
     public int calls() {
       return calls.get();
     }
@@ -78,7 +78,7 @@ class CacheAuthorizationTest {
     }
   }
 
-  /** The same contract on Reactor. */
+  /** El mismo contrato sobre Reactor. */
   public static class ReactiveAccounts {
     private final AtomicInteger calls = new AtomicInteger();
 
@@ -197,7 +197,7 @@ class CacheAuthorizationTest {
       Accounts accounts = ctx.getBean(Accounts.class);
       assertThrows(AccessDeniedException.class, () -> as(false, () -> accounts.after("1")));
       assertEquals(SECRET, as(true, () -> accounts.after("1")));
-      // the same subject loses the authority: the cached value is not returned
+      // el mismo subject pierde la autoridad: no se devuelve el valor cacheado
       assertThrows(AccessDeniedException.class, () -> as(false, () -> accounts.after("1")));
 
       assertEquals(List.of("public", "private"), as(true, () -> accounts.lines("1")));
@@ -217,7 +217,8 @@ class CacheAuthorizationTest {
         assertThrows(AccessDeniedException.class, () -> reactive(false, call.apply(accounts)));
         assertEquals(SECRET, reactive(true, call.apply(accounts)));
       }
-      // one load per method: the denied @PostAuthorize call loads the value, later calls hit
+      // una carga por método: la llamada @PostAuthorize denegada carga el valor y las llamadas
+      // posteriores aciertan
       assertEquals(2, accounts.calls());
     }
   }

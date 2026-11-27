@@ -10,7 +10,8 @@ public class {{project.className}}Application {
 
   public static void main(String[] args) {
 {{#archetype.cronjob}}
-    // a CronJob pod must end with the job's exit code (non-zero when the job failed)
+    // un pod de CronJob debe terminar con el código de salida del job (distinto de cero cuando el
+    // job falló)
     System.exit(
         SpringApplication.exit(SpringApplication.run({{project.className}}Application.class, args)));
 {{/archetype.cronjob}}

@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {
+      "name": "axiz.errors.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "Enables errors auto-configuration."
+    }
+  ]
+}

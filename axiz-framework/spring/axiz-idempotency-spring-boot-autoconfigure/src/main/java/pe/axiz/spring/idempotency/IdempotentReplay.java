@@ -5,9 +5,9 @@ import java.util.Objects;
 import pe.axiz.core.idempotency.StoredResponse;
 
 /**
- * Control-flow signal: the request repeats a completed one and its stored response must be
- * returned. It is raised by the idempotency advice, which runs after method authorization, and
- * turned into the response by {@link IdempotencyReplayHandler}. It is not an error.
+ * Señal de control de flujo: la solicitud repite una ya completada y debe devolverse su respuesta
+ * almacenada. La lanza el advice de idempotencia, que se ejecuta después de la autorización de
+ * métodos, y {@link IdempotencyReplayHandler} la convierte en la respuesta. No es un error.
  */
 public final class IdempotentReplay extends RuntimeException {
 

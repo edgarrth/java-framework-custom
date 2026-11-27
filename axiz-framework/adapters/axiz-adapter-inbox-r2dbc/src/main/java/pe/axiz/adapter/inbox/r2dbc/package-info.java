@@ -1,6 +1,6 @@
 /**
- * Inbox (idempotent consumer) over R2DBC for reactive services on Aurora PostgreSQL. Types are
- * non-null unless annotated {@code @Nullable}.
+ * Inbox (consumidor idempotente) sobre R2DBC para servicios reactivos sobre Aurora PostgreSQL. Los
+ * tipos no admiten null salvo que se anoten con {@code @Nullable}.
  */
 @NullMarked
 package pe.axiz.adapter.inbox.r2dbc;

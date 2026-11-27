@@ -21,8 +21,10 @@
   </properties>
 
   <dependencies>
-    <!-- how the framework builds this adapter's AWS client (endpoint, region, observation): the
-         auto-configuration uses it, so it travels with the adapter -->
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-concurrent</artifactId><version>${project.version}</version></dependency>
+
+    <!-- cómo construye el framework el cliente de AWS de este adaptador (endpoint, región, observación): la
+         autoconfiguración lo usa, así que viaja con el adaptador -->
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-adapter-aws</artifactId>

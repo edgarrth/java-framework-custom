@@ -1,3 +1,2 @@
 pe.axiz.spring.cache.AxizCacheCaffeineAutoConfiguration
-pe.axiz.spring.cache.AxizCacheRedisAutoConfiguration
 pe.axiz.spring.cache.AxizCacheAutoConfiguration

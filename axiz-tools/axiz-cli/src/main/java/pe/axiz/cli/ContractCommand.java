@@ -77,7 +77,7 @@ class ContractCommand implements Runnable {
     return manifest.openapi() == null && manifest.asyncapi() != null;
   }
 
-  /** Regenerates from the updated contract. */
+  /** Regenera a partir del contrato actualizado. */
   @Command(
       mixinStandardHelpOptions = true,
       name = "sync",
@@ -138,7 +138,7 @@ class ContractCommand implements Runnable {
     }
   }
 
-  /** Lints a contract with the corporate rules. */
+  /** Aplica lint a un contrato con las reglas corporativas. */
   @Command(
       mixinStandardHelpOptions = true,
       name = "lint",
@@ -190,7 +190,7 @@ class ContractCommand implements Runnable {
     }
   }
 
-  /** Compares two versions of a contract. */
+  /** Compara dos versiones de un contrato. */
   @Command(
       mixinStandardHelpOptions = true,
       name = "diff",

@@ -12,7 +12,10 @@ import java.util.concurrent.TimeUnit;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.builder.Transferable;
 
-/** Short-lived, per-test certificates; localhost is deliberately the only valid server name. */
+/**
+ * Certificados de vida corta por prueba; localhost es de forma deliberada el único nombre de
+ * servidor válido.
+ */
 record TlsMaterial(Path certificate, Path key, Path untrusted) {
   static TlsMaterial create(Path directory) throws Exception {
     Path certificate = directory.resolve("server.crt");
@@ -59,7 +62,8 @@ record TlsMaterial(Path certificate, Path key, Path untrusted) {
   }
 
   <C extends GenericContainer<?>> C copyTo(C container) throws Exception {
-    // Ephemeral fixture key only, readable by each image's unprivileged user. Never persisted.
+    // Clave efímera solo para el fixture, legible por el usuario sin privilegios de cada imagen.
+    // Nunca se persiste.
     container
         .withCopyToContainer(
             Transferable.of(Files.readAllBytes(certificate), 0644), "/tmp/axiz-server.crt")

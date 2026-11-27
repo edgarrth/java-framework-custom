@@ -1,23 +1,23 @@
-# Defaults of the axiz-initializr chart; values-<env>.yaml override them per environment.
+# Valores por defecto del chart axiz-initializr; values-<env>.yaml los sobrescribe por entorno.
 nameOverride: ""
 environment: dev
 
 image:
-  repository: nexus-docker.axiz.internal/axiz/axiz-initializr
-  tag: ""          # set by the deployment (GitOps): the commit of the image
-  digest: ""       # set by the deployment (GitOps): pins the signed image
+  repository: ghcr.io/edgarrth/java-framework-custom/axiz-initializr
+  tag: ""          # lo define el despliegue (GitOps): el commit de la imagen
+  digest: ""       # lo define el despliegue (GitOps): fija la imagen firmada
   pullPolicy: IfNotPresent
 imagePullSecrets: []
 
 serviceAccount:
   create: true
   name: ""
-  annotations: {}  # eks.amazonaws.com/role-arn per environment (IRSA)
-  # the pods never call the Kubernetes API (configuration is mounted as files); the AWS identity
-  # (IRSA or EKS Pod Identity) uses its own projected token
+  annotations: {}  # eks.amazonaws.com/role-arn por entorno (IRSA)
+  # los pods nunca invocan la API de Kubernetes (la configuración se monta como archivos); la identidad de AWS
+  # (IRSA o EKS Pod Identity) usa su propio token proyectado
   automountToken: false
 
-# shared configuration of the namespace (optional ConfigMap, mounted before the service's own)
+# configuración compartida del namespace (ConfigMap opcional, montado antes que el propio del servicio)
 sharedConfigMap: axiz-common
 
 javaOpts: "-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"
@@ -44,7 +44,7 @@ securityContext:
     drop: ["ALL"]
 
 replicaCount: 2
-terminationGracePeriodSeconds: 30
+terminationGracePeriodSeconds: 90
 service:
   port: 80
 probes:
@@ -58,22 +58,22 @@ pdb:
   enabled: true
   maxUnavailable: 1
 topologySpread:
-  whenUnsatisfiable: ScheduleAnyway   # DoNotSchedule in prod (values-prod.yaml)
+  whenUnsatisfiable: ScheduleAnyway   # DoNotSchedule en prod (values-prod.yaml)
 
 networkPolicy:
   enabled: true
-  ingressNamespaces: []   # namespaces allowed to call the service (ingress, gateway, callers)
-  # Outbound traffic is denied except DNS and what is listed here
+  ingressNamespaces: []   # namespaces autorizados a invocar el servicio (ingress, gateway, invocadores)
+  # El tráfico saliente se deniega salvo DNS y lo que se lista aquí
   egress:
-    sameNamespace: true   # sibling services of the namespace
-    namespaces: []        # other namespaces this service calls
+    sameNamespace: true   # servicios hermanos del namespace
+    namespaces: []        # otros namespaces que invoca este servicio
     cidrs: []             # e.g. {cidr: 10.20.0.0/16, ports: [443, 5432]}: VPC endpoints, Aurora,
-                          # ElastiCache, MSK, partners. Fill per environment (values-<env>.yaml)
+                          # ElastiCache, MSK, socios. Se completa por entorno (values-<env>.yaml)
 
-# ConfigMap axiz-initializr (application.yaml): environment values, flat Spring Boot keys
+# ConfigMap axiz-initializr (application.yaml): valores del entorno, claves planas de Spring Boot
 config: {}
 
-# ConfigMap axiz-initializr-errors: error catalog (code, category, title, detail keys...)
+# ConfigMap axiz-initializr-errors: catálogo de errores (código, categoría, título, claves de detalle...)
 errors: []
 
 externalSecret:
@@ -84,3 +84,5 @@ externalSecret:
   keys:
     - spring.security.oauth2.client.registration.sso.client-secret
     - spring.security.oauth2.client.registration.github.client-secret
+    - axiz.initializr.publication-key
+    - spring.data.redis.password

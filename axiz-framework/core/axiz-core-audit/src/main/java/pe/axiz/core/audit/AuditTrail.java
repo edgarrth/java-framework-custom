@@ -10,8 +10,8 @@ import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.sensitive.ObjectMasker;
 
 /**
- * Builds sanitized audit events and hands them to the publisher. Sanitizing is always active: the
- * details go through the {@link ObjectMasker} for the audit channel.
+ * Construye eventos de auditoría saneados y los entrega al publicador. El saneamiento siempre está
+ * activo: los detalles pasan por el {@link ObjectMasker} del canal de auditoría.
  */
 public final class AuditTrail {
 
@@ -30,17 +30,17 @@ public final class AuditTrail {
     this.clock = Objects.requireNonNull(clock);
   }
 
-  /** Starts an audit record for an action on a resource. */
+  /** Inicia un registro de auditoría para una acción sobre un recurso. */
   public Builder record(String action, String resourceType) {
     return new Builder(action, resourceType);
   }
 
   /**
-   * Context of the current request used to fill actor, correlation, channel and tenant.
+   * Contexto de la petición actual usado para completar actor, correlación, canal y tenant.
    *
    * @param actor actor
-   * @param correlationId correlation id
-   * @param channel channel
+   * @param correlationId id de correlación
+   * @param channel canal
    * @param tenant tenant
    */
   public record Context(
@@ -53,7 +53,7 @@ public final class AuditTrail {
     }
   }
 
-  /** Builder of one audit record. */
+  /** Builder de un registro de auditoría. */
   public final class Builder {
     private final AuditRecord record;
 
@@ -71,7 +71,7 @@ public final class AuditTrail {
       return this;
     }
 
-    /** Adds a detail; the value is sanitized for the audit channel. */
+    /** Agrega un detalle; el valor se sanea para el canal de auditoría. */
     public Builder detail(String key, @Nullable Object value) {
       record.detail(key, value);
       return this;
@@ -90,7 +90,7 @@ public final class AuditTrail {
       publish(AuditEvent.Outcome.FAILURE, errorCode);
     }
 
-    /** Runs the action and records success or failure according to the policy. */
+    /** Ejecuta la acción y registra el éxito o el fallo según la política. */
     public <T> T around(
         AuditPolicy policy,
         Supplier<T> action,

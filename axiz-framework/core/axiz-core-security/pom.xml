@@ -16,7 +16,7 @@
 
   <properties>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
-    <!-- M10: measured locally; floor of branch 163/186 and detected mutations 163/194. -->
+    <!-- Umbrales mínimos del módulo: ramas 163/186 y mutaciones detectadas 163/194. -->
     <axiz.coverage.branch>0.87</axiz.coverage.branch>
     <axiz.mutation.threshold>84</axiz.mutation.threshold>
     <axiz.module.name>pe.axiz.core.security</axiz.module.name>
@@ -25,12 +25,6 @@
   <dependencies>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-tenancy</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-lang</artifactId><version>${project.version}</version></dependency>
-
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-commons</artifactId>
-      <version>${project.version}</version>
-    </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-core-errors</artifactId>

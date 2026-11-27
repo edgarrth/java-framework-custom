@@ -1,4 +1,4 @@
-/** Scheduled jobs (one replica at a time through ShedLock). */
+/** Jobs programados (una réplica a la vez mediante ShedLock). */
 @NullMarked
 package pe.axiz.payments.process.adapter.in.scheduling;
 

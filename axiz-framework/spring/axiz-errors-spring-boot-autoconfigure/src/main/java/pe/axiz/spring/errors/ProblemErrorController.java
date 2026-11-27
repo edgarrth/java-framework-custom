@@ -11,17 +11,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-import pe.axiz.core.commons.StandardHeaders;
+import pe.axiz.core.api.StandardHeaders;
 import pe.axiz.core.errors.Problem;
 
 /**
- * Replaces Boot's whitelabel error controller: errors raised in filters or by the container are
- * rendered as RFC 9457 problems too.
+ * Reemplaza el controlador de errores whitelabel de Boot: los errores lanzados en filtros o por el
+ * contenedor también se representan como problemas RFC 9457.
  *
- * <p>The container forwards a failed request to the error path keeping its HTTP method, so the
- * error page answers every method. The methods are listed explicitly and split in two mappings,
- * safe and unsafe, instead of one mapping open to any method: rendering an error changes no state,
- * and a method outside the list is never routed here.
+ * <p>El contenedor reenvía una solicitud fallida a la ruta de error conservando su método HTTP, por
+ * lo que la página de error responde a todos los métodos. Los métodos se listan explícitamente y se
+ * dividen en dos mapeos, seguros e inseguros, en lugar de un único mapeo abierto a cualquier
+ * método: representar un error no cambia ningún estado, y un método fuera de la lista nunca se
+ * enruta aquí.
  */
 @RestController
 public class ProblemErrorController implements ErrorController {
@@ -33,10 +34,10 @@ public class ProblemErrorController implements ErrorController {
   }
 
   /**
-   * The error of a request made with a safe method.
+   * Devuelve el error de una solicitud hecha con un método seguro.
    *
-   * @param request the forwarded request
-   * @return the problem
+   * @param request la solicitud reenviada
+   * @return el problema
    */
   @RequestMapping(
       path = "${server.error.path:${error.path:/error}}",
@@ -46,10 +47,11 @@ public class ProblemErrorController implements ErrorController {
   }
 
   /**
-   * The error of a request made with a method that changes state. Rendering it changes nothing.
+   * Devuelve el error de una solicitud hecha con un método que cambia estado. Representarlo no
+   * cambia nada.
    *
-   * @param request the forwarded request
-   * @return the problem
+   * @param request la solicitud reenviada
+   * @return el problema
    */
   @RequestMapping(
       path = "${server.error.path:${error.path:/error}}",
@@ -74,6 +76,7 @@ public class ProblemErrorController implements ErrorController {
             uri == null ? null : uri.toString(),
             request.getHeader(StandardHeaders.CORRELATION_ID));
     return ResponseEntity.status(problem.status())
+        .headers(headers -> responder.headers(headers, problem, failure))
         .contentType(MediaType.parseMediaType(ProblemResponder.MEDIA_TYPE))
         .body(responder.json(problem));
   }

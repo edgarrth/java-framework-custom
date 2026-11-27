@@ -19,13 +19,14 @@ import pe.axiz.core.id.IdempotencyKeys;
 import pe.axiz.core.lang.Strings;
 
 /**
- * API idempotency: the first request with a key runs, a repeated identical request gets the stored
- * response, a concurrent one gets 409 and the same key with a different request gets 422.
+ * Idempotencia de API: se ejecuta la primera petición con una clave, una petición idéntica repetida
+ * recibe la respuesta almacenada, una concurrente recibe 409 y la misma clave con una petición
+ * distinta recibe 422.
  *
- * <p>Each execution receives an owner token in {@link Proceed}; {@link #complete} and {@link #fail}
- * only act while that execution still holds the key. When the lock expires and another request
- * takes the key, a late completion of the first one is discarded instead of overwriting the result
- * of the second.
+ * <p>Cada ejecución recibe un token de propietario en {@link Proceed}; {@link #complete} y {@link
+ * #fail} solo actúan mientras esa ejecución conserva la clave. Cuando el lock expira y otra
+ * petición toma la clave, una finalización tardía de la primera se descarta en lugar de
+ * sobrescribir el resultado de la segunda.
  */
 public final class IdempotencyService {
 
@@ -51,22 +52,22 @@ public final class IdempotencyService {
     this.retention = Objects.requireNonNull(retention);
     this.clock = Objects.requireNonNull(clock);
     this.resolver = resolver;
-    if (inProgressTtl.isNegative() || inProgressTtl.isZero()) {
-      throw new IllegalArgumentException("inProgressTtl must be positive");
+    if (inProgressTtl.compareTo(Duration.ofMillis(3)) < 0) {
+      throw new IllegalArgumentException("inProgressTtl must be at least 3 milliseconds");
     }
     if (retention.compareTo(inProgressTtl) <= 0)
       throw new IllegalArgumentException("retention must exceed the execution lease");
   }
 
-  /** Decision for an incoming request. */
+  /** Decisión para una petición entrante. */
   public sealed interface Decision permits Proceed, Replay {}
 
   /**
-   * Run the operation, then call {@link IdempotencyService#complete} or {@link
-   * IdempotencyService#fail} with this value.
+   * Se ejecuta la operación y luego se llama a {@link IdempotencyService#complete} o a {@link
+   * IdempotencyService#fail} con este valor.
    *
-   * @param key scoped key
-   * @param owner token of this execution
+   * @param key clave con alcance
+   * @param owner token de esta ejecución
    */
   public record Proceed(String key, String owner) implements Decision {
     public Proceed {
@@ -76,20 +77,21 @@ public final class IdempotencyService {
   }
 
   /**
-   * Return the stored response.
+   * Se devuelve la respuesta almacenada.
    *
-   * @param response stored response
+   * @param response respuesta almacenada
    */
   public record Replay(StoredResponse response) implements Decision {}
 
   /**
-   * Starts processing.
+   * Inicia el procesamiento.
    *
-   * @param scope operation and caller scope (keys are unique per scope), see {@link #scope}
-   * @param idempotencyKey value of the Idempotency-Key header
-   * @param fingerprint request fingerprint, see {@link #fingerprint}
-   * @return the decision
-   * @throws BusinessException with 400, 409 or 422 errors
+   * @param scope alcance de operación y llamador (las claves son únicas por alcance), ver {@link
+   *     #scope}
+   * @param idempotencyKey valor de la cabecera Idempotency-Key
+   * @param fingerprint huella de la petición, ver {@link #fingerprint}
+   * @return la decisión
+   * @throws BusinessException con errores 400, 409 o 422
    */
   public Decision begin(String scope, @Nullable String idempotencyKey, String fingerprint) {
     String key = scopedKey(scope, idempotencyKey);
@@ -163,25 +165,23 @@ public final class IdempotencyService {
     String owner = UUID.randomUUID().toString();
     boolean started =
         store.tryStart(
-            new IdempotencyRecord(
-                key,
-                fingerprint,
-                IdempotencyRecord.Status.IN_PROGRESS,
-                owner,
-                null,
-                now.plus(inProgressTtl),
-                now.plus(retention),
-                0,
-                null));
+            IdempotencyRecord.builder(
+                    key, fingerprint, now.plus(inProgressTtl), now.plus(retention))
+                .status(IdempotencyRecord.Status.IN_PROGRESS)
+                .owner(owner)
+                .response(null)
+                .resolutionVersion(0)
+                .failure(null)
+                .build());
     return started ? Optional.of(new Proceed(key, owner)) : Optional.empty();
   }
 
   /**
-   * Stores the response for replay.
+   * Almacena la respuesta para replay.
    *
-   * @return {@code false} when this execution no longer holds the key (its retention expired and
-   *     the key was acquired by another request, or reconciliation changed its state); the response
-   *     is then not stored
+   * @return {@code false} cuando esta ejecución perdió la clave (su retención expiró y otra
+   *     petición adquirió la clave, o una reconciliación cambió su estado); en ese caso la
+   *     respuesta no se almacena
    */
   public boolean complete(Proceed execution, StoredResponse response) {
     return store.complete(
@@ -189,9 +189,12 @@ public final class IdempotencyService {
   }
 
   /**
-   * Releases the key after a failure; server errors must not be replayed.
+   * Marca el resultado como UNKNOWN tras un fallo; los errores de servidor no se reproducen. Una
+   * petición posterior recibe un conflicto hasta que un {@link IdempotencyResolver} reconcilia el
+   * efecto. {@link #releaseWithoutEffect(Proceed)} se usa solo cuando se sabe que no hubo ningún
+   * efecto de negocio, para que un reintento no pueda duplicar una operación con commit.
    *
-   * @return {@code false} when this execution no longer holds the key
+   * @return {@code false} cuando esta ejecución no conserva la clave
    */
   public boolean fail(Proceed execution) {
     return markUnknown(execution, "execution-failed");
@@ -220,25 +223,30 @@ public final class IdempotencyService {
   }
 
   /**
-   * Scope of a key: the operation plus a hash of who calls it. Two callers that share an
-   * Idempotency-Key never see each other's responses, even across issuers or tenants.
+   * Alcance de una clave: la operación más un hash de quién la llama. Dos llamadores que comparten
+   * un Idempotency-Key nunca ven las respuestas del otro, incluso entre emisores o tenants
+   * distintos.
    *
-   * <p>Each part is hashed as a marker ({@code 01} absent, {@code 02} present), its UTF-8 bytes and
-   * a {@code 00} separator. The encoding is unambiguous because a part may not contain control
-   * characters: UTF-8 never encodes another character with a byte below {@code 0x20}, so no part
-   * can imitate a separator or a marker. A part with a control character (U+0000 to U+001F, U+007F)
-   * is rejected before any operation starts; the axiz token mapping already refuses such claims,
-   * and integrations that build scopes by other means get the same check here. Unpaired UTF-16
-   * surrogates are also rejected: UTF-8 would replace them and merge distinct identities. Valid
-   * identities retain their original hashes, including across upgrades and in-flight retries.
+   * <p>Cada parte se incluye en el hash como un marcador ({@code 01} ausente, {@code 02} presente),
+   * sus bytes UTF-8 y un separador {@code 00}. La codificación es inequívoca porque una parte no
+   * puede contener caracteres de control: UTF-8 nunca codifica otro carácter con un byte menor que
+   * {@code 0x20}, de modo que ninguna parte puede imitar un separador o un marcador. Una parte con
+   * un carácter de control (U+0000 a U+001F, U+007F) se rechaza antes de que empiece cualquier
+   * operación; el mapeo de tokens de axiz ya rechaza esos claims, y las integraciones que
+   * construyen alcances por otros medios reciben la misma verificación aquí. También se rechazan
+   * los surrogates UTF-16 sin pareja: UTF-8 los reemplazaría y fusionaría identidades distintas.
+   * Las identidades válidas conservan sus hashes originales, también entre versiones y en
+   * reintentos en curso.
    *
-   * @param operation stable operation name (for example {@code com.acme.PaymentController#create})
-   * @param issuer token issuer, if any
-   * @param tenant tenant, if any
-   * @param client calling application, if any
-   * @param subject end user, if any
+   * @param operation nombre estable de la operación (por ejemplo {@code
+   *     com.acme.PaymentController#create})
+   * @param issuer emisor del token, si existe
+   * @param tenant tenant, si existe
+   * @param client aplicación que llama, si existe
+   * @param subject usuario final, si existe
    * @return {@code operation:hash}
-   * @throws IllegalArgumentException when a part contains a control character or malformed Unicode
+   * @throws IllegalArgumentException cuando una parte contiene un carácter de control o Unicode mal
+   *     formado
    */
   public static String scope(
       String operation,
@@ -275,22 +283,22 @@ public final class IdempotencyService {
     }
   }
 
-  /** SHA-256 over method, path and body (no query string). */
+  /** SHA-256 sobre método, ruta y cuerpo (sin query string). */
   public static String fingerprint(String method, String path, byte[] body) {
     return fingerprint(method, path, null, body);
   }
 
   /**
-   * SHA-256 over method, path, query string and body. The query string is used exactly as sent:
-   * reordering parameters is a different request (a repeated parameter such as {@code
-   * sort=a&sort=b} may be order-sensitive), so a client must resend the same request to reuse a
-   * key.
+   * SHA-256 sobre método, ruta, query string y cuerpo. La query string se usa exactamente como se
+   * envió: reordenar parámetros es una petición distinta (un parámetro repetido como {@code
+   * sort=a&sort=b} puede depender del orden), de modo que un cliente debe reenviar la misma
+   * petición para reutilizar una clave.
    *
-   * @param method HTTP method (or a fixed label for non-HTTP commands)
-   * @param path request path
-   * @param query raw query string without {@code ?}, if any
-   * @param body request body
-   * @return hex digest
+   * @param method método HTTP (o una etiqueta fija para comandos no HTTP)
+   * @param path ruta de la petición
+   * @param query query string en bruto sin {@code ?}, si existe
+   * @param body cuerpo de la petición
+   * @return digest hexadecimal
    */
   public static String fingerprint(
       String method, String path, @Nullable String query, byte[] body) {

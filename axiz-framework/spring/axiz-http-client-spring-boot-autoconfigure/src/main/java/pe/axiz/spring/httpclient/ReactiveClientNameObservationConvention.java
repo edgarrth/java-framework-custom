@@ -5,7 +5,10 @@ import io.micrometer.common.KeyValues;
 import org.springframework.web.reactive.function.client.ClientRequestObservationContext;
 import org.springframework.web.reactive.function.client.DefaultClientRequestObservationConvention;
 
-/** Uses the logical client name as {@code client.name} in metrics and spans of a WebClient. */
+/**
+ * Usa el nombre lógico del cliente como {@code client.name} en las métricas y los spans de un
+ * WebClient.
+ */
 public class ReactiveClientNameObservationConvention
     extends DefaultClientRequestObservationConvention {
 

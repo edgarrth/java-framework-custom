@@ -1,42 +1,93 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "github>edgarrth/java-framework-custom//.github/renovate/platform#axiz-workflows-v2.0.0"
+    "config:recommended",
+    ":semanticCommits",
+    ":dependencyDashboard",
+    "helpers:pinGitHubActionDigestsToSemver"
+  ],
+  "timezone": "America/Lima",
+  "schedule": [
+    "before 7am on monday"
+  ],
+  "prConcurrentLimit": 5,
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "schedule": [
+      "at any time"
+    ],
+    "labels": [
+      "security"
+    ]
+  },
+  "description": "Monorepo de Axiz: framework, herramientas, documentación y workflows",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Imágenes base en propiedades del POM con comentario renovate: el tag y su digest se actualizan juntos",
+      "managerFilePatterns": [
+        "/(^|/)pom\\.xml$/"
+      ],
+      "matchStrings": [
+        "<!-- renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+) -->\\s*<[^>]+>[^:<]+:(?<currentValue>[^@<]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?</"
+      ]
+    }
   ],
   "packageRules": [
     {
-      "description": "Release Please owns Axiz product self references; no Renovate update or release-age policy applies to these disabled dependencies",
-      "matchPackageNames": [
-        "edgarrth/java-framework-custom",
-        "edgarrth/java-framework-custom/**"
+      "description": "Las actualizaciones menores y de parche de plugins de build y librerías de prueba se agrupan",
+      "matchDepTypes": [
+        "build",
+        "test"
       ],
-      "matchFileNames": [
-        ".github/workflows/native-nightly.yaml",
-        ".github/workflows/native.yaml",
-        ".github/workflows/pr.yaml",
-        ".github/workflows/lib-build.yaml",
-        ".github/workflows/lib-deploy.yaml",
-        ".github/workflows/service-build.yaml",
-        ".github/workflows/service-deploy.yaml",
-        ".github/actions/build-inputs/action.yaml",
-        ".github/actions/consume-build/action.yaml",
-        ".github/gitops/policies/verify-images.yaml.template",
-        ".github/actions/resolve-service-build/action.yaml",
-        ".github/actions/build-manifest/sign_product.py"
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
       ],
-      "enabled": false,
-      "minimumReleaseAge": null
+      "groupName": "build and test dependencies"
     },
     {
-      "description": "Review Renovate engine upgrades because the offline tests use its internal modules",
-      "matchFileNames": [
-        ".github/scripts/release-version/package.json"
+      "description": "Las GitHub Actions se agrupan y se fijan por SHA con el comentario de la versión",
+      "matchManagers": [
+        "github-actions"
       ],
+      "groupName": "github actions"
+    },
+    {
+      "description": "Las imágenes de contenedor se fijan por digest y conservan el tag para leerlas",
+      "matchDatasources": [
+        "docker"
+      ],
+      "pinDigests": true
+    },
+    {
+      "description": "Los trenes de Spring y AWS avanzan juntos",
       "matchPackageNames": [
-        "renovate"
+        "org.springframework.boot:**",
+        "org.springframework.cloud:**",
+        "io.awspring.cloud:**"
       ],
-      "dependencyDashboardApproval": true,
-      "minimumReleaseAge": "7 days"
+      "groupName": "spring"
+    },
+    {
+      "matchPackageNames": [
+        "software.amazon.awssdk:**"
+      ],
+      "groupName": "aws sdk"
+    },
+    {
+      "description": "Las versiones mayores requieren revisar compatibilidad y pasar las pruebas de integración",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "release-please es dueño de las referencias del producto a sí mismo",
+      "matchPackageNames": [
+        "edgarrth/java-framework-custom"
+      ],
+      "enabled": false
     }
   ]
 }

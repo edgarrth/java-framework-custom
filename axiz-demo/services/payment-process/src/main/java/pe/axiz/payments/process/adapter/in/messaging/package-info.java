@@ -1,4 +1,4 @@
-/** Inbound events (Kafka). */
+/** Eventos de entrada (Kafka). */
 @NullMarked
 package pe.axiz.payments.process.adapter.in.messaging;
 

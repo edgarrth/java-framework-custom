@@ -1,4 +1,4 @@
-/** Persistence adapter (Aurora PostgreSQL, JPA). */
+/** Adaptador de persistencia (Aurora PostgreSQL, JPA). */
 @NullMarked
 package pe.axiz.payments.orders.adapter.out.persistence;
 

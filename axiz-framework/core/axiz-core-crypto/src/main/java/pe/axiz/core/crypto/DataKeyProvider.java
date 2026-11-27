@@ -4,40 +4,72 @@ import java.security.MessageDigest;
 import java.util.Arrays;
 import org.jspecify.annotations.Nullable;
 
-/** Port for envelope encryption data keys (AWS KMS in production). */
+/** Puerto para las claves de datos del cifrado envelope (AWS KMS en producción). */
 public interface DataKeyProvider {
 
-  /** A new data key: plaintext for local use and its encrypted form to store with the data. */
+  /**
+   * Transfiere una clave de datos nueva y propia; quien llama la cierra tras usarla o al retirarla
+   * de la caché.
+   */
   DataKey generate(String context);
 
-  /** Decrypts a stored data key. */
+  /**
+   * Descifra en un buffer nuevo y propio que quien llama limpia; nunca se devuelve un array de
+   * clave compartido.
+   */
   byte[] decrypt(byte[] encryptedKey, String context);
 
   /**
-   * Data key pair. The arrays are copied on the way in and out; equality compares the encrypted key
-   * only, in constant time, and the plaintext never appears in {@link #toString()}.
+   * Par de claves de datos. Los arrays se copian a la entrada y a la salida; la igualdad compara
+   * solo la clave cifrada, en tiempo constante, y el texto plano nunca aparece en {@link
+   * #toString()}.
    */
-  final class DataKey {
+  final class DataKey implements AutoCloseable {
     private final byte[] plaintext;
     private final byte[] encrypted;
+    private boolean closed;
 
     /**
-     * Creates a data key pair.
+     * Crea un par de claves de datos.
      *
-     * @param plaintext 32-byte key, keep only in memory
-     * @param encrypted key encrypted by the master key
+     * @param plaintext clave de 32 bytes, se conserva solo en memoria
+     * @param encrypted clave cifrada con la clave maestra
      */
     public DataKey(byte[] plaintext, byte[] encrypted) {
       this.plaintext = plaintext.clone();
       this.encrypted = encrypted.clone();
     }
 
-    /** A copy of the 32-byte plaintext key. */
-    public byte[] plaintext() {
+    /** Copia de la clave en texto plano de 32 bytes. */
+    public synchronized byte[] plaintext() {
+      if (closed) throw new CryptoException("Data key has been closed");
       return plaintext.clone();
     }
 
-    /** A copy of the key encrypted by the master key. */
+    synchronized DataKey snapshot() {
+      if (closed) throw new CryptoException("Data key has been closed");
+      return new DataKey(plaintext, encrypted);
+    }
+
+    synchronized boolean validForEnvelope() {
+      if (closed
+          || plaintext.length != AesGcm.KEY_BYTES
+          || encrypted.length < 1
+          || encrypted.length > 0xFFFF) throw new CryptoException("Invalid envelope data key");
+      return true;
+    }
+
+    /**
+     * Limpia solo esta instancia; quienes llaman siguen siendo responsables de sus copias de
+     * entrada y salida.
+     */
+    @Override
+    public synchronized void close() {
+      Arrays.fill(plaintext, (byte) 0);
+      closed = true;
+    }
+
+    /** Copia de la clave cifrada con la clave maestra. */
     public byte[] encrypted() {
       return encrypted.clone();
     }

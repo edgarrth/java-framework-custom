@@ -6,13 +6,13 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /**
- * An issuer the service accepts. The JWKS location is configured (or discovered from the configured
- * issuer's OpenID metadata), never taken from the token.
+ * Emisor que el servicio acepta. La ubicación del JWKS se configura (o se descubre a partir de los
+ * metadatos OpenID del emisor configurado), nunca se toma del token.
  *
- * @param issuer exact {@code iss} value
- * @param jwkSetUri JWKS endpoint of the issuer; null to discover it from {@code
+ * @param issuer valor exacto de {@code iss}
+ * @param jwkSetUri endpoint JWKS del emisor; null para descubrirlo desde {@code
  *     <issuer>/.well-known/openid-configuration}
- * @param audiences accepted audiences (at least one)
+ * @param audiences audiencias aceptadas (al menos una)
  */
 public record TrustedIssuer(String issuer, @Nullable URI jwkSetUri, List<String> audiences) {
 
@@ -28,7 +28,7 @@ public record TrustedIssuer(String issuer, @Nullable URI jwkSetUri, List<String>
     }
   }
 
-  /** Whether the keys are discovered from the issuer metadata. */
+  /** Indica si las claves se descubren a partir de los metadatos del emisor. */
   public boolean discovered() {
     return jwkSetUri == null;
   }

@@ -13,10 +13,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import pe.axiz.core.cache.AsyncByteCache;
 import pe.axiz.core.cache.CachedValue;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 
 /**
- * Redis/Valkey asynchronous cache; TTL reads are atomic and eviction uses paginated SCAN/UNLINK.
+ * Caché asíncrona de Redis/Valkey; las lecturas de TTL son atómicas y el desalojo usa SCAN/UNLINK
+ * paginado.
  */
 public final class RedisAsyncByteCache implements AsyncByteCache {
   private final RedisAsyncCommands<String, byte[]> redis;

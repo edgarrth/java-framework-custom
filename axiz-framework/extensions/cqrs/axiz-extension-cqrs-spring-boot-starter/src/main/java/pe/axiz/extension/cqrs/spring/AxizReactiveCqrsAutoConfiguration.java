@@ -28,10 +28,11 @@ import pe.axiz.spring.audit.ReactiveAuditTrail;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Reactive CQRS: {@link ReactiveCommandBus} and {@link ReactiveQueryBus} over all {@link
- * ReactiveCommandHandler} and {@link ReactiveQueryHandler} beans, with the same ordered pipeline as
- * the blocking buses built from non-blocking behaviors (the transaction is reactive, over the R2DBC
- * transaction manager). A request type with both a blocking and a reactive handler fails startup.
+ * CQRS reactivo: {@link ReactiveCommandBus} y {@link ReactiveQueryBus} sobre todos los beans {@link
+ * ReactiveCommandHandler} y {@link ReactiveQueryHandler}, con el mismo pipeline ordenado que los
+ * buses bloqueantes construido a partir de behaviors no bloqueantes (la transacción es reactiva,
+ * sobre el gestor de transacciones R2DBC). Un tipo de petición con un handler bloqueante y otro
+ * reactivo hace fallar el arranque.
  */
 @AutoConfiguration(
     after = AxizCqrsAutoConfiguration.class,
@@ -136,7 +137,12 @@ public class AxizReactiveCqrsAutoConfiguration {
             .toList(),
         AccessPolicies.none(),
         environment.getProperty(AxizCqrsAutoConfiguration.UNPROTECTED_PROPERTY, "fail"));
-    return new ReactiveBuses(reactive, behaviors.orderedStream().toList());
+    List<ReactivePipelineBehavior> pipeline = behaviors.orderedStream().toList();
+    if (!reactive.isEmpty()
+        && pipeline.stream().noneMatch(ReactiveBehaviors.Authorization.class::isInstance))
+      throw new IllegalStateException(
+          "Reactive CQRS handlers require native authorization and Spring Security");
+    return new ReactiveBuses(reactive, pipeline);
   }
 
   @Bean

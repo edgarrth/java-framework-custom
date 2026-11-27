@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistrar;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.localstack.LocalStackContainer;
@@ -21,8 +22,8 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 /**
- * Starts the whole service against real dependencies in containers (Testcontainers): wiring,
- * configuration, migrations and health. Needs Docker.
+ * Arranca el servicio completo contra dependencias reales en contenedores (Testcontainers):
+ * cableado, configuración, migraciones y salud. Requiere Docker.
  */
 @SpringBootTest(
     properties = {
@@ -36,6 +37,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
   LocalStackTestConfiguration.class,
   BankingCoreApplicationTest.AuditQueue.class
 })
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class BankingCoreApplicationTest {
   @TestConfiguration(proxyBeanMethods = false)
   static class AuditQueue {

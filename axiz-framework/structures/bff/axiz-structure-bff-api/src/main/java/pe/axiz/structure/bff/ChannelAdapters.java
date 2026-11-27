@@ -6,10 +6,11 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Chooses the adapter of the caller's channel, falling back to the default one ({@code *}).
+ * Elige el adaptador del canal de quien llama y, en su defecto, el adaptador por defecto ({@code
+ * *}).
  *
- * @param <S> composed source
- * @param <T> channel response
+ * @param <S> fuente compuesta
+ * @param <T> respuesta del canal
  */
 public final class ChannelAdapters<S, T> {
 

@@ -9,14 +9,12 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import pe.axiz.core.lock.DistributedLock;
 import pe.axiz.core.lock.LockTemplate;
-import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 
 class LockTest {
 
   @Test
   void memoryLockForTestsAndUnknownStoreFails() {
     new ApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizLockAutoConfiguration.class))
         .withPropertyValues("axiz.config.environment=test", "axiz.lock.store=memory")
         .run(
@@ -32,7 +30,6 @@ class LockTest {
                       .isPresent());
             });
     new ApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizLockAutoConfiguration.class))
         .withPropertyValues("axiz.lock.store=redis")
         .run(ctx -> assertTrue(ctx.getStartupFailure() != null));
@@ -41,7 +38,6 @@ class LockTest {
   @Test
   void memoryLockIsRefusedWhenTheEnvironmentIsNotSet() {
     new ApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizLockAutoConfiguration.class))
         .withPropertyValues("axiz.config.environment=", "axiz.lock.store=memory")
         .run(

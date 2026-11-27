@@ -3,8 +3,6 @@ package pe.axiz.core.http;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URLEncoder;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.DateTimeException;
 import java.time.Duration;
@@ -15,22 +13,22 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.json.JsonReader;
 import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.errors.CoreErrors;
 import pe.axiz.core.errors.ExternalErrorDetail;
 import pe.axiz.core.errors.ExternalServiceException;
+import pe.axiz.core.json.JsonReader;
 
-/** Shared OAuth wire format and validation for synchronous and native transports. */
-final class ClientCredentialsExchange {
-  static final long MAX_RESPONSE_BYTES = 65_536;
+/** Formato de red y validación de OAuth compartidos para transportes síncronos y nativos. */
+public final class ClientCredentialsExchange {
+  public static final long MAX_RESPONSE_BYTES = 65_536;
   private final URI tokenUri;
   private final String encodedClientId;
   private final String form;
   private final Duration timeout;
 
-  ClientCredentialsExchange(
+  public ClientCredentialsExchange(
       URI tokenUri,
       String clientId,
       List<String> scopes,
@@ -58,32 +56,25 @@ final class ClientCredentialsExchange {
     form = body.toString();
   }
 
-  HttpRequest request(String clientSecret) {
+  public AsyncHttpExchange.Request request(String clientSecret) {
     String basic =
         Base64.getEncoder()
             .encodeToString(
                 (encodedClientId + ":" + encode(Objects.requireNonNull(clientSecret)))
                     .getBytes(StandardCharsets.UTF_8));
-    return HttpRequest.newBuilder(tokenUri)
-        .timeout(timeout)
-        .header("Content-Type", "application/x-www-form-urlencoded")
-        .header("Accept", "application/json")
-        .header("Authorization", "Basic " + basic)
-        .POST(HttpRequest.BodyPublishers.ofString(form))
-        .build();
+    return new AsyncHttpExchange.Request(
+        tokenUri,
+        "POST",
+        Map.of(
+            "Content-Type", List.of("application/x-www-form-urlencoded"),
+            "Accept", List.of("application/json"),
+            "Authorization", List.of("Basic " + basic)),
+        form,
+        timeout);
   }
 
-  AccessToken read(HttpResponse<String> response, Instant requestedAt, Instant receivedAt) {
-    return read(
-        new AsyncHttpExchange.Response(
-            response.statusCode(),
-            response.headers().firstValue("Content-Type").orElse(null),
-            response.body()),
-        requestedAt,
-        receivedAt);
-  }
-
-  AccessToken read(AsyncHttpExchange.Response response, Instant requestedAt, Instant receivedAt) {
+  public AccessToken read(
+      AsyncHttpExchange.Response response, Instant requestedAt, Instant receivedAt) {
     if (response.status() != 200)
       throw ExternalErrorTranslator.translate(
           "oauth2-token", response.status(), response.contentType(), response.body());
@@ -91,7 +82,7 @@ final class ClientCredentialsExchange {
     try {
       json = JsonReader.parseObject(response.body());
     } catch (IllegalArgumentException invalid) {
-      // Parser diagnostics may include a character from a token or client secret.
+      // Los diagnósticos del parser pueden incluir un carácter de un token o de un client secret.
       throw new IllegalStateException("Token endpoint returned invalid JSON");
     }
     Object token = json.get("access_token");
@@ -117,7 +108,7 @@ final class ClientCredentialsExchange {
     return URLEncoder.encode(value, StandardCharsets.UTF_8);
   }
 
-  static RuntimeException transport(Throwable failure) {
+  public static RuntimeException transport(Throwable failure) {
     if (failure instanceof AxizException axiz) return axiz;
     if (failure instanceof CancellationException cancelled) return cancelled;
     if (failure instanceof Error fatal) throw fatal;

@@ -1,5 +1,5 @@
-# Starter template set: a new capability as a layer 1 library, its Spring Boot auto-configuration
-# and the starter that users add (the same layout as the axiz modules).
+# Conjunto de plantillas de starter: una nueva capacidad como biblioteca de capa 1, su autoconfiguración
+# de Spring Boot y el starter que añaden los usuarios (la misma estructura que los módulos de axiz).
 files:
   - {template: /shared/mvnw, path: mvnw, binary: true}
   - {template: /shared/mvnw.cmd, path: mvnw.cmd, binary: true}
@@ -19,7 +19,6 @@ files:
   - {template: /service/static/pull_request_template.md, path: .github/pull_request_template.md, binary: true}
   - {template: /service/static/CODEOWNERS, path: .github/CODEOWNERS, binary: true}
   - {template: /library/ci.yaml.mustache, path: .github/workflows/ci.yaml}
-  - {template: /library/deploy.yaml.mustache, path: .github/workflows/deploy.yaml}
   - {template: /shared/release/release.yaml, path: .github/workflows/release.yaml, binary: true}
   - {template: /shared/release/release-please-config.json.mustache, path: release-please-config.json}
   - {template: /shared/release/release-please-manifest.json, path: .release-please-manifest.json, binary: true}

@@ -4,23 +4,24 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.Authentication;
 
 /**
- * Who the caller of a {@link pe.axiz.core.cache.CacheScope#CALLER} cache is. The identity must be
- * unique across every way callers authenticate to the service: a JWT subject is unique only within
- * its issuer, so two issuers may hand out the same {@code sub} to different people.
+ * Determina quién es el invocante de una caché {@link pe.axiz.core.cache.CacheScope#CALLER}. La
+ * identidad debe ser única entre todas las formas en que los invocantes se autentican ante el
+ * servicio: un subject JWT solo es único dentro de su emisor, por lo que dos emisores pueden
+ * entregar el mismo {@code sub} a personas distintas.
  *
- * <p>The default ({@link DefaultCacheCallerResolver}) knows the authentications of the axiz
- * security starter and of the Spring resource server. A service with another kind of authentication
- * declares a bean of this type; an authentication it cannot tell apart safely returns {@code null}
- * and the call runs without the cache.
+ * <p>La implementación por defecto ({@link DefaultCacheCallerResolver}) conoce las autenticaciones
+ * del starter de seguridad de axiz y del resource server de Spring. Un servicio con otro tipo de
+ * autenticación declara un bean de este tipo; una autenticación que no puede distinguir de forma
+ * segura devuelve {@code null} y la llamada se ejecuta sin la caché.
  */
 @FunctionalInterface
 public interface CacheCallerResolver {
 
   /**
-   * The identity of an authenticated caller.
+   * Devuelve la identidad de un invocante autenticado.
    *
-   * @param authentication the current, authenticated, non-anonymous authentication
-   * @return a value that differs for every distinct caller, or {@code null} to skip the cache
+   * @param authentication la autenticación actual, autenticada y no anónima
+   * @return un valor distinto para cada invocante diferente, o {@code null} para omitir la caché
    */
   @Nullable String identity(Authentication authentication);
 }

@@ -30,7 +30,8 @@ import reactor.core.publisher.Mono;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * What the cache guarantees to the methods it wraps: separate keys, explicit sharing, freshness.
+ * Lo que la caché garantiza a los métodos que envuelve: claves separadas, compartición explícita,
+ * frescura.
  */
 class CacheContractTest {
 
@@ -232,7 +233,7 @@ class CacheContractTest {
             });
     runner
         .withBean("axizL2Cache", ByteCache.class, () -> shared)
-        .withPropertyValues("axiz.cache.redis=false")
+        .withPropertyValues("axiz.cache.l2.enabled=false")
         .run(
             ctx ->
                 assertThat(ctx.getBean(AxizCaches.class).store())

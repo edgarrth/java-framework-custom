@@ -1,0 +1,2 @@
+pe.axiz.spring.secrets.aws.AxizSecretsAwsAutoConfiguration
+pe.axiz.spring.secrets.aws.AxizSecretsNativeAwsAutoConfiguration

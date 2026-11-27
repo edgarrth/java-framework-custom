@@ -3,7 +3,7 @@ package pe.axiz.core.idempotency;
 import pe.axiz.core.errors.ErrorCategory;
 import pe.axiz.core.errors.ErrorDefinition;
 
-/** Errors of the API idempotency capability. */
+/** Errores de la capacidad de idempotencia de API. */
 public final class IdempotencyErrors {
 
   public static final ErrorDefinition KEY_REQUIRED =

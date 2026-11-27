@@ -4,7 +4,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionStage;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.messaging.AsyncEventPublisher;
 import pe.axiz.core.messaging.BoundedPublisher;
 import pe.axiz.core.messaging.EventEnvelope;
@@ -13,7 +13,7 @@ import pe.axiz.core.messaging.PublishException;
 import pe.axiz.core.messaging.PublishResult;
 import software.amazon.awssdk.services.sns.SnsAsyncClient;
 
-/** Sns publisher using the SDK's native asynchronous transport. */
+/** Publicador SNS que usa el transporte asíncrono nativo del SDK. */
 public final class SnsAsyncEventPublisher implements AsyncEventPublisher, BoundedPublisher {
   @SuppressFBWarnings(
       value = "EI_EXPOSE_REP2",

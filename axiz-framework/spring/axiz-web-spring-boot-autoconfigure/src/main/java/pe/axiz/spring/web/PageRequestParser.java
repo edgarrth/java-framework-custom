@@ -6,14 +6,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.PageRequest;
-import pe.axiz.core.commons.Sort;
+import pe.axiz.core.api.PageRequest;
+import pe.axiz.core.api.Sort;
 import pe.axiz.core.errors.FieldViolation;
 import pe.axiz.core.errors.ValidationException;
 
 /**
- * Parses {@code page}, {@code size} and {@code sort} query parameters. Pages are zero-based;
- * invalid values are rejected with a 400 problem instead of being silently corrected.
+ * Interpreta los parámetros de query {@code page}, {@code size} y {@code sort}. Las páginas
+ * empiezan en cero; los valores inválidos se rechazan con un problema 400 en lugar de corregirse en
+ * silencio.
  */
 public final class PageRequestParser {
 
@@ -51,10 +52,21 @@ public final class PageRequestParser {
             : sort;
     Sort parsed;
     try {
+      for (String expression : expressions) {
+        for (String criterion : expression.split(";", -1)) {
+          String[] parts = criterion.strip().split(",", -1);
+          if (parts.length > 2
+              || (parts.length == 2
+                  && !"asc".equalsIgnoreCase(parts[1].strip())
+                  && !"desc".equalsIgnoreCase(parts[1].strip()))) {
+            throw new IllegalArgumentException("invalid sort direction");
+          }
+        }
+      }
       parsed = Sort.parse(expressions);
     } catch (IllegalArgumentException malformed) {
-      // the core keeps rejecting malformed expressions; at the HTTP boundary they are the client's
-      // error (400 with the field), never a 500. The value is not echoed back
+      // el core sigue rechazando las expresiones malformadas; en el límite HTTP son un error del
+      // cliente (400 con el campo), nunca un 500. El valor no se devuelve en la respuesta
       violations.add(
           FieldViolation.of(
               "sort", "Pattern", "sort must be field[,asc|desc] (letters, digits, _ .)"));

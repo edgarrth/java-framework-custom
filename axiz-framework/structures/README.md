@@ -1,5 +1,5 @@
 # structures
 
-Service structures: layered, hexagonal, BFF, EDA and batch. Each structure has neutral contracts and Spring wiring. CQRS is an extension, located in extensions/.
+Estructuras de servicio: layered, hexagonal, BFF, EDA y batch. Cada estructura tiene contratos neutrales y su cableado Spring. CQRS es una extensión y está en extensions/.
 
-Build from the framework root using `./mvnw verify`. See the framework architecture guide for dependency rules.
+Se compila desde la raíz del framework con `./mvnw verify`. Las reglas de dependencias están en la guía de arquitectura del framework.

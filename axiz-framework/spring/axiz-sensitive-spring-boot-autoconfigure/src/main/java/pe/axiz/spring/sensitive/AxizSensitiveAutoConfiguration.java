@@ -14,10 +14,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.env.Environment;
 import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.http.codec.json.JacksonJsonEncoder;
 import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
+import pe.axiz.core.commons.Environments;
 import pe.axiz.core.sensitive.MaskingPolicy;
 import pe.axiz.core.sensitive.ObjectMasker;
 import pe.axiz.core.sensitive.OutputChannel;
@@ -26,10 +28,11 @@ import pe.axiz.core.sensitive.SensitiveKeys;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Masking of sensitive data in the three outputs: API responses (the JSON converter or encoder of
- * server responses), logs and audit ({@link ObjectMasker} shared by the logging and audit
- * starters). Active by default. Only the response channel is masked: the application's {@link
- * JsonMapper} keeps the values, since events, saga contexts, caches and outgoing calls need them.
+ * Enmascaramiento de datos sensibles en las tres salidas: respuestas de la API (el converter o
+ * encoder JSON de las respuestas del servidor), logs y auditoría ({@link ObjectMasker} compartido
+ * por los starters de logging y de auditoría). Activo por defecto. Solo se enmascara el canal de
+ * respuesta: el {@link JsonMapper} de la aplicación conserva los valores, ya que los eventos, los
+ * contextos de saga, las cachés y las llamadas salientes los necesitan.
  */
 @AutoConfiguration(
     afterName = "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration")
@@ -61,22 +64,36 @@ public class AxizSensitiveAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  ObjectMasker axizObjectMasker(MaskingPolicy policy, SensitiveKeys keys) {
-    return new ObjectMasker(policy, keys);
+  ObjectMasker axizObjectMasker(
+      MaskingPolicy policy,
+      SensitiveKeys keys,
+      AxizSensitiveProperties properties,
+      Environment environment) {
+    if (!properties.detectPan()) {
+      Environments.requireSingleProcess(
+          environment.getProperty("axiz.config.environment"),
+          "axiz.sensitive.detect-pan=false",
+          "PAN detection enabled",
+          "sensitive data detection cannot be disabled in a deployed environment");
+    }
+    return new ObjectMasker(policy, keys, properties.detectPan());
   }
 
   /**
-   * The masking mapper of API responses: the application's {@link JsonMapper} plus {@link
-   * SensitiveJacksonModule}. The application's mapper itself stays unmasked, because it also
-   * serializes data that must keep its values: event payloads, saga contexts, cached values,
-   * idempotent results and the bodies of outgoing calls.
+   * Mapper con enmascaramiento de las respuestas de la API: el {@link JsonMapper} de la aplicación
+   * más {@link SensitiveJacksonModule}. El propio mapper de la aplicación no enmascara, porque
+   * también serializa datos que deben conservar sus valores: payloads de eventos, contextos de
+   * saga, valores cacheados, resultados idempotentes y los cuerpos de las llamadas salientes.
    */
   static JsonMapper responseMapper(ObjectProvider<JsonMapper> mapper, MaskingPolicy policy) {
     JsonMapper base = mapper.getIfAvailable(() -> JsonMapper.builder().findAndAddModules().build());
     return base.rebuild().addModule(new SensitiveJacksonModule(policy)).build();
   }
 
-  /** Servlet stack: the JSON converter of server responses masks; client converters do not. */
+  /**
+   * Pila servlet: el converter JSON de las respuestas del servidor enmascara; los converters de
+   * cliente no.
+   */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
   @ConditionalOnClass(
@@ -87,7 +104,10 @@ public class AxizSensitiveAutoConfiguration {
       })
   static class ServletResponses {
 
-    /** Runs after Boot's JSON converter customizer (order 0) and replaces its converter. */
+    /**
+     * Se ejecuta después del customizer del converter JSON de Boot (orden 0) y reemplaza su
+     * converter.
+     */
     @Bean
     @Order(Ordered.LOWEST_PRECEDENCE - 100)
     ServerHttpMessageConvertersCustomizer axizSensitiveResponseConverter(
@@ -98,7 +118,10 @@ public class AxizSensitiveAutoConfiguration {
     }
   }
 
-  /** Reactive stack: the JSON encoder of server responses masks; WebClient codecs do not. */
+  /**
+   * Pila reactiva: el encoder JSON de las respuestas del servidor enmascara; los códecs de
+   * WebClient no.
+   */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
   @ConditionalOnClass(
@@ -108,7 +131,10 @@ public class AxizSensitiveAutoConfiguration {
       })
   static class ReactiveResponses {
 
-    /** Ordered after Boot's WebFlux configurer (order 0), which applies the codec customizers. */
+    /**
+     * Ordenado después del configurador de WebFlux de Boot (orden 0), que aplica los customizers de
+     * códecs.
+     */
     @Bean
     @Order(Ordered.LOWEST_PRECEDENCE - 100)
     WebFluxConfigurer axizSensitiveResponseEncoder(

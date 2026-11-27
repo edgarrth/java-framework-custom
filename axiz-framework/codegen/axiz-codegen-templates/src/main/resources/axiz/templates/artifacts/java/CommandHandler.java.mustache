@@ -5,7 +5,10 @@ import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.errors.CoreErrors;
 import pe.axiz.extension.cqrs.CommandHandler;
 
-/** Handles {@link {{artifact.className}}Command} inside the command pipeline (validation to metrics). */
+/**
+ * Atiende {@link {{artifact.className}}Command} dentro del pipeline de comandos (de la validación a
+ * las métricas).
+ */
 @Component
 public class {{artifact.className}}CommandHandler implements CommandHandler<{{artifact.className}}Command, String> {
 

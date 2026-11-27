@@ -27,8 +27,9 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 /**
- * Amazon S3 storage: streaming upload and download, SSE-KMS with the configured key, presigned URLs
- * bounded by a maximum TTL. Bucket lifecycle rules are defined with Terraform.
+ * Almacenamiento en Amazon S3: subida y descarga en streaming, SSE-KMS con la clave configurada y
+ * URL prefirmadas acotadas por un TTL máximo. Las reglas de ciclo de vida del bucket se definen con
+ * Terraform.
  */
 public final class S3ObjectStorage implements ObjectStorage {
 

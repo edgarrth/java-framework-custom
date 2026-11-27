@@ -4,10 +4,10 @@ import java.time.ZoneId;
 import java.util.Objects;
 
 /**
- * Time settings of a service. Business dates are evaluated in {@link #zone()}; instants are always
- * stored in UTC.
+ * Configuración de tiempo de un servicio. Las fechas de negocio se evalúan en {@link #zone()}; los
+ * instantes siempre se almacenan en UTC.
  *
- * @param zone business time zone, {@code America/Lima} by default
+ * @param zone zona horaria de negocio, {@code America/Lima} por defecto
  */
 public record TimeSettings(ZoneId zone) {
 

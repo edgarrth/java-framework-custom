@@ -1,6 +1,6 @@
 package pe.axiz.payments.process.adapter.out.paymentorders.model;
 
-/** PaymentStatus values. */
+/** Valores de PaymentStatus. */
 public enum PaymentStatus {
   RECEIVED,
   PROCESSING,

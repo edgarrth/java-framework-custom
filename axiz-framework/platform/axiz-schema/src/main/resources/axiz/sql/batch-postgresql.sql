@@ -1,4 +1,4 @@
--- Spring Batch 6 job repository (PostgreSQL)
+-- Job repository de Spring Batch 6 (PostgreSQL)
 CREATE TABLE IF NOT EXISTS BATCH_JOB_INSTANCE (
   JOB_INSTANCE_ID BIGINT       NOT NULL PRIMARY KEY,
   VERSION         BIGINT,

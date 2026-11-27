@@ -10,18 +10,19 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Compatibility check between two versions of a contract, from the point of view of existing
- * consumers: removed operations, new required inputs, removed or retyped response fields and
- * narrowed enums are breaking; new operations, optional inputs and response fields are not.
+ * Verificación de compatibilidad entre dos versiones de un contrato, desde el punto de vista de los
+ * consumidores existentes: las operaciones eliminadas, las entradas obligatorias nuevas, los campos
+ * de respuesta eliminados o con otro tipo y los enums reducidos son incompatibles; las operaciones
+ * nuevas, las entradas opcionales y los campos de respuesta nuevos no lo son.
  */
 public final class ContractDiff {
 
   /**
-   * One difference.
+   * Una diferencia.
    *
-   * @param breaking whether existing consumers break
-   * @param location operation and field, e.g. {@code POST /v1/orders request.amount}
-   * @param message what changed
+   * @param breaking indica si los consumidores existentes se rompen
+   * @param location operación y campo, p. ej., {@code POST /v1/orders request.amount}
+   * @param message qué cambió
    */
   public record Change(boolean breaking, String location, String message) {}
 
@@ -96,7 +97,10 @@ public final class ContractDiff {
     return out;
   }
 
-  /** Path with parameter names erased, so renaming a path variable is not a removal. */
+  /**
+   * Ruta con los nombres de parámetros borrados, de modo que renombrar una variable de ruta no
+   * cuenta como eliminación.
+   */
   private static String normalize(String path) {
     return path.replaceAll("\\{[^}]+}", "{}");
   }
@@ -268,7 +272,7 @@ public final class ContractDiff {
     return out;
   }
 
-  /** The list value, or an empty list when the key is absent or holds something else. */
+  /** El valor de lista, o una lista vacía cuando la clave no existe o contiene otra cosa. */
   private static List<?> list(@Nullable Object value) {
     return value instanceof List<?> l ? l : List.of();
   }

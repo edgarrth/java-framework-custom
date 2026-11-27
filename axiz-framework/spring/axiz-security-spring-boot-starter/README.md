@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-security-spring-boot-starter
 
-OAuth2 resource server with issuer allow-list, claim mapping, method security, headers and rate limit.
+Resource server OAuth2 con lista de emisores permitidos, mapeo de claims, seguridad de métodos, cabeceras y límite de tasa.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,4 +12,4 @@ OAuth2 resource server with issuer allow-list, claim mapping, method security, h
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).

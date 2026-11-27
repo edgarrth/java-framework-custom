@@ -8,8 +8,9 @@ import pe.axiz.core.domain.AggregateRoot;
 import pe.axiz.core.domain.DomainEvent;
 
 /**
- * Collects the domain events raised during the current use case. Use cases call {@link
- * #collect(AggregateRoot)} after saving an aggregate; the runner publishes them at commit.
+ * Recolecta los eventos de dominio lanzados durante el caso de uso actual. Los casos de uso llaman
+ * a {@link #collect(AggregateRoot)} después de guardar un agregado; el runner los publica en el
+ * commit.
  */
 public final class DomainEvents {
 
@@ -17,7 +18,7 @@ public final class DomainEvents {
 
   private DomainEvents() {}
 
-  /** Moves the pending events of an aggregate into the current use case. */
+  /** Mueve los eventos pendientes de un agregado al caso de uso actual. */
   public static void collect(AggregateRoot<?> aggregate) {
     raise(aggregate.pullEvents());
   }

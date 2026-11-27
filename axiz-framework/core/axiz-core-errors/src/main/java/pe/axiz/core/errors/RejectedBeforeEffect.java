@@ -2,7 +2,10 @@ package pe.axiz.core.errors;
 
 import java.util.Map;
 
-/** Use only before any business write or external effect, never as a generic business failure. */
+/**
+ * Se usa solo antes de cualquier escritura de negocio o efecto externo, nunca como fallo de negocio
+ * genérico.
+ */
 public final class RejectedBeforeEffect extends BusinessException implements NoEffect {
   private static final long serialVersionUID = 1L;
 

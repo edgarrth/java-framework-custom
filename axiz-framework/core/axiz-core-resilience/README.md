@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-core-resilience
 
-Retry policies with backoff and jitter, idempotency-aware retry decisions and timeouts.
+Políticas de reintento con backoff y jitter, decisiones de reintento que respetan la idempotencia y timeouts.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,18 +12,18 @@ Retry policies with backoff and jitter, idempotency-aware retry decisions and ti
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `Backoff` | Exponential backoff with full jitter: `random(0, min(maxDelay, initial * multiplier^n))`. |
-| `Retry` | Executes an operation with a retry policy. |
-| `RetryDecider` | Decides whether a failed call may be repeated. |
-| `RetryPolicy` | How an operation is retried. |
-| `TimeoutSettings` | Timeouts that every outbound client must define (there is no "infinite" default). |
+| `Backoff` | Backoff exponencial con jitter completo: `random(0, min(maxDelay, initial * multiplier^n))`. |
+| `Retry` | Ejecuta una operación con una política de reintento. |
+| `RetryDecider` | Decide si una llamada fallida puede repetirse. |
+| `RetryPolicy` | Cómo se reintenta una operación. |
+| `TimeoutSettings` | Timeouts que todo cliente saliente debe definir (no hay un valor "infinito" por defecto). |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-resilience verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl core/axiz-core-resilience verify`.

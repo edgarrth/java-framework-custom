@@ -20,7 +20,7 @@ El endpoint exige el header `Idempotency-Key` (el contrato lo declara) y:
 | misma llave mientras la primera sigue en curso | `409` |
 | misma llave con otra request (otro cuerpo u otra query) | `422` |
 | cuerpo mayor a `max-body-size` | `413` |
-| el handler lanza una excepción o responde `5xx` (falla técnica transitoria) | la llave se libera: el reintento se ejecuta de nuevo |
+| el handler lanza una excepción o responde `5xx` | el resultado queda `UNKNOWN`; el reintento recibe `409` hasta reconciliar el efecto |
 | el handler responde `4xx` (rechazo de negocio o validación) | se guarda y se repite: la misma request recibe la misma decisión y la operación nunca corre dos veces |
 | respuesta mayor a `max-response-size` | se devuelve completa (sin acumularse en memoria); el replay trae status y headers, sin cuerpo, con `Idempotent-Body-Omitted: true` |
 
@@ -45,7 +45,7 @@ token, tenant, aplicación cliente y usuario final. Dos llamantes que usan la mi
 vengan de emisores o tenants distintos. La query string es parte de la huella tal como se envió:
 `?amount=10` y `?amount=99` con la misma llave son un `422`, y también `?sort=a&sort=b` frente a
 `?sort=b&sort=a` (el orden puede tener significado); un cliente que reintenta reenvía la misma
-request.
+petición.
 
 El llamante se codifica parte por parte (marcador de presencia, texto y separador) y ninguna parte
 puede contener caracteres de control (U+0000 a U+001F, U+007F): así ningún valor puede imitar un
@@ -58,13 +58,14 @@ versiones anteriores, así que las llaves en curso siguen deduplicando después 
 ### Dueño de la llave
 
 Cada ejecución recibe un token de dueño. Guardar la respuesta o liberar la llave solo funciona
-mientras esa ejecución la tiene: si su bloqueo (`in-progress-ttl`) venció y otra request tomó la
-llave, la respuesta tardía de la primera se descarta (queda un `WARN`) en vez de sobrescribir a la
-segunda. Redis lo resuelve con scripts Lua que comprueban estado y dueño en el mismo paso atómico;
+mientras esa ejecución la tiene. Una escritura tardía no puede sobrescribir una reconciliación
+ni una nueva ejecución autorizada. El vencimiento de la concesión no autoriza por sí solo
+a repetir un efecto de negocio incierto. Redis lo resuelve con scripts Lua que comprueban estado y dueño en el mismo paso atómico;
 DynamoDB, con escrituras condicionadas por `status` y `owner`.
 
-Elige `in-progress-ttl` mayor que la duración máxima de la operación (timeouts de las llamadas que
-hace incluidos): si vence antes, un reintento puede ejecutarse en paralelo con la primera request.
+Se elige un `in-progress-ttl` mayor que la duración máxima de la operación (timeouts de las llamadas que
+hace incluidos). Axiz renueva la concesión mientras trabaja; si vence, conserva la incertidumbre
+y exige reconciliación antes de volver a ejecutar.
 
 ### Autorización antes del replay
 
@@ -84,15 +85,22 @@ envía el command no vuelve a pasar por el pipeline.
 ### Lo que la idempotencia HTTP no cubre
 
 - **Caída entre el commit y el guardado de la respuesta.** El efecto quedó hecho pero la llave no
-  tiene respuesta; al vencer el bloqueo, un reintento se ejecuta otra vez. En operaciones de dinero,
-  ancla la unicidad en la base del servicio (restricción única sobre el identificador de la
-  operación, por ejemplo la `Idempotency-Key` del cliente) y devuelve el resultado existente.
+  tiene respuesta. La concesión vencida mantiene el resultado incierto y el reintento recibe
+  `409`. Aporta un `IdempotencyResolver` que consulte el identificador único de la operación
+  en la base de negocio y devuelva su respuesta confirmada, o confirme que no hubo efecto.
+  Sin esa evidencia no se libera la llave. La reconciliación sin efecto devuelve un conflicto
+  explícito y permite repetir la misma solicitud después; no ejecuta negocio dentro del resolver.
 - **Streaming y SSE.** Las respuestas en streaming no son idempotentes por replay: no marques
   `@Idempotent` en esos endpoints.
 - **Cancelación.** Si el cliente corta la conexión mientras el handler corre, la llave queda en curso
-  hasta que vence `in-progress-ttl`; el reintento recibe `409` mientras tanto.
+  o pasa a `UNKNOWN`; el reintento recibe `409` hasta reconciliar el resultado.
 
-## Commands: `IdempotentCommand`
+`IdempotencyService.fail` marca incertidumbre; no libera la llave.
+`releaseWithoutEffect` solo corresponde cuando se comprobó que no hubo efecto. La retención
+es un límite de deduplicación, por lo que la unicidad de una operación financiera también debe
+residir en su base de negocio. Una llave expirada no sustituye ese control persistente.
+
+## Comandos: `IdempotentCommand`
 
 En CQRS, un command que implementa `IdempotentCommand` (con su `idempotencyKey()`) guarda su primer
 resultado y lo devuelve para la misma llave y el mismo llamante; la misma llave con otro command es

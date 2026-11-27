@@ -1,5 +1,6 @@
 package pe.axiz.payments.orders.adapter.out.persistence;
 
+import jakarta.persistence.EntityManager;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -16,9 +17,10 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
-import pe.axiz.core.commons.Page;
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.Page;
+import pe.axiz.core.api.PageRequest;
 import pe.axiz.core.crypto.BlindIndex;
+import pe.axiz.core.crypto.IndexScope;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.money.Money;
 import pe.axiz.payments.orders.application.port.out.PaymentOrders;
@@ -26,34 +28,44 @@ import pe.axiz.payments.orders.domain.PaymentErrors;
 import pe.axiz.payments.orders.domain.PaymentOrder;
 import pe.axiz.payments.orders.domain.PaymentStatus;
 
-/** {@link PaymentOrders} on Aurora PostgreSQL (JPA). */
+/** {@link PaymentOrders} sobre Aurora PostgreSQL (JPA). */
 @Component
 public class PaymentOrderPersistenceAdapter implements PaymentOrders {
 
-  static final String CCI_CONTEXT = "payment-order.creditor-cci";
+  static IndexScope cciScope(String customerId) {
+    return new IndexScope("duplicate-payment", "CCI_PE", customerId, "payments", "identity", 1);
+  }
 
-  /** Unique index of (customer_id, request_key), see V3__payment_limits_and_request_keys.sql. */
+  /** Índice único de (customer_id, request_key), ver V3__payment_limits_and_request_keys.sql. */
   static final String REQUEST_KEY_CONSTRAINT = "payment_order_request_key";
 
   private final PaymentOrderJpaRepository repository;
   private final BlindIndex blindIndex;
+  private final EntityManager entityManager;
 
   public PaymentOrderPersistenceAdapter(
-      PaymentOrderJpaRepository repository, BlindIndex blindIndex) {
+      PaymentOrderJpaRepository repository, BlindIndex blindIndex, EntityManager entityManager) {
     this.repository = repository;
     this.blindIndex = blindIndex;
+    this.entityManager = entityManager;
   }
 
   @Override
-  public void create(PaymentOrder order, @Nullable String requestKey) {
+  public PaymentOrder create(PaymentOrder order, @Nullable String requestKey) {
     PaymentOrderEntity entity = newEntity(order);
     entity.requestKey(requestKey);
     entity.status(order.status().name(), order.statusReason());
     try {
-      repository.saveAndFlush(entity);
+      var stored = repository.saveAndFlush(entity);
+      // El listener de auditoría asigna la fecha de creación y PostgreSQL persiste con precisión de
+      // microsegundos.
+      // Se devuelve esa representación exacta para que la respuesta inicial y una repetición
+      // idempotente coincidan.
+      entityManager.refresh(stored);
+      return toDomain(stored);
     } catch (DataIntegrityViolationException e) {
-      // the transaction is aborted now: classify by constraint, the client retries and gets
-      // the order the other request stored
+      // la transacción queda abortada en este punto: se clasifica por restricción, el cliente
+      // reintenta y obtiene la orden que almacenó la otra solicitud
       if (requestKey == null || !duplicateRequestKey(e)) {
         throw e;
       }
@@ -112,7 +124,7 @@ public class PaymentOrderPersistenceAdapter implements PaymentOrders {
         order.customerId(),
         order.debtorAccount(),
         order.creditorCci(),
-        blindIndex.index(order.creditorCci(), CCI_CONTEXT),
+        blindIndex.index(order.creditorCci(), cciScope(order.customerId())).encoded(),
         order.amount().amount(),
         order.amount().currencyCode(),
         order.description(),
@@ -162,12 +174,16 @@ public class PaymentOrderPersistenceAdapter implements PaymentOrders {
   @Override
   public boolean exists(
       String customerId, String creditorCci, Money amount, LocalDate processingDate) {
-    return repository.existsByCustomerIdAndCreditorCciIndexAndAmountAndProcessingDateAndStatusNot(
-        customerId,
-        blindIndex.index(creditorCci, CCI_CONTEXT),
-        amount.amount(),
-        processingDate,
-        PaymentStatus.REJECTED.name());
+    return blindIndex.candidates(creditorCci, cciScope(customerId)).stream()
+        .anyMatch(
+            candidate ->
+                repository
+                    .existsByCustomerIdAndCreditorCciIndexAndAmountAndProcessingDateAndStatusNot(
+                        customerId,
+                        candidate.encoded(),
+                        amount.amount(),
+                        processingDate,
+                        PaymentStatus.REJECTED.name()));
   }
 
   static PaymentOrder toDomain(PaymentOrderEntity e) {

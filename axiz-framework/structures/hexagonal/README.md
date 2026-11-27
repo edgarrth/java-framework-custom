@@ -1,23 +1,26 @@
-# Hexagonal structure
+# Estructura hexagonal
 
-Neutral contracts and Spring wiring live in their respective modules. CQRS is an optional
-extension in `extensions/`, not a separate structure.
+Los contratos neutrales y el cableado Spring están en sus módulos respectivos. CQRS es una extensión
+opcional en `extensions/`, no una estructura separada.
 
-## Hexagonal dependency policy
+## Política de dependencias hexagonal
 
-The domain admits the JDK, JSpecify annotations and the Axiz value/contract packages explicitly
-listed in `HexagonalRules` (commons, domain, money, errors, id, identifiers, sensitive and time).
-It never depends on Spring or technology adapters. Application code uses owned ports and Axiz
-contracts; SLF4J and Reactor publisher contracts are supported for logging and reactive execution.
-Configuration is an outer composition root. Inbound and outbound adapters cannot depend on one
-another. Port signatures cannot expose HTTP models, generated clients or persistence entities.
-Architecture checks also follow dependencies through Axiz core types to detect hidden infrastructure.
+El dominio admite el JDK, las anotaciones JSpecify y los paquetes de valores y contratos de Axiz
+listados de forma explícita en `HexagonalRules` (commons, domain, money, errors, id, identifiers,
+sensitive y time). Nunca depende de Spring ni de adaptadores de tecnología. El código de aplicación
+usa puertos propios y contratos de Axiz; se admiten SLF4J y los contratos de publicador de Reactor
+para logging y ejecución reactiva. La configuración es una raíz de composición externa. Los
+adaptadores de entrada y de salida no pueden depender entre sí. Las firmas de los puertos no pueden
+exponer modelos HTTP, clientes generados ni entidades de persistencia. Los controles de arquitectura
+también siguen las dependencias a través de los tipos del núcleo de Axiz para detectar
+infraestructura oculta.
 
-Generated hexagonal and CQRS services own plain application models in `application.model`. HTTP models stay
-in `api.model`; conversion occurs in the REST adapter. Contract synchronization creates new
-application models and proposes changes to existing models for review. The generator supports
-explicit object schemas and Java-compatible enums; composed schemas must first be expressed as
-explicit application contracts. Schema validation remains at the HTTP boundary.
+Los servicios hexagonales y CQRS generados son dueños de modelos de aplicación simples en
+`application.model`. Los modelos HTTP permanecen en `api.model`; la conversión ocurre en el adaptador
+REST. La sincronización del contrato crea los modelos de aplicación nuevos y propone cambios a los
+modelos existentes para su revisión. El generador admite esquemas de objeto explícitos y enums
+compatibles con Java; los esquemas compuestos deben expresarse primero como contratos de aplicación
+explícitos. La validación de esquemas permanece en el límite HTTP.
 
-CQRS handlers and access policies are registered by the outer `HandlerConfiguration`, keeping
-Spring stereotypes out of the application layer.
+La `HandlerConfiguration` externa registra los handlers y las políticas de acceso de CQRS, lo que
+mantiene los estereotipos de Spring fuera de la capa de aplicación.

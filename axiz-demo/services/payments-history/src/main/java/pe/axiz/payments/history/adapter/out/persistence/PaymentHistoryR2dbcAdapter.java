@@ -2,8 +2,8 @@ package pe.axiz.payments.history.adapter.out.persistence;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
-import pe.axiz.core.commons.Page;
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.Page;
+import pe.axiz.core.api.PageRequest;
 import pe.axiz.payments.history.application.port.out.PaymentHistories;
 import pe.axiz.payments.history.domain.PaymentHistory;
 import pe.axiz.payments.history.domain.PaymentStatus;
@@ -11,8 +11,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * {@link PaymentHistories} on Aurora over R2DBC: every statement joins the reactive transaction of
- * the command or query pipeline and runs without blocking a thread.
+ * {@link PaymentHistories} sobre Aurora mediante R2DBC: cada sentencia se une a la transacción
+ * reactiva del pipeline de comandos o consultas y se ejecuta sin bloquear un hilo.
  */
 @Component
 class PaymentHistoryR2dbcAdapter implements PaymentHistories {

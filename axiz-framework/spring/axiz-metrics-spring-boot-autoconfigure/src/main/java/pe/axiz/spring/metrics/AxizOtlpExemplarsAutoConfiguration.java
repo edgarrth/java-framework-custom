@@ -17,7 +17,10 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
-/** OTLP exemplars never resolve Spring beans from client I/O or metric recording callbacks. */
+/**
+ * Los exemplars de OTLP nunca resuelven beans de Spring desde la E/S de clientes ni desde los
+ * callbacks de registro de métricas.
+ */
 @AutoConfiguration(
     afterName =
         "org.springframework.boot.micrometer.tracing.autoconfigure.MicrometerTracingAutoConfiguration",

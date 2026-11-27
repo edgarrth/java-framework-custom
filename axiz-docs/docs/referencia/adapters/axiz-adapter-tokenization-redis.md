@@ -1,0 +1,166 @@
+<!-- GENERADO por scripts/sync_reference.py desde axiz-framework: no editar -->
+# axiz-adapter-tokenization-redis
+
+Presupuestos distribuidos para la bóveda. Implementa `TokenBudget` y `AsyncTokenBudget` usando
+`RedisRateLimiter` y `RedisAsyncRateLimiter` con `failOpen=false`. No contiene perfiles PAN,
+cifrado, persistencia de valores ni transporte HTTP.
+
+## Política explícita
+
+Cada `TokenBudgetPolicy` define cuatro grupos: consulta por valor (`LOOKUP` y `TOKENIZE`
+comparten contadores), revelación, metadatos (`DESCRIBE`/`DELETE`) y altas adicionales
+(`beforeWrite`). Cada grupo tiene límites independientes por sujeto, cliente y tenant en
+ventanas de 1 segundo, 1 minuto y 24 horas. Se consumen las nueve ventanas antes de admitir.
+Una denegación puede consumir parcialmente otras ventanas: nunca se reembolsa ni se aumenta
+la capacidad por un fallo. Las ventanas son fijas desde su primera petición; no constituyen
+una ventana móvil ni una cuota por día de calendario. Dimensionar la ráfaga en consecuencia.
+
+Las claves incluyen un namespace del despliegue y el tenant/tipo/dominio verificados. No usan
+valor, token, índice HMAC, propósito, IP ni `operationId`. El sujeto mantiene su límite al cambiar
+de cliente; el cliente y el tenant tienen agregados propios. Cambiar la versión del perfil no
+reinicia la cuota. Los identificadores se codifican por longitud y SHA-256; ese hash oculta el
+texto literal en las claves pero **no anonimiza** identificadores de baja entropía. No exportar
+claves como etiquetas de métricas ni registrarlas en logs.
+
+Las réplicas de un mismo servicio deben compartir namespace y política. No derivar ninguno de
+ellos de la petición. Se exige configurar todos los límites: no hay valores productivos
+universales ni un presupuesto que por sí mismo acredite PCI DSS.
+
+## Construcción y propiedad
+
+Construir en el hilo de arranque, donde se inicializa el DRBG para identificadores de reserva.
+La conexión pertenece al llamador; ninguno de los presupuestos la cierra ni cambia sus opciones.
+Se rechaza al construir una conexión sin estas condiciones:
+
+```java
+client.setOptions(ClientOptions.builder()
+    .timeoutOptions(TimeoutOptions.enabled()) // usa el timeout de la conexión también en async
+    .requestQueueSize(1000)
+    .disconnectedBehavior(ClientOptions.DisconnectedBehavior.REJECT_COMMANDS)
+    .build());
+var owner = new TokenBudgetOwner("pod-immutable-uid", UUID.randomUUID());
+var connection = client.connect();
+connection.setTimeout(Duration.ofMillis(500));
+var budget = new RedisTokenBudget(connection, "vault-production", policy, leaseAlarm,
+    new RedisRateLimiter(connection.sync(), "", false), owner);
+// Se usa una conexión separada para el presupuesto nativo.
+var nativeBudget = new RedisAsyncTokenBudget(nativeConnection, "vault-production", policy, leaseAlarm,
+    new RedisAsyncRateLimiter(nativeConnection.async(), ""), owner);
+```
+
+Timeout permitido: 1 ms a 3 s por comando. Cola: 1 a 10 000 comandos. Mantener auto-flush activo.
+El límite total de la operación debe considerar las nueve ventanas y la reserva; configurar
+los plazos del servicio de forma coherente. La variante nativa no usa `join`, esperas bloqueantes
+ni un ejecutor que envuelva la variante síncrona. El callback de alarma debe ser acotado y
+compatible con event loops; no introducir I/O bloqueante en él.
+
+La variante nativa requiere una conexión dedicada a **una** instancia de `RedisAsyncTokenBudget`.
+Su cola MPSC acotada ordena los comandos nativos y espera su acuse mediante callbacks, sin bloquear
+un hilo. Esto evita que las llamadas de varios event loops compitan por `SharedLock` de Lettuce.
+No compartir esa conexión con otro presupuesto, código síncrono u otro consumidor que eluda la
+cola. Las distintas réplicas usan sus conexiones independientes y conservan los límites globales.
+La cola rechaza exceso de trabajo y no ejecuta comandos cuyo plazo de espera ya venció. No crea
+workers para envolver llamadas síncronas. La serialización limita el rendimiento de una conexión;
+medir la capacidad de admisión con los límites y latencias del despliegue.
+
+Una cuota agotada produce `AXZ-TOKEN-0429` con `Retry-After` tipado/acotado. Redis indisponible,
+respuesta inválida o resultado desconocido del control producen `AXZ-TOKEN-0503`, sin causas
+del proveedor ni acceso posterior al valor. Autorizar la operación y construir `TokenCaller`
+desde identidad verificada sigue siendo responsabilidad del motor.
+
+## Concurrencia, cancelación y recuperación
+
+Cada admisión reserva simultáneamente sujeto, cliente y tenant mediante un script de tamaño
+fijo y un UUID aleatorio. Las tres claves usan el mismo hash tag. Los scripts de Redis ejecutan
+las comprobaciones y actualizaciones sin intercalarlas con otras peticiones; el hash tag prepara
+las claves para un mismo slot. El adaptador actual recibe `StatefulRedisConnection`, no un cliente
+de Cluster: esto no acredita soporte de topología Cluster ni failover.
+[Semántica de scripts](https://redis.io/docs/latest/develop/programmability/eval-intro/).
+
+Las reservas son hashes con UUID, instancia de despliegue, encarnación del proceso,
+UUID de operación auditada, clase de operación, claves seudónimas de las tres dimensiones y
+hora del servidor, **sin expiración automática**. No contienen valor, token, índice ni identidad
+literal del sujeto. Los motores entregan su `operationId` al presupuesto; la sobrecarga sin ese
+parámetro genera uno para llamadas manuales. La integración Spring registra la identidad del propietario
+al arrancar y permite `axiz.tokenization.vault.redis.instance-id` (usar el UID inmutable del pod,
+no un nombre reutilizable). La encarnación cambia con cada JVM, también al reiniciar el mismo pod. Se liberan
+solo al terminar realmente la operación. Un timeout no demuestra que el trabajo haya terminado.
+Una cancelación antes de recibir el permiso conserva el I/O aceptado; si llega una concesión
+tardía se libera y se observa su resultado. Cancelar el observador de una liberación no cancela
+su comando. Repetir `close`/`release` conserva el resultado y no envía otra liberación.
+
+Un acuse perdido de concesión/liberación puede dejar capacidad reservada. La alarma recibe solo
+namespace y UUID para conciliación. No reintentar la admisión automáticamente para ese permiso.
+Un crash también puede dejar reservas. `RedisTokenBudgetRecovery` es una capacidad administrativa
+bloqueante sobre conexión/ACL de mantenimiento separada, nunca un endpoint de la API de tokens.
+`inspect(scope, cursor)` recorre un tenant/tipo/dominio configurado con `HSCAN COUNT 100`, devuelve
+cursor, cantidad y hora Redis, reservas trazables y entradas sin metadatos. `COUNT` es
+una sugerencia Redis (los hashes compactos pueden devolver más); se rechazan páginas superiores
+a 4096 entradas. No usar `KEYS`, barridos sin presupuesto ni hashes como etiquetas de métricas.
+Un ciclo no es una instantánea: deduplicar UUID y repetir para alertar sobre cantidad/edad.
+
+`reconcile(scope, reservation, evidenceId)` exige dos integraciones explícitas del operador:
+
+1. `TerminationVerifier` verifica evidencia durable ligada al namespace, scope, reserva,
+   instancia/encarnación y operación. Debe demostrar ejecución permanentemente detenida/fenced
+   **y** fin o conciliación de todo I/O aceptado, incluyendo efectos tardíos y comandos Redis.
+   Un pod desaparecido, una conexión cerrada, un timeout o la antigüedad no bastan. Si el servicio
+   no puede obtener esa prueba de sus participantes, se conserva el cupo y se escala el incidente.
+2. `RecoveryJournal` guarda la intención antes del script y su resultado (`RELEASED`,
+   `ALREADY_RELEASED`, `CONFLICT` o `UNKNOWN`) en una auditoría administrativa durable. Si no puede
+   registrar la intención, no se toca Redis. Un fallo después exige verificar el resultado.
+
+El script compara **las tres entradas completas** con la reserva inspeccionada antes de retirar
+ninguna. Un cambio de propietario/metadatos o una reserva parcial da `CONFLICT`; una retirada
+repetida da `ALREADY_RELEASED`. Ninguna reserva de otro propietario se libera. El framework no
+trae un verificador permisivo ni convierte evidencia textual suministrada por el cliente en prueba.
+Estas interfaces aíslan los contratos del control de procesos y la conciliación de cada despliegue.
+
+Para reservas sin metadatos de propietario, detener admisiones, drenar/reconciliar las operaciones con los
+participantes y obtener prueba por otros registros: la API las inventaría pero no permite su borrado
+automático. No fabricar metadatos para habilitarlo. Nunca usar `FLUSHDB`, comodines de borrado o TTL.
+Tras pérdida/eviction de datos tampoco se reconstruye capacidad a partir de hashes incompletos.
+La alerta de edad es solo detección de posible huérfano, nunca autorización de recuperación.
+
+Redis es infraestructura de control, no caché descartable: exigir aislamiento/ACL, TLS según
+entorno, `noeviction`, persistencia y una política de recuperación probada. El código no puede
+detectar por sí solo una restauración que perdió contadores/reservas. Tras pérdida de estado,
+detener nuevas admisiones y conciliar las operaciones antes de reabrir; no resetear el namespace
+para evitar un límite. AOF y replicación tienen garantías diferentes; Redis Cluster puede perder
+escrituras reconocidas en algunos escenarios. Las pruebas locales no acreditan resistencia a
+ese failover. [Persistencia](https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/),
+[límites de replicación](https://redis.io/docs/latest/operate/oss_and_stack/reference/cluster-spec/).
+
+## Pruebas
+
+Desde `axiz-framework`, con Docker disponible:
+
+```sh
+mvn -Pquality -pl quality/axiz-store-integration-tests -am \
+  -Dtest=RedisTokenBudgetTest,ValkeyTokenBudgetIT \
+  -Dsurefire.failIfNoSpecifiedTests=false -Daxiz.it.requireDocker=true test
+```
+
+Las pruebas unitarias fuerzan concesión tardía, cancelación y pérdida de acuses. La integración
+usa dos conexiones a Valkey real, carreras de admisión, separación de grupos, agregados por
+identidad, reservas sin TTL y pausa efectiva del contenedor con fallo cerrado en ambos modelos. La prueba de recuperación
+mata una JVM después del acuse de reserva, rechaza su liberación solo por muerte del proceso y
+requiere evidencia terminal antes de recuperar; comprueba que otra instancia mantiene su cupo.
+BlockHound instrumenta la ruta nativa. Esto verifica el contrato del adaptador; no reemplaza las
+pruebas integrales de auditoría, cifrado, DynamoDB, Spring, HTTP o la evaluación PCI del despliegue.
+
+## Composición de los limitadores
+
+Los constructores reciben `RateLimiter` o `AsyncRateLimiter` de `core-security`.
+La integración Spring de la bóveda crea los adaptadores Redis con la misma conexión
+privada y los inyecta; el adaptador de tokenización no depende del adaptador de seguridad.
+La composición manual debe suministrar un limitador distribuido que respete
+`failOpen=false`, con prefijo vacío porque la bóveda construye su propio namespace.
+Las pruebas con Valkey verifican ese contrato ante caída del almacén y entre réplicas.
+
+Las entradas mal formadas del inventario se informan solo mediante el digest de su clave y nunca son
+elegibles para recuperación automática; las entradas válidas de la página y el cursor del recorrido
+siguen disponibles. Se alerta tanto por entradas sin metadatos como por entradas inválidas. La
+conciliación rechaza hashes de dimensión modificados o parcialmente ausentes y registra en el journal
+los resultados desconocidos de Redis antes de informar un error. Si falla el registro durable de la
+intención, no se elimina nada.

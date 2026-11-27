@@ -5,10 +5,13 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
-import pe.axiz.core.commons.AsyncLoadingCache;
+import pe.axiz.core.concurrent.AsyncLoadingCache;
 
-/** Bounded TTL cache, coalesced native loads and cancellation without caching missing secrets. */
-public final class CachingAsyncSecretResolver implements AsyncSecretResolver {
+/**
+ * Caché con TTL acotada, cargas nativas coalescidas y cancelación, sin guardar en caché los
+ * secretos ausentes.
+ */
+public final class CachingAsyncSecretResolver implements AsyncSecretResolver, AutoCloseable {
   private final AsyncSecretResolver delegate;
   private final SecretCacheInstrumentation instrumentation;
   private final AsyncLoadingCache<Optional<SecretValue>> cache;
@@ -27,7 +30,9 @@ public final class CachingAsyncSecretResolver implements AsyncSecretResolver {
             Long.MAX_VALUE,
             CachingSecretResolver.MAX_CACHED_SECRETS,
             clock,
-            Optional::isPresent);
+            Optional::isPresent,
+            CachingSecretResolver::snapshot,
+            CachingSecretResolver::release);
   }
 
   @Override
@@ -38,5 +43,10 @@ public final class CachingAsyncSecretResolver implements AsyncSecretResolver {
 
   public void evict(String name) {
     cache.evict(name);
+  }
+
+  @Override
+  public void close() {
+    cache.close();
   }
 }

@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-codegen-templates
 
-Mustache templates of generated services, versioned with the framework.
+Plantillas Mustache de los servicios generados, versionadas junto con el framework.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,4 +12,4 @@ Mustache templates of generated services, versioned with the framework.
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).

@@ -1,4 +1,4 @@
-/** Models of the core-banking API. */
+/** Modelos de la API core-banking. */
 @NullMarked
 package pe.axiz.payments.bankingcore.adapter.out.corebanking.model;
 

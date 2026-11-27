@@ -13,8 +13,8 @@ new SagaDefinition<>("payment", List.of(
 
 `SagaOrchestrator`:
 
-- ejecuta los pasos en orden y **persiste el estado después de cada uno** (Aurora con bloqueo
-  optimista);
+- adquiere una reserva exclusiva por saga, persiste la intención antes del efecto y el resultado
+  después; las escrituras verifican propietario, vigencia y versión;
 - reintenta fallos transitorios de un paso (`axiz.saga.step-attempts`, backoff);
 - si un paso falla, **compensa los completados en orden inverso**
   (`axiz.saga.compensation-attempts`);
@@ -48,7 +48,8 @@ orquestador distingue:
 | rechazo definitivo: `SagaStepRejectedException` o error 4xx de axiz (400, 403, 404, 422...) | el efecto no existe: compensa los pasos anteriores |
 | incierta: timeout, 5xx, error de transporte, 409, 429, cualquier otra | pregunta al participante con `verify(context)` |
 | `verify` responde `applied(ctx)` | el paso se aplicó: la saga sigue con ese contexto |
-| `verify` responde `notApplied()` | compensa los pasos anteriores |
+| `verify` responde `notApplied()` | ausencia observada: permanece `IN_DOUBT`, puede llegar un efecto tardío |
+| `verify` responde `rejected()` | rechazo terminal durable que impide efectos futuros: compensa los anteriores |
 | `verify` responde `unknown()` (por defecto) | la saga queda `IN_DOUBT`: no compensa ni declara resultado; la recuperación vuelve a preguntar |
 
 ```java
@@ -73,8 +74,8 @@ sagas `IN_DOUBT` antiguas: requieren conciliación o decisión de operaciones.
 - Los listeners (`SagaListener`: métricas, trazas, alertas) solo observan: si fallan se registra un
   `WARN` y la saga sigue igual; nunca disparan ni alteran una compensación.
 - La intención de compensar (`COMPENSATING`) se persiste **antes** de deshacer nada. Si ni eso se
-  puede escribir, la excepción se propaga, no se deshace ningún paso y la saga queda `RUNNING` para
-  que la recuperación la reanude.
+  puede escribir, la excepción se propaga, no se deshace ningún paso y la saga queda `IN_DOUBT` para
+  que la recuperación verifique el efecto pendiente.
 - Una falla al registrar el avance de la compensación se propaga y la recuperación vuelve a
   compensar ese paso; nunca se reporta como compensación fallida.
 
@@ -84,7 +85,9 @@ registrarlas las repite al reanudar.
 ## Recuperación
 
 Si el pod muere a mitad de una saga, su estado queda persistido. `SagaRecovery` reanuda las sagas
-inactivas por más de un umbral; se ejecuta periódicamente en **una sola réplica** con ShedLock:
+inactivas por más de un umbral y sin una reserva vigente. Cada ejecución toma su reserva en el
+store; varias réplicas pueden buscar trabajo sin ejecutar simultáneamente la misma saga. Un
+ShedLock adicional puede limitar el escaneo, pero no sustituye esa propiedad por saga:
 
 ```java
 @Scheduled(fixedDelayString = "${payments.process.recovery-interval:60s}")
@@ -98,3 +101,16 @@ Las definiciones se registran una vez (`recovery.register(definition, codec)`).
 
 En el demo, `payment-process` arranca la saga al consumir `payment-order.created.v1` y coordina
 `payments-business` y `core-integration`.
+
+## Migración y fencing de participantes
+
+`SagaStepExecution` entrega id de saga, nombre de paso y versión creciente. El participante debe
+validar esa versión en la misma transacción que aplica su efecto y mantener idempotencia durable.
+Una reserva vencida impide nuevos avances del orquestador anterior, pero no cancela I/O ya enviado.
+Una consulta vacía nunca autoriza compensar una petición todavía en vuelo.
+
+La reserva se renueva y su duración se configura con `axiz.saga.execution-lease` (30 s por defecto).
+JDBC usa las columnas `execution_owner` y `execution_until` de la tabla `axiz_saga`. El store
+confirma el estado y la reserva en conexiones propias en auto-commit (`AutoCommitConnectionProvider`),
+independientes de la transacción del llamante: el orquestador funciona igual dentro de un `@UseCase`
+o de un handler de eventos transaccional, y un rollback del llamante no borra el estado de la saga.

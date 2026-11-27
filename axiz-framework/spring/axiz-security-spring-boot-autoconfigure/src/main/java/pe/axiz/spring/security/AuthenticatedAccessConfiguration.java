@@ -16,7 +16,10 @@ import org.springframework.security.authorization.method.AuthorizationManagerBef
 import org.springframework.security.authorization.method.AuthorizationManagerBeforeReactiveMethodInterceptor;
 import pe.axiz.core.security.AuthenticatedAccess;
 
-/** Prior authentication enforcement; deliberately separate from expression-based coverage. */
+/**
+ * Exigencia previa de autenticación; deliberadamente separada de la cobertura basada en
+ * expresiones.
+ */
 @Configuration(proxyBeanMethods = false)
 class AuthenticatedAccessConfiguration {
   private static Pointcut pointcut() {

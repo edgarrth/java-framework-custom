@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-technology</artifactId><version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-technology/pom.xml</relativePath></parent>
+  <artifactId>axiz-adapter-secrets-file</artifactId>
+  <name>axiz :: adapter :: secrets :: file</name>
+  <description>File and environment secret adapters with bounded refresh and owned lifecycle</description>
+  <properties><axiz.module.name>pe.axiz.adapter.secrets.file</axiz.module.name><axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity></properties>
+  <dependencies>
+    <dependency><groupId>org.awaitility</groupId><artifactId>awaitility</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-concurrent</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-secrets</artifactId><version>${project.version}</version></dependency>
+</dependencies>
+</project>

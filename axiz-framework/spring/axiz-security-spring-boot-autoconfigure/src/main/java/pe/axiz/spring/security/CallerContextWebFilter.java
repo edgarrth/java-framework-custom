@@ -6,18 +6,18 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.security.AxizPrincipal;
 import reactor.core.publisher.Mono;
 
-/** Reactive counterpart of {@link CallerContextFilter}: enriches the Reactor context. */
+/** Contraparte reactiva de {@link CallerContextFilter}: enriquece el contexto de Reactor. */
 public class CallerContextWebFilter implements WebFilter {
 
   @Override
   public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
     return ReactiveSecurityContextHolder.getContext()
-        // a context without authentication (anonymous) is empty here, not a null element
+        // un contexto sin autenticación (anónimo) aquí está vacío, no es un elemento null
         .mapNotNull(SecurityContext::getAuthentication)
         .filter(AxizAuthentication.class::isInstance)
         .map(a -> Optional.of(((AxizAuthentication) a).axizPrincipal()))

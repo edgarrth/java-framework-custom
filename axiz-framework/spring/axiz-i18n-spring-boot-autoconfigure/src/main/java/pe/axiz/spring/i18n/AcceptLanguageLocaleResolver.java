@@ -8,7 +8,10 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpHeaders;
 import pe.axiz.core.i18n.LocaleResolver;
 
-/** Servlet locale resolver driven only by {@code Accept-Language}; the locale cannot be changed. */
+/**
+ * Resolvedor de locale de servlet guiado solo por {@code Accept-Language}; el locale no puede
+ * cambiarse.
+ */
 public final class AcceptLanguageLocaleResolver
     implements org.springframework.web.servlet.LocaleResolver {
 

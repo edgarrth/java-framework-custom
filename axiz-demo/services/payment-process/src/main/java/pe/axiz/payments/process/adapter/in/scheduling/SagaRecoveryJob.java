@@ -9,8 +9,8 @@ import org.springframework.stereotype.Component;
 import pe.axiz.core.saga.SagaRecovery;
 
 /**
- * Resumes payment sagas interrupted by a crash or a redeploy (idle for more than two minutes).
- * ShedLock makes only one replica run it at a time.
+ * Reanuda las sagas de pago interrumpidas por una caída o un redespliegue (inactivas por más de dos
+ * minutos). ShedLock hace que solo una réplica lo ejecute a la vez.
  */
 @Component
 public class SagaRecoveryJob {

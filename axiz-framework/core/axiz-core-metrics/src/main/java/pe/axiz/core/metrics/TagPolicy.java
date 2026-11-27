@@ -4,11 +4,13 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Policy of a tag: an explicit set of allowed values or, when empty, a maximum of distinct values.
+ * Política de un tag: un conjunto explícito de valores permitidos o, cuando está vacío, un máximo
+ * de valores distintos.
  *
- * @param key tag key
- * @param allowedValues allowed values; empty means any value up to {@code maxDistinctValues}
- * @param maxDistinctValues limit of distinct values when no allowed set is given
+ * @param key clave del tag
+ * @param allowedValues valores permitidos; vacío significa cualquier valor hasta {@code
+ *     maxDistinctValues}
+ * @param maxDistinctValues límite de valores distintos cuando no se da un conjunto permitido
  */
 public record TagPolicy(String key, Set<String> allowedValues, int maxDistinctValues) {
 

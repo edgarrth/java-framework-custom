@@ -8,19 +8,19 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-/** Builds SOAP envelopes around a payload XML fragment. */
+/** Construye envelopes SOAP alrededor de un fragmento XML de payload. */
 public final class SoapEnvelope {
 
   private SoapEnvelope() {}
 
   /**
-   * Wraps the payload in an envelope.
+   * Envuelve el payload en un envelope.
    *
-   * @param version SOAP version
-   * @param payloadXml body content (one element)
-   * @param security optional WS-Security credentials
-   * @param now timestamp for WS-Security
-   * @return the envelope XML
+   * @param version versión de SOAP
+   * @param payloadXml contenido del cuerpo (un elemento)
+   * @param security credenciales WS-Security opcionales
+   * @param now marca de tiempo para WS-Security
+   * @return el XML del envelope
    */
   public static String wrap(
       SoapVersion version, String payloadXml, @Nullable Credentials security, Instant now) {
@@ -47,20 +47,21 @@ public final class SoapEnvelope {
   }
 
   /**
-   * WS-Security credentials. The password is copied on the way in and out, so the caller can clear
-   * its own array; it never appears in {@link #toString()}.
+   * Credenciales WS-Security. La contraseña se copia a la entrada y a la salida, de modo que quien
+   * llama puede limpiar su propio array; nunca aparece en {@link #toString()}.
    */
-  public static final class Credentials {
+  public static final class Credentials implements AutoCloseable {
     private final String username;
     private final char[] password;
     private final WsSecurity.Mode mode;
+    private boolean closed;
 
     /**
-     * Creates the credentials.
+     * Crea las credenciales.
      *
-     * @param username user name
-     * @param password password
-     * @param mode text or digest
+     * @param username nombre de usuario
+     * @param password contraseña
+     * @param mode texto o digest
      */
     public Credentials(String username, char[] password, WsSecurity.Mode mode) {
       this.username = Objects.requireNonNull(username, "username");
@@ -72,9 +73,20 @@ public final class SoapEnvelope {
       return username;
     }
 
-    /** A copy of the password; clear it after use. */
-    public char[] password() {
+    /** Copia de la contraseña; debe limpiarse tras usarla. */
+    public synchronized char[] password() {
+      if (closed) throw new IllegalStateException("SOAP credentials are closed");
       return password.clone();
+    }
+
+    @Override
+    public synchronized void close() {
+      Arrays.fill(password, '\0');
+      closed = true;
+    }
+
+    private synchronized char @Nullable [] snapshot() {
+      return closed ? null : password.clone();
     }
 
     public WsSecurity.Mode mode() {
@@ -83,10 +95,17 @@ public final class SoapEnvelope {
 
     @Override
     public boolean equals(@Nullable Object o) {
-      return o instanceof Credentials c
-          && username.equals(c.username)
-          && mode == c.mode
-          && Arrays.equals(password, c.password);
+      if (this == o) return true;
+      if (!(o instanceof Credentials c) || !username.equals(c.username) || mode != c.mode)
+        return false;
+      char[] left = snapshot();
+      char[] right = c.snapshot();
+      try {
+        return left != null && right != null && Arrays.equals(left, right);
+      } finally {
+        if (left != null) Arrays.fill(left, '\0');
+        if (right != null) Arrays.fill(right, '\0');
+      }
     }
 
     @Override

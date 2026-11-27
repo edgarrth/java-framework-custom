@@ -12,7 +12,7 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 {{/persistence.jpa}}
 {{#item.usesPaging}}
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.PageRequest;
 {{/item.usesPaging}}
 import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.errors.CoreErrors;
@@ -21,8 +21,8 @@ import {{item.modelPackage}}.{{name}};
 {{/item.models}}
 
 /**
- * Business operations of {@code {{item.name}}}. Simple resources can extend {@code JpaCrudService}
- * (layered starter) instead of writing each operation.
+ * Operaciones de negocio de {@code {{item.name}}}. Los recursos simples pueden extender
+ * {@code JpaCrudService} (starter layered) en lugar de escribir cada operación.
  */
 @Service
 {{#persistence.jpa}}

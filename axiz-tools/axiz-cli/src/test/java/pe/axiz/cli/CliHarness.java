@@ -19,10 +19,10 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 import picocli.CommandLine;
 
-/** Runs the CLI in-process with captured output and fake processes. */
+/** Ejecuta la CLI en el mismo proceso con salida capturada y procesos fake. */
 final class CliHarness {
 
-  /** Records commands instead of running them. */
+  /** Registra los comandos en lugar de ejecutarlos. */
   static final class FakeProcesses implements ProcessRunner {
     final List<List<String>> commands = new ArrayList<>();
     final Set<String> installed;
@@ -54,7 +54,8 @@ final class CliHarness {
   final FakeProcesses processes = new FakeProcesses(Set.of("mvn", "docker"));
   String input = "";
   Map<String, String> env = Map.of();
-  // the tests run with the compiler exports of the CLI jar, so google-java-format runs in-process
+  // las pruebas se ejecutan con los exports del compilador del jar de la CLI, por lo que
+  // google-java-format se ejecuta en el mismo proceso
   boolean javaFormatter = true;
   final StringWriter out = new StringWriter();
   final StringWriter err = new StringWriter();
@@ -86,7 +87,7 @@ final class CliHarness {
     }
   }
 
-  /** Creates a business service in {@code dir} and returns its folder. */
+  /** Crea un servicio business en {@code dir} y devuelve su carpeta. */
   static Path service(Path dir, String... extra) throws IOException {
     CliHarness h = new CliHarness();
     List<String> args =

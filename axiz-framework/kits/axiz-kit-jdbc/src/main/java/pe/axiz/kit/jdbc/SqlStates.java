@@ -6,12 +6,12 @@ import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.util.Locale;
 
-/** SQLSTATE helpers (portable across PostgreSQL and H2). */
+/** Utilidades de SQLSTATE (portables entre PostgreSQL y H2). */
 public final class SqlStates {
 
   private SqlStates() {}
 
-  /** Unique constraint violation (SQLSTATE 23505, integrity class 23). */
+  /** Violación de restricción única (SQLSTATE 23505, clase de integridad 23). */
   public static boolean isDuplicateKey(SQLException e) {
     for (SQLException ex = e; ex != null; ex = ex.getNextException()) {
       String state = ex.getSQLState();
@@ -26,13 +26,13 @@ public final class SqlStates {
   }
 
   /**
-   * Executes an INSERT and reports {@code false} on a duplicate key. Inside a transaction a
-   * savepoint is used, because PostgreSQL aborts the whole transaction after any error.
+   * Ejecuta un INSERT e informa {@code false} ante una clave duplicada. Dentro de una transacción
+   * se usa un savepoint, porque PostgreSQL aborta toda la transacción tras cualquier error.
    *
-   * @param connection connection to use
-   * @param insert prepared INSERT statement (parameters already set)
-   * @return true when inserted, false when the key already existed
-   * @throws SQLException any other error
+   * @param connection conexión a usar
+   * @param insert sentencia INSERT preparada (con los parámetros ya fijados)
+   * @return true cuando se insertó, false cuando la clave ya existía
+   * @throws SQLException cualquier otro error
    */
   public static boolean insertIgnoringDuplicate(Connection connection, PreparedStatement insert)
       throws SQLException {

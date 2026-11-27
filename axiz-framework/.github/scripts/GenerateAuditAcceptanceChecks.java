@@ -2,7 +2,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import pe.axiz.codegen.render.JavaFormatter;
 
-/** Framework-only assertions, added after normal generation; never delivered to consumers. */
+/** Aserciones propias del framework, agregadas después de la generación normal; nunca se entregan a los consumidores. */
 class GenerateAuditAcceptanceChecks {
   public static void main(String[] args) throws Exception {
     try (var projects = Files.list(Path.of(args[0]))) {
@@ -14,6 +14,12 @@ class GenerateAuditAcceptanceChecks {
         boolean sns = name.endsWith("-outbox-sns");
         String sdk = sns ? "sns.Sns" : "sqs.Sqs";
         String type = (sns ? "Sns" : "Sqs") + (reactive ? "AsyncClient" : "Client");
+        // Cada transporte de mensajería tiene sus propias propiedades de cliente.
+        String properties =
+            sns
+                ? "pe.axiz.spring.messaging.sns.AxizMessagingSnsClientProperties"
+                : "pe.axiz.spring.messaging.sqs.AxizMessagingSqsClientProperties";
+        String propertiesType = properties.substring(properties.lastIndexOf('.') + 1);
         String owner =
             sink
                 ? "axizAuditAsyncAwsResources"
@@ -22,7 +28,7 @@ class GenerateAuditAcceptanceChecks {
             new StringBuilder(
                 """
 
-                  // Framework acceptance harness: this method is not part of the generated template.
+                  // Arnés de aceptación del framework: este método no forma parte de la plantilla generada.
                   @Test
                   void verifiesFrameworkOwnedAuditTransport(@Autowired ApplicationContext context,
                       @Autowired MeterRegistry metrics) {
@@ -38,7 +44,7 @@ class GenerateAuditAcceptanceChecks {
               .append(
                   ".class).serviceClientConfiguration().overrideConfiguration().apiCallTimeout())")
               .append(
-                  ".contains(context.getBean(AxizMessagingAwsProperties.class).apiCallTimeout());\n");
+                  ".contains(context.getBean(" + propertiesType + ".class).apiCallTimeout());\n");
         if (reactive)
           method
               .append("assertThat(context.containsBean(\"")
@@ -66,7 +72,7 @@ class GenerateAuditAcceptanceChecks {
                   + sdk
                   + (reactive ? "AsyncClient" : "Client")
                   + ";\n"
-                  + (sink ? "" : "import pe.axiz.spring.messaging.AxizMessagingAwsProperties;\n");
+                  + (sink ? "" : "import " + properties + ";\n");
           source =
               source.replace(
                   "import org.junit.jupiter.api.Test;",

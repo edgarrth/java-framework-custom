@@ -6,7 +6,10 @@ import pe.axiz.core.notification.NotificationRequest;
 import pe.axiz.spring.foundation.ReactiveStages;
 import reactor.core.publisher.Mono;
 
-/** Native notification acknowledgement, deferred to subscription and cancelled with the caller. */
+/**
+ * Confirmación nativa de notificaciones, diferida hasta la suscripción y cancelada junto con el
+ * invocante.
+ */
 public final class ReactiveNotifications {
   private final AsyncNotificationSender sender;
 

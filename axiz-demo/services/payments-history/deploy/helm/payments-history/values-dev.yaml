@@ -19,7 +19,11 @@ networkPolicy:
 externalSecret:
   remotePrefix: dev/payments-history
 config:
+  axiz.messaging.kafka.authentication: msk
   axiz.messaging.kafka.iam: true
   axiz.config.environment: dev
+  axiz.audit.integrity.mode: HMAC
+  axiz.audit.integrity.hmac-secret: audit-hmac-key
+  axiz.audit.integrity.hmac-key-id: v1
   management.tracing.sampling.probability: '1.0'
 errors: []

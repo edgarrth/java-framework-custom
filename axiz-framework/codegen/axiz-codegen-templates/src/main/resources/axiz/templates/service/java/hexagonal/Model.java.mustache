@@ -1,7 +1,11 @@
 package {{project.basePackage}}.application.model;
 
 {{{item.imports}}}
+{{#item.record}}
 import org.jspecify.annotations.Nullable;
+{{/item.record}}
 
-/** Application contract independent of HTTP serialization and validation annotations. */
+/**
+ * Contrato de aplicación independiente de la serialización HTTP y de las anotaciones de validación.
+ */
 {{{item.declaration}}}

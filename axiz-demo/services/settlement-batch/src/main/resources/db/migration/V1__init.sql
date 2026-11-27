@@ -1,8 +1,8 @@
--- settlement-batch: initial schema (Aurora PostgreSQL). Flyway owns the schema in every
--- environment; Hibernate only validates it (spring.jpa.hibernate.ddl-auto=validate).
--- Add domain tables in new migrations (V2__..., never edit an applied one).
+-- settlement-batch: esquema inicial (Aurora PostgreSQL). Flyway es dueño del esquema en todos los
+-- ambientes; Hibernate solo lo valida (spring.jpa.hibernate.ddl-auto=validate).
+-- Las tablas de dominio se agregan en migraciones nuevas (V2__...); una migración aplicada nunca se edita.
 
--- ShedLock table (one row per scheduled task); the lock time comes from the database clock.
+-- Tabla de ShedLock (una fila por tarea programada); la hora del lock proviene del reloj de la base.
 CREATE TABLE IF NOT EXISTS shedlock (
   name       VARCHAR(64)  NOT NULL PRIMARY KEY,
   lock_until TIMESTAMPTZ  NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS shedlock (
   locked_by  VARCHAR(255) NOT NULL
 );
 
--- Spring Batch 6 job repository (PostgreSQL)
+-- Repositorio de jobs de Spring Batch 6 (PostgreSQL)
 CREATE TABLE IF NOT EXISTS BATCH_JOB_INSTANCE (
   JOB_INSTANCE_ID BIGINT       NOT NULL PRIMARY KEY,
   VERSION         BIGINT,
@@ -77,8 +77,8 @@ CREATE SEQUENCE IF NOT EXISTS BATCH_STEP_EXECUTION_SEQ MAXVALUE 9223372036854775
 CREATE SEQUENCE IF NOT EXISTS BATCH_JOB_EXECUTION_SEQ MAXVALUE 9223372036854775807 NO CYCLE;
 CREATE SEQUENCE IF NOT EXISTS BATCH_JOB_INSTANCE_SEQ MAXVALUE 9223372036854775807 NO CYCLE;
 
--- Lines of the settlement files of the payment network (the end-to-end id makes reloading a
--- file idempotent; file_key tells which file brought each line)
+-- Líneas de los archivos de liquidación de la red de pagos (el id end-to-end vuelve idempotente
+-- la recarga de un archivo; file_key indica qué archivo trajo cada línea)
 CREATE TABLE IF NOT EXISTS settlement_line (
   end_to_end_id VARCHAR(40)   PRIMARY KEY,
   transfer_id   VARCHAR(20)   NOT NULL,

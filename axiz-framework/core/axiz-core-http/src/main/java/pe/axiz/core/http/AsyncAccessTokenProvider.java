@@ -2,7 +2,9 @@ package pe.axiz.core.http;
 
 import java.util.concurrent.CompletionStage;
 
-/** Native asynchronous token acquisition; cancellation releases this caller's pending I/O. */
+/**
+ * Adquisición asíncrona nativa de tokens; la cancelación libera la E/S pendiente de este llamador.
+ */
 @FunctionalInterface
 public interface AsyncAccessTokenProvider {
   CompletionStage<AccessToken> token();

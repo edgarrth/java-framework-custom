@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-observability-spring-boot-starter
 
-OpenTelemetry via Micrometer: framework spans, structured events, PII protection, health groups, AWS SDK tracing.
+OpenTelemetry mediante Micrometer: spans del framework, eventos estructurados, protección de datos personales, grupos de salud y trazas del AWS SDK.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,4 +12,4 @@ OpenTelemetry via Micrometer: framework spans, structured events, PII protection
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).

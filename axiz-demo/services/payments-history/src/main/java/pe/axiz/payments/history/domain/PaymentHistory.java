@@ -7,20 +7,21 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.money.Money;
 
 /**
- * Projected state of one payment for its customer. Events arrive at least once and, across event
- * types, possibly out of order: applying an event is idempotent and an older status never replaces
- * a newer one ({@code lastChangeAt} is the time of the event, not of the projection). A status
- * change seen before the registration creates a partial entry that the registration completes.
+ * Estado proyectado de un pago para su cliente. Los eventos llegan al menos una vez y, entre tipos
+ * de evento, posiblemente desordenados: aplicar un evento es idempotente y un estado más antiguo
+ * nunca reemplaza a uno más reciente ({@code lastChangeAt} es el momento del evento, no de la
+ * proyección). Un cambio de estado recibido previo al registro crea una entrada parcial que el
+ * registro completa.
  *
- * @param paymentId order id in payment-orders
- * @param customerId customer
- * @param operationNumber operation number, null until the registration is seen
- * @param creditorCci destination account (sensitive: stored encrypted, shown masked)
- * @param amount amount, null until the registration is seen
- * @param processingDate processing date, null until the registration is seen
- * @param status latest known status
- * @param reason reason of the latest status, when given
- * @param lastChangeAt time of the event that set the status
+ * @param paymentId id de la orden en payment-orders
+ * @param customerId cliente
+ * @param operationNumber número de operación, null hasta recibir el registro
+ * @param creditorCci cuenta de destino (sensible: se almacena cifrada y se muestra enmascarada)
+ * @param amount monto, null hasta recibir el registro
+ * @param processingDate fecha de procesamiento, null hasta recibir el registro
+ * @param status último estado conocido
+ * @param reason motivo del último estado, cuando se indica
+ * @param lastChangeAt momento del evento que fijó el estado
  */
 public record PaymentHistory(
     String paymentId,
@@ -41,17 +42,17 @@ public record PaymentHistory(
   }
 
   /**
-   * Details of a registered order.
+   * Detalles de una orden registrada.
    *
-   * @param operationNumber operation number
-   * @param creditorCci destination account
-   * @param amount amount
-   * @param processingDate processing date
+   * @param operationNumber número de operación
+   * @param creditorCci cuenta de destino
+   * @param amount monto
+   * @param processingDate fecha de procesamiento
    */
   public record Registration(
       String operationNumber, String creditorCci, Money amount, LocalDate processingDate) {}
 
-  /** Applies the registration of the order to the current entry (null when there is none). */
+  /** Aplica el registro de la orden a la entrada actual (null cuando no existe). */
   public static PaymentHistory registered(
       @Nullable PaymentHistory current,
       String paymentId,
@@ -70,7 +71,7 @@ public record PaymentHistory(
           null,
           at);
     }
-    // a status change came first: keep it, fill in the details
+    // llegó primero un cambio de estado: se conserva y se completan los detalles
     return new PaymentHistory(
         current.paymentId,
         current.customerId,
@@ -83,7 +84,7 @@ public record PaymentHistory(
         current.lastChangeAt);
   }
 
-  /** Applies a status change to the current entry (null when there is none). */
+  /** Aplica un cambio de estado a la entrada actual (null cuando no existe). */
   public static PaymentHistory statusChanged(
       @Nullable PaymentHistory current,
       String paymentId,
@@ -95,7 +96,7 @@ public record PaymentHistory(
       return new PaymentHistory(paymentId, customerId, null, null, null, null, status, reason, at);
     }
     if (at.isBefore(current.lastChangeAt) || (current.status.isFinal() && !status.isFinal())) {
-      return current; // stale or redelivered: never go back
+      return current; // desactualizado o reentregado: nunca retrocede
     }
     return new PaymentHistory(
         current.paymentId,
@@ -109,7 +110,7 @@ public record PaymentHistory(
         at);
   }
 
-  /** Destination account with all but the last four digits hidden. */
+  /** Cuenta de destino con todos los dígitos ocultos salvo los últimos cuatro. */
   public @Nullable String maskedCreditorCci() {
     if (creditorCci == null) {
       return null;

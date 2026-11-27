@@ -91,8 +91,8 @@ class IdentifiersTest {
     assertEquals("555555******4444", card.masked(registry));
     assertEquals(
         "a********@example.com", registry.parse("email", "Ana.Perez@example.com").masked(registry));
-    assertEquals("****5678", registry.parse("dni", "12345678").masked(registry));
-    assertEquals("20100070970", registry.parse("ruc", "20100070970").masked(registry));
+    assertEquals("******78", registry.parse("dni", "12345678").masked(registry));
+    assertEquals("*********70", registry.parse("ruc", "20100070970").masked(registry));
     assertFalse(card.toString().contains("55555555"));
     InvalidIdentifierException ex =
         assertThrows(InvalidIdentifierException.class, () -> registry.parse("dni", "abc"));

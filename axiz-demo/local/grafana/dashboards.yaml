@@ -1,4 +1,4 @@
-# Grafana provisioning of the axiz dashboards (mounted into the otel-lgtm container)
+# Aprovisionamiento en Grafana de los dashboards de axiz (montado en el contenedor otel-lgtm)
 apiVersion: 1
 providers:
   - name: axiz

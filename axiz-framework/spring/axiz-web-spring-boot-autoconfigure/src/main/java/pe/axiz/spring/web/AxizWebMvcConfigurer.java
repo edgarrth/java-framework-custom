@@ -3,12 +3,13 @@ package pe.axiz.spring.web;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.List;
 import java.util.Objects;
+import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.ApiVersionConfigurer;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/** Spring MVC wiring: paging parameters, CORS and native API versioning. */
+/** Cableado de Spring MVC: parámetros de paginación, CORS y versionado nativo de la API. */
 public class AxizWebMvcConfigurer implements WebMvcConfigurer {
 
   private final AxizWebProperties properties;
@@ -33,15 +34,15 @@ public class AxizWebMvcConfigurer implements WebMvcConfigurer {
   public void addCorsMappings(CorsRegistry registry) {
     AxizWebProperties.Cors c = properties.cors();
     if (c.enabled()) {
-      registry
-          .addMapping(c.pathPattern())
-          .allowedOrigins(c.allowedOrigins().toArray(String[]::new))
-          .allowedOriginPatterns(c.allowedOriginPatterns().toArray(String[]::new))
-          .allowedMethods(c.allowedMethods().toArray(String[]::new))
-          .allowedHeaders(c.allowedHeaders().toArray(String[]::new))
-          .exposedHeaders(c.exposedHeaders().toArray(String[]::new))
-          .allowCredentials(c.allowCredentials())
-          .maxAge(c.maxAge().toSeconds());
+      CorsConfiguration configuration = new CorsConfiguration();
+      configuration.setAllowedOrigins(c.allowedOrigins());
+      configuration.setAllowedOriginPatterns(c.allowedOriginPatterns());
+      configuration.setAllowedMethods(c.allowedMethods());
+      configuration.setAllowedHeaders(c.allowedHeaders());
+      configuration.setExposedHeaders(c.exposedHeaders());
+      configuration.setAllowCredentials(c.allowCredentials());
+      configuration.setMaxAge(c.maxAge().toSeconds());
+      registry.addMapping(c.pathPattern()).combine(configuration);
     }
   }
 

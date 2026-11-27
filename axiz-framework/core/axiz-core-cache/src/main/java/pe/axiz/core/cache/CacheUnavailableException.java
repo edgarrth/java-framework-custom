@@ -1,6 +1,6 @@
 package pe.axiz.core.cache;
 
-/** The remote cache tier is not reachable. Callers degrade to the source of truth. */
+/** El nivel de caché remoto no es accesible. Quienes llaman degradan a la fuente de verdad. */
 public class CacheUnavailableException extends RuntimeException {
 
   private static final long serialVersionUID = 1L;

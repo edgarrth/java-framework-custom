@@ -22,11 +22,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-commons</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-observation</artifactId>
     </dependency>
@@ -34,5 +29,11 @@
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
     </dependency>
+
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-commons</artifactId>
+    </dependency>
   </dependencies>
+<build><plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-enforcer-plugin</artifactId><executions><execution><id>axiz-core-layer-rules</id><configuration><rules><bannedDependencies><includes combine.children="append"><include>io.micrometer:micrometer-observation</include><include>io.micrometer:micrometer-commons</include></includes></bannedDependencies></rules></configuration></execution></executions></plugin></plugins></build>
 </project>

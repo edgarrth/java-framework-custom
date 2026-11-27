@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-notification-spring-boot-starter
 
-Notification requests published as events to the delivering service.
+Solicitudes de notificación publicadas como eventos hacia el servicio que las entrega.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,4 +12,4 @@ Notification requests published as events to the delivering service.
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).

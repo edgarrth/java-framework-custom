@@ -17,20 +17,18 @@
   <properties>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
-    <!-- M10: measured locally; floor of branch 161/204 and detected mutations 196/254. -->
+    <!-- Umbrales mínimos del módulo: ramas 161/204 y mutaciones detectadas 196/254. -->
     <axiz.coverage.branch>0.78</axiz.coverage.branch>
-    <axiz.mutation.threshold>77</axiz.mutation.threshold>
+    <axiz.mutation.threshold>81</axiz.mutation.threshold>
     <axiz.module.name>pe.axiz.core.idempotency</axiz.module.name>
   </properties>
 
   <dependencies>
-    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-lang</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-json</artifactId><version>${project.version}</version></dependency>
 
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-commons</artifactId>
-      <version>${project.version}</version>
-    </dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-concurrent</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-lang</artifactId><version>${project.version}</version></dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-core-errors</artifactId>

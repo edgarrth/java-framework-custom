@@ -1,9 +1,9 @@
 #!/bin/bash
-# Runs one service of the demo on this machine against local/compose.yaml:
+# Ejecuta un servicio de la demo en esta máquina contra local/compose.yaml:
 #   scripts/run.sh payment-orders
-# AWS calls go to LocalStack (any credentials work there; these are not real ones).
+# Las llamadas a AWS van a LocalStack (allí cualquier credencial funciona; estas no son reales).
 set -Eeuo pipefail
-# -E: functions inherit the ERR trap, so an unexpected failure never ends the script silently
+# -E: las funciones heredan el trap de ERR, de modo que un fallo inesperado nunca termina el script en silencio
 trap 'printf "\\033[31m%s: unexpected failure (exit %s) at line %s: %s\\033[0m\\n" "${0##*/}" "$?" "$LINENO" "$BASH_COMMAND" >&2' ERR
 root=$(cd "$(dirname "$0")/.." && pwd)
 svc=${1:?service name}

@@ -7,13 +7,13 @@ import pe.axiz.extension.cqrs.OpenAccess;
 import pe.axiz.payments.history.domain.PaymentStatus;
 
 /**
- * payment-orders moved an order to a new status.
+ * payment-orders movió una orden a un estado nuevo.
  *
- * @param paymentId order id
- * @param customerId customer
- * @param status new status
- * @param reason reason, when given
- * @param occurredAt time of the event
+ * @param paymentId id de la orden
+ * @param customerId cliente
+ * @param status estado nuevo
+ * @param reason motivo, cuando se indica
+ * @param occurredAt momento del evento
  */
 @OpenAccess(
     reason = "sent only by the payment-order.status-changed consumer, never exposed over HTTP")

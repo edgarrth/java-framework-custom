@@ -21,6 +21,10 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-id</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kit-outbox-reactor</artifactId><version>${project.version}</version><optional>true</optional></dependency>
+
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-core-messaging</artifactId>
@@ -70,8 +74,8 @@
       <artifactId>axiz-sensitive-spring-boot-starter</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <!-- an event processor has no API, so no resource server: the security capability adds it
-         (with axiz.security.issuers) when the service also exposes endpoints -->
+    <!-- un procesador de eventos no tiene API y, por tanto, tampoco resource server: la capacidad de seguridad lo añade
+         (con axiz.security.issuers) cuando el servicio también expone endpoints -->
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-security-spring-boot-starter</artifactId>
@@ -87,15 +91,13 @@
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-inbox-spring-boot-starter</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <!-- the outbox wiring only: it turns on when the service has a database (the outbox capability
-         or Aurora persistence bring the JDBC or R2DBC pool). An event processor on DynamoDB, or
-         without persistence, starts without a DataSource -->
+    <optional>true</optional></dependency>
+    <!-- Las capacidades de persistencia se seleccionan de forma explícita; el cableado del estilo no elige un backend. -->
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-outbox-spring-boot-autoconfigure</artifactId>
       <version>${project.version}</version>
-    </dependency>
+    <optional>true</optional></dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-audit-spring-boot-starter</artifactId>
@@ -110,7 +112,7 @@
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-adapter-outbox-r2dbc</artifactId>
       <version>${project.version}</version>
-      <optional>true</optional>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>io.projectreactor</groupId>

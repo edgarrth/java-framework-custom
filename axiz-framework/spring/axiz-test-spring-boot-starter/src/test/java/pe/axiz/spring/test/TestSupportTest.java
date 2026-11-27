@@ -24,7 +24,7 @@ import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.localstack.LocalStackContainer;
-import pe.axiz.core.commons.RequestContext;
+import pe.axiz.core.context.RequestContext;
 
 class TestSupportTest {
   @Test
@@ -115,6 +115,7 @@ class TestSupportTest {
     new KafkaTestConfiguration().axizKafkaProperties(kafka).accept(properties::put);
     assertEquals("localhost:32123", properties.get("axiz.messaging.kafka.bootstrap-servers").get());
     assertEquals("false", properties.get("axiz.messaging.kafka.iam").get());
+    assertEquals("configured", properties.get("axiz.messaging.kafka.authentication").get());
   }
 
   @Test

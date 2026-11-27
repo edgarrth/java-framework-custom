@@ -7,10 +7,13 @@ import java.util.Objects;
 import pe.axiz.core.commons.tx.TransactionRunner;
 
 /**
- * Explicit recovery; the audit callback participates in the same transaction as the state change.
+ * Recuperación explícita; el callback de auditoría participa en la misma transacción que el cambio
+ * de estado.
  */
 public final class OutboxAdmin {
-  /** Must record recovery evidence in the transaction that changes the outbox row. */
+  /**
+   * Debe registrar la evidencia de recuperación en la transacción que cambia la fila del outbox.
+   */
   @FunctionalInterface
   public interface RecoveryAudit {
     void record(String action, String eventId, String reason, Instant at);

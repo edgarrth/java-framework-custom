@@ -1,12 +1,13 @@
 package pe.axiz.spring.featureflags;
 
 import java.util.Map;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.featureflags.EvaluationContext;
 
 /**
- * Evaluation context of the current request: user (or client) as targeting key, channel, tenant.
+ * Contexto de evaluación de la solicitud actual: usuario (o cliente) como clave de segmentación,
+ * canal y tenant.
  */
 public final class FlagContexts {
 

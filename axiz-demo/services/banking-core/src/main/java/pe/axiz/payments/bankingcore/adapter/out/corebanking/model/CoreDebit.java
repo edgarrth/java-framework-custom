@@ -5,9 +5,10 @@ import org.jspecify.annotations.Nullable;
 /**
  * CoreDebit.
  *
- * @param amt decimal amount as text
+ * @param amt monto decimal como texto
  * @param ccy ccy
  * @param ref ref
- * @param holder customer who must own the account; the core rejects the debit otherwise (CB-17)
+ * @param holder cliente que debe ser titular de la cuenta; en caso contrario, el core rechaza el
+ *     débito (CB-17)
  */
 public record CoreDebit(String amt, String ccy, String ref, @Nullable String holder) {}

@@ -20,7 +20,7 @@ class PublisherRouteValidationTest {
     var beans = new DefaultListableBeanFactory();
     var properties =
         new AxizMessagingProperties(
-            null, "", Map.of("audit", "${AXIZ_AUDIT_DESTINATION}"), null, null, null, null);
+            null, "", Map.of("audit", "${AXIZ_AUDIT_DESTINATION}"), null, null);
     assertThatThrownBy(
             () ->
                 new AxizNativeMessagingAutoConfiguration()
@@ -45,8 +45,6 @@ class PublisherRouteValidationTest {
                 "https://user:secret@host/audit?token=hidden",
                 "https://user:secret@host/queue?token=hidden"),
             null,
-            null,
-            null,
             null);
     assertThatThrownBy(
             () ->
@@ -66,13 +64,7 @@ class PublisherRouteValidationTest {
     var target = mock(EventPublisher.class);
     var properties =
         new AxizMessagingProperties(
-            null,
-            "",
-            Map.of("audit", "kafka:audit", "kafka:audit", "wrong"),
-            null,
-            null,
-            null,
-            null);
+            null, "", Map.of("audit", "kafka:audit", "kafka:audit", "wrong"), null, null);
     var observed = new ObservedEventPublisher(target, ObservationRegistry.NOOP, properties);
     when(target.supports("kafka:audit")).thenReturn(true);
     assertTrue(observed.supports("audit"));

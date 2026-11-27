@@ -11,11 +11,8 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.Optional;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.crypto.AesGcm;
-import pe.axiz.core.crypto.BlindIndex;
-import pe.axiz.core.crypto.EncryptionRegistry;
 import pe.axiz.core.crypto.FieldEncryptor;
 import pe.axiz.core.crypto.StaticKeyProvider;
 import pe.axiz.core.id.UuidV7;
@@ -26,20 +23,18 @@ class JpaSupportTest {
 
   static class Account extends AuditableEntity {}
 
-  /** A subclass is another entity type, unless it is a generated proxy. */
+  /** Una subclase es otro tipo de entidad, salvo que sea un proxy generado. */
   static final class SavingsAccount extends Account {}
 
   static final class DocumentConverter extends EncryptedConverter {
+    DocumentConverter(FieldEncryptor encryptor) {
+      super(encryptor);
+    }
+
     @Override
     protected String context() {
       return "customer.document";
     }
-  }
-
-  @AfterEach
-  void reset() {
-    AuditingRegistry.reset();
-    EncryptionRegistry.reset();
   }
 
   @Test
@@ -75,20 +70,26 @@ class JpaSupportTest {
   }
 
   @Test
-  void auditListenerUsesRegisteredAuditorAndClock() {
+  void auditListenerUsesInjectedAuditorAndClock() {
     Instant t1 = Instant.parse("2026-01-01T00:00:00Z");
-    AuditingRegistry.register(() -> Optional.of("user-1"), Clock.fixed(t1, ZoneOffset.UTC));
     Customer c = new Customer();
-    AuditListener listener = new AuditListener();
+    AuditListener listener =
+        new AuditListener(() -> Optional.of("user-1"), Clock.fixed(t1, ZoneOffset.UTC));
     listener.onCreate(c);
     assertEquals(t1, c.getCreatedAt());
     assertEquals("user-1", c.getCreatedBy());
     Instant t2 = t1.plusSeconds(60);
-    AuditingRegistry.register(Optional::empty, Clock.fixed(t2, ZoneOffset.UTC));
-    listener.onUpdate(c);
+    AuditListener later = new AuditListener(Optional::empty, Clock.fixed(t2, ZoneOffset.UTC));
+    later.onUpdate(c);
     assertEquals(t1, c.getCreatedAt());
     assertEquals(t2, c.getUpdatedAt());
-    assertEquals(AuditListener.SYSTEM, c.getUpdatedBy());
+    assertEquals(AuditListener.UNATTRIBUTED, c.getUpdatedBy());
+    new AuditListener(() -> Optional.of(" "), Clock.fixed(t2, ZoneOffset.UTC)).onUpdate(c);
+    assertEquals(AuditListener.UNATTRIBUTED, c.getUpdatedBy());
+    Customer independent = new Customer();
+    listener.onCreate(independent);
+    assertEquals("user-1", independent.getCreatedBy());
+    assertEquals(t1, independent.getCreatedAt());
     listener.onCreate("not an entity");
     listener.onUpdate("not an entity");
   }
@@ -97,8 +98,7 @@ class JpaSupportTest {
   void encryptedConverterRoundTripsWithContext() {
     FieldEncryptor encryptor =
         new FieldEncryptor(new StaticKeyProvider("k1", Map.of("k1", AesGcm.newKey())));
-    EncryptionRegistry.register(encryptor, new BlindIndex(new byte[32], 16));
-    DocumentConverter converter = new DocumentConverter();
+    DocumentConverter converter = new DocumentConverter(encryptor);
     String column = converter.convertToDatabaseColumn("12345678");
     assertTrue(column.startsWith("axz1:k1:"));
     assertEquals("12345678", converter.convertToEntityAttribute(column));
@@ -111,12 +111,10 @@ class JpaSupportTest {
                 return "other.document";
               }
             }.convertToEntityAttribute(column));
-    assertEquals(
-        EncryptionRegistry.blindIndex("12345678", "customer.document"),
-        EncryptionRegistry.blindIndex("1234-5678", "customer.document"));
-    EncryptionRegistry.reset();
+    FieldEncryptor other =
+        new FieldEncryptor(new StaticKeyProvider("k1", Map.of("k1", AesGcm.newKey())));
     assertThrows(
-        IllegalStateException.class, () -> new DocumentConverter().convertToDatabaseColumn("x"));
-    assertThrows(IllegalStateException.class, () -> EncryptionRegistry.blindIndex("x", "c"));
+        RuntimeException.class,
+        () -> new DocumentConverter(other).convertToEntityAttribute(column));
   }
 }

@@ -1,0 +1,68 @@
+<!-- GENERADO por scripts/sync_reference.py desde axiz-framework: no editar -->
+# Clasificación de claves sensibles
+
+Extraída de `SensitiveKeys.java`; las anotaciones del modelo y los tipos con `SelfMasking` complementan esta clasificación.
+
+| Clave normalizada | Nivel | Máscara |
+|---|---|---|
+| password | CRITICAL | FULL |
+| passwd | CRITICAL | FULL |
+| passphrase | CRITICAL | FULL |
+| secret | CRITICAL | FULL |
+| clientsecret | CRITICAL | FULL |
+| secretkey | CRITICAL | FULL |
+| privatekey | CRITICAL | FULL |
+| token | CRITICAL | FULL |
+| accesstoken | CRITICAL | FULL |
+| refreshtoken | CRITICAL | FULL |
+| idtoken | CRITICAL | FULL |
+| jwt | CRITICAL | FULL |
+| authorization | CRITICAL | FULL |
+| apikey | CRITICAL | FULL |
+| credential | CRITICAL | FULL |
+| signature | CRITICAL | FULL |
+| pin | CRITICAL | FULL |
+| pinblock | CRITICAL | FULL |
+| cvv | CRITICAL | FULL |
+| cvv2 | CRITICAL | FULL |
+| cvc | CRITICAL | FULL |
+| cvc2 | CRITICAL | FULL |
+| cid | CRITICAL | FULL |
+| securitycode | CRITICAL | FULL |
+| codigoseguridad | CRITICAL | FULL |
+| codigodeseguridad | CRITICAL | FULL |
+| cardverificationvalue | CRITICAL | FULL |
+| track1 | CRITICAL | FULL |
+| track2 | CRITICAL | FULL |
+| trackdata | CRITICAL | FULL |
+| otp | CRITICAL | FULL |
+| clave | CRITICAL | FULL |
+| contrasena | CRITICAL | FULL |
+| sessionid | CRITICAL | FULL |
+| cookie | CRITICAL | FULL |
+| database64 | CRITICAL | FULL |
+| pan | HIGH | CARD |
+| cardnumber | HIGH | CARD |
+| primaryaccountnumber | HIGH | CARD |
+| numerotarjeta | HIGH | CARD |
+| documentnumber | HIGH | DOCUMENT |
+| accountnumber | HIGH | DOCUMENT |
+| cci | HIGH | DOCUMENT |
+| iban | HIGH | DOCUMENT |
+| dni | HIGH | DOCUMENT |
+| ruc | HIGH | DOCUMENT |
+| expirydate | HIGH | FULL |
+| expirationdate | HIGH | FULL |
+| cardexpiry | HIGH | FULL |
+| expiry | HIGH | FULL |
+| vencimiento | HIGH | FULL |
+| fechavencimiento | HIGH | FULL |
+| fechaexpiracion | HIGH | FULL |
+| cardholder | HIGH | NAME |
+| cardholdername | HIGH | NAME |
+| titulartarjeta | HIGH | NAME |
+| email | MEDIUM | EMAIL |
+| phone | MEDIUM | PHONE |
+| mobile | MEDIUM | PHONE |
+| celular | MEDIUM | PHONE |
+| telefono | MEDIUM | PHONE |

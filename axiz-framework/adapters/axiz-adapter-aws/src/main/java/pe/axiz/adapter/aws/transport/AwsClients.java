@@ -18,10 +18,11 @@ import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.regions.Region;
 
 /**
- * Applies the framework conventions to any AWS SDK v2 client builder: optional region and endpoint
- * override (LocalStack in local runs and tests). Credentials always follow {@link
- * AwsCredentialSources} when the builder uses SDK defaults. Explicit custom providers remain owned
- * by the caller according to the SDK lifecycle contract.
+ * Aplica las convenciones del framework a cualquier builder de cliente del AWS SDK v2: región
+ * opcional y reemplazo del endpoint (LocalStack en ejecuciones locales y pruebas). Las credenciales
+ * siempre siguen {@link AwsCredentialSources} cuando el builder usa los valores por defecto del
+ * SDK. Los proveedores personalizados explícitos siguen siendo propiedad de quien llama según el
+ * contrato de ciclo de vida del SDK.
  */
 public final class AwsClients {
 
@@ -62,7 +63,8 @@ public final class AwsClients {
         transportSecurity.validate(URI.create(endpoint), "AWS endpoint");
         builder.endpointOverride(URI.create(endpoint));
       }
-      // A public SDK plugin sees the final provider, preserving explicit custom/static builders.
+      // Un plugin público del SDK ve el proveedor final y preserva los builders explícitos
+      // personalizados o estáticos.
       AwsTransportSecurity.apply(builder, transportSecurity);
       var policy = new CredentialPolicy(transportSecurity);
       builder.addPlugin(policy);
@@ -70,7 +72,7 @@ public final class AwsClients {
     } catch (SdkClientException e) {
       closeCredentials(builder, e);
       if (region == null || region.isBlank()) {
-        // the SDK chain found no region: say which setting the service is missing
+        // la cadena del SDK no encontró región: se indica qué configuración le falta al servicio
         throw new IllegalStateException(
             "No AWS region for this client: set axiz.aws.region (or AWS_REGION), or turn off the"
                 + " capability that creates it when the service does not use AWS",
@@ -119,13 +121,13 @@ public final class AwsClients {
   }
 
   /**
-   * Same as {@link #build}, with region and endpoint taken from the framework properties: {@code
-   * axiz.aws.region}, and {@code axiz.aws.<service>.endpoint} or else {@code axiz.aws.endpoint}.
-   * Modules that create a client go through here, so a local run against LocalStack never reaches
-   * real AWS because one module skipped the endpoint.
+   * Igual que {@link #build}, con región y endpoint tomados de las propiedades del framework:
+   * {@code axiz.aws.region}, y {@code axiz.aws.<service>.endpoint} o, en su defecto, {@code
+   * axiz.aws.endpoint}. Los módulos que crean un cliente pasan por aquí, de modo que una ejecución
+   * local contra LocalStack nunca llega a AWS real porque un módulo omitió el endpoint.
    *
-   * @param properties property lookup, e.g. {@code environment::getProperty}
-   * @param service endpoint key of the service: {@code sqs}, {@code dynamodb}, {@code kms}...
+   * @param properties búsqueda de propiedades, por ejemplo {@code environment::getProperty}
+   * @param service clave de endpoint del servicio: {@code sqs}, {@code dynamodb}, {@code kms}, etc.
    */
   public static <B extends AwsClientBuilder<B, C>, C> C configured(
       B builder, Function<String, @Nullable String> properties, String service) {

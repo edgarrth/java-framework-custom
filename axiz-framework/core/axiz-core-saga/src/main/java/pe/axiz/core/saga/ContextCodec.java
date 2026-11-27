@@ -1,6 +1,6 @@
 package pe.axiz.core.saga;
 
-/** Serializes saga contexts (JSON with the service mapper in the starter). */
+/** Serializa los contextos de saga (JSON con el mapper del servicio en el starter). */
 public interface ContextCodec<C> {
 
   String encode(C context);

@@ -1,6 +1,6 @@
 package pe.axiz.core.identifiers;
 
-/** Thrown when a value is not a valid identifier of the requested type. */
+/** Se lanza cuando un valor no es un identificador válido del tipo solicitado. */
 public class InvalidIdentifierException extends IllegalArgumentException {
 
   private static final long serialVersionUID = 1L;

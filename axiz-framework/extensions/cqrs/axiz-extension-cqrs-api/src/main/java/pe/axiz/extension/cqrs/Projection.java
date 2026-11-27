@@ -1,10 +1,10 @@
 package pe.axiz.extension.cqrs;
 
 /**
- * Keeps a read model up to date from events (domain events in process, or integration events
- * through the EDA style).
+ * Mantiene actualizado un modelo de lectura a partir de eventos (eventos de dominio en proceso, o
+ * eventos de integración mediante el estilo EDA).
  *
- * @param <E> event type
+ * @param <E> tipo del evento
  */
 public interface Projection<E> {
 

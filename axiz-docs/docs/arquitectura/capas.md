@@ -17,7 +17,9 @@ Los arquetipos describen el rol del servicio y no son capas de ejecución.
 
 ## Contratos y tecnología
 
-Core admite JDK, JSpecify, SLF4J, Micrometer y otros módulos core. Prohíbe Spring, Quarkus,
+Core admite JDK, JSpecify, SLF4J y otros módulos core. Micrometer es una excepción acotada
+exclusivamente a `axiz-core-observability` y `axiz-core-metrics`; no es una dependencia abierta
+para todos los módulos. Prohíbe Spring, Quarkus,
 Reactor, Reactive Streams y SDKs de tecnología. Publica puertos síncronos y puertos `Async*`
 con `CompletionStage` o `Flow.Publisher`; los adaptadores tecnológicos implementan esos puertos.
 
@@ -26,10 +28,20 @@ una fila R2DBC puede usar `EncryptedText`; un repositorio DynamoDB puede usar `D
 Estos tipos se importan en `repository` o `adapter.out.persistence`, nunca en el dominio.
 El dominio puede usar contratos de Axiz sin adquirir una dependencia de un framework tercero.
 
-La excepción de Reactor en tecnología es cerrada: `axiz-kit-r2dbc`,
-`axiz-adapter-inbox-r2dbc` y `axiz-adapter-outbox-r2dbc`. Conservan Reactor para transportar
-la transacción en el contexto. Los adaptadores AWS pueden interoperar internamente con Reactive
+La lista Reactor en tecnología es cerrada: las cuatro integraciones `axiz-kit-r2dbc`,
+`axiz-adapter-inbox-r2dbc`, `axiz-adapter-outbox-r2dbc` y `axiz-adapter-sequence-r2dbc`;
+y los contratos neutrales `axiz-kit-audit-reactor` y `axiz-kit-outbox-reactor`. Estos dos últimos
+conservan el contexto de transacción sin traer drivers ni implementaciones de almacenamiento.
+El control de capas prohíbe añadirles dependencias de proveedor. Los adaptadores AWS pueden interoperar internamente con Reactive
 Streams, pero sus APIs públicas exponen los tipos neutrales del puerto.
+
+**Código reactivo de aplicación.** Un caso de uso reactivo depende de los puertos `Async*` de
+core (`AsyncTokenizer`, `AsyncAuditTrail`, `AsyncIdempotencyService`, `AsyncEventPublisher`...) y
+los adapta con `Mono.fromCompletionStage`; no importa `pe.axiz.spring..` ni `pe.axiz.kit..`. Las
+fachadas con tipos de Reactor de la capa Spring (`ReactiveTokenizer`, `ReactiveAuditTrail`,
+`ReactiveEvents`, `ReactiveInbox`) son integraciones para adaptadores, controladores y
+configuración, y los contratos `Reactive*` de kits y adaptadores R2DBC son SPIs de persistencia.
+Así cada capacidad tiene un único contrato de aplicación, en core, para servlet y reactivo.
 
 ## Integración y estructura
 
@@ -52,3 +64,28 @@ Enforcer controla dependencias y scopes; `FrameworkArchitectureTest` controla el
 firmas públicas, aislamiento y ciclos. `check-layer-structure.py` comprueba nombres, parents,
 pertenencia al reactor y la lista cerrada de módulos R2DBC.
 Cada servicio ejecuta [sus reglas de arquitectura](../calidad/arquitectura.md).
+
+## Construcción de objetos públicos
+
+Las APIs con más de siete parámetros usan `builder()` con nombres explícitos. Las clases
+ocultan el constructor; los records conservan el canónico que Java y el binding requieren,
+pero sus consumidores usan el builder. No hay sobrecargas de compatibilidad que omitan
+invariantes, versiones o presupuestos. El control `ConstructionContractsTest` comprueba
+esta frontera sobre las clases compiladas.
+
+```java
+var event = EventEnvelope.builder()
+    .id(eventId)
+    .source("urn:payments:orders")
+    .type("payment.created.v1")
+    .time(clock.instant())
+    .dataContentType("application/json")
+    .data(encodedPayload)
+    .build();
+```
+
+Cada builder es mutable y pertenece a una sola operación. `build()` valida los campos
+obligatorios; el objeto final conserva las copias y validaciones del contrato original.
+Los builders no se registran como singletons ni se comparten entre solicitudes. En auditoría,
+la instantánea profunda de detalles se toma al construir el evento, incluyendo su saneamiento;
+modificar metadatos de transporte conserva esa misma instantánea.

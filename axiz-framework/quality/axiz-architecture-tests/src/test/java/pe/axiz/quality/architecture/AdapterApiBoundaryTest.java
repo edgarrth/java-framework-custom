@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import org.junit.jupiter.api.Test;
 import pe.axiz.adapter.architecturefixture.AdapterApiFixture;
-import pe.axiz.adapter.messaging.kafka.aws.AxizIamClientCallbackHandler;
+import pe.axiz.adapter.kafka.msk.AxizIamClientCallbackHandler;
 import pe.axiz.adapter.messaging.kafka.fixture.UnapprovedAwsDependency;
 
 class AdapterApiBoundaryTest {
@@ -16,9 +16,9 @@ class AdapterApiBoundaryTest {
     var importer = new ClassFileImporter();
     var valid =
         importer.importClasses(
-            pe.axiz.spring.foundation.aws.AwsIdentity.class,
-            pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration.class,
-            pe.axiz.spring.foundation.aws.AwsAsyncResources.class);
+            pe.axiz.spring.aws.AwsIdentity.class,
+            pe.axiz.spring.aws.AxizAwsIdentityAutoConfiguration.class,
+            pe.axiz.spring.aws.AwsAsyncResources.class);
     assertFalse(
         FrameworkArchitectureTest.AWS_IDENTITY_API_DOES_NOT_EXPOSE_CONTAINER
             .evaluate(valid)
@@ -27,8 +27,7 @@ class AdapterApiBoundaryTest {
         FrameworkArchitectureTest.AWS_IDENTITY_HAS_NO_RUNTIME_DEFINITIONS_OR_CREATION_SWEEPS
             .evaluate(valid)
             .hasViolation());
-    var invalid =
-        importer.importClasses(pe.axiz.spring.foundation.aws.fixture.InvalidIdentityApi.class);
+    var invalid = importer.importClasses(pe.axiz.spring.aws.fixture.InvalidIdentityApi.class);
     assertTrue(
         FrameworkArchitectureTest.AWS_IDENTITY_API_DOES_NOT_EXPOSE_CONTAINER
             .evaluate(invalid)

@@ -8,11 +8,14 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.lock.AsyncDistributedLock;
 import pe.axiz.core.lock.AsyncLockHandle;
 
-/** Non-blocking Redis leases, with native asynchronous renew and release fenced by owner. */
+/**
+ * Leases de Redis no bloqueantes, con renovación y liberación asíncronas nativas protegidas por
+ * propietario.
+ */
 public final class RedisAsyncDistributedLock implements AsyncDistributedLock {
   private final RedisAsyncCommands<String, String> redis;
   private final String prefix;

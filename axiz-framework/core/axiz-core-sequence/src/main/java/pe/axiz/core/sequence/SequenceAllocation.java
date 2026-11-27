@@ -3,7 +3,7 @@ package pe.axiz.core.sequence;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
-/** Shared allocation invariants for synchronous and native asynchronous generators. */
+/** Invariantes de asignación compartidas por los generadores síncronos y asíncronos nativos. */
 final class SequenceAllocation {
   private static final Pattern NAME = Pattern.compile("^[a-z][a-z0-9_-]{0,62}$");
 

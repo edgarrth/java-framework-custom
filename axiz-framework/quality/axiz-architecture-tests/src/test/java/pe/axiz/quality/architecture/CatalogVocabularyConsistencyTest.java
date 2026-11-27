@@ -17,7 +17,8 @@ import pe.axiz.quality.archunit.Stack;
 import pe.axiz.quality.archunit.Structure;
 
 class CatalogVocabularyConsistencyTest {
-  // Platform library/starter projects intentionally have no service structure.
+  // Los proyectos de plataforma library y starter no tienen estructura de servicio de forma
+  // intencional.
   private static final Map<String, String> STRUCTURE_EXCEPTIONS =
       Map.of("NONE", "libraries and starters have no service structure");
 

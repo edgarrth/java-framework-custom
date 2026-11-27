@@ -28,12 +28,12 @@ import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * {@link AxizCacheable} and named caches on L1 (Caffeine) plus L2 (ElastiCache) when configured.
+ * {@link AxizCacheable} y cachés con nombre sobre L1 (Caffeine) más L2 (ElastiCache) cuando está
+ * configurado.
  */
 @AutoConfiguration(
     afterName = {
       "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration",
-      "pe.axiz.spring.cache.AxizCacheRedisAutoConfiguration",
       "pe.axiz.spring.cache.AxizCacheCaffeineAutoConfiguration"
     })
 @ConditionalOnBooleanProperty(name = "axiz.cache.enabled", matchIfMissing = true)
@@ -60,7 +60,7 @@ public class AxizCacheAutoConfiguration {
         local.getIfAvailable(
             () ->
                 new InMemoryByteCache(p.l1().maxEntries(), clock.getIfAvailable(Clock::systemUTC)));
-    ByteCache remote = p.redis() ? l2.getIfAvailable() : null;
+    ByteCache remote = p.l2().enabled() ? l2.getIfAvailable() : null;
     ByteCache store = remote != null ? new TwoLevelCache(l1, remote, p.l1().maxTtl()) : l1;
     String configuredPrefix = p.prefix();
     String prefix =
@@ -112,7 +112,7 @@ public class AxizCacheAutoConfiguration {
               () ->
                   new InMemoryByteCache(
                       p.l1().maxEntries(), clock.getIfAvailable(Clock::systemUTC)));
-      AsyncByteCache l2 = p.redis() ? remote.getIfAvailable() : null;
+      AsyncByteCache l2 = p.l2().enabled() ? remote.getIfAvailable() : null;
       String configuredPrefix = p.prefix();
       String application = env.getProperty("spring.application.name");
       String prefix =

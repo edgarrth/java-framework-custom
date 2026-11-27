@@ -9,10 +9,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
- * Business settings of payments ({@code payments.*}, ConfigMap per environment).
+ * Configuración de negocio de los pagos ({@code payments.*}, ConfigMap por entorno).
  *
- * @param cutoff orders received after this local time are processed the next business day
- * @param dailyLimits daily limit per currency code
+ * @param cutoff las órdenes recibidas después de esta hora local se procesan el siguiente día hábil
+ * @param dailyLimits límite diario por código de moneda
  */
 @ConfigurationProperties("payments")
 public record PaymentsProperties(

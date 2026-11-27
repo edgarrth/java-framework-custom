@@ -1,4 +1,6 @@
-/** Package pe.axiz.core.time. Types are non-null unless annotated {@code @Nullable}. */
+/**
+ * Paquete pe.axiz.core.time. Los tipos no admiten null salvo que se anoten con {@code @Nullable}.
+ */
 @NullMarked
 package pe.axiz.core.time;
 

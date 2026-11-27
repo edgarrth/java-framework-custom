@@ -6,8 +6,9 @@ import java.util.IdentityHashMap;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Connection bound to the current thread by {@link R2dbcTransactionRunner} for blocking callers
- * (the outbox relay, consumer threads). Reactive code binds it in the Reactor context instead.
+ * Conexión ligada al hilo actual por {@link R2dbcTransactionRunner} para llamadores bloqueantes (el
+ * relay del outbox, los hilos de consumidores). El código reactivo, en cambio, la liga en el
+ * contexto de Reactor.
  */
 final class BoundConnection {
 

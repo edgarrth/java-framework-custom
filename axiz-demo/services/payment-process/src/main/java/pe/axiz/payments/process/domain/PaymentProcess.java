@@ -4,11 +4,11 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /**
- * State of one payment process.
+ * Estado de un proceso de pago.
  *
- * @param processId process id (the payment order id)
- * @param status status
- * @param failedStep step that failed, when the process did not complete
+ * @param processId id del proceso (el id de la orden de pago)
+ * @param status estado
+ * @param failedStep paso que falló, cuando el proceso no se completó
  */
 public record PaymentProcess(String processId, ProcessStatus status, @Nullable String failedStep) {
 

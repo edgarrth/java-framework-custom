@@ -24,8 +24,8 @@ import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.messaging.PublishResult;
 
 /**
- * The relay publishes an outbox event outside the request that wrote it: the publication continues
- * the trace of the write (stored with the event), not the trace of the relay loop.
+ * El relay publica un evento del outbox fuera de la solicitud que lo escribió: la publicación
+ * continúa la traza de la escritura (almacenada con el evento), no la traza del bucle del relay.
  */
 class OutboxTraceRelayTest {
 
@@ -37,38 +37,37 @@ class OutboxTraceRelayTest {
         null,
         "",
         Map.of("orders", "kafka:orders"),
-        new AxizMessagingProperties.Consumer(
-            null,
-            5,
-            Duration.ofSeconds(1),
-            Duration.ofMinutes(5),
-            false,
-            List.of(),
-            Duration.ofSeconds(10),
-            Duration.ofMinutes(10),
-            true,
-            Duration.ofSeconds(30)),
-        new AxizMessagingProperties.Kafka(
-            null, false, List.of(), null, 1, ".dlq", Duration.ofSeconds(10)),
-        new AxizMessagingProperties.Sqs(
-            List.of(), Map.of(), Duration.ofSeconds(20), 10, Duration.ofSeconds(60)),
+        AxizMessagingProperties.Consumer.builder()
+            .name(null)
+            .maxAttempts(5)
+            .initialDelay(Duration.ofSeconds(1))
+            .maxDelay(Duration.ofMinutes(5))
+            .ignoreUnknownTypes(false)
+            .subscriptions(List.of())
+            .deferInterval(Duration.ofSeconds(10))
+            .deferMaxWait(Duration.ofMinutes(10))
+            .transactional(true)
+            .handlerTimeout(Duration.ofSeconds(30))
+            .build(),
         new AxizMessagingProperties.Routes("domain-events", Map.of()));
   }
 
   private static EventEnvelope fromOutbox() {
-    return new EventEnvelope(
-        "e-1",
-        "urn:axiz:orders",
-        "pe.axiz.orders.order-placed.v1",
-        Instant.EPOCH,
-        "o-1",
-        "application/json",
-        "{}".getBytes(StandardCharsets.UTF_8),
-        Map.of(
-            EventEnvelope.OUTBOX_TRACEPARENT,
-            "00-" + WRITE_TRACE + "-" + WRITE_SPAN + "-01",
-            EventEnvelope.CORRELATION_ID,
-            "corr-1"));
+    return EventEnvelope.builder()
+        .id("e-1")
+        .source("urn:axiz:orders")
+        .type("pe.axiz.orders.order-placed.v1")
+        .time(Instant.EPOCH)
+        .subject("o-1")
+        .dataContentType("application/json")
+        .data("{}".getBytes(StandardCharsets.UTF_8))
+        .extensions(
+            Map.of(
+                EventEnvelope.OUTBOX_TRACEPARENT,
+                "00-" + WRITE_TRACE + "-" + WRITE_SPAN + "-01",
+                EventEnvelope.CORRELATION_ID,
+                "corr-1"))
+        .build();
   }
 
   @Test
@@ -96,7 +95,7 @@ class OutboxTraceRelayTest {
         };
     ObservedEventPublisher publisher = new ObservedEventPublisher(broker, registry, properties());
 
-    // the relay loop has an observation of its own (one per batch), current while it publishes
+    // el bucle del relay tiene su propia observación (una por lote), vigente mientras publica
     Observation.createNotStarted("axiz.outbox.relay", registry)
         .observe(() -> publisher.publish("orders", fromOutbox()));
 
@@ -115,7 +114,8 @@ class OutboxTraceRelayTest {
             .filter(s -> "publish orders".equals(s.getName()))
             .findFirst()
             .orElseThrow();
-    // dispatch continues the write; the publication is its child; the consumer gets the publication
+    // el dispatch continúa la escritura; la publicación es su hija; el consumidor recibe la
+    // publicación
     assertEquals(WRITE_TRACE, dispatch.context().traceId());
     assertEquals(WRITE_SPAN, dispatch.context().parentId());
     assertEquals(WRITE_TRACE, publish.context().traceId());

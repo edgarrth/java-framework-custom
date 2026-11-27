@@ -3,15 +3,17 @@ package pe.axiz.core.lock;
 import java.time.Duration;
 import java.util.Optional;
 
-/** Distributed lock with lease: a crashed owner never blocks a resource beyond its lease. */
+/**
+ * Lock distribuido con lease: un propietario caído nunca bloquea un recurso más allá de su lease.
+ */
 public interface DistributedLock {
 
   /**
-   * Tries once to acquire the lock.
+   * Intenta adquirir el lock una sola vez.
    *
-   * @param resource resource name, e.g. {@code account:123}
-   * @param lease lease duration
-   * @return the handle, or empty when somebody else holds it
+   * @param resource nombre del recurso, por ejemplo {@code account:123}
+   * @param lease duración del lease
+   * @return el handle, o vacío cuando otro lo tiene
    */
   Optional<LockHandle> tryAcquire(String resource, Duration lease);
 }

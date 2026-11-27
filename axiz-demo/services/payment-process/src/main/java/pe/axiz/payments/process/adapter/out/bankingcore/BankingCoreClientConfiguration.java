@@ -4,7 +4,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.service.registry.HttpServiceGroup;
 import org.springframework.web.service.registry.ImportHttpServices;
 
-/** Registers {@link BankingCoreClient} in the HTTP service group {@code banking-core}. */
+/** Registra {@link BankingCoreClient} en el grupo de servicios HTTP {@code banking-core}. */
 @Configuration(proxyBeanMethods = false)
 @ImportHttpServices(
     group = "banking-core",

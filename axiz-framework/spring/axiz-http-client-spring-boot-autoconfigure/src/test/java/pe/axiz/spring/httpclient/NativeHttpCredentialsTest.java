@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.sun.net.httpserver.HttpServer;
@@ -82,7 +83,7 @@ class NativeHttpCredentialsTest {
 
   @BeforeEach
   void start() throws Exception {
-    // The token URI uses localhost: the first request also exercises the native resolver.
+    // La URI de tokens usa localhost: la primera solicitud también ejercita el resolvedor nativo.
     server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
     server.setExecutor(handlers);
     server.createContext(
@@ -123,28 +124,32 @@ class NativeHttpCredentialsTest {
   }
 
   private ClientSettings settings(AuthType type) {
-    return new ClientSettings(
-        "bank",
-        URI.create("http://localhost:" + server.getAddress().getPort()),
-        new TimeoutSettings(Duration.ofSeconds(2), Duration.ofSeconds(3), Duration.ofSeconds(5)),
-        type == AuthType.API_KEY
-            ? new AuthSettings(type, null, null, null, List.of(), null, "X-Api-Key", "api")
-            : new AuthSettings(
-                type,
-                URI.create("http://localhost:" + server.getAddress().getPort() + "/token"),
-                "client",
-                "oauth",
-                List.of("read"),
-                null,
-                null,
-                null),
-        ClientSettings.RetryMode.NONE,
-        1,
-        null,
-        1,
-        List.of(),
-        2,
-        new TransportSecurityPolicy("test", true));
+    return ClientSettings.builder()
+        .name("bank")
+        .baseUrl(URI.create("http://localhost:" + server.getAddress().getPort()))
+        .timeouts(
+            new TimeoutSettings(
+                Duration.ofSeconds(2), Duration.ofSeconds(3), Duration.ofSeconds(5)))
+        .auth(
+            type == AuthType.API_KEY
+                ? new AuthSettings(type, null, null, null, List.of(), null, "X-Api-Key", "api")
+                : new AuthSettings(
+                    type,
+                    URI.create("http://localhost:" + server.getAddress().getPort() + "/token"),
+                    "client",
+                    "oauth",
+                    List.of("read"),
+                    null,
+                    null,
+                    null))
+        .retry(ClientSettings.RetryMode.NONE)
+        .maxAttempts(1)
+        .circuitBreaker(null)
+        .maxConcurrentCalls(1)
+        .propagateHeaders(List.of())
+        .maxConnections(2)
+        .transportSecurity(new TransportSecurityPolicy("test", true))
+        .build();
   }
 
   @Test
@@ -342,19 +347,28 @@ class NativeHttpCredentialsTest {
   private ClientSettings tokenSettings(URI uri) {
     var original = settings(AuthType.CLIENT_CREDENTIALS);
     var a = original.auth();
-    return new ClientSettings(
-        original.name(),
-        original.baseUrl(),
-        original.timeouts(),
-        new AuthSettings(
-            a.type(), uri, a.clientId(), a.clientSecretRef(), a.scopes(), a.audience(), null, null),
-        original.retry(),
-        original.maxAttempts(),
-        original.circuitBreaker(),
-        original.maxConcurrentCalls(),
-        original.propagateHeaders(),
-        original.maxConnections(),
-        new TransportSecurityPolicy("test", true));
+    return ClientSettings.builder()
+        .name(original.name())
+        .baseUrl(original.baseUrl())
+        .timeouts(original.timeouts())
+        .auth(
+            new AuthSettings(
+                a.type(),
+                uri,
+                a.clientId(),
+                a.clientSecretRef(),
+                a.scopes(),
+                a.audience(),
+                null,
+                null))
+        .retry(original.retry())
+        .maxAttempts(original.maxAttempts())
+        .circuitBreaker(original.circuitBreaker())
+        .maxConcurrentCalls(original.maxConcurrentCalls())
+        .propagateHeaders(original.propagateHeaders())
+        .maxConnections(original.maxConnections())
+        .transportSecurity(new TransportSecurityPolicy("test", true))
+        .build();
   }
 
   @Test
@@ -462,6 +476,84 @@ class NativeHttpCredentialsTest {
     StepVerifier.create(ReactiveStages.from(auth::headers))
         .expectError(IllegalStateException.class)
         .verify();
+  }
+
+  @Test
+  void servletSecretsAreClosedEvenWhenHeaderApplicationFails() {
+    var secret = SecretValue.of("CREDENTIAL-CANARY");
+    try (var auth =
+        OutboundAuth.create(
+            settings(AuthType.API_KEY),
+            name -> Optional.of(secret),
+            Duration.ZERO,
+            Clock.systemUTC())) {
+      assertThrows(
+          IllegalArgumentException.class,
+          () ->
+              auth.apply(
+                  (name, value) -> {
+                    assertEquals("CREDENTIAL-CANARY", value);
+                    throw new IllegalArgumentException("request rejected");
+                  }));
+      assertThrows(IllegalStateException.class, secret::reveal);
+    }
+  }
+
+  @Test
+  void oauthSecretIsClosedInBothExecutionStacks() {
+    for (boolean nativeIo : new boolean[] {false, true}) {
+      var secret = SecretValue.of("secret");
+      try (var auth =
+          nativeIo
+              ? OutboundAuth.createAsync(
+                  settings(AuthType.CLIENT_CREDENTIALS),
+                  name -> CompletableFuture.completedFuture(Optional.of(secret)),
+                  Duration.ZERO,
+                  Clock.systemUTC())
+              : OutboundAuth.create(
+                  settings(AuthType.CLIENT_CREDENTIALS),
+                  name -> Optional.of(secret),
+                  Duration.ZERO,
+                  Clock.systemUTC())) {
+        if (nativeIo)
+          auth.headers().toCompletableFuture().join().values().forEach(SecretValue::close);
+        else auth.apply((name, value) -> assertTrue(value.startsWith("Bearer ")));
+        assertThrows(IllegalStateException.class, secret::reveal);
+      }
+    }
+  }
+
+  @Test
+  void nativeApiKeyClosesOriginalAndLateCancelledSecretsButTransfersAnIndependentHeader() {
+    var original = SecretValue.of("CREDENTIAL-CANARY");
+    try (var auth =
+        OutboundAuth.createAsync(
+            settings(AuthType.API_KEY),
+            name -> CompletableFuture.completedFuture(Optional.of(original)),
+            Duration.ZERO,
+            Clock.systemUTC())) {
+      var headers = auth.headers().toCompletableFuture().join();
+      assertThrows(IllegalStateException.class, original::reveal);
+      try (var header = headers.get("X-Api-Key")) {
+        assertEquals("CREDENTIAL-CANARY", header.reveal());
+      }
+    }
+    var late =
+        new CompletableFuture<Optional<SecretValue>>() {
+          @Override
+          public boolean cancel(boolean interrupt) {
+            return false;
+          }
+        };
+    try (var auth =
+        OutboundAuth.createAsync(
+            settings(AuthType.API_KEY), name -> late, Duration.ZERO, Clock.systemUTC())) {
+      var answer = auth.headers().toCompletableFuture();
+      assertTrue(answer.cancel(true));
+      var secret = SecretValue.of("LATE-CANARY");
+      late.complete(Optional.of(secret));
+      assertThrows(IllegalStateException.class, secret::reveal);
+    }
   }
 
   private static final class MovingClock extends Clock {

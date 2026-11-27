@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-spring</artifactId><version>2.0.0</version><relativePath/></parent>
+  <groupId>pe.axiz.payments</groupId><artifactId>sqs-consumer-example</artifactId><version>2.0.0</version>
+  <name>axiz demo: SQS consumer with automatic starter discovery</name>
+  <properties><axiz.module.name>pe.axiz.demo.sqs</axiz.module.name><maven.deploy.skip>true</maven.deploy.skip><spotbugs.includeTests>true</spotbugs.includeTests></properties>
+  <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-messaging-sqs-spring-boot-starter</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-test-spring-boot-starter</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>org.junit.platform</groupId><artifactId>junit-platform-reporting</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>org.springframework</groupId><artifactId>spring-webmvc</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>org.springframework</groupId><artifactId>spring-webflux</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>jakarta.servlet</groupId><artifactId>jakarta.servlet-api</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>io.projectreactor</groupId><artifactId>reactor-core</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>sqs</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>auth</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>regions</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>url-connection-client</artifactId><scope>test</scope></dependency>
+  </dependencies>
+  <build><plugins>
+    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><configuration><properties><configurationParameters>
+      junit.platform.reporting.output.dir = ${project.build.directory}/surefire-reports
+    </configurationParameters></properties></configuration></plugin>
+    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-failsafe-plugin</artifactId><configuration><properties><configurationParameters>
+      junit.platform.reporting.output.dir = ${project.build.directory}/failsafe-reports
+    </configurationParameters></properties></configuration></plugin>
+  </plugins></build>
+</project>

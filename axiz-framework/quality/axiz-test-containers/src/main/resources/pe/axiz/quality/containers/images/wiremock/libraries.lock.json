@@ -1,0 +1,420 @@
+{
+  "schema": 1,
+  "root": "pkg:maven/org.wiremock/wiremock-jetty12@3.13.2?type=jar",
+  "artifacts": [
+    {
+      "group": "com.ethlo.time",
+      "name": "itu",
+      "version": "1.14.0",
+      "sha256": "5cf40ab0cc77828ab2b875b1f3ecd71c8295d7721933476abc2e08fddcea164a"
+    },
+    {
+      "group": "com.fasterxml.jackson.core",
+      "name": "jackson-annotations",
+      "version": "2.22",
+      "sha256": "21ddb598807d3a51a876704eb979d9296e1c6a6f47ab1826ff88c6d6a127a2d0"
+    },
+    {
+      "group": "com.fasterxml.jackson.core",
+      "name": "jackson-core",
+      "version": "2.22.3",
+      "sha256": "8a501126a385b25841915d839508f8a66e2a0dbc8a6709d055ef3b3e852b094c"
+    },
+    {
+      "group": "com.fasterxml.jackson.core",
+      "name": "jackson-databind",
+      "version": "2.22.3",
+      "sha256": "556db5439e206114346043f68d200497dc96a0bca62a360a81784092ebd0e0a9"
+    },
+    {
+      "group": "com.fasterxml.jackson.datatype",
+      "name": "jackson-datatype-jsr310",
+      "version": "2.22.3",
+      "sha256": "ec7052ee48c9d873bb8148338a643f02cf89c01d035dd219411473030d6d2b22"
+    },
+    {
+      "group": "com.github.jknack",
+      "name": "handlebars",
+      "version": "4.5.2",
+      "sha256": "86355b9fb8e79e6648012f013165dd471b405f37f1a770e6d239db7a6916ff78"
+    },
+    {
+      "group": "com.github.jknack",
+      "name": "handlebars-helpers",
+      "version": "4.3.1",
+      "sha256": "56f0ad4defb444b038a708a8e0d003692df1b912b91219736a764de88ff7867c"
+    },
+    {
+      "group": "com.google.errorprone",
+      "name": "error_prone_annotations",
+      "version": "2.50.0",
+      "sha256": "4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a"
+    },
+    {
+      "group": "com.google.guava",
+      "name": "failureaccess",
+      "version": "1.0.3",
+      "sha256": "cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb"
+    },
+    {
+      "group": "com.google.guava",
+      "name": "guava",
+      "version": "33.7.2-jre",
+      "sha256": "b530942257fb935f8b2cfaa5f8eb5bd59c555fd8e8d01b8ce98912e077ea606c"
+    },
+    {
+      "group": "com.google.guava",
+      "name": "listenablefuture",
+      "version": "9999.0-empty-to-avoid-conflict-with-guava",
+      "sha256": "b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99"
+    },
+    {
+      "group": "com.google.j2objc",
+      "name": "j2objc-annotations",
+      "version": "3.1",
+      "sha256": "84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b"
+    },
+    {
+      "group": "com.jayway.jsonpath",
+      "name": "json-path",
+      "version": "2.10.0",
+      "sha256": "890daa95dd3892d34d9fabc27cd5153656e6f369358625c88f4dc7b79cbd6c5a"
+    },
+    {
+      "group": "com.networknt",
+      "name": "json-schema-validator",
+      "version": "3.0.6",
+      "sha256": "f6f727370bbc53de6d1321710b7e90288774042e69e3bb6992d6801048f56800"
+    },
+    {
+      "group": "commons-fileupload",
+      "name": "commons-fileupload",
+      "version": "1.6.0",
+      "sha256": "9383272c93569afeabedb16923a94a6dc8a5bd7a2f9f83bf326af4ee68434629"
+    },
+    {
+      "group": "commons-io",
+      "name": "commons-io",
+      "version": "2.20.0",
+      "sha256": "df90bba0fe3cb586b7f164e78fe8f8f4da3f2dd5c27fa645f888100ccc25dd72"
+    },
+    {
+      "group": "jakarta.activation",
+      "name": "jakarta.activation-api",
+      "version": "2.1.4",
+      "sha256": "c9db52100ce6c8aac95cc39075f95720d2e561b11f8051b81c121ad4effd7004"
+    },
+    {
+      "group": "jakarta.servlet",
+      "name": "jakarta.servlet-api",
+      "version": "6.1.0",
+      "sha256": "8a31f465f3593bf2351531a5c952014eb839da96a605b5825b93dd54714c48c4"
+    },
+    {
+      "group": "jakarta.xml.bind",
+      "name": "jakarta.xml.bind-api",
+      "version": "4.0.5",
+      "sha256": "5e489b6c874c4119e003ff1403db523ee3a8959ec499f3de29e77245efccf216"
+    },
+    {
+      "group": "net.javacrumbs.json-unit",
+      "name": "json-unit-core",
+      "version": "2.40.1",
+      "sha256": "adb7e82bff755c8a90c3b7412226f3a72ed4a8bbdb0cdb3726b46905036051dc"
+    },
+    {
+      "group": "net.minidev",
+      "name": "accessors-smart",
+      "version": "2.6.0",
+      "sha256": "222c9f547bb20a99fc486403a398352d1306fb671b38abd7ecab6401df170e61"
+    },
+    {
+      "group": "net.minidev",
+      "name": "json-smart",
+      "version": "2.6.0",
+      "sha256": "1ae4b561458afb540be8ec5c6dbb4f2e715a319a7ae64854998aaf924770d61b"
+    },
+    {
+      "group": "net.sf.jopt-simple",
+      "name": "jopt-simple",
+      "version": "5.0.4",
+      "sha256": "df26cc58f235f477db07f753ba5a3ab243ebe5789d9f89ecf68dd62ea9a66c28"
+    },
+    {
+      "group": "org.apache.commons",
+      "name": "commons-lang3",
+      "version": "3.20.0",
+      "sha256": "69e5c9fa35da7a51a5fd2099dfe56a2d8d32cf233e2f6d770e796146440263f4"
+    },
+    {
+      "group": "org.apache.commons",
+      "name": "commons-text",
+      "version": "1.15.0",
+      "sha256": "58d2da30f058512a1e7f914e39241deca4dff5c27a085b4ed2faa9e7208067f6"
+    },
+    {
+      "group": "org.apache.httpcomponents.client5",
+      "name": "httpclient5",
+      "version": "5.6.5",
+      "sha256": "a10b555f7c85a720d1011a086d679d854b155816cde91a40198cc98c2b0867e8"
+    },
+    {
+      "group": "org.apache.httpcomponents.core5",
+      "name": "httpcore5",
+      "version": "5.4.4",
+      "sha256": "b08e3c3a440fec2029e89980134c7c787dd6796454641ad1eafb81478d7e8b0b"
+    },
+    {
+      "group": "org.apache.httpcomponents.core5",
+      "name": "httpcore5-h2",
+      "version": "5.4.4",
+      "sha256": "9a61441889f9b222ce99581977cc549b4dfca7ac9d2841582c1e57a31fa65b48"
+    },
+    {
+      "group": "org.eclipse.jetty",
+      "name": "jetty-alpn-client",
+      "version": "12.1.14",
+      "sha256": "b19fc6145005c2978f1d886267cea17b2dc2499afd1aa3f3c3d29f6004f338c5"
+    },
+    {
+      "group": "org.eclipse.jetty",
+      "name": "jetty-alpn-java-client",
+      "version": "12.1.14",
+      "sha256": "24586b24af4563aa3dbfa22a527c5c6aa1a269e488e9d4070c481380eff3ee7f"
+    },
+    {
+      "group": "org.eclipse.jetty",
+      "name": "jetty-alpn-java-server",
+      "version": "12.1.14",
+      "sha256": "0b45e5441e29f4103b3f15fa00d43482a3dfe01e11b58f7504ae631e07606536"
+    },
+    {
+      "group": "org.eclipse.jetty",
+      "name": "jetty-alpn-server",
+      "version": "12.1.14",
+      "sha256": "31387db43b221fec36964b553a6cb0310a4f79a9bb3ac3c40379b36b72891e49"
+    },
+    {
+      "group": "org.eclipse.jetty",
+      "name": "jetty-client",
+      "version": "12.1.14",
+      "sha256": "70db0a8101390818022466da64110aa25e06d78892cc4dce9353d8647c92c2ec"
+    },
+    {
+      "group": "org.eclipse.jetty",
+      "name": "jetty-http",
+      "version": "12.1.14",
+      "sha256": "a898f3dad99c2505409047d849cac7f652eced5853f9dad711395a26cd681e13"
+    },
+    {
+      "group": "org.eclipse.jetty",
+      "name": "jetty-io",
+      "version": "12.1.14",
+      "sha256": "9a41452f362f5bd96e017f16d6b66d19d2d60a5981eafd3729367c1d535eb5e9"
+    },
+    {
+      "group": "org.eclipse.jetty",
+      "name": "jetty-proxy",
+      "version": "12.1.14",
+      "sha256": "937f7fa953b26543e6f52d4d8a88133b1eedf317d635d64c5f5aeef879935c86"
+    },
+    {
+      "group": "org.eclipse.jetty",
+      "name": "jetty-security",
+      "version": "12.1.14",
+      "sha256": "62d4a246b978adee64d081025546466a05ee7b57b1dd6293d93953a80ba4cbe7"
+    },
+    {
+      "group": "org.eclipse.jetty",
+      "name": "jetty-server",
+      "version": "12.1.14",
+      "sha256": "62a2c691ecb3b60178e7b1a64d498261d31bcef76dd19147b89dcb2c6f784f30"
+    },
+    {
+      "group": "org.eclipse.jetty",
+      "name": "jetty-session",
+      "version": "12.1.14",
+      "sha256": "5b091e6132ba30a56ce872e07cdc0de263163e46f88d5dea99310d3a6d00899a"
+    },
+    {
+      "group": "org.eclipse.jetty",
+      "name": "jetty-util",
+      "version": "12.1.14",
+      "sha256": "deb2a47bb9659c69076da1020d058c0ededba61dcd1aebccf83fce4719164adc"
+    },
+    {
+      "group": "org.eclipse.jetty",
+      "name": "jetty-xml",
+      "version": "12.1.14",
+      "sha256": "111ee67bbd31b18081d7efbae91a804e8f5485ae5d90cd40445e2228710b0fd3"
+    },
+    {
+      "group": "org.eclipse.jetty.compression",
+      "name": "jetty-compression-common",
+      "version": "12.1.14",
+      "sha256": "121a28a3aad2a036c9f97073ddc37f11cb3e9f3da13425f2c08c380ead93a6db"
+    },
+    {
+      "group": "org.eclipse.jetty.compression",
+      "name": "jetty-compression-gzip",
+      "version": "12.1.14",
+      "sha256": "d0994b3a821d2946c1d1c881be4b3997e95a05d7381328d79b7c1b7b042e9186"
+    },
+    {
+      "group": "org.eclipse.jetty.ee",
+      "name": "jetty-ee-webapp",
+      "version": "12.1.14",
+      "sha256": "d333fb32fbbd19429ac848b4f94e8b0f688dd9748a5ab59eae707699556274b3"
+    },
+    {
+      "group": "org.eclipse.jetty.ee10",
+      "name": "jetty-ee10-servlet",
+      "version": "12.1.14",
+      "sha256": "cfea6fa831b8bf119ab97a73271fb61194a678c9ffca0661aaecefde53368eda"
+    },
+    {
+      "group": "org.eclipse.jetty.ee10",
+      "name": "jetty-ee10-servlets",
+      "version": "12.1.14",
+      "sha256": "8ab17e2054c27704d6c894ac1bd72f9fadf4feed78f89e86176624f60d615a96"
+    },
+    {
+      "group": "org.eclipse.jetty.ee10",
+      "name": "jetty-ee10-webapp",
+      "version": "12.1.14",
+      "sha256": "950eac43442abbf9a0bdfd230219cd7b0bb784de7edeae97df98ccc19c97b631"
+    },
+    {
+      "group": "org.eclipse.jetty.http2",
+      "name": "jetty-http2-common",
+      "version": "12.1.14",
+      "sha256": "03afc520c0ae363bc35245588104cc0e53e6a02629839a504fbd8703cb4046d8"
+    },
+    {
+      "group": "org.eclipse.jetty.http2",
+      "name": "jetty-http2-hpack",
+      "version": "12.1.14",
+      "sha256": "e0e3e44729910297d3a3ce1236213db656e24767caeaee79711af72928d75bdf"
+    },
+    {
+      "group": "org.eclipse.jetty.http2",
+      "name": "jetty-http2-server",
+      "version": "12.1.14",
+      "sha256": "d5e3421c318f4effd1f95dcd25f2505e06994ee67214608460c4838b7db80451"
+    },
+    {
+      "group": "org.hamcrest",
+      "name": "hamcrest",
+      "version": "3.0",
+      "sha256": "5d66b6a4a680755cb6ed7cb104fa7835ef644667586ff0737adeb977c39ecdbc"
+    },
+    {
+      "group": "org.hamcrest",
+      "name": "hamcrest-core",
+      "version": "3.0",
+      "sha256": "b78a3a81692f421cc01fc17ded9a45e9fb6f3949c712f8ec4d01da6b8c06bc6e"
+    },
+    {
+      "group": "org.jspecify",
+      "name": "jspecify",
+      "version": "1.0.1",
+      "sha256": "070d75f261fe4c5b8202508366715f7f2d4660f88c8ef7e6d3575e48c9683b66"
+    },
+    {
+      "group": "org.openjdk.nashorn",
+      "name": "nashorn-core",
+      "version": "15.4",
+      "sha256": "6f816e84dfd63a81d4eaa7829c08337bbaff3ec683ff3bf6bbd90d017a00dc6f"
+    },
+    {
+      "group": "org.ow2.asm",
+      "name": "asm",
+      "version": "9.10.1",
+      "sha256": "ed825d10ab1399c8c0cb669e688cf0c8c82629b4c8399b58352b68e92ca10fcb"
+    },
+    {
+      "group": "org.ow2.asm",
+      "name": "asm-analysis",
+      "version": "9.10.1",
+      "sha256": "dede75a21306b65974ecd8f87114ff6970f09fb794157a4ca09ab25c888c2bfc"
+    },
+    {
+      "group": "org.ow2.asm",
+      "name": "asm-commons",
+      "version": "9.10.1",
+      "sha256": "6d0abefb7cbf972ea16edb37ec14835372505063a45f976ab7ea889ed9497895"
+    },
+    {
+      "group": "org.ow2.asm",
+      "name": "asm-tree",
+      "version": "9.10.1",
+      "sha256": "3dfb0d5b6a106cd40b5b250e39935fbf2f927f4477546a5369a3ac609cf0506b"
+    },
+    {
+      "group": "org.ow2.asm",
+      "name": "asm-util",
+      "version": "9.10.1",
+      "sha256": "1bb99d091fba2597dc6d51193e9bbcf0d8447e7ed96bd8f0198b18152f09655c"
+    },
+    {
+      "group": "org.slf4j",
+      "name": "slf4j-api",
+      "version": "2.0.20",
+      "sha256": "7e1446499b359675d8aabe6af2de86b85e72ae8a2a932c0b40d0e5ba57097439"
+    },
+    {
+      "group": "org.snakeyaml",
+      "name": "snakeyaml-engine",
+      "version": "3.0.1",
+      "sha256": "0b638c8806112215e02e58e95cbd9e9a69d4bd540991f47553d053919994cc94"
+    },
+    {
+      "group": "org.wiremock",
+      "name": "wiremock",
+      "version": "3.13.2",
+      "sha256": "9946c3f0ef5f8f14d83f4c38fabd392a2ff51fe28a40bd8e674d0150e93b5399"
+    },
+    {
+      "group": "org.wiremock",
+      "name": "wiremock-jetty12",
+      "version": "3.13.2",
+      "sha256": "5fcc858f5c62106d2c8912532af3b731fa93b5aebbd7764ddc4ee50a3443e7db"
+    },
+    {
+      "group": "org.xmlunit",
+      "name": "xmlunit-core",
+      "version": "2.11.0",
+      "sha256": "50970e6069c21182689eb44ae9f8193970e080b6f37fc13f22aa4201cca2dfe4"
+    },
+    {
+      "group": "org.xmlunit",
+      "name": "xmlunit-legacy",
+      "version": "2.11.0",
+      "sha256": "8c924198a6dc5bcfe640bcf24607776bb4c233a1de7f07ea2562a6145dde1631"
+    },
+    {
+      "group": "org.xmlunit",
+      "name": "xmlunit-placeholders",
+      "version": "2.11.0",
+      "sha256": "b5fda3159f06575cc71a7c5bd3e45fb51e535aa88aef514b55103bbfe4359238"
+    },
+    {
+      "group": "tools.jackson.core",
+      "name": "jackson-core",
+      "version": "3.1.7",
+      "sha256": "7608c367fd8a92666d28711519599543c180298259963184ce04d2947a8f71e7"
+    },
+    {
+      "group": "tools.jackson.core",
+      "name": "jackson-databind",
+      "version": "3.1.7",
+      "sha256": "48c781de87e2016e1f0d973748a27130f11643e7ac080173f40e2d9669d84be3"
+    },
+    {
+      "group": "tools.jackson.dataformat",
+      "name": "jackson-dataformat-yaml",
+      "version": "3.1.7",
+      "sha256": "a97e0ecd080030e4b5b55ee3b10dd330b4736951a49df4d91657f2d8678786f5"
+    }
+  ]
+}

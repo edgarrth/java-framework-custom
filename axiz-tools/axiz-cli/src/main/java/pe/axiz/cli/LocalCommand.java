@@ -11,7 +11,7 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
 
 /**
- * {@code axiz local up|down}: the local dependencies of the service (Docker Compose + LocalStack).
+ * {@code axiz local up|down}: las dependencias locales del servicio (Docker Compose + LocalStack).
  */
 @Command(
     mixinStandardHelpOptions = true,
@@ -51,7 +51,7 @@ class LocalCommand implements Runnable {
     }
   }
 
-  /** Starts the dependencies. */
+  /** Inicia las dependencias. */
   @Command(
       mixinStandardHelpOptions = true,
       name = "up",
@@ -73,7 +73,7 @@ class LocalCommand implements Runnable {
     }
   }
 
-  /** Stops the dependencies. */
+  /** Detiene las dependencias. */
   @Command(mixinStandardHelpOptions = true, name = "down", description = "docker compose down")
   static class Down extends Compose {
 

@@ -4,6 +4,7 @@ import io.micrometer.core.instrument.FunctionCounter;
 import io.micrometer.core.instrument.binder.MeterBinder;
 import java.time.Clock;
 import java.util.List;
+import java.util.Locale;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
@@ -23,23 +24,20 @@ import org.springframework.context.annotation.Role;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.Environment;
 import pe.axiz.core.audit.AsyncAuditEventPublisher;
+import pe.axiz.core.audit.AuditIntegrityMetrics;
 import pe.axiz.core.audit.Auditable;
 import pe.axiz.core.audit.CompositeAsyncAuditPublisher;
 import pe.axiz.core.audit.ConfirmedAsyncAuditPublisher;
 import pe.axiz.core.audit.LoggingAsyncAuditPublisher;
 import pe.axiz.core.audit.LoggingAuditPublisher;
 import pe.axiz.core.audit.QueuedAsyncAuditPublisher;
+import pe.axiz.core.audit.SealingAsyncAuditPublisher;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.sensitive.ObjectMasker;
 import pe.axiz.spring.foundation.ReactiveDispatchBoundary;
 
-/** Native audit wiring for reactive applications; never adapts an imperative sink. */
-@AutoConfiguration(
-    afterName = {
-      "pe.axiz.spring.audit.AxizAuditAutoConfiguration",
-      "pe.axiz.spring.audit.AxizAuditSqsAutoConfiguration",
-      "pe.axiz.spring.audit.AxizAuditKafkaAutoConfiguration"
-    })
+/** Cableado de auditoría nativa para aplicaciones reactivas; nunca adapta un destino imperativo. */
+@AutoConfiguration(afterName = {"pe.axiz.spring.audit.AxizAuditAutoConfiguration"})
 @ConditionalOnClass(name = "reactor.core.publisher.Mono")
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
 @ConditionalOnBooleanProperty(name = "axiz.audit.enabled", matchIfMissing = true)
@@ -55,38 +53,42 @@ public class AxizNativeAuditAutoConfiguration {
   AsyncAuditEventPublisher axizAsyncAuditEventPublisher(
       ObjectProvider<AsyncAuditSink> sinks,
       ObjectProvider<AuditSink> imperative,
-      AxizAuditProperties properties) {
+      AxizAuditProperties properties,
+      AuditIntegritySupport integrity) {
     if (imperative.stream().findAny().isPresent())
       throw new IllegalStateException(
           "Reactive audit requires AsyncAuditSink; imperative AuditSink is not supported");
-    if (properties.kafka().topic() != null
-        && sinks.stream().noneMatch(sink -> sink.name().equals("kafka")))
-      throw new IllegalStateException(
-          "Reactive Kafka audit requires a native producer configuration; imperative Kafka audit is"
-              + " not supported");
     List<AsyncAuditEventPublisher> targets =
         sinks.orderedStream().map(AsyncAuditSink::publisher).toList();
     AsyncAuditEventPublisher target =
         targets.isEmpty()
             ? new LoggingAsyncAuditPublisher()
             : targets.size() == 1 ? targets.getFirst() : new CompositeAsyncAuditPublisher(targets);
-    return properties.effectiveMode() == AxizAuditProperties.Mode.SYNC
-        ? new ConfirmedAsyncAuditPublisher(target)
-        : new QueuedAsyncAuditPublisher(
-            target,
-            new LoggingAuditPublisher(),
-            properties.async().capacity(),
-            properties.async().deliveryTimeout(),
-            AuditDeliveryContext.PROVIDER);
+    AsyncAuditEventPublisher delivery =
+        properties.effectiveMode() == AxizAuditProperties.Mode.SYNC
+            ? new ConfirmedAsyncAuditPublisher(target)
+            : new QueuedAsyncAuditPublisher(
+                target,
+                new LoggingAuditPublisher(),
+                properties.async().capacity(),
+                properties.async().deliveryTimeout(),
+                AuditDeliveryContext.PROVIDER);
+    return properties.effectiveMode() == AxizAuditProperties.Mode.DURABLE
+        ? delivery
+        : new SealingAsyncAuditPublisher(
+            integrity.memory(properties.effectiveMode().name().toLowerCase(Locale.ROOT)), delivery);
   }
 
   @Bean
   @ConditionalOnMissingBean
   ReactiveAuditPublisher axizReactiveAuditPublisher(
-      AsyncAuditEventPublisher publisher, AxizAuditProperties properties, BeanFactory beans) {
+      AsyncAuditEventPublisher publisher,
+      AxizAuditProperties properties,
+      BeanFactory beans,
+      AuditIntegritySupport integrity) {
     ReactiveAuditPublisher fallback = ReactiveAuditPublisher.from(publisher);
     return properties.effectiveMode() == AxizAuditProperties.Mode.DURABLE
-        ? ReactiveDurableAudit.wrap(beans, properties.durable(), fallback)
+        ? ReactiveDurableAudit.wrap(beans, properties.durable(), fallback, integrity)
         : fallback;
   }
 
@@ -97,9 +99,16 @@ public class AxizNativeAuditAutoConfiguration {
     MeterBinder axizNativeAuditMetrics(
         AsyncAuditEventPublisher delivery, ReactiveAuditPublisher publisher) {
       return registry -> {
-        if (delivery instanceof QueuedAsyncAuditPublisher queued)
+        AxizAuditAutoConfiguration.MetricsConfiguration.bindIntegrity(
+            registry,
+            publisher instanceof AuditIntegrityMetrics metrics
+                ? metrics
+                : AuditPublisherLookup.find(delivery, AuditIntegrityMetrics.class));
+        var queued = AuditPublisherLookup.find(delivery, QueuedAsyncAuditPublisher.class);
+        if (queued != null)
           AxizAuditAutoConfiguration.MetricsConfiguration.bindQueue(registry, queued);
-        if (delivery instanceof ConfirmedAsyncAuditPublisher sync)
+        var sync = AuditPublisherLookup.find(delivery, ConfirmedAsyncAuditPublisher.class);
+        if (sync != null)
           FunctionCounter.builder(
                   "axiz.audit.persistence.unconfirmed",
                   sync,

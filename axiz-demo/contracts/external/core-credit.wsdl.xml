@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Credit service of the core banking system (simulated with WireMock). SOAP 1.1, document/literal,
-     WS-Security UsernameToken (digest). Called only by banking-core. -->
+<!-- Servicio de crédito del core bancario (simulado con WireMock). SOAP 1.1, document/literal,
+     WS-Security UsernameToken (digest). Solo lo invoca banking-core. -->
 <definitions xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
              xmlns:tns="urn:core:credit:v1" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
              targetNamespace="urn:core:credit:v1" name="CoreCredit">

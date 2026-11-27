@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockAsyncContext;
@@ -35,7 +36,7 @@ class ServletIdempotencySafetyTest {
       var service =
           new IdempotencyService(
               store, Duration.ofSeconds(30), Duration.ofHours(1), Clock.systemUTC());
-      var filter = new IdempotencyFilter(service, 1024, 1024);
+      var filter = new IdempotencyFilter(service, 1024, 1024, List.of());
       var request = new MockHttpServletRequest("POST", "/payments");
       request.addHeader("Idempotency-Key", "async-key-0000001");
       request.setAsyncSupported(true);
@@ -49,6 +50,9 @@ class ServletIdempotencySafetyTest {
                 (IdempotencyService.Proceed)
                     service.begin("scope", "async-key-0000001", "fingerprint");
             req.setAttribute(IdempotencySupport.KEY_ATTRIBUTE, execution);
+            req.setAttribute(
+                IdempotencyPayloads.BINDING_ATTRIBUTE,
+                IdempotencyPayloads.Binding.of("test", "scope", "key"));
             req.setAttribute(IdempotencyFilter.LEASE_ATTRIBUTE, service.startLease(execution));
             ((HttpServletResponse) res).setStatus(201);
             res.getOutputStream().write("accepted".getBytes(StandardCharsets.UTF_8));
@@ -114,32 +118,22 @@ class ServletIdempotencySafetyTest {
     Duration lease = Duration.ofSeconds(30);
     Duration window = Duration.ofHours(1);
     Duration retention = window.plus(lease);
-    new AxizIdempotencyProperties("memory", "table", "prefix", lease, retention, 1, 1, window);
+    new AxizIdempotencyProperties("memory", lease, retention, 1, 1, window);
     for (Duration invalid : new Duration[] {Duration.ZERO, retention.minusNanos(1)})
       assertThrows(
           IllegalArgumentException.class,
-          () ->
-              new AxizIdempotencyProperties(
-                  "memory", "table", "prefix", lease, invalid, 1, 1, window));
+          () -> new AxizIdempotencyProperties("memory", lease, invalid, 1, 1, window));
     assertThrows(
         IllegalArgumentException.class,
-        () ->
-            new AxizIdempotencyProperties(
-                "memory", "table", "prefix", Duration.ZERO, retention, 1, 1, window));
+        () -> new AxizIdempotencyProperties("memory", Duration.ZERO, retention, 1, 1, window));
     assertThrows(
         IllegalArgumentException.class,
-        () ->
-            new AxizIdempotencyProperties(
-                "memory", "table", "prefix", lease, retention, 1, 1, window.negated()));
+        () -> new AxizIdempotencyProperties("memory", lease, retention, 1, 1, window.negated()));
     assertThrows(
         IllegalArgumentException.class,
-        () ->
-            new AxizIdempotencyProperties(
-                "memory", "table", "prefix", lease, retention, 0, 1, window));
+        () -> new AxizIdempotencyProperties("memory", lease, retention, 0, 1, window));
     assertThrows(
         IllegalArgumentException.class,
-        () ->
-            new AxizIdempotencyProperties(
-                "memory", "table", "prefix", lease, retention, 1, 0, window));
+        () -> new AxizIdempotencyProperties("memory", lease, retention, 1, 0, window));
   }
 }

@@ -11,8 +11,8 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.codegen.model.Snapshots;
 
 /**
- * Minimal, safe reader of OpenAPI 3.x documents (YAML or JSON): operations, tags, schemas and
- * examples needed by the generators. No remote {@code $ref} is ever resolved.
+ * Lector mínimo y seguro de documentos OpenAPI 3.x (YAML o JSON): operaciones, etiquetas, esquemas
+ * y ejemplos que necesitan los generadores. Nunca se resuelve un {@code $ref} remoto.
  */
 public final class OpenApiDocument {
 
@@ -28,11 +28,11 @@ public final class OpenApiDocument {
   }
 
   /**
-   * Parses a contract.
+   * Analiza un contrato.
    *
-   * @param text YAML or JSON
-   * @return the document
-   * @throws IllegalArgumentException when the text is not an OpenAPI 3 document
+   * @param text YAML o JSON
+   * @return el documento
+   * @throws IllegalArgumentException cuando el texto no es un documento OpenAPI 3
    */
   public static OpenApiDocument parse(String text) {
     if (text.length() > MAX_SIZE) {
@@ -98,8 +98,8 @@ public final class OpenApiDocument {
   }
 
   /**
-   * Resolves a local reference ({@code #/components/...}); remote references are never followed and
-   * resolve to an empty object.
+   * Resuelve una referencia local ({@code #/components/...}); las referencias remotas nunca se
+   * siguen y se resuelven como un objeto vacío.
    */
   static Map<String, Object> deref(Map<String, Object> root, Map<String, Object> node) {
     Map<String, Object> current = node;
@@ -183,23 +183,24 @@ public final class OpenApiDocument {
     List<String> scopes = scopes(security);
     ApiOperation.Access access = access(root, security, scopes);
     if (access != ApiOperation.Access.SCOPED) scopes = List.of();
-    return new ApiOperation(
-        operationId,
-        method,
-        path,
-        tag,
-        String.valueOf(op.getOrDefault("summary", operationId)),
-        requestSchema,
-        responseSchema,
-        success,
-        pathParams,
-        paged,
-        requestExample,
-        queryParams,
-        pagingParams,
-        headerParams,
-        scopes,
-        access);
+    return ApiOperation.builder()
+        .operationId(operationId)
+        .method(method)
+        .path(path)
+        .tag(tag)
+        .summary(String.valueOf(op.getOrDefault("summary", operationId)))
+        .requestSchema(requestSchema)
+        .responseSchema(responseSchema)
+        .successStatus(success)
+        .pathParams(pathParams)
+        .paged(paged)
+        .requestExample(requestExample)
+        .queryParams(queryParams)
+        .pagingParams(pagingParams)
+        .headerParams(headerParams)
+        .scopes(scopes)
+        .access(access)
+        .build();
   }
 
   private static ApiOperation.Access access(
@@ -222,7 +223,10 @@ public final class OpenApiDocument {
     return scopes.isEmpty() ? ApiOperation.Access.AUTHENTICATED : ApiOperation.Access.SCOPED;
   }
 
-  /** Multiple security objects are OR alternatives and require an explicit application policy. */
+  /**
+   * Varios objetos de seguridad son alternativas OR y requieren una política de aplicación
+   * explícita.
+   */
   private static List<String> scopes(@Nullable Object security) {
     if (!(security instanceof List<?> alternatives) || alternatives.size() != 1) return List.of();
     var requirement = map(alternatives.getFirst());
@@ -250,7 +254,10 @@ public final class OpenApiDocument {
     return ex == null ? null : Json.write(ex);
   }
 
-  /** Schema name for a {@code $ref}, {@code List<Name>} for arrays of references, else null. */
+  /**
+   * Nombre del esquema para un {@code $ref}, {@code List<Name>} para arreglos de referencias; en
+   * otro caso, null.
+   */
   static @Nullable String schemaName(@Nullable Object schema) {
     Map<String, Object> s = map(schema);
     Object ref = s.get("$ref");

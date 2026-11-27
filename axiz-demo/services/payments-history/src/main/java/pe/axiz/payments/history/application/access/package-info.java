@@ -1,4 +1,7 @@
-/** Object-level authorization of the history queries: customers only see their own payments. */
+/**
+ * Autorización a nivel de objeto de las consultas del historial: los clientes solo ven sus propios
+ * pagos.
+ */
 @NullMarked
 package pe.axiz.payments.history.application.access;
 

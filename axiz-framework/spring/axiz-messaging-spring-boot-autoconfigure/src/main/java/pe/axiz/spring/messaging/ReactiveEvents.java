@@ -2,7 +2,7 @@ package pe.axiz.spring.messaging;
 
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.RequestContext;
+import pe.axiz.core.context.RequestContext;
 import pe.axiz.core.messaging.AsyncEventPublisher;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventFactory;
@@ -10,7 +10,9 @@ import pe.axiz.core.messaging.PublishResult;
 import pe.axiz.spring.foundation.ReactiveStages;
 import reactor.core.publisher.Mono;
 
-/** Deferred native event publication with subscriber metadata, acknowledgement and cancellation. */
+/**
+ * Publicación nativa diferida de eventos con metadatos del suscriptor, confirmación y cancelación.
+ */
 public final class ReactiveEvents {
   private final EventFactory factory;
   private final AsyncEventPublisher publisher;

@@ -1,12 +1,12 @@
 package pe.axiz.spring.secrets;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -22,38 +22,28 @@ import pe.axiz.core.secrets.CachingAsyncSecretResolver;
 import pe.axiz.core.secrets.CachingSecretResolver;
 import pe.axiz.core.secrets.CompositeAsyncSecretResolver;
 import pe.axiz.core.secrets.CompositeSecretResolver;
-import pe.axiz.core.secrets.EnvironmentAsyncSecretResolver;
-import pe.axiz.core.secrets.EnvironmentSecretResolver;
-import pe.axiz.core.secrets.FileSecretResolver;
-import pe.axiz.core.secrets.RefreshingFileSecretResolver;
 import pe.axiz.core.secrets.SecretCacheObserver;
 import pe.axiz.core.secrets.SecretResolver;
+import pe.axiz.core.secrets.SecretValue;
 
 /**
- * {@link SecretResolver} over mounted files, environment variables and the AWS adapters, with a TTL
- * cache. Values are never logged; AWS identity selection is owned by AwsIdentity.
+ * Compone fuentes de secretos ordenadas con una política de caché común. Las integraciones definen
+ * la selección de fuentes, la configuración del proveedor y los ciclos de vida de los recursos. Los
+ * valores nunca se registran.
  */
-@AutoConfiguration(afterName = "pe.axiz.spring.secrets.AxizSecretsAwsAutoConfiguration")
+@AutoConfiguration
 @ConditionalOnBooleanProperty(name = "axiz.secrets.enabled", matchIfMissing = true)
 @EnableConfigurationProperties(AxizSecretsProperties.class)
 public class AxizSecretsAutoConfiguration {
 
-  @Bean
-  @ConditionalOnMissingBean
-  SecretResolver axizSecretResolver(
+  @Bean(destroyMethod = "close")
+  @ConditionalOnMissingBean(SecretResolver.class)
+  CachingSecretResolver axizSecretResolver(
       AxizSecretsProperties p,
       ObjectProvider<SecretSource> sources,
       ObjectProvider<Clock> clock,
       @Qualifier("axizSecretCacheSyncObserver") ObjectProvider<SecretCacheObserver> observers) {
-    List<SecretResolver> chain = new ArrayList<>();
-    Path dir = Path.of(p.directory());
-    if (Files.isDirectory(dir)) {
-      chain.add(new FileSecretResolver(dir));
-    }
-    if (p.environment()) {
-      chain.add(EnvironmentSecretResolver.system());
-    }
-    sources.orderedStream().map(SecretSource::resolver).forEach(chain::add);
+    List<SecretResolver> chain = sources.orderedStream().map(SecretSource::resolver).toList();
     return new CachingSecretResolver(
         new CompositeSecretResolver(chain),
         p.cacheTtl(),
@@ -69,30 +59,42 @@ public class AxizSecretsAutoConfiguration {
     @ConditionalOnMissingBean(AsyncSecretResolver.class)
     static class NativeConfiguration {
       @Bean(destroyMethod = "close")
-      MountedSecretFiles axizMountedSecretFiles(AxizSecretsProperties p) {
-        return new MountedSecretFiles(p);
-      }
-
-      @Bean
-      AsyncSecretResolver axizAsyncSecretResolver(
-          MountedSecretFiles files,
+      ManagedAsyncSources axizAsyncSecretResolver(
           AxizSecretsProperties p,
           ObjectProvider<AsyncSecretSource> sources,
-          ObjectProvider<Clock> clock,
+          ObjectProvider<Clock> clocks,
           @Qualifier("axizSecretCacheAsyncObserver") ObjectProvider<SecretCacheObserver> observers) {
+        Clock clock = clocks.getIfAvailable(Clock::systemUTC);
+        SecretCacheObserver observer = observers.getIfAvailable(() -> SecretCacheObserver.NONE);
         List<AsyncSecretResolver> chain = new ArrayList<>();
-        chain.add(files.resolver);
-        if (p.environment()) chain.add(EnvironmentAsyncSecretResolver.system());
-        // Local snapshots are already refreshed. Cache only remote sources to avoid doubling
-        // the time during which a rotated mounted secret could remain stale.
-        chain.add(
+        List<AsyncSecretResolver> cached = new ArrayList<>();
+        List<CachingAsyncSecretResolver> owned = new ArrayList<>();
+        for (AsyncSecretSource source : sources.orderedStream().toList()) {
+          if (source.cacheable()) {
+            cached.add(source.resolver());
+          } else {
+            appendCached(chain, cached, owned, p.cacheTtl(), clock, observer);
+            chain.add(source.resolver());
+          }
+        }
+        appendCached(chain, cached, owned, p.cacheTtl(), clock, observer);
+        return new ManagedAsyncSources(new CompositeAsyncSecretResolver(chain), owned);
+      }
+
+      private static void appendCached(
+          List<AsyncSecretResolver> chain,
+          List<AsyncSecretResolver> cached,
+          List<CachingAsyncSecretResolver> owned,
+          Duration ttl,
+          Clock clock,
+          SecretCacheObserver observer) {
+        if (cached.isEmpty()) return;
+        var cache =
             new CachingAsyncSecretResolver(
-                new CompositeAsyncSecretResolver(
-                    sources.orderedStream().map(AsyncSecretSource::resolver).toList()),
-                p.cacheTtl(),
-                clock.getIfAvailable(Clock::systemUTC),
-                observers.getIfAvailable(() -> SecretCacheObserver.NONE)));
-        return new CompositeAsyncSecretResolver(chain);
+                new CompositeAsyncSecretResolver(List.copyOf(cached)), ttl, clock, observer);
+        chain.add(cache);
+        owned.add(cache);
+        cached.clear();
       }
     }
 
@@ -100,6 +102,30 @@ public class AxizSecretsAutoConfiguration {
     @ConditionalOnMissingBean
     ReactiveSecrets axizReactiveSecrets(AsyncSecretResolver resolver) {
       return new ReactiveSecrets(resolver);
+    }
+  }
+
+  /**
+   * Posee solo las cachés fabricadas aquí; los clientes de las fuentes siguen perteneciendo a sus
+   * beans de proveedor.
+   */
+  static final class ManagedAsyncSources implements AsyncSecretResolver, AutoCloseable {
+    private final AsyncSecretResolver delegate;
+    private final List<CachingAsyncSecretResolver> owned;
+
+    ManagedAsyncSources(AsyncSecretResolver delegate, List<CachingAsyncSecretResolver> owned) {
+      this.delegate = delegate;
+      this.owned = List.copyOf(owned);
+    }
+
+    @Override
+    public CompletionStage<Optional<SecretValue>> resolve(String name) {
+      return delegate.resolve(name);
+    }
+
+    @Override
+    public void close() {
+      owned.forEach(CachingAsyncSecretResolver::close);
     }
   }
 
@@ -120,22 +146,6 @@ public class AxizSecretsAutoConfiguration {
       return registry == null
           ? SecretCacheObserver.NONE
           : new SecretCacheMetrics(registry, "async");
-    }
-  }
-
-  /** Owns the file refresher without registering a second AsyncSecretResolver candidate. */
-  static final class MountedSecretFiles implements AutoCloseable {
-    private final RefreshingFileSecretResolver resolver;
-
-    MountedSecretFiles(AxizSecretsProperties p) {
-      Duration interval =
-          p.cacheTtl().compareTo(Duration.ofSeconds(1)) < 0 ? Duration.ofSeconds(1) : p.cacheTtl();
-      resolver = new RefreshingFileSecretResolver(Path.of(p.directory()), interval);
-    }
-
-    @Override
-    public void close() {
-      resolver.close();
     }
   }
 }

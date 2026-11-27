@@ -9,14 +9,18 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 
 /**
- * Native asynchronous object storage. Content is streamed with demand and cancellation; publishers
- * supplied for uploads must support replay when the backend retries an attempt.
+ * Almacenamiento de objetos asíncrono nativo. El contenido se transmite en streaming con demanda y
+ * cancelación; los publishers suministrados para las subidas deben soportar replay cuando el
+ * backend reintenta un intento.
  */
 public interface AsyncObjectStorage {
   CompletionStage<Void> put(
       String key, Flow.Publisher<ByteBuffer> content, ObjectMetadata metadata);
 
-  /** Complete when headers arrive. Consume or close a present object to release its connection. */
+  /**
+   * Se completa cuando llegan las cabeceras. Un objeto presente se consume o se cierra para liberar
+   * su conexión.
+   */
   CompletionStage<Optional<AsyncStoredObject>> get(String key);
 
   CompletionStage<Optional<ObjectMetadata>> head(String key);
@@ -27,6 +31,6 @@ public interface AsyncObjectStorage {
 
   CompletionStage<URL> presignGet(String key, Duration ttl);
 
-  /** Complete upload instructions; cancellation reaches the native signing operation. */
+  /** Instrucciones de subida completas; la cancelación llega a la operación de firma nativa. */
   CompletionStage<PresignedUpload> presignUpload(String key, String contentType, Duration ttl);
 }

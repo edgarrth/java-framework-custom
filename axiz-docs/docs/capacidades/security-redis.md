@@ -1,0 +1,45 @@
+<!-- GENERADO por scripts/sync_reference.py desde axiz-framework: no editar -->
+# security-redis
+
+Límites de tasa compartidos en Redis con el transporte TLS gestionado
+
+```bash
+axiz add security-redis
+```
+
+|  |  |
+|---|---|
+| Starter | `pe.axiz:axiz-security-redis-spring-boot-starter` |
+| Stacks del catálogo | servlet, reactive |
+| Agrega también | [`security`](security.md) |
+| Incluida por defecto en | ningún arquetipo |
+
+## Propiedades que agrega
+
+Valores por defecto seguros en `application.yaml`; los valores de cada ambiente van en el ConfigMap del servicio y los secretos en el secret store.
+
+```yaml
+axiz.security.rate-limit.enabled: true
+axiz.security.rate-limit.store: redis
+axiz.security.rate-limit.rules[0].name: api
+axiz.security.rate-limit.rules[0].paths:
+- /**
+axiz.security.rate-limit.rules[0].limit: 100
+axiz.security.rate-limit.rules[0].window: 1m
+axiz.security.rate-limit.rules[0].fail-open: false
+```
+
+## Llaves del ConfigMap por ambiente
+
+- `axiz.security.rate-limit`
+
+## Uso
+
+```java
+axiz.security.rate-limit.store: redis
+```
+
+## Módulos
+
+- [`axiz-security-redis-spring-boot-autoconfigure`](../referencia/spring/axiz-security-redis-spring-boot-autoconfigure.md)
+- [`axiz-core-security`](../referencia/core/axiz-core-security.md)

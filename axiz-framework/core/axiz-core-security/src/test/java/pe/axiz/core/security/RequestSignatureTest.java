@@ -22,7 +22,9 @@ import org.junit.jupiter.api.Test;
 import pe.axiz.core.security.RequestSignature.Message;
 import pe.axiz.core.security.RequestSignature.Outcome;
 
-/** Signed callbacks: one signed string per request, accepted once, within the window. */
+/**
+ * Callbacks firmados: una cadena firmada por petición, aceptada una sola vez, dentro de la ventana.
+ */
 class RequestSignatureTest {
 
   private static final byte[] K1 =
@@ -61,7 +63,8 @@ class RequestSignatureTest {
   @Test
   void fieldBoundariesCannotBeShifted() {
     RequestSignature s = signer();
-    // the same characters split differently between target and body (and method and target)
+    // los mismos caracteres repartidos de otra forma entre destino y cuerpo (y entre método y
+    // destino)
     String a = s.sign(message(NONCE, "POST", "/callback.a", "b"));
     String b = s.sign(message(NONCE, "POST", "/callback", "a.b"));
     assertNotEquals(a, b);

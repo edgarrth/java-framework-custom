@@ -13,22 +13,27 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.errors.BusinessException;
 
 /**
- * Monetary amount in an ISO 4217 currency. The amount always has the currency's number of decimals
- * (PEN and USD: 2), at most {@link #MAX_INTEGER_DIGITS} integer digits, and arithmetic never mixes
- * currencies. Every factory and operation preserves these invariants. Immutable and thread-safe.
+ * Monto monetario en una moneda ISO 4217. El monto siempre tiene la cantidad de decimales de la
+ * moneda (PEN y USD: 2), como máximo {@link #MAX_INTEGER_DIGITS} dígitos enteros, y la aritmética
+ * nunca mezcla monedas. Todas las fábricas y operaciones preservan estas invariantes. Inmutable y
+ * thread-safe.
  *
- * <p>Text form is {@code "PEN 150.00"}; JSON adapters serialize the amount as a string to avoid
- * binary floating point in clients.
+ * <p>La forma de texto es {@code "PEN 150.00"}; los adaptadores JSON serializan el monto como
+ * cadena para evitar el punto flotante binario en los clientes.
  */
 public final class Money implements Comparable<Money> {
 
-  /** Most digits accepted before the decimal point (far above any real amount). */
+  /**
+   * Máximo de dígitos aceptados antes del punto decimal (muy por encima de cualquier monto real).
+   */
   public static final int MAX_INTEGER_DIGITS = 30;
 
-  /** Most decimals accepted in a value before it is rounded to the currency scale. */
+  /** Máximo de decimales aceptados en un valor antes de redondearlo a la escala de la moneda. */
   public static final int MAX_SCALE = 100;
 
-  /** Maximum external text length, checked before normalization or decimal parsing. */
+  /**
+   * Longitud máxima del texto externo, verificada antes de la normalización o del parseo decimal.
+   */
   public static final int MAX_TEXT_LENGTH = 256;
 
   static final int MAX_CURRENCY_SCALE = 4;
@@ -45,12 +50,12 @@ public final class Money implements Comparable<Money> {
   }
 
   /**
-   * Creates an amount rounded to the currency scale with the given rounding mode.
+   * Crea un monto redondeado a la escala de la moneda con el modo de redondeo indicado.
    *
-   * @param amount amount
-   * @param currency currency
-   * @param rounding rounding mode
-   * @return the money
+   * @param amount monto
+   * @param currency moneda
+   * @param rounding modo de redondeo
+   * @return el monto
    */
   public static Money rounded(BigDecimal amount, Currency currency, RoundingMode rounding) {
     Objects.requireNonNull(amount, "amount");
@@ -62,21 +67,22 @@ public final class Money implements Comparable<Money> {
   }
 
   /**
-   * Creates an amount that already fits the currency scale, for values received from outside
-   * (requests, messages, files): {@code 150.5} becomes {@code 150.50}, but {@code 150.005} is
-   * rejected instead of being rounded, so a client is never charged an amount it did not send.
+   * Crea un monto que ya se ajusta a la escala de la moneda, para valores recibidos de fuera
+   * (peticiones, mensajes, archivos): {@code 150.5} se convierte en {@code 150.50}, pero {@code
+   * 150.005} se rechaza en lugar de redondearse, de modo que nunca se cobra a un cliente un monto
+   * que no envió.
    *
-   * @param amount amount
-   * @param currencyCode ISO 4217 code
-   * @return the money
-   * @throws BusinessException {@link MoneyErrors#INVALID_AMOUNT} when the amount has more decimals
-   *     than the currency or is out of range
+   * @param amount monto
+   * @param currencyCode código ISO 4217
+   * @return el monto
+   * @throws BusinessException {@link MoneyErrors#INVALID_AMOUNT} cuando el monto tiene más
+   *     decimales que la moneda o está fuera de rango
    */
   public static Money of(BigDecimal amount, String currencyCode) {
     return of(amount, currency(currencyCode));
   }
 
-  /** Same as {@link #of(BigDecimal, String)} with a currency. */
+  /** Igual que {@link #of(BigDecimal, String)} con una moneda. */
   public static Money of(BigDecimal amount, Currency currency) {
     Objects.requireNonNull(amount, "amount");
     Objects.requireNonNull(currency, "currency");
@@ -91,15 +97,16 @@ public final class Money implements Comparable<Money> {
     }
   }
 
-  /** Same as {@link #of(BigDecimal, String)} from text. */
+  /** Igual que {@link #of(BigDecimal, String)} a partir de texto. */
   public static Money of(String amount, String currencyCode) {
     return of(parseAmount(amount), currencyCode);
   }
 
   /**
-   * Rejects values no real amount reaches before any rescaling: rescaling a value such as {@code
-   * 1e99999999} or {@code 1e-99999999} needs a power of ten with that many digits and would keep a
-   * thread busy for minutes. The limits leave room for intermediate results (rates, percentages).
+   * Rechaza valores que ningún monto real alcanza antes de cualquier reescalado: reescalar un valor
+   * como {@code 1e99999999} o {@code 1e-99999999} requiere una potencia de diez con esa cantidad de
+   * dígitos y mantendría un hilo ocupado durante minutos. Los límites dejan margen para resultados
+   * intermedios (tasas, porcentajes).
    */
   static void requireBounded(BigDecimal amount) {
     int scale = amount.scale();
@@ -119,19 +126,19 @@ public final class Money implements Comparable<Money> {
     return zero(currency(currencyCode));
   }
 
-  /** Smallest unit (cents) to money, e.g. {@code ofMinor(15000, "PEN")} is PEN 150.00. */
+  /** Unidad mínima (céntimos) a monto, por ejemplo {@code ofMinor(15000, "PEN")} es PEN 150.00. */
   public static Money ofMinor(long minorUnits, String currencyCode) {
     Currency c = currency(currencyCode);
     return new Money(BigDecimal.valueOf(minorUnits, scaleOf(c)), c);
   }
 
   /**
-   * Parses {@code "PEN 150.00"} (the text form produced by {@link #toString()}). The amount must
-   * fit the currency scale, as in {@link #of(BigDecimal, String)}: text comes from outside (JSON,
-   * stored values) and is never rounded.
+   * Parsea {@code "PEN 150.00"} (la forma de texto que produce {@link #toString()}). El monto debe
+   * ajustarse a la escala de la moneda, como en {@link #of(BigDecimal, String)}: el texto viene de
+   * fuera (JSON, valores almacenados) y nunca se redondea.
    *
-   * @param text text form
-   * @return the money
+   * @param text forma de texto
+   * @return el monto
    */
   public static Money parse(String text) {
     String checked = requireBoundedText(text);
@@ -195,7 +202,7 @@ public final class Money implements Comparable<Money> {
     return currency.getCurrencyCode();
   }
 
-  /** Amount in minor units (cents); fails if it does not fit in a long. */
+  /** Monto en unidades menores (céntimos); falla si no cabe en un long. */
   public long minorUnits() {
     return amount.movePointRight(amount.scale()).longValueExact();
   }
@@ -226,7 +233,7 @@ public final class Money implements Comparable<Money> {
     return roundedProduct(amount.multiply(operand.movePointLeft(decimalShift)), target, rounding);
   }
 
-  /** Rounds only internal products whose external operands have already been bounded. */
+  /** Redondea solo los productos internos cuyos operandos externos ya se acotaron. */
   static Money roundedProduct(BigDecimal product, Currency currency, RoundingMode rounding) {
     if (product.scale() > MAX_PRODUCT_SCALE || product.scale() < -MAX_INTEGER_DIGITS) {
       throw new BusinessException(MoneyErrors.INVALID_AMOUNT, "amount out of range");
@@ -235,12 +242,16 @@ public final class Money implements Comparable<Money> {
   }
 
   public Money divide(BigDecimal divisor, RoundingMode rounding) {
-    // Bound the operand before BigDecimal can expand an arbitrarily large power of ten.
+    // Se acota el operando antes de que BigDecimal pueda expandir una potencia de diez
+    // arbitrariamente grande.
     requireBounded(Objects.requireNonNull(divisor, "divisor"));
+    if (divisor.signum() == 0) {
+      throw new BusinessException(MoneyErrors.INVALID_AMOUNT, "divisor must not be zero");
+    }
     return new Money(amount.divide(divisor, amount.scale(), rounding), currency);
   }
 
-  /** Applies a percentage with the caller's rounding policy, e.g. 18 for 18 %. */
+  /** Aplica un porcentaje con la política de redondeo de quien llama, por ejemplo 18 para 18 %. */
   public Money percentage(BigDecimal percent, RoundingMode rounding) {
     return scaledProduct(percent, currency, rounding, PERCENTAGE_SHIFT);
   }
@@ -274,11 +285,11 @@ public final class Money implements Comparable<Money> {
   }
 
   /**
-   * Splits the amount into {@code parts} amounts that add up exactly to this one; leftover minor
-   * units go to the first parts.
+   * Divide el monto en {@code parts} montos que suman exactamente este; las unidades menores
+   * sobrantes van a las primeras partes.
    *
-   * @param parts number of parts
-   * @return the parts
+   * @param parts cantidad de partes
+   * @return las partes
    */
   public List<Money> allocate(int parts) {
     if (parts <= 0) {
@@ -290,10 +301,10 @@ public final class Money implements Comparable<Money> {
   }
 
   /**
-   * Splits the amount proportionally to the ratios without losing minor units.
+   * Divide el monto en proporción a los ratios sin perder unidades menores.
    *
-   * @param ratios positive ratios
-   * @return one amount per ratio, adding up to this amount
+   * @param ratios ratios positivos
+   * @return un monto por ratio, que en total suman este monto
    */
   public List<Money> allocate(int... ratios) {
     if (ratios.length == 0) {
@@ -309,7 +320,7 @@ public final class Money implements Comparable<Money> {
     if (total == 0) {
       throw new IllegalArgumentException("ratios must not all be zero");
     }
-    // exact integer arithmetic: minor * ratio can exceed a long for large amounts or ratios
+    // aritmética entera exacta: minor * ratio puede superar un long para montos o ratios grandes
     BigInteger minor = amount.unscaledValue();
     BigInteger divisor = BigInteger.valueOf(total);
     BigInteger remainder = minor;
@@ -319,7 +330,8 @@ public final class Money implements Comparable<Money> {
       shares.add(share);
       remainder = remainder.subtract(share);
     }
-    // floor division leaves 0 <= remainder < number of positive ratios: one unit each, in order
+    // la división entera por defecto deja 0 <= resto < cantidad de ratios positivos: una unidad a
+    // cada uno, en orden
     List<Money> out = new ArrayList<>();
     for (int i = 0; i < shares.size(); i++) {
       BigInteger value = shares.get(i);
@@ -362,7 +374,7 @@ public final class Money implements Comparable<Money> {
     return Objects.hash(currency, amount.stripTrailingZeros());
   }
 
-  /** Plain amount text without exponent, e.g. {@code "150.00"}. */
+  /** Texto plano del monto sin exponente, por ejemplo {@code "150.00"}. */
   public String amountText() {
     return amount.toPlainString();
   }

@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jspecify.annotations.Nullable;
 
-/** In-memory store for tests and single-instance local runs. */
+/** Almacén en memoria para pruebas y ejecuciones locales de una sola instancia. */
 public final class InMemoryIdempotencyStore implements IdempotencyStore {
 
   private final Map<String, IdempotencyRecord> records = new ConcurrentHashMap<>();

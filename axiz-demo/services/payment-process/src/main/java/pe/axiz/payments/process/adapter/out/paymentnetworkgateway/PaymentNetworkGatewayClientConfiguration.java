@@ -5,7 +5,7 @@ import org.springframework.web.service.registry.HttpServiceGroup;
 import org.springframework.web.service.registry.ImportHttpServices;
 
 /**
- * Registers {@link PaymentNetworkGatewayClient} in the HTTP service group {@code
+ * Registra {@link PaymentNetworkGatewayClient} en el grupo de servicios HTTP {@code
  * payment-network-gateway}.
  */
 @Configuration(proxyBeanMethods = false)

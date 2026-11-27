@@ -1,6 +1,7 @@
 /**
- * Object-level authorization of the commands and queries (who may act on which customer and order).
- * Policies run in the CQRS pipeline before idempotency, transactions and handlers.
+ * Autorización a nivel de objeto de los comandos y consultas (quién puede actuar sobre qué cliente
+ * y qué orden). Las políticas se ejecutan en el pipeline CQRS previo a la idempotencia, las
+ * transacciones y los handlers.
  */
 @NullMarked
 package pe.axiz.payments.orders.application.access;

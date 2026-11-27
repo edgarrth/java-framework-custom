@@ -21,9 +21,11 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-json</artifactId><version>${project.version}</version></dependency>
+
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-commons</artifactId>
+      <artifactId>axiz-core-identifiers</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>

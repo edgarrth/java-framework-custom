@@ -12,7 +12,7 @@
 
   <artifactId>axiz-core-secrets</artifactId>
   <name>axiz :: core :: secrets</name>
-  <description>SecretResolver port with environment and file resolvers and TTL cache</description>
+  <description>Secret resolution contracts, owned secret values and bounded caching</description>
 
   <properties>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
@@ -21,20 +21,9 @@
   </properties>
 
   <dependencies>
-    <dependency>
-      <groupId>org.awaitility</groupId>
-      <artifactId>awaitility</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-commons</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-errors</artifactId>
-      <version>${project.version}</version>
-    </dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-context</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-sensitive</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-concurrent</artifactId><version>${project.version}</version></dependency>
   </dependencies>
 </project>

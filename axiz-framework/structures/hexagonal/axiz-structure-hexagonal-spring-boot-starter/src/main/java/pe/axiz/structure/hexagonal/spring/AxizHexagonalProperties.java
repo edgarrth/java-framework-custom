@@ -7,19 +7,19 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
- * Hexagonal style settings ({@code axiz.hexagonal.*}).
+ * Configuración del estilo hexagonal ({@code axiz.hexagonal.*}).
  *
- * @param events domain event publication through the outbox
+ * @param events publicación de eventos de dominio mediante el outbox
  */
 @ConfigurationProperties("axiz.hexagonal")
 public record AxizHexagonalProperties(@DefaultValue Events events) {
 
   /**
-   * Domain event routing.
+   * Enrutamiento de los eventos de dominio.
    *
-   * @param destination default logical destination
-   * @param destinations destination by event type
-   * @param typeSuffix version suffix of event types, e.g. {@code .v1}
+   * @param destination destino lógico por defecto
+   * @param destinations destino por tipo de evento
+   * @param typeSuffix sufijo de versión de los tipos de evento, por ejemplo {@code .v1}
    */
   public record Events(
       @DefaultValue("domain-events") String destination,

@@ -14,21 +14,24 @@
   <name>axiz :: spring :: r2dbc :: autoconfigure</name>
   <description>Aurora PostgreSQL for reactive services over R2DBC: IAM tokens, pool defaults, Flyway over JDBC, transactional ReactiveSql, auditing, encrypted and money columns, reader endpoint (auto-configuration)</description>
 
-  <properties>
+  <properties><axiz.provider.boundaries.skip>false</axiz.provider.boundaries.skip>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
     <axiz.module.name>pe.axiz.spring.r2dbc</axiz.module.name>
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-commons</artifactId><version>${project.version}</version></dependency>
+
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-context</artifactId><version>${project.version}</version></dependency>
+
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-jdbc-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
-    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-aws</artifactId><version>${project.version}</version></dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-foundation-spring-boot-autoconfigure</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-database-auth-aws</artifactId><version>${project.version}</version><optional>true</optional></dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-autoconfigure</artifactId>
@@ -79,11 +82,6 @@
     <dependency>
       <groupId>org.flywaydb</groupId>
       <artifactId>flyway-core</artifactId>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>rds</artifactId>
       <optional>true</optional>
     </dependency>
     <dependency>

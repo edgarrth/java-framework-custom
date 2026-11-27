@@ -9,9 +9,9 @@ import pe.axiz.core.audit.AuditTrail;
 import pe.axiz.core.metrics.EventMetrics;
 
 /**
- * Batch style on Spring Batch: every job reports metrics, audit and a summary line; readers for
- * files in S3 restart from the last committed chunk. Runs as a Kubernetes CronJob (exit code from
- * the job status) or from {@code @Scheduled} with ShedLock.
+ * Estilo batch sobre Spring Batch: cada job informa métricas, auditoría y una línea de resumen; los
+ * lectores de archivos en S3 reinician desde el último chunk confirmado. Se ejecuta como CronJob de
+ * Kubernetes (código de salida según el estado del job) o desde {@code @Scheduled} con ShedLock.
  */
 @AutoConfiguration(
     afterName = {

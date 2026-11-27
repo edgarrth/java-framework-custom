@@ -17,14 +17,16 @@ import javax.xml.stream.XMLStreamReader;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.codegen.output.SafePaths;
 
-/** Reads declared reactor modules without following links, external entities or outside paths. */
+/**
+ * Lee los módulos declarados del reactor sin seguir enlaces, entidades externas ni rutas externas.
+ */
 public final class MavenReactor {
   private MavenReactor() {}
 
-  /** A declared module and its Axiz parent, without resolving or executing Maven. */
+  /** Un módulo declarado y su padre de Axiz, sin resolver ni ejecutar Maven. */
   public record Module(Path pom, @Nullable String parentVersion, boolean axizParent) {}
 
-  /** Reads the declared reactor, rejecting unsafe, repeated and missing module paths. */
+  /** Lee el reactor declarado y rechaza rutas de módulo inseguras, repetidas o inexistentes. */
   public static List<Module> read(Path directory) throws IOException {
     Path root = directory.toAbsolutePath().normalize();
     Map<Path, Module> modules = new LinkedHashMap<>();

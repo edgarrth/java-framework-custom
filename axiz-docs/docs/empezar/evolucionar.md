@@ -50,22 +50,22 @@ reintentos, autenticación). Ver [Clientes HTTP y SOAP](../guias/clientes.md).
 ## El contrato cambia
 
 ```bash
-axiz contract sync               # nuevas operaciones → esqueletos; borradas → reporte
+axiz contract sync               # nuevas operaciones -> esqueletos; borradas -> reporte
 axiz contract diff old.yaml new.yaml
 ```
 
 `sync` compara el contrato con la última versión sincronizada (`.axiz/openapi.snapshot.yaml`):
 genera controladores y casos de uso para las operaciones nuevas, propone los cambios de las
-existentes sin tocar tu código y falla ante cambios incompatibles salvo con `--allow-breaking`.
+existentes sin tocar el código propio y falla ante cambios incompatibles salvo con `--allow-breaking`.
 Ver [Contrato primero](../herramientas/contratos.md).
 
 ## Diagnóstico y actualización
 
 ```bash
 axiz doctor                      # herramientas, versiones, contrato, configuración, anti-patrones
-axiz upgrade --to 1.3.0 --dry-run
-axiz upgrade --to 1.3.0
+axiz upgrade --to 2.1.0 --dry-run
+axiz upgrade --to 2.1.0
 ```
 
 `upgrade` cambia la versión del parent y del manifiesto y aplica las recetas de OpenRewrite de esa
-versión (ver [Migración](../guias/actualizar-servicio.md)).
+versión (ver [Actualizar un servicio](../guias/actualizar-servicio.md)).

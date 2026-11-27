@@ -4,11 +4,11 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Streamed object content; close it to release the connection.
+ * Contenido de un objeto en streaming; se cierra para liberar la conexión.
  *
- * @param key object key
- * @param metadata metadata
- * @param content content stream
+ * @param key clave del objeto
+ * @param metadata metadatos
+ * @param content stream del contenido
  */
 public record StoredObject(String key, ObjectMetadata metadata, InputStream content)
     implements AutoCloseable {

@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import pe.axiz.kit.dynamodb.DynamoRepository;
-import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
+import pe.axiz.spring.aws.AxizAwsIdentityAutoConfiguration;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbImmutable;
@@ -18,7 +18,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbParti
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-/** One observed client per application, the enhanced client and prefixed repositories. */
+/** Un cliente observado por aplicación, el cliente mejorado y repositorios con prefijo. */
 class AxizDynamoDbAutoConfigurationTest {
 
   @DynamoDbBean
@@ -35,10 +35,10 @@ class AxizDynamoDbAutoConfigurationTest {
     }
   }
 
-  /** Records go through the immutable schema: they must be annotated for it. */
+  /** Los records pasan por el esquema inmutable: deben estar anotados para él. */
   public record NotAnnotated(String id) {}
 
-  /** An immutable item: a record with its builder. */
+  /** Elemento inmutable: un record con su builder. */
   @DynamoDbImmutable(builder = Movement.Builder.class)
   public record Movement(@DynamoDbPartitionKey String id) {
 
@@ -46,7 +46,7 @@ class AxizDynamoDbAutoConfigurationTest {
       return new Builder();
     }
 
-    /** Builder used by the enhanced client. */
+    /** Builder usado por el cliente mejorado. */
     public static final class Builder {
       private String id = "";
 

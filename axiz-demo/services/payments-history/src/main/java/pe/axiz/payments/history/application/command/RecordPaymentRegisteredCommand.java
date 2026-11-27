@@ -10,16 +10,16 @@ import pe.axiz.extension.cqrs.Command;
 import pe.axiz.extension.cqrs.OpenAccess;
 
 /**
- * payment-orders registered an order: add it to the customer's history.
+ * payment-orders registró una orden: se agrega al historial del cliente.
  *
- * @param paymentId order id
- * @param operationNumber operation number
- * @param customerId customer
- * @param creditorCci destination account
- * @param amount amount
- * @param currency currency
- * @param processingDate processing date
- * @param occurredAt time of the event
+ * @param paymentId id de la orden
+ * @param operationNumber número de operación
+ * @param customerId cliente
+ * @param creditorCci cuenta de destino
+ * @param amount monto
+ * @param currency moneda
+ * @param processingDate fecha de procesamiento
+ * @param occurredAt momento del evento
  */
 @OpenAccess(reason = "sent only by the payment-order.created consumer, never exposed over HTTP")
 public record RecordPaymentRegisteredCommand(

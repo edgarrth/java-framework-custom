@@ -15,7 +15,7 @@ resources:
   limits:
     memory: 512Mi
 env:
-# Local environments skip automatic cluster imports; load the chart mounts explicitly.
+# Los entornos locales omiten las importaciones automáticas del clúster; los montajes del chart se cargan de forma explícita.
 - name: SPRING_CONFIG_IMPORT
   value: optional:file:/etc/axiz/config/common/application.yaml,file:/etc/axiz/config/service/application.yaml,file:/etc/axiz/config/errors/application.yaml
 - name: AWS_ACCESS_KEY_ID
@@ -43,6 +43,7 @@ config:
   spring.datasource.url: jdbc:postgresql://postgres.axiz-demo.svc.cluster.local:5432/payment_process
   spring.datasource.username: app
   spring.kafka.bootstrap-servers: kafka.axiz-demo.svc.cluster.local:9092
+  axiz.messaging.kafka.authentication: configured
   axiz.messaging.kafka.iam: false
   axiz.http-client.clients:
     payment-orders:

@@ -10,7 +10,10 @@ import org.openrewrite.xml.XmlIsoVisitor;
 import org.openrewrite.xml.tree.Content;
 import org.openrewrite.xml.tree.Xml;
 
-/** Moves production adapters to runtime without promoting test fixtures into the application. */
+/**
+ * Mueve los adaptadores de producción a runtime sin promover los fixtures de prueba a la
+ * aplicación.
+ */
 public final class AdaptersAsRuntime extends Recipe {
   private static final XPathMatcher DIRECT = new XPathMatcher("/project/dependencies/dependency");
   private static final XPathMatcher PROFILE =

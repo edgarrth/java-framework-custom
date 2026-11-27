@@ -4,10 +4,10 @@ import java.io.Serializable;
 import java.util.regex.Pattern;
 
 /**
- * Error code with the form {@code PREFIX-CAPABILITY-NNNN}, for example {@code AXZ-HTTP-0001}. The
- * framework uses the {@code AXZ} prefix; services use their own.
+ * Código de error con la forma {@code PREFIX-CAPABILITY-NNNN}, por ejemplo {@code AXZ-HTTP-0001}.
+ * El framework usa el prefijo {@code AXZ}; los servicios usan el suyo.
  *
- * @param value code text
+ * @param value texto del código
  */
 public record ErrorCode(String value) implements Serializable {
 

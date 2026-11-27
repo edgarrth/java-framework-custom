@@ -12,7 +12,7 @@
 
   <artifactId>axiz-core-sequence</artifactId>
   <name>axiz :: core :: sequence</name>
-  <description>Atomic formatted sequences with JDBC (atomic counter blocks) store</description>
+  <description>Atomic sequence contracts, formatting and provider-independent counter allocation</description>
 
   <properties>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
@@ -21,17 +21,15 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-concurrent</artifactId><version>${project.version}</version></dependency>
+
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-lang</artifactId><version>${project.version}</version></dependency>
 
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-commons</artifactId>
+      <artifactId>axiz-core-context</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-errors</artifactId>
-      <version>${project.version}</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>

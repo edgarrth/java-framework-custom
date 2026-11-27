@@ -10,9 +10,9 @@ import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.PageRequest;
 
-/** Spring MVC resolver for {@link PageRequest} controller parameters. */
+/** Resolvedor de Spring MVC para los parámetros {@link PageRequest} de los controladores. */
 public class PageRequestArgumentResolver implements HandlerMethodArgumentResolver {
 
   private final PageRequestParser parser;

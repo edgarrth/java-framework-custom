@@ -5,21 +5,20 @@ import java.util.List;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import org.springframework.transaction.reactive.TransactionalOperator;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.messaging.CompletesInTransaction;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.spring.foundation.ReactiveDispatchBoundary;
-import pe.axiz.spring.foundation.ReactiveInboxCompletion;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Mono;
 
 /**
- * Runs a reactive handler in one reactive transaction (its R2DBC writes and the events it enqueues
- * in the outbox commit together), with the request metadata and the trace of the consumed message
- * in the Reactor context, and waits for it on the consumer thread.
+ * Ejecuta un handler reactivo en una única transacción reactiva (sus escrituras R2DBC y los eventos
+ * que encola en el outbox hacen commit juntos), con los metadatos de la solicitud y la traza del
+ * mensaje consumido en el contexto de Reactor, y lo espera en el hilo del consumidor.
  *
- * @param <T> payload type
+ * @param <T> tipo del payload
  */
 public final class ReactiveTransactionalEventHandler<T> implements CompletesInTransaction<T> {
 
@@ -111,7 +110,8 @@ public final class ReactiveTransactionalEventHandler<T> implements CompletesInTr
     for (var boundary : boundaries.reversed()) work = boundary.wrap(work);
     work =
         work.contextWrite(c -> metadata != null ? c.put(RequestContext.KEY, metadata) : c)
-            // thread-locals of the consumer (current observation, MDC) become Reactor context
+            // los thread-locals del consumidor (observación actual, MDC) pasan a ser contexto de
+            // Reactor
             .contextCapture();
     try {
       work.block(timeout);

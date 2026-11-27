@@ -6,8 +6,9 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Derives outcome and reason of a failed operation. Classifiers are chained; the errors starter
- * contributes one that turns business errors into {@code rejected} with the catalog code as reason.
+ * Deriva el resultado y el motivo de una operación fallida. Los clasificadores se encadenan; el
+ * starter de errores aporta uno que convierte los errores de negocio en {@code rejected} con el
+ * código del catálogo como motivo.
  */
 @FunctionalInterface
 public interface FailureClassifier {
@@ -15,14 +16,17 @@ public interface FailureClassifier {
   Optional<Classification> classify(Throwable failure);
 
   /**
-   * Classification of a failure.
+   * Clasificación de un fallo.
    *
-   * @param outcome outcome tag
-   * @param reason reason tag (bounded: error codes or exception types, never messages)
+   * @param outcome tag de resultado
+   * @param reason tag de motivo (acotado: códigos de error o tipos de excepción, nunca mensajes)
    */
   record Classification(Outcome outcome, String reason) {}
 
-  /** Default classifier: timeouts, cancellations and otherwise errors by exception type. */
+  /**
+   * Clasificador por defecto: timeouts, cancelaciones y, en otro caso, errores por tipo de
+   * excepción.
+   */
   static FailureClassifier defaults() {
     return failure -> {
       for (Throwable t = failure; t != null; t = t.getCause()) {

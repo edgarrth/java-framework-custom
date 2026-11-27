@@ -17,8 +17,8 @@ import org.springframework.transaction.reactive.TransactionalOperator;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.AuditTrail;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.errors.NoEffect;
 import pe.axiz.core.idempotency.AsyncIdempotencyService;
 import pe.axiz.core.idempotency.IdempotencyService;
@@ -39,14 +39,14 @@ import pe.axiz.spring.foundation.ReactiveStages;
 import reactor.core.publisher.Mono;
 import tools.jackson.databind.json.JsonMapper;
 
-/** The standard reactive pipeline behaviors, one per cross-cutting concern. */
+/** Behaviors estándar del pipeline reactivo, uno por cada aspecto transversal. */
 public final class ReactiveBehaviors {
 
   private ReactiveBehaviors() {}
 
   /**
-   * Outermost step: a span {@code axiz.command}/{@code axiz.query} that is the parent of every span
-   * created downstream (R2DBC statements, HTTP calls), through the Reactor context.
+   * Paso más externo: un span {@code axiz.command}/{@code axiz.query} que es el padre de cada span
+   * creado aguas abajo (sentencias R2DBC, llamadas HTTP), mediante el contexto de Reactor.
    */
   public static final class Observation implements ReactivePipelineBehavior {
 
@@ -81,7 +81,10 @@ public final class ReactiveBehaviors {
     }
   }
 
-  /** Bean Validation of the request before anything else runs (400 on violations). */
+  /**
+   * Bean Validation de la petición antes de que se ejecute cualquier otra cosa (400 ante
+   * violaciones).
+   */
   public static final class Validation implements ReactivePipelineBehavior {
 
     private final Validator validator;
@@ -103,9 +106,9 @@ public final class ReactiveBehaviors {
   }
 
   /**
-   * {@link RequiresAuthority} and the matching access policies, checked against the reactive
-   * security context before idempotency (403/404). External state is read by native reactive
-   * policies.
+   * {@link RequiresAuthority} y las políticas de acceso coincidentes, verificadas contra el
+   * contexto de seguridad reactivo antes de la idempotencia (403/404). El estado externo lo leen
+   * las políticas reactivas nativas.
    */
   public static final class Authorization implements ReactivePipelineBehavior {
 
@@ -120,10 +123,10 @@ public final class ReactiveBehaviors {
     }
 
     /**
-     * Authorization for reactive buses.
+     * Autorización para los buses reactivos.
      *
-     * @param policies must be empty; imperative policies are not accepted by a reactive bus
-     * @param reactivePolicies native non-blocking policies
+     * @param policies debe estar vacío; un bus reactivo no acepta políticas imperativas
+     * @param reactivePolicies políticas nativas no bloqueantes
      */
     public Authorization(
         AccessPolicies policies, List<? extends ReactiveAccessPolicy<?>> reactivePolicies) {
@@ -174,8 +177,8 @@ public final class ReactiveBehaviors {
   }
 
   /**
-   * Idempotent commands: the first result is stored and replayed for the same key and command; the
-   * store is native asynchronous and cancellation releases the execution lease.
+   * Comandos idempotentes: el primer resultado se almacena y se reproduce para la misma clave y el
+   * mismo comando; el almacén es asíncrono nativo y la cancelación libera el lease de la ejecución.
    */
   public static final class Idempotency implements ReactivePipelineBehavior {
 
@@ -187,11 +190,6 @@ public final class ReactiveBehaviors {
             "JsonMapper is an injected collaborator whose identity and lifecycle must be shared, "
                 + "not copied.")
     private final JsonMapper mapper;
-
-    /** Retained descriptor; reactive buses reject an imperative service at construction. */
-    public Idempotency(IdempotencyService service, JsonMapper mapper) {
-      throw new IllegalArgumentException("Reactive CQRS requires AsyncIdempotencyService");
-    }
 
     public Idempotency(AsyncIdempotencyService service, JsonMapper mapper) {
       this.service = Objects.requireNonNull(service);
@@ -300,7 +298,9 @@ public final class ReactiveBehaviors {
     }
   }
 
-  /** Commands in a reactive read-write transaction, queries in a read-only one. */
+  /**
+   * Comandos en una transacción reactiva de lectura y escritura; consultas en una de solo lectura.
+   */
   public static final class Transaction implements ReactivePipelineBehavior {
 
     private final TransactionalOperator write;
@@ -324,14 +324,12 @@ public final class ReactiveBehaviors {
     }
   }
 
-  /** Records {@link AuditedCommand} outcomes through native delivery in the Reactor context. */
+  /**
+   * Registra los resultados de {@link AuditedCommand} mediante entrega nativa en el contexto de
+   * Reactor.
+   */
   public static final class Audit implements ReactivePipelineBehavior {
     private final ReactiveAuditTrail trail;
-
-    /** Retained descriptor; reactive buses reject an imperative publisher at construction. */
-    public Audit(AuditTrail trail) {
-      throw new IllegalArgumentException("Reactive CQRS requires ReactiveAuditTrail");
-    }
 
     public Audit(ReactiveAuditTrail trail) {
       this.trail = Objects.requireNonNull(trail);
@@ -368,7 +366,7 @@ public final class ReactiveBehaviors {
     }
   }
 
-  /** Counts and times every command and query as an event named after the request. */
+  /** Cuenta y mide cada comando y consulta como un evento con el nombre de la petición. */
   public static final class Metrics implements ReactivePipelineBehavior {
 
     private final EventMetrics metrics;

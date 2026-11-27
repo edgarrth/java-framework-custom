@@ -11,8 +11,9 @@ import pe.axiz.core.lock.DistributedLock;
 import pe.axiz.core.lock.LockHandle;
 
 /**
- * Lock on Redis: {@code SET key token NX PX lease}; renew and release are Lua scripts that act only
- * when the stored token is ours, so an expired owner never touches the next owner's lock.
+ * Lock sobre Redis: {@code SET key token NX PX lease}; la renovación y la liberación son scripts
+ * Lua que actúan solo cuando el token almacenado es el propio, de modo que un propietario expirado
+ * nunca toca el lock del siguiente propietario.
  */
 public final class RedisDistributedLock implements DistributedLock {
 

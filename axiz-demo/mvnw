@@ -1,16 +1,16 @@
 #!/bin/sh
-# Maven wrapper (script-only): downloads the Maven distribution declared in
-# .mvn/wrapper/maven-wrapper.properties into ~/.m2/wrapper and runs it.
-# Set MVNW_REPOURL to download from the Nexus proxy of Maven Central.
+# Maven wrapper (solo script): descarga la distribución de Maven declarada en
+# .mvn/wrapper/maven-wrapper.properties en ~/.m2/wrapper y la ejecuta.
+# MVNW_REPOURL permite descargar desde un mirror aprobado de la distribución de Maven.
 #
-# The distribution is always verified before it is used (fail closed):
-#   1. distributionSha512Sum (or distributionSha256Sum) pinned in the properties file, or
-#   2. when nothing is pinned, the official <distribution>.sha512 published next to it.
-# A cached distribution is only reused when it was verified against the checksum pinned now
-# (a marker file records it); otherwise it is downloaded and verified again.
-# Set MVNW_REQUIRE_PINNED_CHECKSUM=true (release pipelines) to accept only a pinned checksum,
-# also with a distribution already in the cache.
-# "./mvnw --pin-checksum" downloads the official checksum once and pins it in the properties file.
+# La distribución siempre se verifica antes de usarla (falla de forma cerrada):
+#   1. distributionSha512Sum (o distributionSha256Sum) fijado en el archivo de propiedades, o
+#   2. si no hay nada fijado, el <distribution>.sha512 oficial publicado junto a ella.
+# Una distribución en caché solo se reutiliza si se verificó contra el checksum fijado vigente
+# (un archivo marcador lo registra); en caso contrario se descarga y se verifica de nuevo.
+# MVNW_REQUIRE_PINNED_CHECKSUM=true (pipelines de release) acepta solo un checksum fijado,
+# también con una distribución que ya está en la caché.
+# "./mvnw --pin-checksum" descarga una vez el checksum oficial y lo fija en el archivo de propiedades.
 set -eu
 BASEDIR=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 PROPS="$BASEDIR/.mvn/wrapper/maven-wrapper.properties"
@@ -25,11 +25,28 @@ NAME=$(basename "$URL" -bin.zip)
 HOME_DIR="${MAVEN_USER_HOME:-$HOME/.m2}/wrapper/dists/$NAME"
 MARKER="$HOME_DIR/.verified-checksum"
 
-fetch() {
-  if command -v curl >/dev/null 2>&1; then curl -fsSL -o "$2" "$1"; else wget -q -O "$2" "$1"; fi
+# Reintenta los errores transitorios del repositorio (429 y 5xx) respetando Retry-After. Si Maven Central
+# sigue rechazando la descarga, usa su espejo oficial de Google; la distribución se verifica igual contra
+# su checksum antes de ejecutarla.
+download() {
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL --retry 5 --retry-delay 10 --retry-connrefused -o "$2" "$1"
+  else
+    wget -q --tries=5 --retry-on-http-error=429,502,503,504 -O "$2" "$1"
+  fi
 }
 
-# sha256sum/sha512sum on Linux, shasum on macOS
+fetch() {
+  download "$1" "$2" && return 0
+  case "$1" in
+    https://repo.maven.apache.org/maven2/*)
+      download "https://maven-central.storage-download.googleapis.com/maven2/${1#https://repo.maven.apache.org/maven2/}" "$2"
+      ;;
+    *) return 1 ;;
+  esac
+}
+
+# sha256sum/sha512sum en Linux, shasum en macOS
 check_sum() {
   if command -v "sha${1}sum" >/dev/null 2>&1; then "sha${1}sum" -c - >/dev/null; else shasum -a "$1" -c - >/dev/null; fi
 }
@@ -42,7 +59,7 @@ pinned() {
   fi
 }
 
-# verifies $1 and prints the checksum it was verified against (sha512:<hex> or sha256:<hex>)
+# verifica $1 e imprime el checksum contra el que se verificó (sha512:<hex> o sha256:<hex>)
 verify() {
   if [ -n "$SHA512" ]; then
     echo "$SHA512  $1" | check_sum 512 || { echo "Checksum mismatch (pinned SHA-512) for $URL" >&2; exit 1; }
@@ -75,13 +92,13 @@ if [ "${1:-}" = "--pin-checksum" ]; then
   exit 0
 fi
 
-# strict mode is checked before looking at the cache
+# el modo estricto se comprueba antes de consultar la caché
 if [ "${MVNW_REQUIRE_PINNED_CHECKSUM:-false}" = "true" ] && [ -z "$(pinned)" ]; then
   echo "No distributionSha512Sum pinned in $PROPS: run ./mvnw --pin-checksum" >&2
   exit 1
 fi
 
-# reuse the cache only when it was verified, and against the checksum pinned now
+# la caché solo se reutiliza si se verificó, y contra el checksum fijado vigente
 CACHED=false
 if [ -x "$HOME_DIR/$NAME/bin/mvn" ] && [ -f "$MARKER" ]; then
   if [ -z "$(pinned)" ] || [ "$(cat "$MARKER")" = "$(pinned)" ]; then

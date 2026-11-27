@@ -1,0 +1,62 @@
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "urn:uuid:56d3f84c-2601-4a13-b381-1e83c892b158",
+  "author": "Axiz source review (Codex)",
+  "timestamp": "2026-11-19T13:30:00Z",
+  "version": 3,
+  "x_axiz_review_by": "2027-01-18T00:00:00Z",
+  "statements": [
+    {
+      "vulnerability": {
+        "name": "CVE-2026-21728",
+        "@id": "https://github.com/advisories/GHSA-p4r4-xvrq-gvmc"
+      },
+      "products": [
+        {
+          "@id": "pkg:golang/github.com/grafana/tempo@v1.5.1-0.20260427112133-525d1bab07e0"
+        }
+      ],
+      "status": "fixed",
+      "impact_statement": "The exact source revision 525d1bab07e0 contains upstream fix 650eb1985a0776789c8564122990f588a742356f; GitHub compare reports ahead_by=337, behind_by=0, merge_base_commit=650eb1985a0776789c8564122990f588a742356f. The pre-v2 pseudo-version is not evidence of vulnerable source. See https://github.com/grafana/tempo/compare/650eb1985a0776789c8564122990f588a742356f...525d1bab07e0",
+      "x_axiz_evidence": {
+        "repository": "https://github.com/grafana/tempo",
+        "fix": "650eb1985a0776789c8564122990f588a742356f",
+        "revision": "525d1bab07e0257b7b9dc73189eaa6b9d32059e8",
+        "status": "ahead",
+        "ahead_by": 337,
+        "behind_by": 0,
+        "merge_base": "650eb1985a0776789c8564122990f588a742356f",
+        "verified_at": "2026-11-19T13:30:00Z",
+        "advisory": "https://grafana.com/security/security-advisories/cve-2026-21728/",
+        "patch": "https://github.com/grafana/tempo/commit/650eb1985a0776789c8564122990f588a742356f",
+        "advisory_patch_reference": "https://github.com/advisories/GHSA-p4r4-xvrq-gvmc"
+      }
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-28377",
+        "@id": "https://github.com/advisories/GHSA-ffqx-q65f-36jf"
+      },
+      "products": [
+        {
+          "@id": "pkg:golang/github.com/grafana/tempo@v1.5.1-0.20260427112133-525d1bab07e0"
+        }
+      ],
+      "status": "fixed",
+      "impact_statement": "The exact source revision 525d1bab07e0 contains upstream fix bb8ca663db34a0980c9758b40d918fda3b4dbec3; GitHub compare reports ahead_by=218, behind_by=0, merge_base_commit=bb8ca663db34a0980c9758b40d918fda3b4dbec3. The pre-v2 pseudo-version is not evidence of vulnerable source. See https://github.com/grafana/tempo/compare/bb8ca663db34a0980c9758b40d918fda3b4dbec3...525d1bab07e0",
+      "x_axiz_evidence": {
+        "repository": "https://github.com/grafana/tempo",
+        "fix": "bb8ca663db34a0980c9758b40d918fda3b4dbec3",
+        "revision": "525d1bab07e0257b7b9dc73189eaa6b9d32059e8",
+        "status": "ahead",
+        "ahead_by": 218,
+        "behind_by": 0,
+        "merge_base": "bb8ca663db34a0980c9758b40d918fda3b4dbec3",
+        "verified_at": "2026-11-19T13:30:00Z",
+        "advisory": "https://grafana.com/security/security-advisories/cve-2026-28377/",
+        "patch": "https://github.com/grafana/tempo/commit/bb8ca663db34a0980c9758b40d918fda3b4dbec3",
+        "advisory_patch_reference": "https://github.com/advisories/GHSA-ffqx-q65f-36jf"
+      }
+    }
+  ]
+}

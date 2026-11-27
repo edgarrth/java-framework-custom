@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-/** Role boundaries that apply in addition to the chosen package structure. */
+/** Límites de rol que se aplican además de la estructura de paquetes elegida. */
 public final class ArchetypeRules {
   private ArchetypeRules() {}
 
@@ -26,11 +26,7 @@ public final class ArchetypeRules {
               .because("this role owns no domain persistence"));
     }
     if (archetype == Archetype.EVENT_PROCESSOR || archetype == Archetype.BATCH) {
-      rules.add(
-          noClasses()
-              .should()
-              .beAnnotatedWith("org.springframework.web.bind.annotation.RestController")
-              .because("event processors and batch have no public REST API"));
+      rules.addAll(PackageClosure.noHttpApi());
     }
     if (Set.of(Archetype.UX, Archetype.CORE, Archetype.GATEWAY).contains(archetype)) {
       rules.add(

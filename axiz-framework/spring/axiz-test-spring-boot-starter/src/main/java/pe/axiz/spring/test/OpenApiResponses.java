@@ -12,8 +12,9 @@ import tools.jackson.databind.node.ObjectNode;
 import tools.jackson.dataformat.yaml.YAMLMapper;
 
 /**
- * Asserts serialized HTTP response bodies against OpenAPI 3.1 JSON schemas, including local schema
- * references. Used with MockMvc or WebTestClient responses; no running server is required.
+ * Comprueba los cuerpos serializados de las respuestas HTTP contra esquemas JSON de OpenAPI 3.1,
+ * incluidas las referencias locales de esquemas. Se usa con respuestas de MockMvc o WebTestClient;
+ * no requiere un servidor en ejecución.
  */
 public final class OpenApiResponses {
 
@@ -24,7 +25,7 @@ public final class OpenApiResponses {
   private final SchemaRegistry registry =
       SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2020_12);
 
-  /** Loads the service's source contract, rather than a copy in test resources. */
+  /** Carga el contrato fuente del servicio, no una copia en los recursos de prueba. */
   public OpenApiResponses(Path contract) throws IOException {
     document = YAMLMapper.builder().build().readTree(contract.toFile());
     if (!document.path("openapi").asString().startsWith("3.1.")) {
@@ -33,8 +34,8 @@ public final class OpenApiResponses {
   }
 
   /**
-   * Validates the actual status, content type and serialized body against an explicitly declared
-   * response. The path is the contract template, for example {@code /items/{id}}.
+   * Valida el estado, el content type y el cuerpo serializado reales contra una respuesta declarada
+   * explícitamente. La ruta es la plantilla del contrato, por ejemplo {@code /items/{id}}.
    */
   public void assertResponse(
       String path, String method, int status, String contentType, String body) {
@@ -50,7 +51,7 @@ public final class OpenApiResponses {
     validate(pointer, body);
   }
 
-  /** Validates every inline response example (single or named) and returns their count. */
+  /** Valida cada ejemplo de respuesta inline (único o con nombre) y devuelve su cantidad. */
   public int assertExamples() {
     int count = 0;
     for (var path : document.path("paths").properties()) {
@@ -95,7 +96,8 @@ public final class OpenApiResponses {
     if (!schema.isObject() && !schema.isBoolean()) {
       throw new AssertionError("Response schema is not declared at " + pointer);
     }
-    // Preserve the original root so #/components/... references resolve to the source contract.
+    // Se conserva la raíz original para que las referencias #/components/... se resuelvan contra el
+    // contrato fuente.
     ObjectNode root = ((ObjectNode) document).deepCopy();
     root.put("$ref", "#" + pointer + "/schema");
     var errors =

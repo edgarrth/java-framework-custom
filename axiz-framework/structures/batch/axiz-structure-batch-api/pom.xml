@@ -23,22 +23,7 @@
   <dependencies>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-commons</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
       <artifactId>axiz-core-fileformats</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-storage</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-errors</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>

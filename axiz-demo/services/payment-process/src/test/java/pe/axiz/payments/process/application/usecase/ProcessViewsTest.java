@@ -9,11 +9,20 @@ import pe.axiz.core.saga.SagaStatus;
 import pe.axiz.payments.process.domain.PaymentProcess;
 import pe.axiz.payments.process.domain.ProcessStatus;
 
-/** What a process looks like from the outside: its status and, when it failed, which step. */
+/** Cómo se ve un proceso desde fuera: su estado y, cuando falló, en qué paso. */
 class ProcessViewsTest {
 
   static SagaState state(SagaStatus status, String error) {
-    return new SagaState("O-1", "payment", status, 2, "ctx", error, Instant.EPOCH, 3);
+    return SagaState.builder()
+        .sagaId("O-1")
+        .sagaName("payment")
+        .status(status)
+        .stepIndex(2)
+        .context("ctx")
+        .error(error)
+        .updatedAt(Instant.EPOCH)
+        .version(3)
+        .build();
   }
 
   @Test
@@ -24,6 +33,14 @@ class ProcessViewsTest {
     assertThat(ProcessViews.status(SagaStatus.COMPLETED)).isEqualTo(ProcessStatus.COMPLETED);
     assertThat(ProcessViews.status(SagaStatus.COMPENSATED)).isEqualTo(ProcessStatus.REJECTED);
     assertThat(ProcessViews.status(SagaStatus.FAILED)).isEqualTo(ProcessStatus.NEEDS_ATTENTION);
+  }
+
+  @Test
+  void aStepInFlightIsRunningAndOnlyAnUncertainOutcomeIsVerifying() {
+    assertThat(ProcessViews.of(state(SagaStatus.IN_DOUBT, null)))
+        .isEqualTo(new PaymentProcess("O-1", ProcessStatus.RUNNING, null));
+    assertThat(ProcessViews.of(state(SagaStatus.IN_DOUBT, "debit: in doubt, TimeoutException")))
+        .isEqualTo(new PaymentProcess("O-1", ProcessStatus.VERIFYING, "debit"));
   }
 
   @Test

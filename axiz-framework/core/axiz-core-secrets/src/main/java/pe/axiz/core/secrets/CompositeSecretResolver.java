@@ -3,7 +3,7 @@ package pe.axiz.core.secrets;
 import java.util.List;
 import java.util.Optional;
 
-/** Tries resolvers in order; the first one that has the secret wins. */
+/** Prueba los resolvers en orden; prevalece el primero que tiene el secreto. */
 public final class CompositeSecretResolver implements SecretResolver {
 
   private final List<SecretResolver> delegates;

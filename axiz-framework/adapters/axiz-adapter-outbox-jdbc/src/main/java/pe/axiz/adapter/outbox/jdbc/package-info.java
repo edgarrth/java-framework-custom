@@ -1,4 +1,4 @@
-/** Outbox persistence and schema resources over JDBC. */
+/** Persistencia del outbox y recursos de esquema sobre JDBC. */
 @NullMarked
 package pe.axiz.adapter.outbox.jdbc;
 

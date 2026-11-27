@@ -11,8 +11,8 @@ import javax.crypto.spec.SecretKeySpec;
 import org.jspecify.annotations.Nullable;
 
 /**
- * AES-256-GCM authenticated encryption with a random 96-bit IV per message and optional additional
- * authenticated data (AAD). Output layout: {@code iv(12) || ciphertext+tag(16)}.
+ * Cifrado autenticado AES-256-GCM con un IV aleatorio de 96 bits por mensaje y datos autenticados
+ * adicionales (AAD) opcionales. Disposición de la salida: {@code iv(12) || ciphertext+tag(16)}.
  */
 public final class AesGcm {
 
@@ -20,9 +20,17 @@ public final class AesGcm {
   private static final int IV_BYTES = 12;
   private static final int TAG_BITS = 128;
   private static final String TRANSFORMATION = "AES/GCM/NoPadding";
-  private static final SecureRandom RANDOM = new SecureRandom();
+  private static final SecureRandom RANDOM = SecureRandoms.drbg("aes-gcm");
 
   private AesGcm() {}
+
+  /**
+   * Inicializa la entropía y los proveedores JCA durante el arranque, antes de una conversión en el
+   * event loop.
+   */
+  public static void initialize() {
+    encrypt(newKey(), new byte[0], new byte[0]);
+  }
 
   public static SecretKey newKey() {
     try {

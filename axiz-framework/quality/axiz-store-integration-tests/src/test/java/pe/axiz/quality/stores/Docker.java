@@ -5,18 +5,11 @@ import org.junit.jupiter.api.Assumptions;
 import org.testcontainers.DockerClientFactory;
 
 /**
- * Integration tests need Docker. Locally they are skipped without it; CI passes {@code
- * -Daxiz.it.requireDocker=true} so a missing Docker fails the build instead of hiding the tests.
+ * Las pruebas de integración necesitan Docker. En local se omiten si no está disponible; la CI pasa
+ * {@code -Daxiz.it.requireDocker=true} para que la falta de Docker haga fallar el build en lugar de
+ * ocultar las pruebas.
  */
 final class Docker {
-
-  /**
-   * Images of the approved infrastructure (same as the test starter); Renovate keeps them current.
-   */
-  static final String POSTGRES = "postgres:17.6-alpine";
-
-  static final String VALKEY = "valkey/valkey:8.1-alpine";
-  static final String LOCALSTACK = "localstack/localstack:4.9";
 
   private Docker() {}
 

@@ -30,20 +30,29 @@ import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.transaction.ReactiveTransactionManager;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import org.testcontainers.postgresql.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.outbox.jdbc.JdbcOutboxStore;
+import pe.axiz.adapter.outbox.r2dbc.R2dbcAuditChainState;
 import pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxStore;
-import pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter;
+import pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxWriter;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.AuditEvent.Outcome;
+import pe.axiz.core.audit.AuditEventJson;
+import pe.axiz.core.audit.AuditSealCalculator;
+import pe.axiz.core.audit.AuditSealer;
 import pe.axiz.core.audit.Auditable;
+import pe.axiz.core.audit.InMemoryAuditChainState;
 import pe.axiz.core.domain.DomainEvent;
 import pe.axiz.core.id.IdGenerator;
+import pe.axiz.core.messaging.CloudEventJson;
 import pe.axiz.core.messaging.EventFactory;
 import pe.axiz.core.messaging.PayloadCodec;
 import pe.axiz.core.sensitive.ObjectMasker;
+import pe.axiz.kit.r2dbc.R2dbcSql;
 import pe.axiz.kit.r2dbc.ReactiveSql;
 import pe.axiz.kit.r2dbc.SqlParams;
+import pe.axiz.kit.reactor.audit.ReactiveAuditChainState;
+import pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter;
+import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.spring.audit.AuditOutsideTransaction;
 import pe.axiz.spring.audit.AxizAuditAutoConfiguration;
 import pe.axiz.spring.audit.AxizNativeAuditAutoConfiguration;
@@ -66,16 +75,13 @@ import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
 /**
- * Real PostgreSQL proves business and outbox commit or roll back together across thread changes.
+ * PostgreSQL real prueba que el negocio y el outbox se confirman o hacen rollback juntos a través
+ * de cambios de hilo.
  */
 @ExtendWith(BlockHoundExtension.class)
 class PostgresReactiveUseCaseIT {
   private static final Duration T = Duration.ofSeconds(10);
-  private static final PostgreSQLContainer POSTGRES =
-      new PostgreSQLContainer(DockerImageName.parse(Docker.POSTGRES))
-          .withDatabaseName("app")
-          .withUsername("app")
-          .withPassword("local-only");
+  private static PostgreSQLContainer postgres;
   private static ConnectionFactory connections;
   private static ReactiveSql sql;
   private static ReactiveDomainEventSink sink;
@@ -84,16 +90,21 @@ class PostgresReactiveUseCaseIT {
   static void start() throws Exception {
     ReactiveInfrastructureBootstrap.initialize();
     Docker.require();
-    POSTGRES.start();
+    postgres =
+        TestContainerImages.postgres()
+            .withDatabaseName("app")
+            .withUsername("app")
+            .withPassword("local-only");
+    postgres.start();
     connections =
         ConnectionFactories.get(
             ConnectionFactoryOptions.builder()
                 .option(ConnectionFactoryOptions.DRIVER, "postgresql")
-                .option(ConnectionFactoryOptions.HOST, POSTGRES.getHost())
-                .option(ConnectionFactoryOptions.PORT, POSTGRES.getMappedPort(5432))
-                .option(ConnectionFactoryOptions.DATABASE, POSTGRES.getDatabaseName())
-                .option(ConnectionFactoryOptions.USER, POSTGRES.getUsername())
-                .option(ConnectionFactoryOptions.PASSWORD, POSTGRES.getPassword())
+                .option(ConnectionFactoryOptions.HOST, postgres.getHost())
+                .option(ConnectionFactoryOptions.PORT, postgres.getMappedPort(5432))
+                .option(ConnectionFactoryOptions.DATABASE, postgres.getDatabaseName())
+                .option(ConnectionFactoryOptions.USER, postgres.getUsername())
+                .option(ConnectionFactoryOptions.PASSWORD, postgres.getPassword())
                 .build());
     sql = new DatabaseClientReactiveSql(DatabaseClient.create(connections));
     sql.update("CREATE TABLE business_changes (id VARCHAR(64) PRIMARY KEY)", SqlParams.of())
@@ -127,14 +138,13 @@ class PostgresReactiveUseCaseIT {
         new ReactiveTransactionalEvents(
             new EventFactory(
                 "urn:test:original", "", codec, IdGenerator.uuidV7(), Clock.systemUTC()),
-            new ReactiveOutboxWriter(
-                new R2dbcOutboxStore(sql, "axiz_outbox", T), Clock.systemUTC()));
+            new R2dbcOutboxWriter(new R2dbcOutboxStore(sql, "axiz_outbox", T), Clock.systemUTC()));
     sink = new ReactiveOutboxDomainEventSink(events, "payments", Map.of(), ".v1");
   }
 
   @AfterAll
   static void stop() {
-    POSTGRES.stop();
+    if (postgres != null) postgres.stop();
   }
 
   record Changed(String eventId, Instant occurredAt, String aggregateId) implements DomainEvent {}
@@ -168,8 +178,51 @@ class PostgresReactiveUseCaseIT {
     factory.setProxyTargetClass(true);
     factory.addAdvice(
         new ReactiveUseCaseInterceptor(
-            () -> new R2dbcTransactionManager(connections), ObservationRegistry.NOOP));
+            () -> new R2dbcTransactionManager(connections), () -> ObservationRegistry.NOOP));
     return (Change) factory.getProxy();
+  }
+
+  @Test
+  void nativeNamedBindingsPreservePostgresLiteralAndCommentSyntax() {
+    var nativeSql = new R2dbcSql(connections);
+    String statement =
+        "SELECT $tag$:hidden 'quote' $tag$ AS dollar, "
+            + "'firstit''s :hidden' AS escaped, "
+            + "/* outer /* inner */ :ignored */ :actual::text AS bound";
+    var result =
+        nativeSql
+            .queryOne(
+                statement,
+                SqlParams.of().bind("actual", "untrusted ':value' $$"),
+                row ->
+                    List.of(
+                        row.require("dollar", String.class),
+                        row.require("escaped", String.class),
+                        row.require("bound", String.class)))
+            .block(T);
+    assertEquals(List.of(":hidden 'quote' ", "firstit's :hidden", "untrusted ':value' $$"), result);
+  }
+
+  @Test
+  void driverRejectsBackslashQuotedLiteralsInsteadOfExecutingMisparsedSql() {
+    // PostgreSQL acepta esta gramática y NamedSql la preserva. El lexer propio del driver R2DBC
+    // fijado no reconoce las comillas escapadas con barra invertida. Se mantiene la limitación como
+    // algo ejecutable; los valores de la aplicación deben usar parámetros de binding, nunca
+    // reescritura de literales SQL.
+    var sql = new R2dbcSql(connections);
+    for (String literal :
+        List.of("E'firstit\\'s :hidden'", "E'first' -- continuation\n'it\\'s :hidden'")) {
+      StepVerifier.create(
+              sql.queryOne(
+                  "SELECT " + literal + ", :actual::text",
+                  SqlParams.of().bind("actual", "bound"),
+                  row -> row.require("actual", String.class)))
+          .expectErrorMatches(
+              failure ->
+                  failure instanceof IllegalArgumentException
+                      && failure.getMessage().startsWith("Sql cannot be parsed: unclosed quote"))
+          .verify(T);
+    }
   }
 
   @Test
@@ -204,7 +257,7 @@ class PostgresReactiveUseCaseIT {
         .then(() -> target.written.asMono().block(T))
         .thenCancel()
         .verify(T);
-    // A fresh query waits for asynchronous rollback without blocking an I/O worker.
+    // Una consulta nueva espera el rollback asíncrono sin bloquear un worker de E/S.
     Mono.defer(
             () ->
                 sql.query(
@@ -256,12 +309,21 @@ class PostgresReactiveUseCaseIT {
   void durableAuditCommitsWithBusinessDataAndRollsBackDeliveryFailure() {
     var fallback = new CopyOnWriteArrayList<AuditEvent>();
     var publisher =
-        new ReactiveTransactionalAuditPublisher(
-            new ReactiveOutboxWriter(
-                new R2dbcOutboxStore(sql, "axiz_outbox", T), Clock.systemUTC()),
-            "audit",
-            event -> Mono.fromRunnable(() -> fallback.add(event)),
-            AuditOutsideTransaction.FAIL);
+        ReactiveTransactionalAuditPublisher.builder()
+            .outbox(
+                new R2dbcOutboxWriter(
+                    new R2dbcOutboxStore(sql, "axiz_outbox", T), Clock.systemUTC()))
+            .destination("audit")
+            .fallback(event -> Mono.fromRunnable(() -> fallback.add(event)))
+            .outside(AuditOutsideTransaction.FAIL)
+            .transactions(new R2dbcTransactionManager(connections))
+            .failureTimeout(T)
+            .failureConcurrency(4)
+            .state(auditState())
+            .chain("durable")
+            .calculator(new AuditSealCalculator(AuditSealer.Mode.HASH, null, null))
+            .degradation(degradation())
+            .build();
     var ids = new AtomicInteger();
     var trail =
         new ReactiveAuditTrail(
@@ -289,15 +351,14 @@ class PostgresReactiveUseCaseIT {
         .expectComplete()
         .verify(T);
     assertEquals(1, count("business_changes", "audit-committed"));
-    assertEquals(1, count("axiz_outbox", "audit-proof-1"));
-    String json =
-        sql.query(
-                "SELECT envelope FROM axiz_outbox WHERE id='audit-proof-1'",
-                SqlParams.of(),
-                row -> row.require("envelope", String.class))
-            .single()
-            .block(T);
-    org.junit.jupiter.api.Assertions.assertFalse(Objects.requireNonNull(json).contains("hidden"));
+    assertEquals(1, auditEvents().stream().filter(e -> e.id().equals("audit-proof-1")).count());
+    AuditEvent persisted =
+        auditEvents().stream()
+            .filter(e -> e.id().equals("audit-proof-1"))
+            .findFirst()
+            .orElseThrow();
+    org.junit.jupiter.api.Assertions.assertFalse(
+        AuditEventJson.write(persisted).contains("hidden"));
     Mono<String> aborted =
         Mono.defer(
             () ->
@@ -312,17 +373,29 @@ class PostgresReactiveUseCaseIT {
         .expectErrorMessage("business failed")
         .verify(T);
     assertEquals(0, count("business_changes", "audit-aborted"));
-    assertEquals(0, count("axiz_outbox", "audit-proof-2"));
-    assertEquals(1, fallback.size());
-    assertEquals(Outcome.FAILURE, fallback.getFirst().outcome());
+    assertEquals(
+        1,
+        auditEvents().stream()
+            .filter(e -> e.id().equals("audit-proof-2") && e.outcome() == Outcome.FAILURE)
+            .count());
+    assertEquals(0, fallback.size());
 
     var rejected =
-        new ReactiveTransactionalAuditPublisher(
-            new ReactiveOutboxWriter(
-                new R2dbcOutboxStore(sql, "missing_audit_table", T), Clock.systemUTC()),
-            "audit",
-            event -> Mono.empty(),
-            AuditOutsideTransaction.FAIL);
+        ReactiveTransactionalAuditPublisher.builder()
+            .outbox(
+                new R2dbcOutboxWriter(
+                    new R2dbcOutboxStore(sql, "missing_audit_table", T), Clock.systemUTC()))
+            .destination("audit")
+            .fallback(event -> Mono.empty())
+            .outside(AuditOutsideTransaction.FAIL)
+            .transactions(new R2dbcTransactionManager(connections))
+            .failureTimeout(T)
+            .failureConcurrency(4)
+            .state(auditState())
+            .chain("durable")
+            .calculator(new AuditSealCalculator(AuditSealer.Mode.HASH, null, null))
+            .degradation(degradation())
+            .build();
     var unavailable =
         new ReactiveAuditTrail(
             "accounts", rejected, ObjectMasker.defaults(), IdGenerator.uuidV7(), Clock.systemUTC());
@@ -355,8 +428,9 @@ class PostgresReactiveUseCaseIT {
   @Test
   void nativeAuditAdviceIsInsideTheHexagonalUseCaseTransaction() {
     var writer =
-        new ReactiveOutboxWriter(new R2dbcOutboxStore(sql, "axiz_outbox", T), Clock.systemUTC());
+        new R2dbcOutboxWriter(new R2dbcOutboxStore(sql, "axiz_outbox", T), Clock.systemUTC());
     new ReactiveWebApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(
             AutoConfigurations.of(
                 AxizAuditAutoConfiguration.class,
@@ -364,6 +438,7 @@ class PostgresReactiveUseCaseIT {
                 AxizHexagonalAutoConfiguration.class,
                 AxizReactiveHexagonalAutoConfiguration.class))
         .withBean(ReactiveOutboxWriter.class, () -> writer)
+        .withBean(ReactiveAuditChainState.class, PostgresReactiveUseCaseIT::auditState)
         .withBean(ReactiveTransactionManager.class, () -> new R2dbcTransactionManager(connections))
         .withPropertyValues(
             "axiz.audit.mode=DURABLE",
@@ -389,15 +464,36 @@ class PostgresReactiveUseCaseIT {
                   .expectComplete()
                   .verify(T);
               assertEquals(1, count("business_changes", "audit-through-advice"));
-              Long evidence =
-                  sql.query(
-                          "SELECT count(*) AS n FROM axiz_outbox WHERE envelope LIKE :pattern",
-                          SqlParams.of().bind("pattern", "%account.change%"),
-                          row -> row.require("n", Long.class))
-                      .single()
-                      .block(T);
-              assertEquals(1L, evidence);
+              assertEquals(
+                  1,
+                  auditEvents().stream().filter(e -> e.action().equals("account.change")).count());
             });
+  }
+
+  private static R2dbcAuditChainState auditState() {
+    return new R2dbcAuditChainState(sql, connections, "axiz_audit_chain", Clock.systemUTC(), T);
+  }
+
+  private static AuditSealer degradation() {
+    return new AuditSealer(
+        "degradation",
+        AuditSealer.Mode.HASH,
+        new InMemoryAuditChainState(Clock.systemUTC(), 8),
+        null,
+        null);
+  }
+
+  private static List<AuditEvent> auditEvents() {
+    return sql.query(
+            "SELECT envelope FROM axiz_outbox WHERE destination='audit'",
+            SqlParams.of(),
+            row ->
+                AuditEventJson.read(
+                    new String(
+                        CloudEventJson.read(row.require("envelope", String.class)).data(),
+                        StandardCharsets.UTF_8)))
+        .collectList()
+        .block(T);
   }
 
   private static long count(String table, String pattern) {

@@ -31,6 +31,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.mock.http.client.MockClientHttpRequest;
 import org.springframework.mock.http.client.MockClientHttpResponse;
+import org.springframework.web.reactive.function.BodyExtractors;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import pe.axiz.core.commons.net.TransportSecurityPolicy;
@@ -38,24 +39,29 @@ import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.core.http.AuthSettings;
 import pe.axiz.core.http.ClientSettings;
 import pe.axiz.core.resilience.TimeoutSettings;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 class ClientResilienceLifecycleTest {
   private static final URI URI_BANK = URI.create("https://bank.invalid");
 
   private static ClientSettings settings(boolean circuit) {
-    return new ClientSettings(
-        "bank",
-        URI_BANK,
-        new TimeoutSettings(Duration.ofSeconds(1), Duration.ofSeconds(1), Duration.ofSeconds(2)),
-        AuthSettings.none(),
-        ClientSettings.RetryMode.NONE,
-        1,
-        circuit ? "default" : null,
-        1,
-        List.of(),
-        10,
-        TransportSecurityPolicy.system());
+    return ClientSettings.builder()
+        .name("bank")
+        .baseUrl(URI_BANK)
+        .timeouts(
+            new TimeoutSettings(
+                Duration.ofSeconds(1), Duration.ofSeconds(1), Duration.ofSeconds(2)))
+        .auth(AuthSettings.none())
+        .retry(ClientSettings.RetryMode.NONE)
+        .maxAttempts(1)
+        .circuitBreaker(circuit ? "default" : null)
+        .maxConcurrentCalls(1)
+        .propagateHeaders(List.of())
+        .maxConnections(10)
+        .transportSecurity(TransportSecurityPolicy.system())
+        .build();
   }
 
   private static AxizRestClientInterceptor interceptor(ClientResilience r) {
@@ -216,7 +222,8 @@ class ClientResilienceLifecycleTest {
         .thenReturn(
             Mono.defer(
                 () -> {
-                  // Permit termination precedes asynchronous draining of the abandoned response.
+                  // La terminación del permiso precede al drenado asíncrono de la respuesta
+                  // abandonada.
                   r.acquire();
                   r.release(System.nanoTime(), null, 200);
                   return Mono.error(cleanup);
@@ -267,5 +274,26 @@ class ClientResilienceLifecycleTest {
                 .statusCode());
         capacityIsExactlyOne(r);
       }
+  }
+
+  @Test
+  void rawResponseRetainsCapacityUntilBodyConsumptionOrCancellation() {
+    var r = new ClientResilience(settings(false), CircuitBreakerRegistry.ofDefaults());
+    try (var auth = OutboundAuth.create(r.settings(), null, Duration.ZERO, Clock.systemUTC())) {
+      var filter = new AxizExchangeFilter(r, auth, null, false);
+      var request = ClientRequest.create(HttpMethod.POST, URI_BANK).build();
+      var response =
+          filter
+              .filter(
+                  request,
+                  ignored ->
+                      Mono.just(ClientResponse.create(HttpStatus.OK).body(Flux.never()).build()))
+              .block();
+      assertThrows(ExternalServiceException.class, r::acquire);
+      StepVerifier.create(response.body(BodyExtractors.toDataBuffers())).thenCancel().verify();
+      r.acquire();
+      assertThrows(ExternalServiceException.class, r::acquire);
+      r.release(System.nanoTime(), null, 200);
+    }
   }
 }

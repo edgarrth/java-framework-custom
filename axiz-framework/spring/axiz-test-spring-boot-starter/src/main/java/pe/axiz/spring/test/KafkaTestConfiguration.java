@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.DynamicPropertyRegistrar;
 import org.testcontainers.kafka.KafkaContainer;
 
-/** Kafka for messaging tests; IAM authentication is switched off for the local broker. */
+/** Kafka para pruebas de mensajería; la autenticación IAM se desactiva para el broker local. */
 @TestConfiguration(proxyBeanMethods = false)
 public class KafkaTestConfiguration {
 
@@ -20,6 +20,7 @@ public class KafkaTestConfiguration {
   DynamicPropertyRegistrar axizKafkaProperties(KafkaContainer kafka) {
     return registry -> {
       registry.add("axiz.messaging.kafka.bootstrap-servers", kafka::getBootstrapServers);
+      registry.add("axiz.messaging.kafka.authentication", () -> "configured");
       registry.add("axiz.messaging.kafka.iam", () -> "false");
     };
   }

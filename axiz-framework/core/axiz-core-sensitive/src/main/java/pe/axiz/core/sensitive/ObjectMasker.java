@@ -9,15 +9,17 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Converts objects into masked, JSON-like structures (maps, lists, strings, numbers) for logs and
- * audit. Annotated fields ({@link Sensitive}, {@link Mask}) and well-known key names are masked by
- * the policy. Depth and collection sizes are bounded to protect logs.
+ * Convierte objetos en estructuras enmascaradas de tipo JSON (mapas, listas, cadenas, números) para
+ * logs y auditoría. Los campos anotados ({@link Sensitive}, {@link Mask}) y los nombres de clave
+ * conocidos se enmascaran según la política. La profundidad y el tamaño de las colecciones están
+ * acotados para proteger los logs.
  */
 public final class ObjectMasker {
 
@@ -25,75 +27,139 @@ public final class ObjectMasker {
   private static final int MAX_ITEMS = 50;
   private static final int MAX_STRING = 2000;
 
+  private static final String UNREADABLE = "<unreadable>";
+  private static final String COLLISION = "<collision>";
   private final MaskingPolicy policy;
   private final SensitiveKeys keys;
+  private final boolean detectPan;
   private final Map<Class<?>, List<Property>> cache = new ConcurrentHashMap<>();
 
-  public ObjectMasker(MaskingPolicy policy, SensitiveKeys keys) {
-    this.policy = policy;
-    this.keys = keys;
+  public ObjectMasker(MaskingPolicy policy, SensitiveKeys keys, boolean detectPan) {
+    this.policy = Objects.requireNonNull(policy);
+    this.keys = Objects.requireNonNull(keys);
+    this.detectPan = detectPan;
   }
 
   public static ObjectMasker defaults() {
-    return new ObjectMasker(MaskingPolicy.defaults(), SensitiveKeys.defaults());
+    return new ObjectMasker(MaskingPolicy.defaults(), SensitiveKeys.defaults(), true);
   }
 
   /**
-   * Masked representation of any value for the given output.
-   *
-   * @param value object to describe
-   * @param channel output channel
-   * @return maps, lists, strings, numbers, booleans or null
+   * Representación y cantidad de valores ilegibles o en colisión reemplazados por marcadores
+   * seguros.
    */
+  public record Description(@Nullable Object value, int sanitized) {}
+
   public @Nullable Object describe(@Nullable Object value, OutputChannel channel) {
-    return describe(value, channel, 0);
+    return describe(value, channel, 0, new Counter());
   }
 
-  /**
-   * Whether the values of a key are masked on the channel; a structured value (an array or an
-   * object in JSON) under such a key is hidden whole.
-   *
-   * @param key property or header name
-   * @param channel where the value goes
-   * @return true for a sensitive key at the level the channel masks
-   */
+  public @Nullable Object describeNamed(
+      String name,
+      @Nullable Object value,
+      @Nullable SensitiveField declared,
+      OutputChannel channel) {
+    return describeCounting(name, value, declared, channel).value();
+  }
+
+  public Description describeCounting(
+      String name,
+      @Nullable Object value,
+      @Nullable SensitiveField declared,
+      OutputChannel channel) {
+    Counter count = new Counter();
+    Object result = named(name, value, declared, channel, 0, count);
+    return new Description(result, count.sanitized);
+  }
+
   public boolean masksKey(String key, OutputChannel channel) {
-    Optional<SensitiveField> field = keys.find(key);
-    return field.isPresent() && policy.masks(field.get().level(), channel);
+    return keys.find(key).map(f -> policy.masks(f.level(), channel)).orElse(false);
   }
 
   public @Nullable String maskByKey(String key, @Nullable String value, OutputChannel channel) {
+    if (value == null) return null;
     Optional<SensitiveField> field = keys.find(key);
-    return field.isPresent()
-        ? policy.apply(value, field.get().level(), field.get().mask(), channel)
-        : value;
+    String masked =
+        field.isPresent()
+            ? policy.apply(value, field.get().level(), field.get().mask(), channel)
+            : value;
+    return masked == null ? null : maskText(masked, channel);
   }
 
-  private @Nullable Object describe(@Nullable Object value, OutputChannel channel, int depth) {
-    if (value == null || value instanceof Number || value instanceof Boolean) {
-      return value;
+  /** Búsqueda de PAN para destinos de texto; independiente de la clasificación por clave. */
+  public String maskText(String value, OutputChannel channel) {
+    return detectPan && channel != OutputChannel.RESPONSE ? PanDetector.redact(value) : value;
+  }
+
+  /**
+   * Solo los tipos numéricos exactos soportados; las implementaciones de Number desconocidas no se
+   * evalúan.
+   */
+  public Object maskNumber(Number value, OutputChannel channel) {
+    return detectPan && channel != OutputChannel.RESPONSE ? PanDetector.redactNumber(value) : value;
+  }
+
+  private @Nullable Object named(
+      String name,
+      @Nullable Object value,
+      @Nullable SensitiveField declared,
+      OutputChannel channel,
+      int depth,
+      Counter count) {
+    try {
+      if (value == null) return null;
+      if (value instanceof SelfMasking self) return self.masked();
+      SensitiveField field = declared != null ? declared : keys.find(name).orElse(null);
+      if (field != null && policy.masks(field.level(), channel)) {
+        return composite(value)
+            ? Masker.FULL_MASK
+            : policy.apply(String.valueOf(value), field.level(), field.mask(), channel);
+      }
+      return describe(value, channel, depth, count);
+    } catch (RuntimeException error) {
+      count.sanitized++;
+      return UNREADABLE;
     }
+  }
+
+  private @Nullable Object describe(
+      @Nullable Object value, OutputChannel channel, int depth, Counter count) {
+    try {
+      return describeValue(value, channel, depth, count);
+    } catch (RuntimeException error) {
+      count.sanitized++;
+      return UNREADABLE;
+    }
+  }
+
+  private @Nullable Object describeValue(
+      @Nullable Object value, OutputChannel channel, int depth, Counter count) {
+    if (value == null || value instanceof Boolean) return value;
+    if (value instanceof SelfMasking self) return self.masked();
+    if (value instanceof Number number) return maskNumber(number, channel);
     if (value instanceof CharSequence
         || value instanceof Enum<?>
         || value instanceof TemporalAccessor
         || value instanceof Character
         || value instanceof UUID) {
-      String s = value.toString();
-      return s.length() > MAX_STRING ? s.substring(0, MAX_STRING) + "...(truncated)" : s;
+      String text = value.toString();
+      text = text.length() > MAX_STRING ? text.substring(0, MAX_STRING) + "...(truncated)" : text;
+      return maskText(text, channel);
     }
-    if (depth >= MAX_DEPTH) {
-      return "...";
-    }
+    if (depth >= MAX_DEPTH) return "...";
     if (value instanceof Map<?, ?> map) {
       Map<String, Object> out = new LinkedHashMap<>();
       int i = 0;
-      for (Map.Entry<?, ?> e : map.entrySet()) {
+      for (Map.Entry<?, ?> entry : map.entrySet()) {
         if (i++ >= MAX_ITEMS) {
-          out.put("...", (map.size() - MAX_ITEMS) + " more");
+          out.put("...", "more items");
           break;
         }
-        String k = String.valueOf(e.getKey());
-        out.put(k, maskEntry(k, e.getValue(), channel, depth));
+        String key = String.valueOf(entry.getKey());
+        if (out.containsKey(key)) {
+          out.put(key, COLLISION);
+          count.sanitized++;
+        } else out.put(key, named(key, entry.getValue(), null, channel, depth + 1, count));
       }
       return out;
     }
@@ -102,41 +168,44 @@ public final class ObjectMasker {
       int i = 0;
       for (Object item : collection) {
         if (i++ >= MAX_ITEMS) {
-          out.add("...(" + (collection.size() - MAX_ITEMS) + " more)");
+          out.add("...(more items)");
           break;
         }
-        out.add(describe(item, channel, depth + 1));
+        out.add(describe(item, channel, depth + 1, count));
       }
       return out;
     }
-    if (value instanceof byte[] bytes) {
-      return "<" + bytes.length + " bytes>";
-    }
-    if (value.getClass().isArray()) {
-      return "<array>";
-    }
+    if (value instanceof byte[] bytes) return "<" + bytes.length + " bytes>";
+    if (value.getClass().isArray()) return "<array>";
     Map<String, Object> out = new LinkedHashMap<>();
-    for (Property p : properties(value.getClass())) {
-      Object raw = p.read(value);
-      if (p.sensitive() != null) {
-        SensitiveField sf = p.sensitive();
-        out.put(
-            p.name(),
-            raw == null ? null : policy.apply(String.valueOf(raw), sf.level(), sf.mask(), channel));
-      } else {
-        out.put(p.name(), maskEntry(p.name(), raw, channel, depth));
+    for (Property property : properties(value.getClass())) {
+      if (out.size() >= MAX_ITEMS) {
+        out.put("...", "more properties");
+        break;
       }
+      if (out.containsKey(property.name())) {
+        out.put(property.name(), COLLISION);
+        count.sanitized++;
+      } else
+        out.put(
+            property.name(),
+            named(
+                property.name(),
+                property.read(value),
+                property.sensitive(),
+                channel,
+                depth + 1,
+                count));
     }
     return out;
   }
 
-  private @Nullable Object maskEntry(
-      String key, @Nullable Object raw, OutputChannel channel, int depth) {
-    Optional<SensitiveField> byKey = keys.find(key);
-    if (byKey.isPresent() && raw != null && !(raw instanceof Map) && !(raw instanceof Collection)) {
-      return policy.apply(String.valueOf(raw), byKey.get().level(), byKey.get().mask(), channel);
-    }
-    return describe(raw, channel, depth + 1);
+  private static boolean composite(Object value) {
+    return value instanceof Map || value instanceof Collection || value.getClass().isArray();
+  }
+
+  private static final class Counter {
+    private int sanitized;
   }
 
   private List<Property> properties(Class<?> type) {
@@ -204,7 +273,7 @@ public final class ObjectMasker {
         }
         return null;
       } catch (ReflectiveOperationException | RuntimeException e) {
-        return "<unreadable>";
+        throw new IllegalStateException("Property cannot be inspected", e);
       }
     }
   }

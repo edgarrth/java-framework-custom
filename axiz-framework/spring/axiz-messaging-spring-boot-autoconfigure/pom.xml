@@ -14,18 +14,19 @@
   <name>axiz :: spring :: messaging :: autoconfigure</name>
   <description>CloudEvents publishers and consumers for MSK, SQS and SNS with retries, DLQ and inbox integration (auto-configuration)</description>
 
-  <properties>
+  <properties><axiz.provider.boundaries.skip>false</axiz.provider.boundaries.skip>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
     <axiz.module.name>pe.axiz.spring.messaging</axiz.module.name>
   </properties>
 
   <dependencies>
-    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-kafka</artifactId><optional>true</optional></dependency>
-    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kafka-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
-    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-observability-aws</artifactId><version>${project.version}</version></dependency>
-    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-aws</artifactId><version>${project.version}</version></dependency>
-    <dependency><groupId>org.springframework.kafka</groupId><artifactId>spring-kafka-test</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-resilience</artifactId><version>${project.version}</version></dependency>
+
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-concurrent</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-context</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>io.micrometer</groupId><artifactId>micrometer-core</artifactId></dependency>
     <dependency><groupId>org.springframework</groupId><artifactId>spring-webflux</artifactId><scope>test</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-foundation-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
@@ -61,43 +62,10 @@
       <artifactId>micrometer-observation</artifactId>
     </dependency>
     <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-adapter-messaging-kafka</artifactId>
-      <version>${project.version}</version>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-adapter-messaging-sqs</artifactId>
-      <version>${project.version}</version>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-adapter-messaging-sns</artifactId>
-      <version>${project.version}</version>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
       <groupId>tools.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.springframework.kafka</groupId>
-      <artifactId>spring-kafka</artifactId>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>sqs</artifactId>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>sns</artifactId>
-      <optional>true</optional>
-    </dependency>
-    <!-- real Micrometer tracing handlers (with a test tracer) for the trace through the outbox -->
+    <!-- handlers reales de tracing de Micrometer (con un tracer de prueba) para la traza a través del outbox -->
     <dependency>
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-tracing-test</artifactId>

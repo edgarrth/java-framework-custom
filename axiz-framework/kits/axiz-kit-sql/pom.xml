@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-technology</artifactId><version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-technology/pom.xml</relativePath></parent>
+  <artifactId>axiz-kit-sql</artifactId>
+  <name>axiz :: kit :: sql</name>
+  <description>SQL identifier validation independent of database drivers</description>
+  <properties><axiz.module.name>pe.axiz.kit.sql</axiz.module.name><axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity></properties>
+  <dependencies></dependencies>
+</project>

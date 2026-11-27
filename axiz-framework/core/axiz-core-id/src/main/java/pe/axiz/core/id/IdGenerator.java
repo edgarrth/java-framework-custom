@@ -1,6 +1,6 @@
 package pe.axiz.core.id;
 
-/** Generates unique identifiers as strings. */
+/** Genera identificadores únicos como cadenas. */
 @FunctionalInterface
 public interface IdGenerator {
 

@@ -15,7 +15,7 @@ resources:
   limits:
     memory: 512Mi
 env:
-# Local environments skip automatic cluster imports; load the chart mounts explicitly.
+# Los entornos locales omiten las importaciones automáticas del clúster; los montajes del chart se cargan de forma explícita.
 - name: SPRING_CONFIG_IMPORT
   value: optional:file:/etc/axiz/config/common/application.yaml,file:/etc/axiz/config/service/application.yaml,file:/etc/axiz/config/errors/application.yaml
 - name: AWS_ACCESS_KEY_ID

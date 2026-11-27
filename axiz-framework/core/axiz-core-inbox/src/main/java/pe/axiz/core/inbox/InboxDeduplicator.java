@@ -7,9 +7,10 @@ import java.util.Objects;
 import pe.axiz.core.messaging.Deduplicator;
 
 /**
- * Connects the inbox to the event dispatcher: a message is processed once per consumer within the
- * retention period. The lease protects against two deliveries processing at the same time, the
- * owner token against a late delivery changing the registration of the one that took it over.
+ * Conecta el inbox con el despachador de eventos: un mensaje se procesa una vez por consumidor
+ * dentro del periodo de retención. El lease protege frente a dos entregas que procesan al mismo
+ * tiempo, y el token de propietario frente a una entrega tardía que cambie el registro de la que
+ * tomó el control.
  */
 public final class InboxDeduplicator implements Deduplicator {
 
@@ -25,6 +26,9 @@ public final class InboxDeduplicator implements Deduplicator {
     this.clock = Objects.requireNonNull(clock);
     if (lease.isNegative() || lease.isZero()) {
       throw new IllegalArgumentException("lease must be positive");
+    }
+    if (retention.compareTo(lease) <= 0) {
+      throw new IllegalArgumentException("retention must exceed the processing lease");
     }
   }
 

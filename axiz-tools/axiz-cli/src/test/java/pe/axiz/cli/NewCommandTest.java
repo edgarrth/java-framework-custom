@@ -111,4 +111,55 @@ class NewCommandTest {
     assertEquals(ExitCodes.PROBLEMS, code);
     assertTrue(h.output().contains("--force"));
   }
+
+  @Test
+  void hyphenatedServiceKeepsItsNamePackageAndActionableNextSteps(@TempDir Path tmp)
+      throws Exception {
+    var cli = new CliHarness();
+    assertEquals(
+        0,
+        cli.run(
+            "new",
+            "customer-orders",
+            "--archetype",
+            "business",
+            "--openapi",
+            CliHarness.contract(tmp).toString(),
+            "--output",
+            tmp.toString()),
+        cli.output());
+    assertEquals(
+        "pe.axiz.customer.orders",
+        ProjectManifest.read(tmp.resolve("customer-orders")).basePackage());
+    for (String line :
+        List.of(
+            "Created business / hexagonal / servlet",
+            "Next steps:",
+            "cd customer-orders",
+            "docker compose up -d && mvn verify",
+            "axiz doctor")) assertTrue(cli.output().contains(line), cli.output());
+  }
+
+  @Test
+  void invalidContractIsReportedAndNeverWritesAProject(@TempDir Path tmp) throws Exception {
+    Path contract = CliHarness.contract(tmp);
+    Files.writeString(
+        contract,
+        Files.readString(contract).replace("operationId: getOrder", "# missing identifier"));
+    var cli = new CliHarness();
+    assertEquals(
+        ExitCodes.PROBLEMS,
+        cli.run(
+            "new",
+            "orders",
+            "--archetype",
+            "business",
+            "--openapi",
+            contract.toString(),
+            "--output",
+            tmp.toString()),
+        cli.output());
+    assertTrue(cli.output().contains("operationId"), cli.output());
+    assertTrue(Files.notExists(tmp.resolve("orders")));
+  }
 }

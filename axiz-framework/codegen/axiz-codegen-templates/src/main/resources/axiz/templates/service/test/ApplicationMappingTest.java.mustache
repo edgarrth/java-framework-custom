@@ -5,18 +5,18 @@ import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
 
-/** Protects the boundary between HTTP models and owned application contracts. */
+/** Protege la frontera entre los modelos HTTP y los contratos de aplicación propios. */
 class {{item.className}}ApplicationMappingTest {
   @Test
   void requestExampleSurvivesApplicationMapping() throws Exception {
     var mapper = JsonMapper.builder().build();
     try (var input = getClass().getResourceAsStream("/contract-examples/{{item.operationId}}.json")) {
       var transport = mapper.readValue(Objects.requireNonNull(input),
-          {{project.basePackage}}.api.model.{{item.requestType}}.class);
+          {{api.modelPackage}}.{{item.requestType}}.class);
       var application = mapper.convertValue(transport,
           {{project.basePackage}}.application.model.{{item.requestType}}.class);
       var restored = mapper.convertValue(application,
-          {{project.basePackage}}.api.model.{{item.requestType}}.class);
+          {{api.modelPackage}}.{{item.requestType}}.class);
       assertEquals(mapper.valueToTree(transport), mapper.valueToTree(restored));
     }
   }

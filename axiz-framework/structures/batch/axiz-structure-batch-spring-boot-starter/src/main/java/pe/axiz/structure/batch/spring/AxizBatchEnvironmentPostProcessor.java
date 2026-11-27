@@ -9,8 +9,9 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 
 /**
- * Batch defaults: no web server (CronJob), the job runs on startup and the process exits with its
- * status; the Spring Batch schema is managed by Flyway outside local runs.
+ * Valores por defecto de batch: sin servidor web (CronJob), el job se ejecuta al arrancar y el
+ * proceso termina con su estado; fuera de las ejecuciones locales, Flyway gestiona el esquema de
+ * Spring Batch.
  */
 public class AxizBatchEnvironmentPostProcessor implements EnvironmentPostProcessor, Ordered {
 

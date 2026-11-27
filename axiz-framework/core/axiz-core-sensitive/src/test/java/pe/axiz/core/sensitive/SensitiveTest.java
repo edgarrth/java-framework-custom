@@ -35,16 +35,16 @@ class SensitiveTest {
   @CsvSource({
     "EMAIL, ana.perez@example.com, a********@example.com",
     "PHONE, +51987654321, *********321",
-    "DOCUMENT, 12345678, ****5678",
+    "DOCUMENT, 12345678, ******78",
     "CARD, 4111-1111-1111-1111, 411111******1111",
-    "CARD, 123456, **3456",
-    "PARTIAL, secret, s****t",
-    "PARTIAL, ab, **",
-    "NAME, Ana Torres, A** T*****",
-    "NAME, María-José Pérez, M****-J*** P****",
+    "CARD, 123456, ****",
+    "PARTIAL, secret, ****",
+    "PARTIAL, ab, ****",
+    "NAME, Ana Torres, ****",
+    "NAME, María-José Pérez, ****",
     "FULL, anything, ****",
     "NONE, visible, visible",
-    "EMAIL, invalid, i*****d"
+    "EMAIL, invalid, ****"
   })
   void maskingStrategies(MaskType type, String input, String expected) {
     assertEquals(expected, Masker.mask(input, type));
@@ -57,15 +57,15 @@ class SensitiveTest {
         "****",
         policy.apply("1234", SensitivityLevel.CRITICAL, MaskType.NONE, OutputChannel.RESPONSE));
     assertEquals(
-        "a**@x.pe",
+        "****@x.pe",
         policy.apply("ana@x.pe", SensitivityLevel.MEDIUM, MaskType.EMAIL, OutputChannel.RESPONSE));
     assertEquals(
         "code",
         policy.apply("code", SensitivityLevel.LOW, MaskType.PARTIAL, OutputChannel.RESPONSE));
     assertEquals(
-        "c**e", policy.apply("code", SensitivityLevel.LOW, MaskType.PARTIAL, OutputChannel.LOG));
+        "****", policy.apply("code", SensitivityLevel.LOW, MaskType.PARTIAL, OutputChannel.LOG));
     assertEquals(
-        "c**e", policy.apply("code", SensitivityLevel.LOW, MaskType.NONE, OutputChannel.LOG));
+        "****", policy.apply("code", SensitivityLevel.LOW, MaskType.NONE, OutputChannel.LOG));
     assertNull(policy.apply(null, SensitivityLevel.HIGH, MaskType.FULL, OutputChannel.LOG));
     assertEquals("****", Masker.mask(null, MaskType.NONE));
   }
@@ -84,8 +84,8 @@ class SensitiveTest {
     Map<String, Object> log =
         (Map<String, Object>) ObjectMasker.defaults().describe(c, OutputChannel.LOG);
     assertEquals("Ana", log.get("name"));
-    assertEquals("a**@example.com", log.get("email"));
-    assertEquals("****5678", log.get("document"));
+    assertEquals("****@example.com", log.get("email"));
+    assertEquals("******78", log.get("document"));
     assertEquals("****", log.get("password"));
     Map<String, Object> extra = (Map<String, Object>) log.get("extra");
     assertEquals("****", extra.get("cvv"));
@@ -123,7 +123,7 @@ class SensitiveTest {
         "{\"user\":{\"email\":\"ana@example.com\",\"password\":\"s3cr\\\"et\"},\"pan\":\"4111111111111111\","
             + "\"amount\":10.5,\"pin\":1234,\"ok\":true}";
     String masked = new JsonTextMasker(ObjectMasker.defaults()).mask(json, OutputChannel.LOG);
-    assertTrue(masked.contains("\"email\":\"a**@example.com\""), masked);
+    assertTrue(masked.contains("\"email\":\"****@example.com\""), masked);
     assertTrue(masked.contains("\"password\":\"****\""), masked);
     assertTrue(masked.contains("\"pan\":\"411111******1111\""), masked);
     assertTrue(masked.contains("\"pin\":\"****\""), masked);
@@ -148,8 +148,8 @@ class SensitiveTest {
 
   @Test
   void escapedMemberNamesAreDecodedBeforeTheyAreCompared() {
-    assertEquals("{\"\\u0070assword\":\"****\"}", masked("{\"\\u0070assword\":\"SECRET-1\"}"));
-    assertEquals("{\"pass\\u0077ord\":\"****\"}", masked("{\"pass\\u0077ord\":\"SECRET-1\"}"));
+    assertEquals("{\"password\":\"****\"}", masked("{\"\\u0070assword\":\"SECRET-1\"}"));
+    assertEquals("{\"password\":\"****\"}", masked("{\"pass\\u0077ord\":\"SECRET-1\"}"));
     assertEquals("{\"note\\\"x\":\"free\"}", masked("{\"note\\\"x\":\"free\"}"));
     String longKey = "description" + "x".repeat(200);
     assertEquals(
@@ -174,9 +174,9 @@ class SensitiveTest {
   void stringsAreDecodedBeforeTheyAreMasked() {
     assertEquals("{\"pan\":\"411111******1111\"}", masked("{\"pan\":\"4111\\u003111111111111\"}"));
     assertEquals(
-        "{\"note\":\"a\\u0041\\n\\/\"}",
+        "{\"note\":\"aA\\n/\"}",
         masked("{\"note\":\"a\\u0041\\n\\/\"}"),
-        "values that are not masked keep their escapes");
+        "unmasked text retains its value with canonical escaping");
     assertEquals("{\"pin\":\"****\"}", masked("{\"pin\":\"12\\t34\"}"));
   }
 
@@ -184,7 +184,10 @@ class SensitiveTest {
   void numbersBooleansAndWhitespaceFollowTheJsonGrammar() {
     for (String number : List.of("0", "-0", "1234", "-12.5e+3", "1E2", "7.25", "3e-7")) {
       assertEquals("{\"pin\":\"****\"}", masked("{\"pin\":" + number + "}"), number);
-      assertEquals("{\"n\":" + number + "}", masked("{\"n\":" + number + "}"), number);
+      assertEquals(
+          "{\"n\":" + new BigDecimal(number).toString() + "}",
+          masked("{\"n\":" + number + "}"),
+          number);
     }
     assertEquals("{\"pin\":\"****\",\"ok\":false}", masked("{\"pin\":true,\"ok\":false}"));
     assertEquals(
@@ -243,7 +246,8 @@ class SensitiveTest {
             MaskingPolicy.defaults(),
             SensitiveKeys.withExtra(
                 Map.of(
-                    "memo", new SensitiveField("memo", SensitivityLevel.HIGH, MaskType.PARTIAL))));
+                    "memo", new SensitiveField("memo", SensitivityLevel.HIGH, MaskType.PARTIAL))),
+            true);
     String out =
         new JsonTextMasker(masker)
             .mask("{\"memo\":\"ab\\\"\\\\\\n\\u0001cdef\"}", OutputChannel.LOG);
@@ -259,8 +263,8 @@ class SensitiveTest {
             MaskingPolicy.defaults(),
             SensitiveKeys.withExtra(
                 Map.of(
-                    "segment",
-                    new SensitiveField("segment", SensitivityLevel.LOW, MaskType.FULL))));
+                    "segment", new SensitiveField("segment", SensitivityLevel.LOW, MaskType.FULL))),
+            true);
     JsonTextMasker json = new JsonTextMasker(masker);
     assertEquals(
         "{\"segment\":[\"retail\"]}",
@@ -282,8 +286,8 @@ class SensitiveTest {
             Map.of(
                 "customer-code",
                 new SensitiveField("customer-code", SensitivityLevel.HIGH, MaskType.DOCUMENT)));
-    ObjectMasker masker = new ObjectMasker(MaskingPolicy.defaults(), keys);
-    assertEquals("*****6789", masker.maskByKey("CUSTOMER_CODE", "123456789", OutputChannel.LOG));
+    ObjectMasker masker = new ObjectMasker(MaskingPolicy.defaults(), keys, true);
+    assertEquals("*******89", masker.maskByKey("CUSTOMER_CODE", "123456789", OutputChannel.LOG));
     assertEquals("free", masker.maskByKey("note", "free", OutputChannel.LOG));
   }
 }

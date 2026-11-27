@@ -14,8 +14,8 @@ import java.util.Objects;
 import pe.axiz.core.featureflags.FeatureFlags;
 
 /**
- * OpenFeature provider backed by the configured flags. Boolean and string (variant) flags are
- * supported; other types return the default value.
+ * Proveedor de OpenFeature respaldado por los flags configurados. Se admiten flags booleanos y de
+ * texto (variante); los demás tipos devuelven el valor por defecto.
  */
 public class AxizOpenFeatureProvider implements FeatureProvider {
 
@@ -63,9 +63,9 @@ public class AxizOpenFeatureProvider implements FeatureProvider {
   }
 
   /**
-   * An unknown flag yields the caller's default and says so (OpenFeature {@code FLAG_NOT_FOUND}),
-   * instead of silently answering "off": a typo in a flag name must be visible, not a behaviour
-   * change.
+   * Un flag desconocido produce el valor por defecto del invocante y lo indica (OpenFeature {@code
+   * FLAG_NOT_FOUND}), en lugar de responder "off" en silencio: un error tipográfico en el nombre de
+   * un flag debe ser visible, no un cambio de comportamiento.
    */
   private static <T> ProviderEvaluation<T> notFound(String key, T defaultValue) {
     return ProviderEvaluation.<T>builder()

@@ -7,8 +7,8 @@ import pe.axiz.core.domain.DomainEvent;
 import pe.axiz.structure.hexagonal.DomainEventSink;
 
 /**
- * In-process publication after commit through Spring application events, used when the service has
- * no outbox (events stay inside the service).
+ * Publicación en proceso tras el commit mediante eventos de aplicación de Spring, usada cuando el
+ * servicio no tiene outbox (los eventos permanecen dentro del servicio).
  */
 public final class ApplicationEventDomainEventSink implements DomainEventSink {
 

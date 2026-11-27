@@ -67,7 +67,7 @@ class S3ObjectStorageTest {
         throw NoSuchKeyException.builder().message("no").build();
       }
       if (r.key().equals("bare")) {
-        // S3 compatible stores may omit the type and the length
+        // los almacenes compatibles con S3 pueden omitir el tipo y la longitud
         return HeadObjectResponse.builder().metadata(Map.of()).build();
       }
       return HeadObjectResponse.builder()
@@ -101,7 +101,7 @@ class S3ObjectStorageTest {
     @Override
     public ListObjectsV2Response listObjectsV2(ListObjectsV2Request r) {
       listings.add(r);
-      // two pages of two keys
+      // dos páginas de dos claves
       if (r.continuationToken() == null) {
         return ListObjectsV2Response.builder()
             .contents(
@@ -220,7 +220,7 @@ class S3ObjectStorageTest {
       assertEquals(List.of("axiz-files/in/old.txt"), s3.deleted);
       assertThrows(IllegalArgumentException.class, () -> storage.delete("../etc"));
 
-      // the listing follows the pages and stops at the maximum
+      // el listado sigue las páginas y se detiene en el máximo
       assertEquals(List.of("in/a", "in/b", "in/c"), storage.list("in/", 3));
       assertEquals("in/", s3.listings.get(0).prefix());
       assertEquals(3, s3.listings.get(0).maxKeys());

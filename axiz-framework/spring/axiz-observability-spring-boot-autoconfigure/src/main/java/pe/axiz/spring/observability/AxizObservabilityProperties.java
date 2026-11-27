@@ -8,11 +8,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
- * Observability conventions ({@code axiz.observability.*}).
+ * Convenciones de observabilidad ({@code axiz.observability.*}).
  *
- * @param deniedAttributes extra attribute keys never exported (PII protection)
- * @param ignoredPaths inbound paths not observed (probes, metrics scraping)
- * @param contextAttributes whether correlation id, channel and tenant are added to spans
+ * @param deniedAttributes claves de atributo adicionales que nunca se exportan (protección de PII)
+ * @param ignoredPaths rutas entrantes que no se observan (sondas, scraping de métricas)
+ * @param contextAttributes indica si se añaden a los spans el id de correlación, el canal y el
+ *     tenant
  */
 @ConfigurationProperties("axiz.observability")
 public record AxizObservabilityProperties(

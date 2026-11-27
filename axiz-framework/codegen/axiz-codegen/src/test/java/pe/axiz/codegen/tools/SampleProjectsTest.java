@@ -118,12 +118,16 @@ class SampleProjectsTest {
         try (var sources = Files.walk(tmp.resolve(name).resolve("src/test/java"))) {
           var boot =
               sources
-                  .filter(path -> path.getFileName().toString().endsWith("ApplicationTest.java"))
+                  .filter(
+                      path -> path.getFileName().toString().endsWith("ApplicationTestSupport.java"))
                   .findFirst()
                   .orElseThrow();
           String testSource = Files.readString(boot);
           for (String setting :
               List.of(
+                  "axiz.security.issuers[0].issuer=https://issuer.test",
+                  "axiz.security.issuers[0].jwk-set-uri=https://issuer.test/jwks",
+                  "axiz.security.issuers[0].audiences[0]=test",
                   "axiz.config.environment=test",
                   "axiz.transport.allow-plain-http=true",
                   "axiz.transport.allow-insecure-data-stores=true")) {
@@ -131,6 +135,22 @@ class SampleProjectsTest {
                 testSource.contains(setting),
                 name + " must declare its test transport policy: " + setting);
           }
+        }
+      }
+      if (!project.persistence().equals("none")) {
+        Path acceptance =
+            tmp.resolve(name)
+                .resolve("src/test/java")
+                .resolve(project.basePackage().replace('.', '/'))
+                .resolve("ValidationRecordPersistenceTest.java");
+        String persistenceTest = Files.readString(acceptance);
+        assertTrue(persistenceTest.contains("storesReadsUpdatesAndDeletes"), name);
+        assertTrue(persistenceTest.contains("repository.findById"), name);
+        if (project.persistence().equals("dynamodb")) {
+          assertTrue(persistenceTest.contains("byPartition"), name);
+          assertTrue(persistenceTest.contains("isGreaterThan(version)"), name);
+        } else {
+          assertTrue(persistenceTest.contains("rename(\"updated\")"), name);
         }
       }
       if (project.cqrs()

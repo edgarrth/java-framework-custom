@@ -1,6 +1,7 @@
-# Releases (shared axiz workflow with release-please): every merge to main updates a release pull
-# request with the next version and the changelog from Conventional Commits; merging it creates the
-# tag v<x.y.z>, which runs build-only ci.yaml. Promotion is a separate deploy.yaml invocation.
+# Releases (workflow compartido de axiz con release-please): cada merge a main actualiza un pull
+# request de release con la siguiente versión y el changelog a partir de Conventional Commits; al
+# fusionarlo se crea el tag v<x.y.z>, que ejecuta ci.yaml y publica. La promoción entre ambientes es
+# una ejecución separada de deploy.yaml.
 name: release
 
 on:
@@ -14,30 +15,10 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  axiz-workflows-trust:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 3
-    permissions:
-      contents: read
-    steps:
-      - name: Verify immutable Axiz workflow release
-        env:
-          GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
-          GH_HOST: github.com
-          AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0
-        shell: bash
-        run: |
-          set -euo pipefail
-          release=$(gh api "repos/edgarrth/java-framework-custom/releases/tags/$AXIZ_WORKFLOWS_VERSION")
-          jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
-
   release:
     permissions:
       contents: write
-    needs: axiz-workflows-trust
-    # Immutable internal release: axiz-workflows-trust must succeed first.
-    # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-    uses: edgarrth/java-framework-custom/.github/workflows/release.yaml@axiz-workflows-v2.0.0
+    uses: edgarrth/java-framework-custom/.github/workflows/release.yaml@axiz-workflows-v2.0.0 # x-release-please-version
     secrets:
       RELEASE_APP_CLIENT_ID: ${{ secrets.RELEASE_APP_CLIENT_ID }}
       RELEASE_APP_PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}

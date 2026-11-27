@@ -7,16 +7,17 @@ import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Request to notify a recipient with a template. The delivering service owns the providers; this
- * request travels as an event.
+ * Petición para notificar a un destinatario con una plantilla. El servicio que entrega es dueño de
+ * los proveedores; esta petición viaja como evento.
  *
- * @param id request id (deduplication)
- * @param channel channel
- * @param recipient address, phone or device token (masked in logs by key name)
- * @param templateId template identifier
- * @param locale locale of the template
- * @param parameters template parameters (no secrets)
- * @param correlationId correlation id
+ * @param id id de la petición (deduplicación)
+ * @param channel canal
+ * @param recipient dirección, teléfono o token de dispositivo (enmascarado en logs por nombre de
+ *     clave)
+ * @param templateId identificador de la plantilla
+ * @param locale locale de la plantilla
+ * @param parameters parámetros de la plantilla (sin secretos)
+ * @param correlationId id de correlación
  */
 public record NotificationRequest(
     String id,

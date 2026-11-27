@@ -7,8 +7,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks a field, record component or getter as sensitive. The masking policy decides, per output
- * channel, whether the value is shown, masked with {@link #mask()} or removed.
+ * Marca un campo, componente de record o getter como sensible. La política de enmascaramiento
+ * decide, por canal de salida, si el valor se muestra, se enmascara con {@link #mask()} o se
+ * elimina.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -22,6 +23,6 @@ public @interface Sensitive {
 
   SensitivityLevel level() default SensitivityLevel.HIGH;
 
-  /** Mask to use where the value may be partially shown. */
+  /** Máscara a usar donde el valor puede mostrarse en parte. */
   MaskType mask() default MaskType.PARTIAL;
 }

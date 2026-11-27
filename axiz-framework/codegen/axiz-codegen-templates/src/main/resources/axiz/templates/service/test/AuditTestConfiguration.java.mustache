@@ -16,7 +16,10 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sns.SnsClient;
 {{/auditResources.topic}}
 
-/** Creates only test resources, before Spring selects the production AWS auto-configurations. */
+/**
+ * Crea solo recursos de prueba, previo a que Spring seleccione las autoconfiguraciones AWS de
+ * producción.
+ */
 class AuditTestConfiguration implements ApplicationContextInitializer<GenericApplicationContext> {
   @Override
   public void initialize(GenericApplicationContext context) {
@@ -31,7 +34,9 @@ class AuditTestConfiguration implements ApplicationContextInitializer<GenericApp
           .endpointOverride(localstack.getEndpoint())
           .region(Region.of(localstack.getRegion()))
           .credentialsProvider(credentials)
-          .overrideConfiguration(config -> config.apiCallTimeout(Duration.ofSeconds(10)))
+          // LocalStack inicia los servicios de AWS de forma diferida; este cliente solo aprovisiona
+          // recursos de prueba.
+          .overrideConfiguration(config -> config.apiCallTimeout(Duration.ofSeconds(60)))
           .build()) {
         queueUrl = sqs.createQueue(request -> request.queueName("{{project.name}}-audit")).queueUrl();
       }
@@ -42,7 +47,9 @@ class AuditTestConfiguration implements ApplicationContextInitializer<GenericApp
           .endpointOverride(localstack.getEndpoint())
           .region(Region.of(localstack.getRegion()))
           .credentialsProvider(credentials)
-          .overrideConfiguration(config -> config.apiCallTimeout(Duration.ofSeconds(10)))
+          // LocalStack inicia los servicios de AWS de forma diferida; este cliente solo aprovisiona
+          // recursos de prueba.
+          .overrideConfiguration(config -> config.apiCallTimeout(Duration.ofSeconds(60)))
           .build()) {
         topicArn = sns.createTopic(request -> request.name("{{project.name}}-audit")).topicArn();
       }
@@ -64,7 +71,8 @@ class AuditTestConfiguration implements ApplicationContextInitializer<GenericApp
           , "axiz.messaging.destinations.audit=" + topicArn
 {{/auditResources.outboxSns}}
       ).applyTo(context);
-      // Register before production client beans are selected; identity is local to this context.
+      // Se registra previo a la selección de los beans de cliente de producción; la identidad es
+      // local a este contexto.
       context.registerBean("auditTestAwsCredentialsProvider", AwsCredentialsProvider.class, () -> credentials);
       context.getBeanFactory().registerSingleton("auditTestLocalStack", localstack);
       context.getDefaultListableBeanFactory().registerDisposableBean("auditTestLocalStack", localstack::stop);

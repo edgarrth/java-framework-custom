@@ -5,15 +5,15 @@ import pe.axiz.core.saga.SagaStateStore;
 import pe.axiz.payments.process.domain.PaymentProcess;
 import pe.axiz.structure.hexagonal.annotation.UseCase;
 
-/** State of the payment process of an order. */
+/** Estado del proceso de pago de una orden. */
 @UseCase
 public class GetPaymentProcessUseCase
     implements pe.axiz.structure.hexagonal.UseCase<GetPaymentProcessUseCase.Input, PaymentProcess> {
 
   /**
-   * Input of the use case.
+   * Entrada del caso de uso.
    *
-   * @param processId process id (the payment order id)
+   * @param processId id del proceso (el id de la orden de pago)
    */
   public record Input(String processId) {}
 

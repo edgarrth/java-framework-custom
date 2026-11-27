@@ -1,5 +1,5 @@
-# axiz project manifest: read by the axiz CLI (generate, add, contract sync, upgrade, doctor).
-# Keep it in version control; the CLI updates it when it changes the project.
+# Manifiesto del proyecto axiz: lo lee la CLI axiz (generate, add, contract sync, upgrade, doctor).
+# Se versiona en el repositorio; la CLI lo actualiza cuando cambia el proyecto.
 schema: 2
 kind: service
 name: settlement-batch
@@ -15,6 +15,8 @@ contract:
   openapi: null
   asyncapi: null
 capabilities:
+  - config-aws
+  - jpa-aws
   - foundation
   - errors
   - logging
@@ -23,6 +25,8 @@ capabilities:
   - config
   - storage-s3
   - audit
+  - secrets
+  - secrets-file
   - jpa
   - scheduling
 operations:

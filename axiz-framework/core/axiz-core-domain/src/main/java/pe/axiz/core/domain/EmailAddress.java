@@ -4,9 +4,9 @@ import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.identifiers.contact.ContactIdentifiers;
 
 /**
- * Validated, normalized (lowercase) email address.
+ * Dirección de correo validada y normalizada (en minúsculas).
  *
- * @param value address
+ * @param value dirección
  */
 public record EmailAddress(String value) implements ValueObject {
 

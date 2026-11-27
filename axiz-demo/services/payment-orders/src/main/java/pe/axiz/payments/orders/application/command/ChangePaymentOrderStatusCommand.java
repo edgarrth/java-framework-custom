@@ -6,11 +6,11 @@ import pe.axiz.payments.orders.domain.PaymentOrder;
 import pe.axiz.payments.orders.domain.PaymentStatus;
 
 /**
- * Moves an order to its next status.
+ * Mueve una orden a su siguiente estado.
  *
- * @param orderId order
- * @param status target status
- * @param reason why (shown to the customer when rejected)
+ * @param orderId orden
+ * @param status estado de destino
+ * @param reason motivo (se muestra al cliente cuando se rechaza)
  */
 public record ChangePaymentOrderStatusCommand(
     String orderId, PaymentStatus status, @Nullable String reason)

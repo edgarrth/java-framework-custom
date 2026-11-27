@@ -1,9 +1,9 @@
 package pe.axiz.extension.cqrs;
 
 /**
- * Command protected by an idempotency key: a repeated key returns the first result.
+ * Comando protegido por una clave de idempotencia: una clave repetida devuelve el primer resultado.
  *
- * @param <R> result type
+ * @param <R> tipo del resultado
  */
 public interface IdempotentCommand<R> extends Command<R> {
 

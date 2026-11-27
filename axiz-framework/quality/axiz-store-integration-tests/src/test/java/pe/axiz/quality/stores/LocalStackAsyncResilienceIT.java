@@ -23,7 +23,6 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.localstack.LocalStackContainer;
-import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.audit.sqs.SqsAsyncAuditPublisher;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
@@ -41,6 +40,7 @@ import pe.axiz.adapter.storage.s3.S3AsyncObjectStorage;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.commons.TransactionOutcome;
 import pe.axiz.core.messaging.EventEnvelope;
+import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Mono;
@@ -65,12 +65,15 @@ import software.amazon.awssdk.services.ssm.SsmAsyncClient;
 import software.amazon.awssdk.services.ssm.model.ParameterType;
 import software.amazon.awssdk.utils.SdkAutoCloseable;
 
-/** Cancellation and real SDK deadlines through public ports, retaining the framework transport. */
+/**
+ * Cancelación y plazos reales del SDK mediante puertos públicos, conservando el transporte del
+ * framework.
+ */
 @ExtendWith(BlockHoundExtension.class)
 class LocalStackAsyncResilienceIT {
   private static final Duration T = Duration.ofSeconds(80);
   private static final LocalStackContainer LOCALSTACK =
-      new LocalStackContainer(DockerImageName.parse(Docker.LOCALSTACK))
+      TestContainerImages.localstack()
           .withServices("dynamodb", "sqs", "sns", "s3", "kms", "secretsmanager", "ssm");
   private static final List<SdkAutoCloseable> CLIENTS = new ArrayList<>();
   private static final List<Operation> OPERATIONS = new ArrayList<>();
@@ -210,22 +213,26 @@ class LocalStackAsyncResilienceIT {
             "sqs-audit",
             () ->
                 audit.publish(
-                    new AuditEvent(
-                        UUID.randomUUID().toString(),
-                        Instant.now(),
-                        "svc",
-                        "pay",
-                        "account",
-                        "a-1",
-                        AuditEvent.Actor.system(),
-                        AuditEvent.Outcome.SUCCESS,
-                        null,
-                        "correlation",
-                        "test",
-                        null,
-                        Map.of(),
-                        TransactionOutcome.UNKNOWN,
-                        TransactionOutcome.UNKNOWN))));
+                    AuditEvent.builder()
+                        .id(UUID.randomUUID().toString())
+                        .occurredAt(Instant.now())
+                        .service("svc")
+                        .action("pay")
+                        .resourceType("account")
+                        .resourceId("a-1")
+                        .actor(AuditEvent.Actor.system())
+                        .outcome(AuditEvent.Outcome.SUCCESS)
+                        .errorCode(null)
+                        .correlationId("correlation")
+                        .channel("test")
+                        .tenant(null)
+                        .details(Map.of())
+                        .transactionOutcome(TransactionOutcome.UNKNOWN)
+                        .operationOutcome(TransactionOutcome.UNKNOWN)
+                        .persistence(null)
+                        .integrity(null)
+                        .detailsSanitized(0)
+                        .build())));
     OPERATIONS.add(
         new Operation("kms-key", () -> new KmsAsyncDataKeyProvider(kms, key).generate("context")));
     OPERATIONS.add(
@@ -253,21 +260,23 @@ class LocalStackAsyncResilienceIT {
   }
 
   private static EventEnvelope event() {
-    return new EventEnvelope(
-        UUID.randomUUID().toString(),
-        "urn:test",
-        "payment.v1",
-        Instant.now(),
-        "account",
-        "application/json",
-        new byte[] {123, 125},
-        Map.of());
+    return EventEnvelope.builder()
+        .id(UUID.randomUUID().toString())
+        .source("urn:test")
+        .type("payment.v1")
+        .time(Instant.now())
+        .subject("account")
+        .dataContentType("application/json")
+        .data(new byte[] {123, 125})
+        .extensions(Map.of())
+        .build();
   }
 
   @TestFactory
   List<DynamicTest> cancellationAndDeadline() {
-    // Freeze one real backend, send all operations concurrently and wait for their configured
-    // 60s API deadlines together. The test keeps the actual production timeout configuration.
+    // Se congela un backend real, se envían todas las operaciones de forma concurrente y se esperan
+    // juntos sus plazos de API configurados de 60s. La prueba conserva la configuración real de
+    // timeouts de producción.
     return List.of(
         DynamicTest.dynamicTest(
             "every port cancels and reaches its SDK deadline",

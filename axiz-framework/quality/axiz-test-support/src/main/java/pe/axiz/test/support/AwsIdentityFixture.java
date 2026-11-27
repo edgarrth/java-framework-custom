@@ -12,7 +12,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/** Loopback-only STS/SSM/IMDS fixture with temporary, fictitious web identity credentials. */
+/**
+ * Fixture de STS/SSM/IMDS solo en loopback con credenciales de web identity temporales y ficticias.
+ */
 public final class AwsIdentityFixture implements AutoCloseable {
   private final HttpServer server;
   private final Path directory;
@@ -104,7 +106,9 @@ public final class AwsIdentityFixture implements AutoCloseable {
     return invalid.get();
   }
 
-  /** Child-process environment has no inherited AWS identity or secret configuration. */
+  /**
+   * El entorno del proceso hijo no tiene identidad de AWS heredada ni configuración de secretos.
+   */
   public Map<String, String> environment() {
     var env = new HashMap<>(System.getenv());
     env.keySet()

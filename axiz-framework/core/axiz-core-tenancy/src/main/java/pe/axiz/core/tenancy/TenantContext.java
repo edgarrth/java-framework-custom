@@ -6,9 +6,10 @@ import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Tenant of the current unit of work, bound for the duration of a call. The binding is restored
- * when the call ends, so nested calls and thread reuse never leak a tenant. Works with platform and
- * virtual threads; reactive code propagates it through the Reactor context (starter).
+ * Tenant de la unidad de trabajo actual, ligado durante una llamada. El enlace se restaura cuando
+ * termina la llamada, de modo que las llamadas anidadas y la reutilización de hilos nunca filtran
+ * un tenant. Funciona con hilos de plataforma y virtuales; el código reactivo lo propaga mediante
+ * el contexto de Reactor (starter).
  */
 public final class TenantContext {
 
@@ -21,7 +22,7 @@ public final class TenantContext {
     return Optional.ofNullable(CURRENT.get());
   }
 
-  /** Current tenant or {@link TenantRequiredException}. */
+  /** Tenant actual o {@link TenantRequiredException}. */
   public static String require() {
     String tenant = CURRENT.get();
     if (tenant == null) {
@@ -35,12 +36,12 @@ public final class TenantContext {
   }
 
   /**
-   * Runs a call bound to a tenant.
+   * Ejecuta una llamada ligada a un tenant.
    *
-   * @param tenant tenant id (lowercase, digits and dashes)
-   * @param call work to run
-   * @return the call result
-   * @throws Exception whatever the call throws
+   * @param tenant id del tenant (minúsculas, dígitos y guiones)
+   * @param call trabajo a ejecutar
+   * @return el resultado de la llamada
+   * @throws Exception lo que lance la llamada
    */
   public static <T> T callAs(String tenant, Callable<T> call) throws Exception {
     if (!isValid(tenant)) {
@@ -75,9 +76,10 @@ public final class TenantContext {
   }
 
   /**
-   * Low-level setter for context-propagation accessors and filters; prefer {@link #callAs}.
+   * Setter de bajo nivel para accesores de context-propagation y filtros; es preferible {@link
+   * #callAs}.
    *
-   * @param tenant tenant to bind, or null to clear
+   * @param tenant tenant a ligar, o null para limpiar
    */
   public static void restore(@Nullable String tenant) {
     if (tenant == null) {
@@ -89,7 +91,9 @@ public final class TenantContext {
     }
   }
 
-  /** Wraps a task so it runs with the tenant that is current now (for executors). */
+  /**
+   * Envuelve una tarea para que se ejecute con el tenant actual en este momento (para executors).
+   */
   public static Runnable propagate(Runnable task) {
     String tenant = CURRENT.get();
     return tenant == null ? task : () -> runAs(tenant, task);

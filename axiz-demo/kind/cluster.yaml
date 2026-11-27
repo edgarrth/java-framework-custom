@@ -1,5 +1,5 @@
-# kind cluster of the demo: one node, host ports for the channel API, Keycloak and Grafana.
-# They are 9080/9180/9300, not the 8080/8180/3000 of the local demo, so both can run at once.
+# Clúster kind de la demo: un nodo, puertos del host para la API del canal, Keycloak y Grafana.
+# Son 9080/9180/9300, no los 8080/8180/3000 de la demo local, para que ambas puedan ejecutarse a la vez.
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 name: axiz-demo

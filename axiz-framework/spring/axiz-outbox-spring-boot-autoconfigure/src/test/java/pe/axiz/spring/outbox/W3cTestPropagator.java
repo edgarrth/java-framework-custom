@@ -7,7 +7,7 @@ import io.micrometer.tracing.test.simple.SimpleTracer;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/** W3C {@code traceparent} propagation for the {@link SimpleTracer} of the tests. */
+/** Propagación W3C de {@code traceparent} para el {@link SimpleTracer} de las pruebas. */
 final class W3cTestPropagator implements Propagator {
 
   private final SimpleTracer tracer;

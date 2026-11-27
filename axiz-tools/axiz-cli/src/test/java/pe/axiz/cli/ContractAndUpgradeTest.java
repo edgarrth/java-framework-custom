@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import pe.axiz.codegen.project.ProjectManifest;
 
-/** The answers of {@code axiz contract} and {@code axiz upgrade} beyond the main flow. */
+/** Las respuestas de {@code axiz contract} y {@code axiz upgrade} más allá del flujo principal. */
 class ContractAndUpgradeTest {
 
   static final String NEW_OPERATION =
@@ -61,19 +61,21 @@ class ContractAndUpgradeTest {
 
     Path library = Files.createDirectories(tmp.resolve("library"));
     ProjectManifest m = ProjectManifest.read(CliHarness.service(tmp));
-    new ProjectManifest(
-            m.name(),
-            m.groupId(),
-            m.basePackage(),
-            m.archetype(),
-            m.structure(),
-            m.stack(),
-            m.persistence(),
-            m.axizVersion(),
-            null,
-            null,
-            m.capabilities(),
-            List.of())
+    ProjectManifest.builder()
+        .name(m.name())
+        .groupId(m.groupId())
+        .basePackage(m.basePackage())
+        .archetype(m.archetype())
+        .structure(m.structure())
+        .stack(m.stack())
+        .persistence(m.persistence())
+        .axizVersion(m.axizVersion())
+        .openapi(null)
+        .asyncapi(null)
+        .capabilities(m.capabilities())
+        .operations(List.of())
+        .extensions(List.of())
+        .build()
         .write(library);
     CliHarness none = new CliHarness();
     assertEquals(ExitCodes.PROBLEMS, none.run("contract", "lint", "--dir", library.toString()));
@@ -102,8 +104,13 @@ class ContractAndUpgradeTest {
     Files.writeString(openapi, withNewOperation(openapi));
 
     CliHarness h = new CliHarness();
+    h.javaFormatter = false;
     assertEquals(0, h.run("contract", "sync", "--dir", p.toString()), h.output());
-    assertTrue(h.output().contains("✔"), h.output());
+    assertTrue(h.output().contains("Created src/main/java/"), h.output());
+    assertTrue(h.output().contains("Review and merge "), h.output());
+    assertTrue(h.output().contains(".axiz-new (then delete it)"), h.output());
+    assertTrue(
+        h.processes.commands.stream().anyMatch(command -> command.contains("spotless:apply")));
     assertTrue(ProjectManifest.read(p).operations().contains("listOrderNotes"));
 
     Files.writeString(
@@ -111,6 +118,7 @@ class ContractAndUpgradeTest {
     CliHarness invalid = new CliHarness();
     assertEquals(ExitCodes.PROBLEMS, invalid.run("contract", "sync", "--dir", p.toString()));
     assertTrue(invalid.output().contains("lint errors: nothing generated"), invalid.output());
+    assertTrue(invalid.output().contains("operationId"), invalid.output());
   }
 
   @Test
@@ -146,6 +154,10 @@ class ContractAndUpgradeTest {
     assertEquals(0, skip.run("upgrade", "--to", "2.3.0", "--skip-rewrite", "--dir", p.toString()));
     assertEquals("2.3.0", ProjectManifest.read(p).axizVersion());
     assertTrue(skip.processes.commands.isEmpty());
+    assertTrue(
+        skip.output()
+            .contains("Recipes skipped explicitly; migration validation is still required"),
+        skip.output());
 
     CliHarness failing = new CliHarness();
     failing.processes.exitCode = 3;

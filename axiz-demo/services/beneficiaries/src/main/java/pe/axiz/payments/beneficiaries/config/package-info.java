@@ -1,4 +1,4 @@
-/** Spring configuration of the service. */
+/** Configuración de Spring del servicio. */
 @NullMarked
 package pe.axiz.payments.beneficiaries.config;
 

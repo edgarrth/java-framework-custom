@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-jpa-spring-boot-starter
 
-Aurora PostgreSQL with Hibernate 7: base entities, auditing, encryption, read replicas and safe defaults.
+Aurora PostgreSQL con Hibernate 7: entidades base, auditoría, cifrado, réplicas de lectura y valores por defecto seguros.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,4 +12,4 @@ Aurora PostgreSQL with Hibernate 7: base entities, auditing, encryption, read re
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).

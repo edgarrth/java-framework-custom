@@ -1,4 +1,4 @@
-# axiz-initializr in qa
+# axiz-initializr en qa
 environment: qa
 
 serviceAccount:
@@ -20,8 +20,8 @@ autoscaling:
 
 networkPolicy:
   egress:
-    # destinations outside the cluster this service reaches in qa (VPC endpoints of
-    # the AWS services it uses, databases, brokers, partners), with their ports
+    # destinos fuera del clúster a los que este servicio llega en qa (VPC endpoints de
+    # los servicios de AWS que usa, bases de datos, brokers, socios), con sus puertos
     cidrs: []
 
 externalSecret:
@@ -30,14 +30,17 @@ externalSecret:
 config:
   axiz.config.environment: qa
   management.tracing.sampling.probability: "1.0"
-  axiz.initializr.structure-version: "1.0.0"
-  # set per environment:
+  # se define por entorno:
   # spring.security.oauth2.resourceserver.jwt.issuer-uri: https://sso.example/realms/axiz
   # spring.security.oauth2.client.provider.sso.issuer-uri: https://sso.example/realms/axiz
   # spring.security.oauth2.client.registration.sso.client-id: axiz-initializr
-  # axiz.initializr.audience: axiz-initializr   (aud that the API accepts in bearer tokens)
+  # axiz.initializr.audience: axiz-initializr   (aud que la API acepta en los bearer tokens)
   # spring.security.oauth2.client.registration.github.client-id: <GitHub OAuth app>
-  #   (callback of that OAuth app: https://<initializr host>/authorized/github)
+  #   (callback de esa OAuth app: https://<initializr host>/authorized/github)
   # axiz.initializr.github-organization: <organization>
 
 errors: []
+
+# El ingress debe mantener la afinidad de sesión si omite el Service ClusterIP.
+# spring.data.redis.host, port y username se definen en el ConfigMap del entorno; la contraseña y
+# axiz.initializr.publication-key provienen del ExternalSecret. Debe permitirse el egress a Redis con TLS.

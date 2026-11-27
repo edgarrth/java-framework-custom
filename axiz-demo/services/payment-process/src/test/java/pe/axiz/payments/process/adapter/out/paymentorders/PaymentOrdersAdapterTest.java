@@ -16,7 +16,7 @@ import pe.axiz.payments.process.adapter.out.paymentorders.model.StatusChange;
 
 class PaymentOrdersAdapterTest {
 
-  /** Business fake that rejects every change with 409 and reports a fixed status. */
+  /** Fake de negocio que rechaza cada cambio con 409 e informa un estado fijo. */
   static final class Conflicting implements PaymentOrdersClient {
     final PaymentStatus current;
 

@@ -4,7 +4,10 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
-/** Non-blocking byte cache tier. Completion means the store acknowledged the operation. */
+/**
+ * Nivel de caché de bytes no bloqueante. La finalización significa que el almacén confirmó la
+ * operación.
+ */
 public interface AsyncByteCache {
   CompletionStage<Optional<byte[]>> get(String key);
 

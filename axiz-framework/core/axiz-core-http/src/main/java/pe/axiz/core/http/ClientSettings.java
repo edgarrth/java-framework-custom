@@ -9,18 +9,18 @@ import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.resilience.TimeoutSettings;
 
 /**
- * Settings of one logical HTTP client ({@code axiz.http-client.clients.<name>}).
+ * Configuración de un cliente HTTP lógico ({@code axiz.http-client.clients.<name>}).
  *
- * @param name logical name (used in metrics, traces, logs and errors)
- * @param baseUrl base URL
- * @param timeouts mandatory timeouts
- * @param auth outbound authentication
- * @param retry retry mode
- * @param maxAttempts attempts for idempotent calls
- * @param circuitBreaker circuit breaker configuration name, or null to disable
- * @param maxConcurrentCalls bulkhead limit, or 0 to disable
- * @param propagateHeaders inbound headers forwarded to this dependency (allow-list)
- * @param maxConnections connection pool size
+ * @param name nombre lógico (usado en métricas, trazas, logs y errores)
+ * @param baseUrl URL base
+ * @param timeouts timeouts obligatorios
+ * @param auth autenticación saliente
+ * @param retry modo de reintento
+ * @param maxAttempts intentos para llamadas idempotentes
+ * @param circuitBreaker nombre de la configuración del circuit breaker, o null para desactivarlo
+ * @param maxConcurrentCalls límite del bulkhead, o 0 para desactivarlo
+ * @param propagateHeaders cabeceras entrantes reenviadas a esta dependencia (lista de permitidas)
+ * @param maxConnections tamaño del pool de conexiones
  */
 public record ClientSettings(
     String name,
@@ -57,25 +57,120 @@ public record ClientSettings(
     }
   }
 
-  /** Retry modes. */
+  /** Modos de reintento. */
   public enum RetryMode {
     NONE,
-    /** Retry only idempotent methods or calls with an Idempotency-Key. */
+    /** Reintenta solo métodos idempotentes o llamadas con un Idempotency-Key. */
     IDEMPOTENT_ONLY
   }
 
   public static ClientSettings of(String name, URI baseUrl) {
-    return new ClientSettings(
-        name,
-        baseUrl,
-        TimeoutSettings.defaults(),
-        AuthSettings.none(),
-        RetryMode.IDEMPOTENT_ONLY,
-        3,
-        "default",
-        0,
-        List.of(),
-        50,
-        TransportSecurityPolicy.system());
+    return ClientSettings.builder()
+        .name(name)
+        .baseUrl(baseUrl)
+        .timeouts(TimeoutSettings.defaults())
+        .auth(AuthSettings.none())
+        .retry(RetryMode.IDEMPOTENT_ONLY)
+        .maxAttempts(3)
+        .circuitBreaker("default")
+        .maxConcurrentCalls(0)
+        .propagateHeaders(List.of())
+        .maxConnections(50)
+        .transportSecurity(TransportSecurityPolicy.system())
+        .build();
+  }
+
+  /** Construcción nominal; build verifica los valores obligatorios y las invariantes. */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  /**
+   * Estado mutable de construcción; se usa un builder por operación, nunca como estado compartido.
+   */
+  public static final class Builder {
+    private @Nullable String name = null;
+    private @Nullable URI baseUrl = null;
+    private @Nullable TimeoutSettings timeouts = null;
+    private @Nullable AuthSettings auth = null;
+    private @Nullable RetryMode retry = null;
+    private int maxAttempts = 0;
+    private @Nullable String circuitBreaker = null;
+    private int maxConcurrentCalls = 0;
+    private @Nullable List<String> propagateHeaders = List.of();
+    private int maxConnections = 0;
+    private @Nullable TransportSecurityPolicy transportSecurity = null;
+
+    private Builder() {}
+
+    public Builder name(String value) {
+      this.name = value;
+      return this;
+    }
+
+    public Builder baseUrl(URI value) {
+      this.baseUrl = value;
+      return this;
+    }
+
+    public Builder timeouts(TimeoutSettings value) {
+      this.timeouts = value;
+      return this;
+    }
+
+    public Builder auth(AuthSettings value) {
+      this.auth = value;
+      return this;
+    }
+
+    public Builder retry(RetryMode value) {
+      this.retry = value;
+      return this;
+    }
+
+    public Builder maxAttempts(int value) {
+      this.maxAttempts = value;
+      return this;
+    }
+
+    public Builder circuitBreaker(@Nullable String value) {
+      this.circuitBreaker = value;
+      return this;
+    }
+
+    public Builder maxConcurrentCalls(int value) {
+      this.maxConcurrentCalls = value;
+      return this;
+    }
+
+    public Builder propagateHeaders(List<String> value) {
+      this.propagateHeaders = List.copyOf(value);
+      return this;
+    }
+
+    public Builder maxConnections(int value) {
+      this.maxConnections = value;
+      return this;
+    }
+
+    public Builder transportSecurity(TransportSecurityPolicy value) {
+      this.transportSecurity = value;
+      return this;
+    }
+
+    public ClientSettings build() {
+      return new ClientSettings(
+          Objects.requireNonNull(name, "name"),
+          Objects.requireNonNull(baseUrl, "baseUrl"),
+          Objects.requireNonNull(timeouts, "timeouts"),
+          Objects.requireNonNull(auth, "auth"),
+          Objects.requireNonNull(retry, "retry"),
+          maxAttempts,
+          circuitBreaker,
+          maxConcurrentCalls,
+          Objects.requireNonNull(propagateHeaders, "propagateHeaders"),
+          maxConnections,
+          Objects.requireNonNull(transportSecurity, "transportSecurity"));
+    }
   }
 }

@@ -10,13 +10,13 @@ import java.io.InputStream;
 import java.util.Objects;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
-import pe.axiz.payments.bankingcore.api.model.MovementRequest;
+import pe.axiz.payments.bankingcore.adapter.in.rest.model.MovementRequest;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Contract tests from the request examples of the OpenAPI contract: each example must deserialize
- * into the generated model and pass its validation. A contract change that breaks its own examples
- * fails here, before reaching consumers.
+ * Pruebas de contrato a partir de los ejemplos de solicitud del contrato OpenAPI: cada ejemplo debe
+ * deserializarse en el modelo generado y superar su validación. Un cambio de contrato que rompe sus
+ * propios ejemplos falla aquí, sin llegar a los consumidores.
  */
 class ContractExamplesTest {
 

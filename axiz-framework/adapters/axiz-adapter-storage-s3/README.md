@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-adapter-storage-s3
 
-Amazon S3 object storage with SSE-KMS and presigned URLs.
+Almacenamiento de objetos en Amazon S3 con SSE-KMS y URL prefirmadas.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,35 +12,37 @@ Amazon S3 object storage with SSE-KMS and presigned URLs.
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `S3AsyncObjectStorage` | Native S3AsyncClient streaming, explicit cancellation and sequential bounded listing. |
-| `S3ObjectStorage` | Amazon S3 storage: streaming upload and download, SSE-KMS with the configured key, presigned URLs bounded by a maximum TTL. |
+| `S3AsyncObjectStorage` | Streaming nativo con S3AsyncClient, cancelación explícita y listado secuencial acotado. |
+| `S3ObjectStorage` | Almacenamiento en Amazon S3: carga y descarga en streaming, SSE-KMS con la clave configurada y URL prefirmadas acotadas por un TTL máximo. |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl adapters/axiz-adapter-storage-s3 verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl adapters/axiz-adapter-storage-s3 verify`.
 
-## Native asynchronous transport
+## Transporte asíncrono nativo
 
-Use `presignUpload` when delegating a PUT to an HTTP client. Apply its URI and every returned
-header, including SSE-KMS and content type. The port always returns complete upload
-instructions. `Host` is derived by the HTTP client from the URI.
+Se usa `presignUpload` cuando un PUT se delega a un cliente HTTP. Se aplican su URI y todas las
+cabeceras devueltas, incluidas SSE-KMS y el tipo de contenido. El puerto siempre devuelve
+instrucciones de carga completas. El cliente HTTP deriva `Host` a partir de la URI.
 
-`S3AsyncObjectStorage` implements the JDK-only `AsyncObjectStorage` port. Its private bridges
-translate JDK Flow and the SDK protocol without Reactor or object aggregation. Each delivered
-chunk has independent ownership. Closing an unconsumed download cancels its body and releases
-its connection. Listing owns and cancels the exact SDK request for the active page; it uses a
-trampoline so already-completed pages do not consume the Java stack.
+`S3AsyncObjectStorage` implementa el puerto `AsyncObjectStorage`, que solo depende del JDK. Sus
+puentes privados traducen JDK Flow y el protocolo del SDK sin Reactor ni agregación de objetos.
+Cada fragmento entregado tiene propiedad independiente. Cerrar una descarga no consumida cancela
+su cuerpo y libera su conexión. El listado es dueño de la petición exacta del SDK para la página
+activa y la cancela; usa un trampolín para que las páginas ya completadas no consuman la pila de Java.
 
-Both adapters share key validation, metadata, checksums, SSE-KMS and presign policy. The maximum
-URL validity must be between one second and seven days; per-call validity is positive and capped
-at that maximum. Missing objects return empty; bucket and permission errors propagate.
+Ambos adaptadores comparten la validación de claves, los metadatos, los checksums, SSE-KMS y la
+política de prefirmado. La validez máxima de la URL debe estar entre un segundo y siete días; la
+validez por llamada es positiva y no supera ese máximo. Los objetos inexistentes devuelven vacío;
+los errores de bucket y de permisos se propagan.
 
-Clients and presigner are borrowed. Construct them at startup using `AsyncAwsClients`, with
-explicit region, native Netty transport, background credential refresh and a snapshot-only
-`credentialsProvider()` for the presigner. Never construct a default credential chain per request.
+Los clientes y el prefirmador se toman prestados. Se construyen al arrancar con `AsyncAwsClients`,
+con región explícita, transporte Netty nativo, refresco de credenciales en segundo plano y un
+`credentialsProvider()` de solo instantánea para el prefirmador. Nunca se construye una cadena de
+credenciales por defecto en cada petición.

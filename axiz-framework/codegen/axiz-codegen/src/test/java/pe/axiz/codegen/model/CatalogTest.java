@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -19,6 +20,52 @@ import org.junit.jupiter.api.Test;
 class CatalogTest {
 
   private final Catalog catalog = Catalog.load();
+
+  @Test
+  void localOverridesUseTheCatalogSchema() {
+    assertEquals(
+        "local",
+        catalog
+            .capability("config")
+            .orElseThrow()
+            .localProperties()
+            .get("axiz.config.environment"));
+    assertEquals(
+        false,
+        catalog
+            .capability("r2dbc-aws")
+            .orElseThrow()
+            .localProperties()
+            .get("axiz.r2dbc.iam.enabled"));
+    assertEquals(
+        "local",
+        catalog
+            .capability("tokenization")
+            .orElseThrow()
+            .localProperties()
+            .get("axiz.tokenization.mode"));
+  }
+
+  @Test
+  void tokenConsumerDoesNotSelectTheVaultOrItsInfrastructure() {
+    var consumer = catalog.resolve(List.of("tokenization"));
+    assertTrue(catalog.missingAlternatives(consumer).isEmpty());
+    assertFalse(
+        consumer.stream()
+            .anyMatch(
+                c ->
+                    c.name().startsWith("tokenization-vault")
+                        || c.name().startsWith("crypto")
+                        || c.name().equals("dynamodb")));
+    assertFalse(
+        catalog.missingAlternatives(catalog.resolve(List.of("tokenization-vault"))).isEmpty());
+    var selected =
+        List.of("tokenization-vault-dynamodb", "tokenization-vault-redis", "audit-kafka");
+    assertTrue(catalog.missingAlternatives(catalog.resolve(selected)).isEmpty());
+    var mixed = new ArrayList<>(selected);
+    mixed.add("tokenization");
+    assertFalse(catalog.missingAlternatives(catalog.resolve(mixed)).isEmpty());
+  }
 
   @Test
   void hasTheSevenServiceArchetypesAndTwoPlatformOnes() {
@@ -68,9 +115,10 @@ class CatalogTest {
     Capability inbox = catalog.capability("inbox").orElseThrow();
     assertTrue(inbox.supports("aurora"));
     assertTrue(inbox.supports("dynamodb"));
-    assertTrue(inbox.supports("none"));
+    assertFalse(inbox.supports("none"));
     assertEquals("dynamodb", inbox.properties("dynamodb").get("axiz.inbox.store"));
-    assertTrue(inbox.dependencies("dynamodb").contains("pe.axiz:axiz-adapter-inbox-dynamodb"));
+    assertTrue(
+        inbox.dependencies("dynamodb").contains("pe.axiz:axiz-inbox-dynamodb-spring-boot-starter"));
     assertTrue(catalog.capability("cache").orElseThrow().supports("none"));
   }
 
@@ -90,12 +138,15 @@ class CatalogTest {
     }
   }
 
-  /** Inside the structure repository every referenced axiz artifact must exist as a module. */
+  /**
+   * Dentro del repositorio de la estructura, cada artefacto de axiz referenciado debe existir como
+   * módulo.
+   */
   @Test
   void referencedAxizArtifactsExist() throws IOException {
     Path root = Path.of("").toAbsolutePath().getParent().getParent();
     if (!Files.isDirectory(root.resolve("spring")) || !Files.isDirectory(root.resolve("core"))) {
-      return; // packaged outside the repository
+      return; // empaquetado fuera del repositorio
     }
     Set<String> modules;
     try (Stream<Path> s =

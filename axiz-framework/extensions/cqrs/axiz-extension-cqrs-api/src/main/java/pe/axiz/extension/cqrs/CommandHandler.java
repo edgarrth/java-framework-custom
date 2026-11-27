@@ -1,10 +1,10 @@
 package pe.axiz.extension.cqrs;
 
 /**
- * Handles one command type.
+ * Maneja un tipo de comando.
  *
- * @param <C> command type
- * @param <R> result type
+ * @param <C> tipo del comando
+ * @param <R> tipo del resultado
  */
 public interface CommandHandler<C extends Command<R>, R> {
 

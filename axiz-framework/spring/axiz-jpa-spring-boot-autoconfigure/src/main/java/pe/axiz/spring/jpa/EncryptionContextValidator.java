@@ -9,14 +9,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.context.ApplicationContext;
 import org.springframework.orm.jpa.EntityManagerFactoryInfo;
 import org.springframework.util.ClassUtils;
 import pe.axiz.kit.jpa.EncryptedConverter;
 
-/** Validates actual entity converters after JPA has built its metamodel. */
+/** Valida los converters reales de las entidades después de que JPA ha construido su metamodelo. */
 final class EncryptionContextValidator implements SmartInitializingSingleton {
   private final ApplicationContext context;
 
@@ -73,7 +72,7 @@ final class EncryptionContextValidator implements SmartInitializingSingleton {
 
   private EncryptedConverter converter(Class<? extends EncryptedConverter> type) {
     EncryptedConverter candidate = context.getBeanProvider(type).getIfAvailable();
-    return candidate != null ? candidate : BeanUtils.instantiateClass(type);
+    return candidate != null ? candidate : context.getAutowireCapableBeanFactory().createBean(type);
   }
 
   private static final class ManagedConverters {

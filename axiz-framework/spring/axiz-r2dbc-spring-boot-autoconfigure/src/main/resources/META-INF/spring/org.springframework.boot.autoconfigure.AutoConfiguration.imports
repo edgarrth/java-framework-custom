@@ -1,5 +1,5 @@
-pe.axiz.spring.r2dbc.AxizR2dbcIamAutoConfiguration
-pe.axiz.spring.r2dbc.AxizR2dbcFlywayIamAutoConfiguration
+pe.axiz.spring.r2dbc.AxizR2dbcPasswordAutoConfiguration
+pe.axiz.spring.r2dbc.AxizR2dbcFlywayPasswordAutoConfiguration
 pe.axiz.spring.r2dbc.AxizR2dbcAutoConfiguration
 pe.axiz.spring.r2dbc.AxizR2dbcAuditingAutoConfiguration
 pe.axiz.spring.r2dbc.AxizR2dbcTransportAutoConfiguration

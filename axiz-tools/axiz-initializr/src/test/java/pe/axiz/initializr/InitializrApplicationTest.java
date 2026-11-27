@@ -16,15 +16,24 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import pe.axiz.core.security.RateLimiter;
 import pe.axiz.initializr.config.SecurityConfiguration;
 
 /**
- * The whole application starts as it ships (every axiz starter, the real services and the security
- * chain). Only the SSO discovery is replaced, because it needs a running identity provider; the
- * resource server decoder resolves the issuer lazily and is never called here.
+ * La aplicación completa arranca tal como se distribuye (todos los starters de axiz, los servicios
+ * reales y la cadena de seguridad). El descubrimiento del SSO y la frontera de cuotas en Redis se
+ * reemplazan por beans de prueba; el decodificador del resource server resuelve el emisor de forma
+ * diferida y aquí nunca se invoca.
  */
-@SpringBootTest(properties = "axiz.config.environment=test")
+@SpringBootTest(
+    properties = {
+      "axiz.config.environment=test",
+      "AXIZ_SSO_ISSUER=https://sso.example.test",
+      "axiz.security.rate-limit.enabled=false",
+      "axiz.initializr.publication-key=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+    })
 @AutoConfigureMockMvc
 class InitializrApplicationTest {
 
@@ -56,6 +65,7 @@ class InitializrApplicationTest {
   }
 
   @Autowired MockMvc mvc;
+  @MockitoBean RateLimiter limiter;
 
   @Test
   void startsAndServesTheCatalogOnlyToAuthenticatedCallers() throws Exception {

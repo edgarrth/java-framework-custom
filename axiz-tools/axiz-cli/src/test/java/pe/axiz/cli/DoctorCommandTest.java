@@ -17,7 +17,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import pe.axiz.codegen.project.ProjectManifest;
 
-/** What {@code axiz doctor} reports on a generated service and on each kind of drift. */
+/**
+ * Lo que {@code axiz doctor} informa sobre un servicio generado y sobre cada tipo de desviación.
+ */
 class DoctorCommandTest {
 
   static DoctorCommand doctor() {
@@ -45,19 +47,21 @@ class DoctorCommandTest {
 
   static ProjectManifest with(
       ProjectManifest m, String axizVersion, List<String> capabilities, List<String> operations) {
-    return new ProjectManifest(
-        m.name(),
-        m.groupId(),
-        m.basePackage(),
-        m.archetype(),
-        m.structure(),
-        m.stack(),
-        m.persistence(),
-        axizVersion,
-        m.openapi(),
-        m.asyncapi(),
-        capabilities,
-        operations);
+    return ProjectManifest.builder()
+        .name(m.name())
+        .groupId(m.groupId())
+        .basePackage(m.basePackage())
+        .archetype(m.archetype())
+        .structure(m.structure())
+        .stack(m.stack())
+        .persistence(m.persistence())
+        .axizVersion(axizVersion)
+        .openapi(m.openapi())
+        .asyncapi(m.asyncapi())
+        .capabilities(capabilities)
+        .operations(operations)
+        .extensions(List.of())
+        .build();
   }
 
   @Test
@@ -70,13 +74,14 @@ class DoctorCommandTest {
     try (var files = Files.walk(project.resolve("src/test/java"))) {
       application =
           files
-              .filter(path -> path.getFileName().toString().endsWith("ApplicationTest.java"))
+              .filter(path -> path.getFileName().toString().endsWith("ApplicationTestSupport.java"))
               .findFirst()
               .orElseThrow();
     }
     String annotated = Files.readString(application);
-    // Scoped contracts also generate instrumented authorization tests. Remove every explicit
-    // extension so this project-level check does not accidentally find one in another class.
+    // Los contratos con alcances también generan pruebas de autorización instrumentadas. Se elimina
+    // cada extensión explícita para que esta verificación a nivel de proyecto no encuentre por
+    // accidente una en otra clase.
     try (var sources = Files.walk(project.resolve("src/test/java"))) {
       for (Path source : sources.filter(path -> path.toString().endsWith(".java")).toList()) {
         String text = Files.readString(source);
@@ -139,6 +144,8 @@ class DoctorCommandTest {
         import org.springframework.stereotype.Component;
         import pe.axiz.kit.jpa.JpaRepositories;
         import pe.axiz.adapter.cache.redis.RedisByteCache;
+        import pe.axiz.core.lang.JsonSnapshots;
+        import pe.axiz.core.commons.net.DataTransportSecurityPolicy;
         """);
     Files.writeString(
         domain.resolve("Good.java"),
@@ -148,6 +155,10 @@ class DoctorCommandTest {
         import org.jspecify.annotations.Nullable;
         import pe.axiz.orders.domain.Order;
         import pe.axiz.core.money.Money;
+        import pe.axiz.core.lang.ValueSnapshots;
+        import static pe.axiz.core.lang.ValueSnapshots.map;
+        import pe.axiz.core.lang.Checks;
+        import pe.axiz.core.commons.ReviewedState;
         """);
     Path persistence = Files.createDirectories(sources.resolve("adapter/out/persistence"));
     Files.writeString(
@@ -314,6 +325,9 @@ class DoctorCommandTest {
     List<String> warnings = messages(doctor().checks(p), DoctorCommand.Level.WARN);
 
     assertTrue(any(warnings, "Pending proposal src/main/resources/application.yaml.axiz-new"));
-    assertTrue(any(warnings, "No ArchitectureTest"), warnings.toString());
+    assertTrue(
+        any(
+            messages(doctor().checks(p), DoctorCommand.Level.ERROR),
+            "Missing required architecture test: ArchitectureTest.java"));
   }
 }

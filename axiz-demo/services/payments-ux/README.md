@@ -1,53 +1,53 @@
 # Payments UX
 
-Payments API for the channels.
+API de pagos para los canales.
 
 | | |
 |---|---|
-| Archetype | `ux`: Channel API that composes downstream services |
-| Structure | `bff` |
-| Extensions | – |
+| Arquetipo | `ux`: API de canal que compone servicios posteriores |
+| Estructura | `bff` |
+| Extensiones | Ninguna |
 | Stack | `reactive` |
-| Persistence | `none` |
+| Persistencia | `none` |
 | axiz | `2.0.0` |
-| Base package | `pe.axiz.payments.ux` |
+| Paquete base | `pe.axiz.payments.ux` |
 
-## In the demo
+## En la demo
 
-Channel API of the web and mobile apps (BFF, reactive). The customer is always the token subject.
+API de canal de las apps web y móvil (BFF, reactiva). El cliente siempre es el sujeto del token.
 
-- `POST /v1/payments`: reads the beneficiary fresh from beneficiaries (no cache), checks the
-  currency and the `payments-usd` feature flag, and registers the order in payment-orders with
-  the caller's `Idempotency-Key` (Redis store: a retried request replays the first response).
-- `GET /v1/payments/{id}`: order (required) + beneficiary alias (optional part of the composition:
-  the screen still works when beneficiaries is slow or down). Another customer's payment is
-  reported as not found.
-- `GET /v1/beneficiaries`: cached pages (`customer-beneficiaries`, 30 s, L1 + Redis), holder names
-  and accounts masked for the channel.
-- Downstream business errors are translated to channel errors (`PAYMENTS-PAYMENTSUX-*`).
-- HTTP clients generated with `axiz generate http-client` from the contracts in `../../contracts`.
+- `POST /v1/payments`: lee el beneficiario directamente de beneficiaries (sin caché), comprueba la
+  moneda y el feature flag `payments-usd`, y registra la orden en payment-orders con la
+  `Idempotency-Key` del llamador (almacén Redis: una petición reintentada repite la primera respuesta).
+- `GET /v1/payments/{id}`: orden (obligatoria) + alias del beneficiario (parte opcional de la
+  composición: la pantalla sigue funcionando cuando beneficiaries está lento o caído). El pago de otro
+  cliente se informa como no encontrado.
+- `GET /v1/beneficiaries`: páginas en caché (`customer-beneficiaries`, 30 s, L1 + Redis), con los
+  nombres de los titulares y las cuentas enmascarados para el canal.
+- Los errores de negocio de los servicios posteriores se traducen a errores del canal (`PAYMENTS-PAYMENTSUX-*`).
+- Clientes HTTP generados con `axiz generate http-client` desde los contratos de `../../contracts`.
 
-## Requirements
+## Requisitos
 
-- JDK 25 (Maven comes with the wrapper `./mvnw`)
-- Docker, for `docker compose` and the Testcontainers tests
-- Access to the Nexus repository that publishes axiz
+- JDK 25 (Maven viene con el wrapper `./mvnw`)
+- Docker, para `docker compose` y las pruebas con Testcontainers
+- Acceso al repositorio de GitHub Packages que publica axiz
 
-## Build and test
+## Compilación y pruebas
 
 ```bash
-./mvnw verify                 # enforcer rules, tests and architecture rules
-./mvnw spotless:apply         # formats the code (run it before pushing)
-./mvnw -Pquality verify       # CI gate: + format check, Checkstyle, Error Prone + NullAway, SpotBugs/FindSecBugs,
-                              # dependency convergence and coverage thresholds
-./mvnw -Pnative native:compile  # GraalVM native image
+./mvnw verify                 # reglas de enforcer, pruebas y reglas de arquitectura
+./mvnw spotless:apply         # formatea el código (se ejecuta antes de hacer push)
+./mvnw -Pquality verify       # control de CI: además formato, Checkstyle, Error Prone con NullAway, SpotBugs/FindSecBugs,
+                              # convergencia de dependencias y umbrales de cobertura
+./mvnw -Pnative native:compile  # imagen nativa con GraalVM
 ```
 
-`ArchitectureTest` enforces the rules of the `bff` style and the general axiz rules;
-`PaymentsUxApplicationTest` starts the service against real dependencies in containers.
-`ContractExamplesTest` checks that every request example of the contract is a valid request.
+`ArchitectureTest` hace cumplir las reglas del estilo `bff` y las reglas generales de axiz;
+`PaymentsUxApplicationTest` arranca el servicio contra dependencias reales en contenedores.
+`ContractExamplesTest` comprueba que cada ejemplo de petición del contrato sea una petición válida.
 
-## Run locally
+## Ejecución local
 
 ```bash
 local/dev-secrets.sh       # random development-only secrets in local/secrets (git-ignored)
@@ -55,72 +55,72 @@ docker compose up -d
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-Or `axiz local up` / `axiz local down`. Traces, metrics and logs are in Grafana at
-<http://localhost:3000> (OpenTelemetry collector on ports 4317/4318).
-Keycloak (<http://localhost:8180>, realm `axiz`) issues local tokens:
+También `axiz local up` / `axiz local down`. Las trazas, métricas y logs están en Grafana en
+<http://localhost:3000> (colector OpenTelemetry en los puertos 4317/4318).
+Keycloak (<http://localhost:8180>, realm `axiz`) emite tokens locales:
 
 ```bash
 curl -s -d grant_type=client_credentials -d client_id=local-client -d client_secret=local-only \
   http://localhost:8180/realms/axiz/protocol/openid-connect/token
 ```
 
-## Contract first
+## Contrato primero
 
-`src/main/openapi/openapi.yaml` is the source of truth. Request and response models are generated at
-build time into `pe.axiz.payments.ux.api.model` (never versioned). Controllers were generated once
-as skeletons that answer `501 Not Implemented` until each operation is implemented.
+`src/main/openapi/openapi.yaml` es la fuente de verdad. Los modelos de petición y de respuesta se generan
+en tiempo de build en `pe.axiz.payments.ux.api.model` (nunca se versionan). Los controladores se generan una sola vez
+como esqueletos que responden `501 Not Implemented` hasta que se implementa cada operación.
 
-- `axiz contract sync` adds skeletons for new operations, reports removed ones and checks breaking
-  changes against the previous version (openapi-diff).
-- Lint the contract with the axiz Spectral ruleset before publishing it.
+- `axiz contract sync` agrega esqueletos para las operaciones nuevas, informa las eliminadas y comprueba
+  los cambios incompatibles contra la versión anterior (openapi-diff).
+- El contrato se valida con el ruleset de Spectral de axiz antes de publicarlo.
 
-| Operation | Method | Path |
+| Operación | Método | Ruta |
 |---|---|---|
 | `createPayment` | POST | `/v1/payments` |
 | `getPayment` | GET | `/v1/payments/{paymentId}` |
 | `listMyBeneficiaries` | GET | `/v1/beneficiaries` |
 
-## Structure
+## Estructura
 
-- `pe.axiz.payments.ux.controller`: Channel API generated from the OpenAPI contract.
-- `pe.axiz.payments.ux.composition`: Compositions of downstream calls, one per API tag.
-- `pe.axiz.payments.ux.client`: HTTP clients of downstream services.
+- `pe.axiz.payments.ux.controller`: API de canal generada desde el contrato OpenAPI.
+- `pe.axiz.payments.ux.composition`: Composiciones de llamadas a servicios posteriores, una por tag de la API.
+- `pe.axiz.payments.ux.client`: Clientes HTTP de los servicios posteriores.
 
-## Capabilities
+## Capacidades
 
-| Capability | Starter | What it brings |
+| Capacidad | Starter | Qué aporta |
 |---|---|---|
-| `foundation` | `axiz-foundation-spring-boot-starter` | Clock and business calendar (zone, weekends, holidays), JSON and validation defaults |
-| `web` | `axiz-web-spring-boot-starter` | Request metadata headers, correlation, pagination, API versioning, CORS and JSON conventions |
-| `errors` | `axiz-errors-spring-boot-starter` | RFC 9457 problem details, error catalog (ConfigMap `APP_NAME-errors`), external error mapping |
-| `logging` | `axiz-logging-spring-boot-starter` | Structured JSON logs with trace and request context, HTTP access log with masking |
-| `observability` | `axiz-observability-spring-boot-starter` | OpenTelemetry traces and metrics through Micrometer (OTLP), no Java agent |
-| `metrics` | `axiz-metrics-spring-boot-starter` | Generic event metrics (count, duration, amounts by currency, values) with bounded tags |
-| `config` | `axiz-config-spring-boot-starter` | ConfigMaps mounted as files (axiz-common, `APP_NAME`, `APP_NAME-errors`; no Kubernetes API access), Parameter Store, required keys check |
-| `i18n` | `axiz-i18n-spring-boot-starter` | Localized messages and problem details (es-PE by default) from messages*.properties |
-| `sensitive` | `axiz-sensitive-spring-boot-starter` | Masking of sensitive fields in responses, logs and audit by sensitivity level |
-| `security` | `axiz-security-spring-boot-starter` | OAuth2 resource server (trusted issuers, audiences, claims), caller context, rate limit |
-| `resilience` | `axiz-resilience-spring-boot-starter` | Timeouts, retry with backoff, circuit breaker and bulkhead policies by name |
-| `http-client` | `axiz-http-client-spring-boot-starter` | Declarative HTTP clients per name with timeouts, retries, circuit breaker, OAuth2 client credentials and header propagation |
-| `cache` | `axiz-cache-spring-boot-starter` | @AxizCacheable with Mono/Flux support, L1 Caffeine |
-| `idempotency` | `axiz-idempotency-spring-boot-starter` | Idempotency-Key for POST/PATCH with stored responses (in memory only in local/test; shared environments need idempotency-redis or idempotency-dynamodb) |
-| `idempotency-redis` | `axiz-idempotency-spring-boot-starter` | Idempotency store on ElastiCache (Redis/Valkey) |
-| `cache-redis` | `axiz-cache-spring-boot-starter` | L2 cache on ElastiCache (Redis/Valkey), tolerant to Redis outages |
-| `featureflags` | `axiz-featureflags-spring-boot-starter` | Feature flags (OpenFeature) by percentage, channel, tenant and rules, from the ConfigMap |
+| `foundation` | `axiz-foundation-spring-boot-starter` | Reloj y calendario de negocio (zona, fines de semana, feriados), valores por defecto de JSON y validación |
+| `web` | `axiz-web-spring-boot-starter` | Cabeceras de metadatos de la petición, correlación, paginación, versionado de API, CORS y convenciones JSON |
+| `errors` | `axiz-errors-spring-boot-starter` | Detalles de problema RFC 9457, catálogo de errores (ConfigMap `APP_NAME-errors`) y mapeo de errores externos |
+| `logging` | `axiz-logging-spring-boot-starter` | Logs JSON estructurados con contexto de traza y de petición, log de acceso HTTP con enmascaramiento |
+| `observability` | `axiz-observability-spring-boot-starter` | Trazas y métricas OpenTelemetry mediante Micrometer (OTLP), sin agente Java |
+| `metrics` | `axiz-metrics-spring-boot-starter` | Métricas genéricas de eventos (conteo, duración, importes por moneda, valores) con etiquetas acotadas |
+| `config` | `axiz-config-spring-boot-starter` | ConfigMaps montados como archivos (axiz-common, `APP_NAME`, `APP_NAME-errors`; sin acceso a la API de Kubernetes), Parameter Store y comprobación de claves obligatorias |
+| `i18n` | `axiz-i18n-spring-boot-starter` | Mensajes y detalles de problema localizados (es-PE por defecto) desde messages*.properties |
+| `sensitive` | `axiz-sensitive-spring-boot-starter` | Enmascaramiento de campos sensibles en respuestas, logs y auditoría según el nivel de sensibilidad |
+| `security` | `axiz-security-spring-boot-starter` | Servidor de recursos OAuth2 (emisores confiables, audiencias, claims), contexto del llamador y límite de tasa |
+| `resilience` | `axiz-resilience-spring-boot-starter` | Políticas por nombre de timeouts, reintento con backoff, circuit breaker y bulkhead |
+| `http-client` | `axiz-http-client-spring-boot-starter` | Clientes HTTP declarativos por nombre con timeouts, reintentos, circuit breaker, client credentials de OAuth2 y propagación de cabeceras |
+| `cache` | `axiz-cache-spring-boot-starter` | @AxizCacheable con soporte de Mono/Flux, L1 con Caffeine |
+| `idempotency` | `axiz-idempotency-spring-boot-starter` | Idempotency-Key para POST/PATCH con respuestas guardadas (en memoria solo en local/test; los ambientes compartidos necesitan idempotency-redis o idempotency-dynamodb) |
+| `idempotency-redis` | `axiz-idempotency-spring-boot-starter` | Almacén de idempotencia en ElastiCache (Redis/Valkey) |
+| `cache-redis` | `axiz-cache-spring-boot-starter` | Caché L2 en ElastiCache (Redis/Valkey), tolerante a caídas de Redis |
+| `featureflags` | `axiz-featureflags-spring-boot-starter` | Feature flags (OpenFeature) por porcentaje, canal, tenant y reglas, desde el ConfigMap |
 
-Add more with `axiz add <capability>`: it adds the starter, its properties, the ConfigMap keys and a
-usage example.
+Se agregan más con `axiz add <capability>`: añade el starter, sus propiedades, las claves del ConfigMap
+y un ejemplo de uso.
 
-## Configuration
+## Configuración
 
-- `application.yaml` holds defaults only. Environment values live in the ConfigMaps `axiz-common`,
-  `payments-ux` and `payments-ux-errors`, mounted as files by the chart
-  (`deploy/helm/payments-ux/values-<env>.yaml`, keys `config` and `errors`).
-- Secrets never go to the repository nor to ConfigMaps: they come from AWS Secrets Manager through
-  the ExternalSecret and are mounted as files in `/var/run/secrets/axiz`.
-- AWS access uses the pod identity (IRSA or EKS Pod Identity); there are no AWS keys anywhere.
+- `application.yaml` contiene solo valores por defecto. Los valores de cada ambiente están en los ConfigMaps `axiz-common`,
+  `payments-ux` y `payments-ux-errors`, que el chart monta como archivos
+  (`deploy/helm/payments-ux/values-<env>.yaml`, claves `config` y `errors`).
+- Los secretos nunca van al repositorio ni a los ConfigMaps: provienen de AWS Secrets Manager mediante
+  el ExternalSecret y se montan como archivos en `/var/run/secrets/axiz`.
+- El acceso a AWS usa la identidad del pod (IRSA o EKS Pod Identity); no hay claves de AWS en ningún lugar.
 
-Keys each environment must define:
+Claves que cada ambiente debe definir:
 
 - `axiz.foundation.calendar.holidays`
 - `axiz.security.issuers`
@@ -128,19 +128,30 @@ Keys each environment must define:
 - `spring.data.redis.url`
 - `axiz.feature-flags.flags`
 
-## Deployment
+## Despliegue
 
-`deploy/helm/payments-ux` contains the chart: Deployment with probes, Service, HPA, PDB,
-ConfigMaps mounted as files, ExternalSecret, ServiceAccount and a NetworkPolicy. Pods do not
-require Kubernetes API permissions to read their mounted configuration.
-The pipelines in `.github/workflows` call the shared axiz workflows, pinned to an immutable release (`@axiz-workflows-vX.Y.Z`; Renovate proposes grouped updates to the next immutable release tag):
+`deploy/helm/payments-ux` contiene el chart: Deployment con probes, Service, HPA, PDB,
+ConfigMaps montados como archivos, ExternalSecret, ServiceAccount y una NetworkPolicy. Los pods no
+requieren permisos sobre la API de Kubernetes para leer su configuración montada.
 
-- `ci.yaml`: pull requests run the shared checks and the build with every quality gate; `main`
-  builds the image (Jib, signed with cosign) and deploys it to dev and then qa; a tag `v*` deploys
-  to prod after the approval of the `prod` environment.
-- Deployments are GitOps: the pipeline records the release (chart commit, image tag and digest) in
-  the GitOps repository and Argo CD applies it. `cd.yaml` redeploys or rolls back an existing image.
-- `release.yaml`: release-please keeps a release pull request with the next version and the
-  changelog; merging it creates the tag.
+Los workflows de `.github/workflows` llaman a los workflows reutilizables de Axiz, fijados al tag
+inmutable de su release:
 
-## Decisions
+- `ci.yaml`: cada pull request compila con todos los controles de calidad, revisa la compatibilidad
+  del contrato OpenAPI, valida el chart y escanea las dependencias. En `main` y en los tags
+  publica la imagen (Jib) y el chart en GHCR con atestaciones de procedencia y SBOM; en `main`
+  despliega en dev cuando el repositorio define la variable `AXIZ_GITOPS_REPOSITORY`.
+- `deploy.yaml`: promueve a un ambiente un digest ya construido y atestiguado; las reglas de
+  protección del ambiente de GitHub aportan la aprobación. Volver atrás es desplegar el digest
+  anterior; el despliegue nunca recompila.
+- `release.yaml`: release-please mantiene un pull request de release con la siguiente versión y el
+  changelog; al fusionarlo se crea el tag. `version.txt` y `.release-please-manifest.json` guardan
+  la última versión publicada (`0.0.0`: nada publicado todavía); el pom guarda la siguiente
+  (`0.1.0-SNAPSHOT`). La primera release es `0.1.0` (`initial-version` en
+  `release-please-config.json`); las siguientes siguen Conventional Commits.
+
+Variables opcionales del repositorio: `AXIZ_BASE_IMAGE` (imagen base fijada por digest) y
+`AXIZ_NATIVE` (`true` para la imagen nativa). Secretos del despliegue: `GITOPS_APP_CLIENT_ID` y
+`GITOPS_APP_PRIVATE_KEY`, de una GitHub App que solo escribe en el repositorio GitOps.
+
+## Decisiones

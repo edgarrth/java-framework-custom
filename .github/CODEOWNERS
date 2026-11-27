@@ -1,6 +1,8 @@
-# Supply-chain changes require review by the configured repository owner.
+# Dueños de revisión. Los cambios en workflows, configuración de seguridad y despliegue requieren
+# la aprobación del dueño (regla de revisión de code owners en el ruleset de main).
 *                         @edgarrth
-/.github/workflows/       @edgarrth
-/.github/actions/         @edgarrth
-/.github/policies/        @edgarrth
-/.github/gitops/          @edgarrth
+/.github/                 @edgarrth
+/trivy.yaml               @edgarrth
+/.trivyignore.yaml        @edgarrth
+/renovate.json            @edgarrth
+/release-please-config.json @edgarrth

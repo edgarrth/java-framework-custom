@@ -12,9 +12,9 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Meter filter for the {@code axiz.events*} instruments: denies meters with undeclared tag keys
- * (defense in depth against ad-hoc tags) and applies the histogram buckets of the event catalog.
- * Common tags (service, env, version, domain) are allowed.
+ * Filtro de meters para los instrumentos {@code axiz.events*}: rechaza los meters con claves de tag
+ * no declaradas (defensa en profundidad frente a tags ad hoc) y aplica los buckets del histograma
+ * del catálogo de eventos. Se permiten los tags comunes (service, env, version, domain).
  */
 public final class EventMetricsMeterFilter implements MeterFilter {
 
@@ -84,7 +84,7 @@ public final class EventMetricsMeterFilter implements MeterFilter {
     return values.stream().mapToDouble(Double::doubleValue).toArray();
   }
 
-  /** Duration helper for catalogs declared in milliseconds. */
+  /** Utilidad de duración para catálogos declarados en milisegundos. */
   public static Duration millis(long ms) {
     return Duration.ofMillis(ms);
   }

@@ -1,6 +1,9 @@
 package pe.axiz.core.messaging;
 
-/** Optional publication-budget contract, shared by adapters, routing and instrumentation. */
+/**
+ * Contrato opcional de presupuesto de publicación, compartido por adaptadores, enrutamiento e
+ * instrumentación.
+ */
 public interface BoundedPublisher {
   PublishBound publishBound();
 

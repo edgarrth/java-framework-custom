@@ -1,0 +1,30 @@
+package pe.axiz.spring.config.aws;
+
+import org.jspecify.annotations.Nullable;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.SpringApplicationRunListener;
+import org.springframework.boot.bootstrap.ConfigurableBootstrapContext;
+import org.springframework.context.ConfigurableApplicationContext;
+
+/**
+ * Cubre los fallos de config data antes de que los recursos del bootstrap puedan transferirse a
+ * Spring.
+ */
+public final class AwsBootstrapLifecycle implements SpringApplicationRunListener {
+  private @Nullable ConfigurableBootstrapContext bootstrap;
+
+  public AwsBootstrapLifecycle(SpringApplication application, String[] arguments) {}
+
+  @Override
+  public void starting(ConfigurableBootstrapContext context) {
+    bootstrap = context;
+  }
+
+  @Override
+  public void failed(@Nullable ConfigurableApplicationContext context, Throwable failure) {
+    if (bootstrap != null && bootstrap.isRegistered(AwsBootstrapOwner.class)) {
+      var owner = bootstrap.get(AwsBootstrapOwner.class);
+      if (owner != null) owner.failed();
+    }
+  }
+}

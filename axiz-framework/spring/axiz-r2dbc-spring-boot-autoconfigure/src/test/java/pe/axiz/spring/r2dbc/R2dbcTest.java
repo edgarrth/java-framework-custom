@@ -27,8 +27,8 @@ import org.springframework.r2dbc.connection.R2dbcTransactionManager;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.transaction.ReactiveTransactionManager;
 import org.springframework.transaction.reactive.TransactionalOperator;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.crypto.AesGcm;
 import pe.axiz.core.crypto.FieldEncryptor;
 import pe.axiz.core.crypto.StaticKeyProvider;
@@ -37,7 +37,6 @@ import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
 import pe.axiz.kit.r2dbc.EncryptedText;
 import pe.axiz.kit.r2dbc.ReactiveSql;
 import pe.axiz.kit.r2dbc.SqlParams;
-import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import pe.axiz.test.support.r2dbc.FakeR2dbc;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
@@ -80,26 +79,25 @@ class R2dbcTest {
   }
 
   @Test
-  void iamUsesTlsAndNoStoredPassword() {
+  void dynamicCredentialsUseTlsAndNoStoredPassword() {
     MockEnvironment env =
         new MockEnvironment()
             .withProperty("spring.r2dbc.url", "r2dbc:postgresql://db/payments")
             .withProperty("spring.r2dbc.username", "app")
-            .withProperty("axiz.r2dbc.iam.enabled", "true");
+            .withProperty("axiz.r2dbc.password-mode", "dynamic");
     epp.postProcessEnvironment(env, new SpringApplication());
     assertEquals("verify-full", env.getProperty("spring.r2dbc.properties.sslMode"));
     assertNull(env.getProperty("spring.flyway.password"));
   }
 
   @Test
-  void iamTokenIsResolvedPerConnection() {
+  void dynamicPasswordIsResolvedPerConnection() {
     DatabasePasswordProvider tokens = () -> "token-1";
     new ApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
-        .withConfiguration(AutoConfigurations.of(AxizR2dbcIamAutoConfiguration.class))
+        .withConfiguration(AutoConfigurations.of(AxizR2dbcPasswordAutoConfiguration.class))
         .withBean(DatabasePasswordProvider.class, () -> tokens)
-        .withPropertyValues("axiz.r2dbc.iam.enabled=true")
+        .withPropertyValues("axiz.r2dbc.password-mode=dynamic")
         .run(
             ctx -> {
               ConnectionFactoryOptions.Builder b =
@@ -110,10 +108,9 @@ class R2dbcTest {
               assertEquals("token-1", Mono.from((Publisher<?>) password).block(T).toString());
             });
     new ApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
-        .withConfiguration(AutoConfigurations.of(AxizR2dbcIamAutoConfiguration.class))
-        .run(ctx -> assertFalse(ctx.containsBean("axizR2dbcIamPassword")));
+        .withConfiguration(AutoConfigurations.of(AxizR2dbcPasswordAutoConfiguration.class))
+        .run(ctx -> assertFalse(ctx.containsBean("axizR2dbcPassword")));
   }
 
   @Test
@@ -133,7 +130,8 @@ class R2dbcTest {
               String status =
                   tx.transactional(
                           sql.update(
-                                  "UPDATE payments SET status = :status, error = :error WHERE id = :id",
+                                  "UPDATE payments SET status = :status, error = :error WHERE id ="
+                                      + " :id",
                                   SqlParams.of()
                                       .bind("status", "PAID")
                                       .bind("error", null, String.class)
@@ -148,7 +146,7 @@ class R2dbcTest {
               FakeR2dbc.Execution update = db.last("UPDATE payments");
               assertEquals(
                   "UPDATE payments SET status = $1, error = $2 WHERE id = $3", update.sql());
-              // the null error travels as a typed null (Spring binds Parameters.in(String.class))
+              // el error null viaja como un null tipado (Spring enlaza Parameters.in(String.class))
               assertNull(update.binds().get(1));
               assertEquals(String.class, update.types().get(1));
               assertEquals("p-1", update.binds().get(2));
@@ -194,7 +192,7 @@ class R2dbcTest {
   @Test
   void auditorIsTheCallerOfTheRequest() {
     RequestReactiveAuditor auditor = new RequestReactiveAuditor();
-    assertEquals("system", auditor.getCurrentAuditor().block(T));
+    assertEquals("unattributed", auditor.getCurrentAuditor().block(T));
     RequestMetadata user =
         RequestMetadata.builder("corr-12345678", "req-12345678")
             .clientId("app")
@@ -211,6 +209,31 @@ class R2dbcTest {
   }
 
   @Test
+  void blankIdentitiesAreExplicitlyUnattributed() {
+    RequestReactiveAuditor auditor = new RequestReactiveAuditor();
+    RequestMetadata machine =
+        RequestMetadata.builder("corr-12345678", "req-12345678")
+            .subject(" ")
+            .clientId("batch-app")
+            .build();
+    assertEquals(
+        "batch-app",
+        auditor.getCurrentAuditor().contextWrite(Context.of(RequestContext.KEY, machine)).block(T));
+    RequestMetadata blank =
+        RequestMetadata.builder("corr-12345678", "req-12345678")
+            .subject(" ")
+            .clientId("\t")
+            .build();
+    assertEquals(
+        "unattributed",
+        auditor.getCurrentAuditor().contextWrite(Context.of(RequestContext.KEY, blank)).block(T));
+    RequestMetadata missing = RequestMetadata.builder("corr-12345678", "req-12345678").build();
+    assertEquals(
+        "unattributed",
+        auditor.getCurrentAuditor().contextWrite(Context.of(RequestContext.KEY, missing)).block(T));
+  }
+
+  @Test
   void readerUrlsArePooled() {
     assertEquals(
         "r2dbc:pool:postgresql://ro/db", ReaderConnections.pooled("r2dbc:postgresql://ro/db"));
@@ -221,7 +244,6 @@ class R2dbcTest {
 
   private static ApplicationContextRunner context(FakeR2dbc db) {
     return new ApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
         .withConfiguration(AutoConfigurations.of(AxizR2dbcAutoConfiguration.class))
         .withPropertyValues("axiz.r2dbc.encryption-context=account.number")

@@ -11,8 +11,8 @@ import pe.axiz.payments.history.application.query.ListCustomerPaymentsQuery;
 import reactor.core.publisher.Mono;
 
 /**
- * Who reads the payment history: the customer its own payments, services with {@code payments:read}
- * any of them. Another customer's payment is reported as not found.
+ * Quién lee el historial de pagos: el cliente, sus propios pagos; los servicios con {@code
+ * payments:read}, cualquiera de ellos. El pago de otro cliente se informa como no encontrado.
  */
 public final class HistoryAccess {
 
@@ -24,7 +24,7 @@ public final class HistoryAccess {
     return caller.isMachine() ? caller.hasAuthority(READ) : caller.isUser(customerId);
   }
 
-  /** Customers list their own history. */
+  /** Los clientes listan su propio historial. */
   public static class ListPolicy implements ReactiveAccessPolicy<ListCustomerPaymentsQuery> {
 
     @Override
@@ -44,8 +44,8 @@ public final class HistoryAccess {
   }
 
   /**
-   * One payment, only for its customer. Non-blocking: the owner is read through the reactive
-   * repository, never with {@code block()}.
+   * Un pago, solo para su cliente. No bloqueante: el propietario se lee mediante el repositorio
+   * reactivo, nunca con {@code block()}.
    */
   public static class GetPolicy implements ReactiveAccessPolicy<GetPaymentQuery> {
 

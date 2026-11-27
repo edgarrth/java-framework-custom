@@ -1,13 +1,14 @@
 package pe.axiz.spring.jpa;
 
 import java.util.Optional;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.kit.jpa.AuditorProvider;
 
 /**
- * Auditor of {@code createdBy}/{@code updatedBy}: the end user, or the calling application for
- * machine-to-machine requests, as authenticated by the security starter; {@code system} otherwise.
+ * Auditor de {@code createdBy}/{@code updatedBy}: el usuario final, o la aplicación invocante en
+ * solicitudes de máquina a máquina, según la autenticación del starter de seguridad; un resultado
+ * vacío cuando no hay ninguna identidad autenticada disponible.
  */
 public class RequestAuditorProvider implements AuditorProvider {
 
@@ -15,11 +16,12 @@ public class RequestAuditorProvider implements AuditorProvider {
   public Optional<String> currentAuditor() {
     RequestMetadata m = RequestContext.get();
     if (m == null) {
-      return Optional.of("system");
+      return Optional.empty();
     }
-    if (m.subject() != null) {
-      return Optional.of(m.subject());
+    String subject = m.subject();
+    if (subject != null && !subject.isBlank()) {
+      return Optional.of(subject);
     }
-    return Optional.of(m.clientId() != null ? m.clientId() : "system");
+    return Optional.ofNullable(m.clientId()).filter(id -> !id.isBlank());
   }
 }

@@ -3,7 +3,7 @@ package pe.axiz.kit.dynamodb;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
@@ -19,7 +19,10 @@ import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsResponse
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse;
 
-/** One invocation owns its SDK cancellation binding; no thread-local or shared request state. */
+/**
+ * Una invocación es dueña de su enlace de cancelación del SDK; sin estado de petición thread-local
+ * ni compartido.
+ */
 final class NativeDynamoCall<T> extends CompletableFuture<T> implements DynamoDbAsyncClient {
   private final DynamoDbAsyncClient delegate;
   private final AtomicReference<CompletableFuture<?>> nativeRequest = new AtomicReference<>();
@@ -110,7 +113,7 @@ final class NativeDynamoCall<T> extends CompletableFuture<T> implements DynamoDb
     return delegate.serviceName();
   }
 
-  /** The application owns the borrowed transport. */
+  /** La aplicación es dueña del transporte prestado. */
   @Override
   public void close() {}
 }

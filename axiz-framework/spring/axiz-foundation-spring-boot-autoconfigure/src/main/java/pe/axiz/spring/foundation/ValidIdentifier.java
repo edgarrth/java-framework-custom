@@ -9,8 +9,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Bean Validation constraint for any registered identifier type, e.g. {@code @ValidIdentifier(type
- * = "ruc") String taxId}. Null values are valid (combine with {@code @NotNull}).
+ * Restricción de Bean Validation para cualquier tipo de identificador registrado, p. ej.
+ * {@code @ValidIdentifier(type = "ruc") String taxId}. Los valores nulos son válidos (se combina
+ * con {@code @NotNull}).
  */
 @Documented
 @Constraint(validatedBy = IdentifierConstraintValidator.class)

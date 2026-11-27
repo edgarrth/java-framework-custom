@@ -3,10 +3,15 @@ package pe.axiz.quality.architecture;
 import java.util.Map;
 import java.util.Set;
 
-/** Shared class/POM policy; every exception must have a documented reason at this declaration. */
+/**
+ * Política compartida de clases y POM; cada excepción debe tener un motivo documentado en esta
+ * declaración.
+ */
 final class TechnologyBoundaries {
-  // AWS database authentication implements the neutral credential contract owned by the R2DBC kit.
-  static final Map<String, Set<String>> EXCEPTIONS = Map.of("databaseauth.aws", Set.of("r2dbc"));
+  // La autenticación de base de datos de AWS implementa el contrato neutral de credenciales que
+  // define el kit R2DBC.
+  static final Map<String, Set<String>> EXCEPTIONS =
+      Map.of("databaseauth.aws", Set.of("r2dbc"), "outbox.r2dbc", Set.of("reactor"));
 
   private TechnologyBoundaries() {}
 
@@ -30,7 +35,8 @@ final class TechnologyBoundaries {
   }
 
   static boolean allowed(String sourceModule, String technology, String targetKit) {
-    return technology.equals(targetKit)
+    return (targetKit.equals("sql") && Set.of("jdbc", "r2dbc").contains(technology))
+        || technology.equals(targetKit)
         || EXCEPTIONS.getOrDefault(sourceModule, Set.of()).contains(targetKit);
   }
 }

@@ -1,8 +1,0 @@
-public final class pe.axiz.adapter.audit.kafka.KafkaAuditPublisher implements pe.axiz.core.audit.AuditPublisher {
-public pe.axiz.adapter.audit.kafka.KafkaAuditPublisher(org.apache.kafka.clients.producer.Producer<java.lang.String, java.lang.String>, java.lang.String, java.time.Duration);
-public void publish(pe.axiz.core.audit.AuditEvent);
-}
-
-public final class pe.axiz.adapter.audit.kafka.KafkaAuditRecords {
-public static org.apache.kafka.clients.producer.ProducerRecord<java.lang.String, java.lang.String> create(java.lang.String, pe.axiz.core.audit.AuditEvent);
-}

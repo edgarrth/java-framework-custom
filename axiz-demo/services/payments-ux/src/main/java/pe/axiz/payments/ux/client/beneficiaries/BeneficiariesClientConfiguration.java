@@ -4,7 +4,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.service.registry.HttpServiceGroup;
 import org.springframework.web.service.registry.ImportHttpServices;
 
-/** Registers {@link BeneficiariesClient} in the HTTP service group {@code beneficiaries}. */
+/** Registra {@link BeneficiariesClient} en el grupo de servicios HTTP {@code beneficiaries}. */
 @Configuration(proxyBeanMethods = false)
 @ImportHttpServices(
     group = "beneficiaries",

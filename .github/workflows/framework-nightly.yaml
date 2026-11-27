@@ -1,0 +1,215 @@
+# Verificaciones nocturnas del framework que son demasiado lentas para cada pull request: todas las
+# combinaciones de proyectos generados, la compilación nativa de los ejemplos y la aceptación
+# reactiva nativa.
+name: framework-nightly
+
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+# Maven Central responde 429 cuando muchos jobs descargan a la vez: el resolver reintenta con espera
+# exponencial (respeta Retry-After). setup-java conserva este valor y le agrega -ntp.
+env:
+  MAVEN_ARGS: >-
+    -Daether.connector.http.retryHandler.count=8
+    -Daether.connector.http.retryHandler.interval=10000
+    -Daether.connector.http.retryHandler.intervalMax=120000
+
+jobs:
+  samples-matrix:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: '25'
+      # Maven consulta primero el espejo oficial de Maven Central en Google Cloud Storage, que no limita
+      # por IP, y recurre a Central solo cuando un artefacto todavía no llega al espejo.
+      - name: Espejo oficial de Maven Central
+        run: |
+          cat > "$RUNNER_TEMP/maven-central-mirror.xml" <<'EOF'
+          <settings>
+            <profiles>
+              <profile>
+                <id>maven-central-mirror</id>
+                <repositories>
+                  <repository>
+                    <id>maven-central-mirror</id>
+                    <url>https://maven-central.storage-download.googleapis.com/maven2</url>
+                    <snapshots><enabled>false</enabled></snapshots>
+                  </repository>
+                </repositories>
+                <pluginRepositories>
+                  <pluginRepository>
+                    <id>maven-central-mirror</id>
+                    <url>https://maven-central.storage-download.googleapis.com/maven2</url>
+                    <snapshots><enabled>false</enabled></snapshots>
+                  </pluginRepository>
+                </pluginRepositories>
+              </profile>
+            </profiles>
+            <activeProfiles>
+              <activeProfile>maven-central-mirror</activeProfile>
+            </activeProfiles>
+          </settings>
+          EOF
+          echo "MAVEN_ARGS=$MAVEN_ARGS -gs $RUNNER_TEMP/maven-central-mirror.xml" >> "$GITHUB_ENV"
+      # Caché propio de este job: la clave restaura el anterior aunque cambie un pom.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.m2/wrapper
+          key: maven-samples-matrix-${{ hashFiles('axiz-framework/**/pom.xml') }}
+          restore-keys: maven-samples-matrix-
+      - name: Todas las combinaciones de arquetipo, estructura, stack y persistencia
+        working-directory: axiz-framework
+        env:
+          MODE: all
+        run: .github/scripts/samples.sh
+      - name: Cada proyecto generado compila con el perfil quality, sin credenciales de AWS del runner
+        working-directory: axiz-framework
+        run: |
+          failed=()
+          for dir in target/samples/*/ target/audit-samples/*/; do
+            echo "::group::$dir"
+            (cd "$dir" && env -u AWS_REGION -u AWS_DEFAULT_REGION -u AWS_PROFILE \
+              -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY -u AWS_SESSION_TOKEN \
+              AWS_CONFIG_FILE=/dev/null AWS_SHARED_CREDENTIALS_FILE=/dev/null \
+              ./mvnw -B -ntp -Pquality spotless:check verify) || failed+=("$dir")
+            echo "::endgroup::"
+          done
+          if [[ "${#failed[@]}" -gt 0 ]]; then
+            echo "::error::Proyectos con fallas: ${failed[*]}"
+            exit 1
+          fi
+
+  native-samples:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: graalvm/setup-graalvm@27b360dbb857524eaf0b4c4cef364d38e5b4f173 # v1.6.7
+        with:
+          java-version: '25'
+          distribution: graalvm-community
+      # Maven consulta primero el espejo oficial de Maven Central en Google Cloud Storage, que no limita
+      # por IP, y recurre a Central solo cuando un artefacto todavía no llega al espejo.
+      - name: Espejo oficial de Maven Central
+        run: |
+          cat > "$RUNNER_TEMP/maven-central-mirror.xml" <<'EOF'
+          <settings>
+            <profiles>
+              <profile>
+                <id>maven-central-mirror</id>
+                <repositories>
+                  <repository>
+                    <id>maven-central-mirror</id>
+                    <url>https://maven-central.storage-download.googleapis.com/maven2</url>
+                    <snapshots><enabled>false</enabled></snapshots>
+                  </repository>
+                </repositories>
+                <pluginRepositories>
+                  <pluginRepository>
+                    <id>maven-central-mirror</id>
+                    <url>https://maven-central.storage-download.googleapis.com/maven2</url>
+                    <snapshots><enabled>false</enabled></snapshots>
+                  </pluginRepository>
+                </pluginRepositories>
+              </profile>
+            </profiles>
+            <activeProfiles>
+              <activeProfile>maven-central-mirror</activeProfile>
+            </activeProfiles>
+          </settings>
+          EOF
+          echo "MAVEN_ARGS=$MAVEN_ARGS -gs $RUNNER_TEMP/maven-central-mirror.xml" >> "$GITHUB_ENV"
+      # Caché propio de este job: la clave restaura el anterior aunque cambie un pom.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.m2/wrapper
+          key: maven-native-samples-${{ hashFiles('axiz-framework/**/pom.xml') }}
+          restore-keys: maven-native-samples-
+      - name: Ejemplos por defecto generados
+        working-directory: axiz-framework
+        run: .github/scripts/samples.sh
+      - name: Imagen nativa y pruebas nativas de cada ejemplo de servicio
+        working-directory: axiz-framework/target/samples
+        run: |
+          for sample in sample-orders sample-core sample-gateway sample-ux sample-support \
+                        sample-notifications-processor sample-settlement-batch; do
+            echo "::group::$sample"
+            (cd "$sample" && ./mvnw -B -ntp -Pnative package native:compile native:test)
+            echo "::endgroup::"
+          done
+
+  native-reactive:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: graalvm/setup-graalvm@27b360dbb857524eaf0b4c4cef364d38e5b4f173 # v1.6.7
+        with:
+          java-version: '25'
+          distribution: graalvm-community
+      # Maven consulta primero el espejo oficial de Maven Central en Google Cloud Storage, que no limita
+      # por IP, y recurre a Central solo cuando un artefacto todavía no llega al espejo.
+      - name: Espejo oficial de Maven Central
+        run: |
+          cat > "$RUNNER_TEMP/maven-central-mirror.xml" <<'EOF'
+          <settings>
+            <profiles>
+              <profile>
+                <id>maven-central-mirror</id>
+                <repositories>
+                  <repository>
+                    <id>maven-central-mirror</id>
+                    <url>https://maven-central.storage-download.googleapis.com/maven2</url>
+                    <snapshots><enabled>false</enabled></snapshots>
+                  </repository>
+                </repositories>
+                <pluginRepositories>
+                  <pluginRepository>
+                    <id>maven-central-mirror</id>
+                    <url>https://maven-central.storage-download.googleapis.com/maven2</url>
+                    <snapshots><enabled>false</enabled></snapshots>
+                  </pluginRepository>
+                </pluginRepositories>
+              </profile>
+            </profiles>
+            <activeProfiles>
+              <activeProfile>maven-central-mirror</activeProfile>
+            </activeProfiles>
+          </settings>
+          EOF
+          echo "MAVEN_ARGS=$MAVEN_ARGS -gs $RUNNER_TEMP/maven-central-mirror.xml" >> "$GITHUB_ENV"
+      # Caché propio de este job: la clave restaura el anterior aunque cambie un pom.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.m2/wrapper
+          key: maven-native-reactive-${{ hashFiles('axiz-framework/**/pom.xml') }}
+          restore-keys: maven-native-reactive-
+      - name: Servicio reactivo nativo de aceptación
+        working-directory: axiz-framework
+        run: bash .github/scripts/reactive-native-sample.sh

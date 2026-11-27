@@ -51,7 +51,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 {{/item.usesQuery}}
 import org.springframework.web.bind.annotation.RestController;
 {{#item.usesPaging}}
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.PageRequest;
 {{/item.usesPaging}}
 {{#fw.cqrs}}
 {{^fw.reactiveHandlers}}
@@ -104,9 +104,10 @@ import {{project.basePackage}}.composition.{{item.className}}Composition;
 {{/fw.bff}}
 
 /**
- * REST adapter of the {@code {{item.name}}} operations of the contract (src/main/openapi). Generated
- * once by axiz: keep the signatures in sync with the contract ({@code axiz contract sync} adds new
- * operations and reports removed ones); request and response models are generated at build time.
+ * Adaptador REST de las operaciones {@code {{item.name}}} del contrato (src/main/openapi). Generado
+ * una sola vez por axiz: las firmas se mantienen sincronizadas con el contrato
+ * ({@code axiz contract sync} agrega operaciones nuevas e informa las eliminadas); los modelos de
+ * solicitud y respuesta se generan en tiempo de build.
  */
 @RestController
 public class {{item.className}}Controller {

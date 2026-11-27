@@ -19,8 +19,8 @@ import pe.axiz.core.notification.NotificationSender;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 
 /**
- * Notifications (email, SMS, push) as {@code notification.requested.v1} events to the service that
- * delivers them; the destination is {@code axiz.notification.destination} (default {@code
+ * Notificaciones (email, SMS, push) como eventos {@code notification.requested.v1} hacia el
+ * servicio que las entrega; el destino es {@code axiz.notification.destination} (por defecto {@code
  * notifications}).
  */
 @AutoConfiguration(

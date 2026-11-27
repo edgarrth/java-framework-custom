@@ -22,25 +22,27 @@ import tools.jackson.databind.JavaType;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Applies {@link AxizCacheable}: the key is the cache name, the key format, the method signature
- * (or the explicit {@link AxizCacheable#keyName()}), the scope ({@link CacheScope}: the tenant by
- * default, the tenant and the caller, or nothing for global data) and the arguments encoded by
- * {@link CacheKeys}; values are stored as JSON with their full generic type; {@code null} results
- * are not cached; {@code Mono} and {@code Flux} results are cached when they complete, without
- * blocking the event loop, and their scope is read when they are subscribed. A call whose scope
- * cannot be resolved (a {@link CacheScope#CALLER} cache without an authenticated caller) runs
- * without the cache. The cache never replaces authorization: see {@link #ORDER}.
+ * Aplica {@link AxizCacheable}: la clave es el nombre de la caché, el formato de la clave, la firma
+ * del método (o el {@link AxizCacheable#keyName()} explícito), el ámbito ({@link CacheScope}: el
+ * tenant por defecto, el tenant y el invocante, o nada para datos globales) y los argumentos
+ * codificados por {@link CacheKeys}; los valores se almacenan como JSON con su tipo genérico
+ * completo; los resultados {@code null} no se cachean; los resultados {@code Mono} y {@code Flux}
+ * se cachean cuando completan, sin bloquear el event loop, y su ámbito se lee cuando se suscriben.
+ * Una llamada cuyo ámbito no puede resolverse (una caché {@link CacheScope#CALLER} sin invocante
+ * autenticado) se ejecuta sin la caché. La caché nunca reemplaza la autorización: ver {@link
+ * #ORDER}.
  */
 public class AxizCacheableInterceptor implements MethodInterceptor {
 
   /**
-   * Order of the advisor: inside every authorization interceptor of Spring Security method security
-   * ({@code AuthorizationInterceptorsOrder}: {@code @PreFilter} 100 to {@code @PostFilter} 600), so
-   * {@code @PreAuthorize}, {@code @Secured}, {@code @RolesAllowed}, {@code @PostAuthorize} and
-   * {@code @PostFilter} run on every call, also when the value comes from the cache; and outside
-   * {@code @Transactional} (lowest precedence), so a hit opens no transaction. An application that
-   * moves method security with {@code @EnableMethodSecurity(offset = ...)} must keep this order
-   * after its last authorization interceptor.
+   * Orden del advisor: dentro de todos los interceptores de autorización de la seguridad de métodos
+   * de Spring Security ({@code AuthorizationInterceptorsOrder}: de {@code @PreFilter} 100 a
+   * {@code @PostFilter} 600), de modo que {@code @PreAuthorize}, {@code @Secured},
+   * {@code @RolesAllowed}, {@code @PostAuthorize} y {@code @PostFilter} se ejecutan en cada
+   * llamada, también cuando el valor proviene de la caché; y fuera de {@code @Transactional}
+   * (precedencia más baja), de modo que un acierto no abre ninguna transacción. Una aplicación que
+   * desplaza la seguridad de métodos con {@code @EnableMethodSecurity(offset = ...)} debe mantener
+   * este orden después de su último interceptor de autorización.
    */
   public static final int ORDER = 700;
 
@@ -52,16 +54,17 @@ public class AxizCacheableInterceptor implements MethodInterceptor {
   private final SingletonSupplier<@Nullable CacheCallerResolver> callers;
   private final Map<Method, Plan> plans = new ConcurrentHashMap<>();
 
-  /** With the default caller identity ({@link DefaultCacheCallerResolver}). */
+  /** Con la identidad de invocante por defecto ({@link DefaultCacheCallerResolver}). */
   public AxizCacheableInterceptor(Supplier<AxizCaches> caches, Supplier<JsonMapper> mapper) {
     this(caches, mapper, CacheScopes::defaultCallers);
   }
 
   /**
-   * Creates the interceptor with the given caller identity for {@link CacheScope#CALLER} caches.
+   * Crea el interceptor con la identidad de invocante indicada para las cachés {@link
+   * CacheScope#CALLER}.
    *
-   * @param callers identity of the caller for {@link CacheScope#CALLER} caches; a supplier that
-   *     returns {@code null} (no Spring Security) leaves those caches unused
+   * @param callers identidad del invocante para las cachés {@link CacheScope#CALLER}; un proveedor
+   *     que devuelve {@code null} (sin Spring Security) deja esas cachés sin uso
    */
   public AxizCacheableInterceptor(
       Supplier<AxizCaches> caches,
@@ -184,7 +187,10 @@ public class AxizCacheableInterceptor implements MethodInterceptor {
         reactive);
   }
 
-  /** Class, name and parameter types: overloads and equally named methods never share entries. */
+  /**
+   * Clase, nombre y tipos de parámetros: las sobrecargas y los métodos con el mismo nombre nunca
+   * comparten entradas.
+   */
   static String signature(Method method) {
     StringBuilder b =
         new StringBuilder(method.getDeclaringClass().getName())

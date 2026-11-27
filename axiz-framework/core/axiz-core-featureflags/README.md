@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-core-featureflags
 
-Feature flags with targeting by channel, tenant or percentage; OpenFeature-compatible provider.
+Feature flags segmentados por canal, tenant o porcentaje, con proveedor compatible con OpenFeature.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,18 +12,18 @@ Feature flags with targeting by channel, tenant or percentage; OpenFeature-compa
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `EvaluationContext` | Who a flag is evaluated for. |
-| `FeatureFlags` | Evaluates feature flags. |
-| `FlagDefinition` | A feature flag. |
-| `FlagProvider` | Source of flag definitions (ConfigMap-bound properties, Parameter Store). |
-| `MapFlagProvider` | Flags from configuration (bound from the service ConfigMap). |
+| `EvaluationContext` | Para quién se evalúa un flag. |
+| `FeatureFlags` | Evalúa feature flags. |
+| `FlagDefinition` | Un feature flag. |
+| `FlagProvider` | Fuente de definiciones de flags (propiedades enlazadas desde el ConfigMap, Parameter Store). |
+| `MapFlagProvider` | Flags desde la configuración (enlazada desde el ConfigMap del servicio). |
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-featureflags verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl core/axiz-core-featureflags verify`.

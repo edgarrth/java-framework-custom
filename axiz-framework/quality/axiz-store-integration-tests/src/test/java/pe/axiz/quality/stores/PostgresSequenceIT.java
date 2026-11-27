@@ -25,19 +25,18 @@ import org.springframework.r2dbc.connection.R2dbcTransactionManager;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import org.testcontainers.postgresql.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.sequence.r2dbc.R2dbcSequenceStore;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.sequence.ResetPolicy;
 import pe.axiz.kit.r2dbc.ReactiveSql;
 import pe.axiz.kit.r2dbc.SqlParams;
+import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
-import pe.axiz.spring.foundation.jdbc.SchemaInitializer.Mode;
 import pe.axiz.spring.r2dbc.DatabaseClientReactiveSql;
 import pe.axiz.spring.sequence.AxizSequenceAutoConfiguration;
 import pe.axiz.spring.sequence.AxizSequenceProperties;
-import pe.axiz.spring.sequence.AxizSequenceR2dbcAutoConfiguration;
 import pe.axiz.spring.sequence.ReactiveSequences;
+import pe.axiz.spring.sequence.r2dbc.AxizSequenceR2dbcAutoConfiguration;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -45,12 +44,14 @@ import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
-/** Native counter reservations commit independently of business writes, including cancellation. */
+/**
+ * Las reservas nativas del contador se confirman de forma independiente de las escrituras de
+ * negocio, incluida la cancelación.
+ */
 @ExtendWith(BlockHoundExtension.class)
 class PostgresSequenceIT {
   private static final Duration T = Duration.ofSeconds(15);
-  private static final PostgreSQLContainer POSTGRES =
-      new PostgreSQLContainer(DockerImageName.parse(Docker.POSTGRES));
+  private static final PostgreSQLContainer POSTGRES = TestContainerImages.postgres();
   private static ConnectionFactory connections;
   private static ReactiveSql sql;
   private static R2dbcSequenceStore store;
@@ -72,8 +73,8 @@ class PostgresSequenceIT {
                 .build());
     sql = new DatabaseClientReactiveSql(DatabaseClient.create(connections));
     sql.update(
-            "CREATE TABLE axiz_sequence (seq_name VARCHAR(64), seq_period VARCHAR(64), seq_value BIGINT NOT NULL, "
-                + "PRIMARY KEY (seq_name, seq_period))",
+            "CREATE TABLE axiz_sequence (seq_name VARCHAR(64), seq_period VARCHAR(64), seq_value"
+                + " BIGINT NOT NULL, PRIMARY KEY (seq_name, seq_period))",
             SqlParams.of())
         .block(T);
     sql.update("CREATE TABLE sequence_business (id VARCHAR(64) PRIMARY KEY)", SqlParams.of())
@@ -90,8 +91,6 @@ class PostgresSequenceIT {
     var properties =
         new AxizSequenceProperties(
             "r2dbc",
-            "axiz_sequence",
-            Mode.NEVER,
             Map.of(
                 name,
                 new AxizSequenceProperties.Spec(
@@ -150,7 +149,8 @@ class PostgresSequenceIT {
               AutoConfigurations.of(
                   AxizSequenceAutoConfiguration.class, AxizSequenceR2dbcAutoConfiguration.class))
           .withBean(ConnectionFactory.class, () -> main)
-          .withPropertyValues("axiz.sequence.sequences.saturated.block-size=1")
+          .withPropertyValues(
+              "axiz.sequence.store=r2dbc", "axiz.sequence.sequences.saturated.block-size=1")
           .run(
               context -> {
                 Assertions.assertThat(context).hasNotFailed();

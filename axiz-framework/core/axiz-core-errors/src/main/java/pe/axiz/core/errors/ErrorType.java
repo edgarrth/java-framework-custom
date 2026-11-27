@@ -1,15 +1,15 @@
 package pe.axiz.core.errors;
 
-/** Nature of an error, independent of its HTTP representation. */
+/** Naturaleza de un error, independiente de su representación HTTP. */
 public enum ErrorType {
-  /** A business rule rejected the operation (expected outcome). */
+  /** Una regla de negocio rechazó la operación (resultado esperado). */
   BUSINESS,
-  /** The input is malformed or incomplete. */
+  /** La entrada está mal formada o incompleta. */
   VALIDATION,
-  /** Authentication or authorization failure. */
+  /** Fallo de autenticación o de autorización. */
   SECURITY,
-  /** Unexpected failure inside the service. */
+  /** Fallo inesperado dentro del servicio. */
   TECHNICAL,
-  /** A dependency (third party, legacy system, other service) failed or rejected the call. */
+  /** Una dependencia (tercero, sistema core, otro servicio) falló o rechazó la llamada. */
   EXTERNAL
 }

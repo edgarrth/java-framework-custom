@@ -1,11 +1,15 @@
-# axiz initializr. Environment values (issuer, client ids, organization) come from the ConfigMap;
-# client secrets from the mounted secrets (/var/run/secrets/axiz), never from this file.
+# axiz initializr. Los valores de entorno (issuer, client ids, organización) provienen del ConfigMap;
+# los client secrets, de los secretos montados (/var/run/secrets/axiz), nunca de este archivo.
 spring:
   application:
     name: axiz-initializr
   threads:
     virtual:
       enabled: true
+  data:
+    redis:
+      connect-timeout: 1s
+      timeout: 1s
   servlet:
     multipart:
       max-file-size: 2MB
@@ -14,7 +18,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${AXIZ_SSO_ISSUER:http://localhost:8180/realms/axiz}
+          issuer-uri: ${AXIZ_SSO_ISSUER}
       client:
         registration:
           sso:
@@ -22,19 +26,26 @@ spring:
             client-id: ${AXIZ_SSO_CLIENT_ID:axiz-initializr}
             client-secret: ${AXIZ_SSO_CLIENT_SECRET:}
             scope: [openid, profile, email]
-          # only authorizes repository creation; login is the SSO (see SecurityConfiguration).
-          # The GitHub OAuth app must use this callback: <initializr URL>/authorized/github
+          # solo autoriza la creación de repositorios; el login es el SSO (ver SecurityConfiguration).
+          # La OAuth app de GitHub debe usar este callback: <initializr URL>/authorized/github
           github:
             client-id: ${AXIZ_GITHUB_CLIENT_ID:axiz-initializr-local}
             client-secret: ${AXIZ_GITHUB_CLIENT_SECRET:}
             redirect-uri: "{baseUrl}/authorized/{registrationId}"
-            scope: [repo]
+            scope: [repo, workflow]
         provider:
           sso:
-            issuer-uri: ${AXIZ_SSO_ISSUER:http://localhost:8180/realms/axiz}
+            issuer-uri: ${AXIZ_SSO_ISSUER}
 server:
   port: 8080
   shutdown: graceful
+  servlet:
+    session:
+      timeout: 15m
+      cookie:
+        http-only: true
+        secure: true
+        same-site: lax
   tomcat:
     max-swallow-size: 6MB
     max-http-form-post-size: 6MB
@@ -48,10 +59,19 @@ management:
       probes:
         enabled: true
 axiz:
+  security:
+    # Initializr define su propia cadena de seguridad SSO/OAuth; el starter del proveedor aporta las cuotas.
+    enabled: false
+    rate-limit:
+      enabled: true
+      store: redis
+      redis:
+        key-prefix: "axiz:initializr:quota:v1:"
   initializr:
-    structure-version: ${AXIZ_FRAMEWORK_VERSION:2.0.0}
+    publication-key: ${AXIZ_INITIALIZR_PUBLICATION_KEY:}
+    framework-version: ${AXIZ_FRAMEWORK_VERSION:2.0.0}
     github-organization: ${AXIZ_GITHUB_ORGANIZATION:}
-    # bearer tokens of the CLI and automations must name this API in their audience
+    # los bearer tokens de la CLI y de las automatizaciones deben nombrar esta API en su audience
     audience: ${AXIZ_INITIALIZR_AUDIENCE:axiz-initializr}
   audit:
-    mode: ASYNC
+    mode: SYNC

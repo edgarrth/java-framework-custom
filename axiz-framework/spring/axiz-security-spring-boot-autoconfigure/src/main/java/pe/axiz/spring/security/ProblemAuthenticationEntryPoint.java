@@ -15,8 +15,9 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import pe.axiz.core.errors.Problem;
 
 /**
- * Servlet 401 and 403 handling: problem body plus {@code WWW-Authenticate: Bearer}. The reason a
- * token was rejected is logged by Spring Security at debug level and never sent to the client.
+ * Manejo de 401 y 403 en servlet: cuerpo de problema más {@code WWW-Authenticate: Bearer}. Spring
+ * Security registra en nivel debug el motivo por el que se rechazó un token y nunca se envía al
+ * cliente.
  */
 public class ProblemAuthenticationEntryPoint
     implements AuthenticationEntryPoint, AccessDeniedHandler {
@@ -36,6 +37,16 @@ public class ProblemAuthenticationEntryPoint
   public void commence(
       HttpServletRequest request, HttpServletResponse response, AuthenticationException e)
       throws IOException {
+    var unavailable = IssuerUnavailableException.find(e);
+    if (unavailable != null) {
+      response.setHeader(HttpHeaders.RETRY_AFTER, Long.toString(unavailable.retryAfterSeconds()));
+      response.setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
+      write(
+          response,
+          503,
+          problems.unavailable(LocaleContextHolder.getLocale(), request.getRequestURI()));
+      return;
+    }
     boolean hadToken = request.getHeader(HttpHeaders.AUTHORIZATION) != null;
     response.setHeader(
         HttpHeaders.WWW_AUTHENTICATE, hadToken ? "Bearer error=\"invalid_token\"" : "Bearer");

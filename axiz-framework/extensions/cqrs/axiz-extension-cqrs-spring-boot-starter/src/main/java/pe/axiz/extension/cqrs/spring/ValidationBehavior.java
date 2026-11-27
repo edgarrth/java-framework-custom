@@ -10,7 +10,10 @@ import pe.axiz.core.errors.ValidationException;
 import pe.axiz.extension.cqrs.Invocation;
 import pe.axiz.extension.cqrs.PipelineBehavior;
 
-/** Bean Validation of commands and queries before anything else runs (400 on violations). */
+/**
+ * Bean Validation de comandos y consultas antes de que se ejecute cualquier otra cosa (400 ante
+ * violaciones).
+ */
 public final class ValidationBehavior implements PipelineBehavior {
 
   private final Validator validator;
@@ -30,7 +33,7 @@ public final class ValidationBehavior implements PipelineBehavior {
     return next.proceed();
   }
 
-  /** Throws {@link ValidationException} with every violation of the request. */
+  /** Lanza {@link ValidationException} con cada violación de la petición. */
   static void validate(Validator validator, Object request) {
     Set<ConstraintViolation<Object>> violations = validator.validate(request);
     if (!violations.isEmpty()) {

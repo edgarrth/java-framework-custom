@@ -1,0 +1,10 @@
+capabilities:
+- crypto
+- crypto-kms
+- carddata
+- secrets-aws
+- tokenization
+- tokenization-pan
+- tokenization-vault
+- tokenization-vault-dynamodb
+- tokenization-vault-redis

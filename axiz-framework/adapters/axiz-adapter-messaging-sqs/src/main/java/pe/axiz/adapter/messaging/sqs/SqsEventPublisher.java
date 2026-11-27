@@ -18,8 +18,8 @@ import software.amazon.awssdk.services.sqs.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 /**
- * Publishes CloudEvents (structured JSON) to Amazon SQS. FIFO queues use the subject as message
- * group and the event id as deduplication id. Destinations are queue URLs.
+ * Publica CloudEvents (JSON estructurado) en Amazon SQS. Las colas FIFO usan el subject como grupo
+ * de mensajes y el id del evento como id de deduplicación. Los destinos son URL de colas.
  */
 public final class SqsEventPublisher implements EventPublisher, BoundedPublisher {
 
@@ -84,7 +84,7 @@ public final class SqsEventPublisher implements EventPublisher, BoundedPublisher
     return request.build();
   }
 
-  /** Whether the address selects SQS, including HTTP emulator queue URLs. */
+  /** Indica si la dirección selecciona SQS, incluidas las URL de colas de emuladores HTTP. */
   public static boolean isDestination(String destination) {
     try {
       URI uri = URI.create(destination);

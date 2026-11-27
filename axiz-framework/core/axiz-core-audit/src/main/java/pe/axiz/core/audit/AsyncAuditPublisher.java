@@ -21,17 +21,17 @@ import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pe.axiz.core.commons.BoundedCallbackExecutor;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.BoundedCallbackExecutor;
+import pe.axiz.core.concurrent.Stages;
+import pe.axiz.core.context.RequestContext;
 
 /**
- * Bounded asynchronous delivery with independently bounded admission, delivery and fallback.
- * Shutdown shares one total budget across draining, cancellation, flushing and executor
- * termination. A callback ignoring interruption can outlive that budget; {@link
- * Shutdown#terminated()} exposes this explicitly. A timed-out acknowledgement is uncertain and may
- * physically complete later; consumers must tolerate duplicates. Publication after shutdown is
- * rejected.
+ * Entrega asíncrona acotada, con admisión, entrega y fallback acotados de forma independiente. El
+ * apagado comparte un único presupuesto total entre drenado, cancelación, vaciado y terminación del
+ * executor. Un callback que ignora la interrupción puede sobrevivir a ese presupuesto; {@link
+ * Shutdown#terminated()} lo expone de forma explícita. Un acuse con timeout es incierto y puede
+ * completarse físicamente más tarde; los consumidores deben tolerar duplicados. La publicación
+ * después del apagado se rechaza.
  */
 public final class AsyncAuditPublisher implements AuditPublisher, AuditQueueMetrics, AutoCloseable {
   private static final Logger LOG = LoggerFactory.getLogger(AsyncAuditPublisher.class);
@@ -65,9 +65,10 @@ public final class AsyncAuditPublisher implements AuditPublisher, AuditQueueMetr
   private final Object shutdownMonitor = new Object();
 
   /**
-   * Shutdown snapshot. Counts are final when terminated is true; otherwise a callback or the
-   * drainer may still be finishing. Unconfirmed means fallback acceptance is unknown, not confirmed
-   * loss. Flushed counts only events taken from the queue by the closing thread.
+   * Instantánea del apagado. Los conteos son definitivos cuando terminated es true; en otro caso un
+   * callback o el drenador aún pueden estar terminando. Unconfirmed significa que la aceptación del
+   * fallback es desconocida, no una pérdida confirmada. Flushed cuenta solo los eventos que el hilo
+   * de cierre tomó de la cola.
    */
   public record Shutdown(
       boolean drainedInTime,
@@ -77,7 +78,7 @@ public final class AsyncAuditPublisher implements AuditPublisher, AuditQueueMetr
       long unconfirmed,
       int pending) {}
 
-  /** All execution paths, including fallback, use a finite delivery timeout. */
+  /** Todas las rutas de ejecución, incluido el fallback, usan un timeout de entrega finito. */
   public AsyncAuditPublisher(
       AuditPublisher delegate,
       AuditPublisher fallback,
@@ -89,7 +90,7 @@ public final class AsyncAuditPublisher implements AuditPublisher, AuditQueueMetr
     this(delegate, fallback, capacity, offerTimeout, closeTimeout, deliveryTimeout, context, false);
   }
 
-  /** Native submissions are non-blocking by contract; the owned drainer awaits just their ACK. */
+  /** Los envíos nativos no bloquean por contrato; el drenador propio espera solo su ACK. */
   static AsyncAuditPublisher forNative(
       AsyncAuditEventPublisher target,
       AuditPublisher fallback,
@@ -158,7 +159,7 @@ public final class AsyncAuditPublisher implements AuditPublisher, AuditQueueMetr
     enqueue(event, offerTimeoutNanos);
   }
 
-  /** Immediate admission for native callers; never waits for queue space. */
+  /** Admisión inmediata para quienes llaman de forma nativa; nunca espera espacio en la cola. */
   public void publishWithoutWait(AuditEvent event) {
     Objects.requireNonNull(event);
     callerFallbacks.incrementAndGet();
@@ -179,7 +180,7 @@ public final class AsyncAuditPublisher implements AuditPublisher, AuditQueueMetr
     }
   }
 
-  // Producers hold admission; the queue itself uses lock-free, non-waiting offers.
+  // Los productores mantienen la admisión; la cola en sí usa ofertas sin locks y sin espera.
   private boolean offer(Pending pending) {
     if (queued.get() >= capacity) return false;
     queued.incrementAndGet();
@@ -188,6 +189,11 @@ public final class AsyncAuditPublisher implements AuditPublisher, AuditQueueMetr
       return false;
     }
     return true;
+  }
+
+  private static AuditEvent fallbackEvent(AuditEvent event) {
+    return event.withPersistence(
+        "UNCERTAIN".equals(event.persistence()) ? "UNCERTAIN" : "NOT_CONFIRMED");
   }
 
   private void fallbackWithoutWait(AuditEvent event) {
@@ -201,23 +207,27 @@ public final class AsyncAuditPublisher implements AuditPublisher, AuditQueueMetr
           if (failure instanceof TimeoutException || failure instanceof CancellationException)
             unconfirmed.incrementAndGet();
           else if (failure != null) lost.incrementAndGet();
-          // Removal is the completion barrier used by shutdown's final snapshot.
+          // La eliminación es la barrera de finalización que usa la instantánea final del apagado.
           nativeFallbacks.remove(admissionKey);
         },
         failure -> {
           nativeFallbacks.remove(admissionKey);
           lost.incrementAndGet();
-          LOG.error("Audit fallback completion observation failed", failure);
+          LOG.error(
+              "Audit fallback completion observation failed type={}", failure.getClass().getName());
         });
     try {
       fallbackDeliveries.execute(
           () -> {
             try {
-              fallback.publish(event);
+              fallback.publish(fallbackEvent(event));
               completion.complete(null);
             } catch (RuntimeException | Error failure) {
               completion.completeExceptionally(failure);
-              LOG.error("Audit fallback failed for event {}", event.id(), failure);
+              LOG.error(
+                  "Audit fallback failed for event {} type={}",
+                  event.id(),
+                  failure.getClass().getName());
             }
           });
       completion.orTimeout(deliveryTimeoutNanos, TimeUnit.NANOSECONDS);
@@ -317,7 +327,9 @@ public final class AsyncAuditPublisher implements AuditPublisher, AuditQueueMetr
     } catch (RuntimeException failure) {
       failures.incrementAndGet();
       LOG.error(
-          "Audit delivery failed for event {}, writing to fallback", pending.event().id(), failure);
+          "Audit delivery failed for event {}, writing to fallback type={}",
+          pending.event().id(),
+          failure.getClass().getName());
       toFallback(pending.event());
     }
   }
@@ -330,10 +342,11 @@ public final class AsyncAuditPublisher implements AuditPublisher, AuditQueueMetr
 
   private void toFallback(AuditEvent event) {
     fallbacks.incrementAndGet();
-    // Cancellation of a delivery must still allow its fallback within the shared deadline.
+    // La cancelación de una entrega debe seguir permitiendo su fallback dentro del plazo
+    // compartido.
     boolean interrupted = Thread.interrupted();
     try {
-      invoke(fallbackDeliveries, () -> fallback.publish(event));
+      invoke(fallbackDeliveries, () -> fallback.publish(fallbackEvent(event)));
     } catch (RuntimeException failure) {
       if (failure instanceof RejectedExecutionException
           || (failure instanceof AuditPublishException
@@ -344,7 +357,10 @@ public final class AsyncAuditPublisher implements AuditPublisher, AuditQueueMetr
       } else {
         unconfirmed.incrementAndGet();
       }
-      LOG.error("Audit fallback did not confirm event {}", event.id(), failure);
+      LOG.error(
+          "Audit fallback did not confirm event {} type={}",
+          event.id(),
+          failure.getClass().getName());
     } finally {
       if (interrupted) Thread.currentThread().interrupt();
     }
@@ -370,7 +386,7 @@ public final class AsyncAuditPublisher implements AuditPublisher, AuditQueueMetr
     return failures.get();
   }
 
-  /** Confirmed failures of the fallback; uncertain acceptance is counted separately. */
+  /** Fallos confirmados del fallback; la aceptación incierta se cuenta por separado. */
   @Override
   public long lostCount() {
     return lost.get();
@@ -396,7 +412,7 @@ public final class AsyncAuditPublisher implements AuditPublisher, AuditQueueMetr
     return !worker.isAlive() || (nanos > 0 && worker.join(Duration.ofNanos(nanos)));
   }
 
-  /** Idempotent shutdown. No new admission can race with the final queue flush. */
+  /** Apagado idempotente. Ninguna admisión nueva puede competir con el vaciado final de la cola. */
   public Shutdown shutdown() {
     synchronized (shutdownMonitor) {
       return shutdownOwned();
@@ -420,7 +436,7 @@ public final class AsyncAuditPublisher implements AuditPublisher, AuditQueueMetr
       drained = joinWorker(started + closeTimeoutNanos / 2) && queue.isEmpty();
       if (!drained) {
         worker.interrupt();
-        // Reserve time for the closing thread to flush and terminate resources.
+        // Se reserva tiempo para que el hilo de cierre vacíe y termine los recursos.
         joinWorker(started + closeTimeoutNanos * 3 / 4);
       }
       Pending pending;

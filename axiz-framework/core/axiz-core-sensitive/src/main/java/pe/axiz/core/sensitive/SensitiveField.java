@@ -1,11 +1,11 @@
 package pe.axiz.core.sensitive;
 
 /**
- * Sensitivity metadata of a property.
+ * Metadatos de sensibilidad de una propiedad.
  *
- * @param name property name
- * @param level sensitivity level
- * @param mask mask type
+ * @param name nombre de la propiedad
+ * @param level nivel de sensibilidad
+ * @param mask tipo de máscara
  */
 public record SensitiveField(String name, SensitivityLevel level, MaskType mask) {
 

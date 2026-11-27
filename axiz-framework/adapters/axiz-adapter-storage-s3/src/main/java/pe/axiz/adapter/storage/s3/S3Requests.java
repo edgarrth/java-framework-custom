@@ -18,7 +18,7 @@ import software.amazon.awssdk.services.s3.model.ServerSideEncryption;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 
-/** Shared wire contract for the imperative and native asynchronous adapters. */
+/** Contrato de red compartido por los adaptadores imperativo y asíncrono nativo. */
 final class S3Requests {
   final String bucket;
   private final @Nullable String kmsKeyId;

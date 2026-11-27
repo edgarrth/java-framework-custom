@@ -3,6 +3,7 @@ package pe.axiz.codegen;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -18,18 +19,19 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import pe.axiz.codegen.openapi.OpenApiDocument;
+import pe.axiz.core.lang.ValueSnapshots;
 
 class ApplicationModelsTest {
   private static String models(String schemas) {
     return ApplicationModels.records(
             OpenApiDocument.parse(
                 """
-        openapi: 3.1.0
-        info: {title: Models, version: 1.0.0}
-        paths: {}
-        components:
-          schemas:
-        """
+                openapi: 3.1.0
+                info: {title: Models, version: 1.0.0}
+                paths: {}
+                components:
+                  schemas:
+                """
                     + schemas.indent(4)))
         .toString();
   }
@@ -39,22 +41,22 @@ class ApplicationModelsTest {
     String result =
         models(
             """
-        Status: {type: string, enum: [READY, DONE]}
-        Item:
-          type: object
-          properties:
-            id: {type: string, format: uuid}
-            day: {type: string, format: date}
-            time: {type: string, format: date-time}
-            label: {type: [string, 'null']}
-            status: {$ref: '#/components/schemas/Status'}
-            count: {type: integer}
-            total: {type: integer, format: int64}
-            amount: {type: number}
-            enabled: {type: boolean}
-            children: {type: array, items: {$ref: '#/components/schemas/Item'}}
-            attributes: {type: object}
-        """);
+            Status: {type: string, enum: [READY, DONE]}
+            Item:
+              type: object
+              properties:
+                id: {type: string, format: uuid}
+                day: {type: string, format: date}
+                time: {type: string, format: date-time}
+                label: {type: [string, 'null']}
+                status: {$ref: '#/components/schemas/Status'}
+                count: {type: integer}
+                total: {type: integer, format: int64}
+                amount: {type: number}
+                enabled: {type: boolean}
+                children: {type: array, items: {$ref: '#/components/schemas/Item'}}
+                attributes: {type: object}
+            """);
     for (String expected :
         new String[] {
           "enum Status",
@@ -68,7 +70,7 @@ class ApplicationModelsTest {
           "@Nullable BigDecimal amount",
           "Boolean enabled",
           "@Nullable List<Item> children",
-          "@Nullable Map<String, Object> attributes"
+          "@Nullable Map<String, @Nullable Object> attributes"
         }) {
       assertTrue(result.contains(expected), expected + ": " + result);
     }
@@ -139,11 +141,11 @@ class ApplicationModelsTest {
         () ->
             models(
                 """
-        Item:
-          type: object
-          properties:
-            remote: {$ref: 'https://example.invalid/schema'}
-        """));
+                Item:
+                  type: object
+                  properties:
+                    remote: {$ref: 'https://example.invalid/schema'}
+                """));
   }
 
   @Test
@@ -151,19 +153,19 @@ class ApplicationModelsTest {
     var document =
         OpenApiDocument.parse(
             """
-        openapi: 3.1.0
-        info: {title: Models, version: 1.0.0}
-        paths: {}
-        components:
-          schemas:
-            Item:
-              type: object
-              properties:
-                amount: {type: number}
-                items: {type: array, items: {$ref: '#/components/schemas/Item'}}
-                label: {type: string}
-                metadata: {type: object}
-        """);
+            openapi: 3.1.0
+            info: {title: Models, version: 1.0.0}
+            paths: {}
+            components:
+              schemas:
+                Item:
+                  type: object
+                  properties:
+                    amount: {type: number}
+                    items: {type: array, items: {$ref: '#/components/schemas/Item'}}
+                    label: {type: string}
+                    metadata: {type: object}
+            """);
     var model = ApplicationModels.records(document).getFirst();
     var source = directory.resolve("Item.java");
     Files.writeString(
@@ -182,7 +184,14 @@ class ApplicationModelsTest {
                 null,
                 null,
                 "-classpath",
-                annotations,
+                annotations
+                    + File.pathSeparator
+                    + Path.of(
+                        ValueSnapshots.class
+                            .getProtectionDomain()
+                            .getCodeSource()
+                            .getLocation()
+                            .toURI()),
                 "-d",
                 directory.toString(),
                 source.toString()));
@@ -193,11 +202,19 @@ class ApplicationModelsTest {
       var items = new ArrayList<>();
       var metadata = new HashMap<String, Object>();
       metadata.put("status", "created");
+      var nested = new HashMap<String, Object>();
+      nested.put("state", "original");
+      metadata.put("nested", List.of(nested));
+      items.add(null);
       Object item = constructor.newInstance(null, items, null, metadata);
       items.add("changed");
       metadata.clear();
-      Assertions.assertEquals(List.of(), type.getMethod("items").invoke(item));
-      Assertions.assertEquals(Map.of("status", "created"), type.getMethod("metadata").invoke(item));
+      nested.clear();
+      Assertions.assertEquals(
+          java.util.Collections.singletonList(null), type.getMethod("items").invoke(item));
+      Assertions.assertEquals(
+          Map.of("status", "created", "nested", List.of(Map.of("state", "original"))),
+          type.getMethod("metadata").invoke(item));
       Object absent = constructor.newInstance(null, null, null, null);
       Assertions.assertNull(type.getMethod("items").invoke(absent));
       Assertions.assertNull(type.getMethod("metadata").invoke(absent));

@@ -4,10 +4,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * {{artifact.title}} as exchanged by the REST adapter (models of the OpenAPI contract are generated;
- * use DTOs only for shapes the contract does not define).
+ * {{artifact.titleJavadoc}} tal como lo intercambia el adaptador REST (los modelos del contrato
+ * OpenAPI se generan; los DTO se usan solo para formas que el contrato no define).
  *
- * @param id identifier
- * @param name display name
+ * @param id identificador
+ * @param name nombre visible
  */
 public record {{artifact.className}}(@NotBlank String id, @NotBlank @Size(max = 200) String name) {}

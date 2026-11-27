@@ -16,7 +16,7 @@ import pe.axiz.core.secrets.SecretResolver;
 import pe.axiz.core.secrets.SecretValue;
 import pe.axiz.kit.dynamodb.CursorCodec;
 import pe.axiz.kit.dynamodb.InvalidCursorException;
-import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
+import pe.axiz.spring.aws.AxizAwsIdentityAutoConfiguration;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 class CursorConfigurationTest {

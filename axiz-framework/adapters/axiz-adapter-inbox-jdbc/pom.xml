@@ -16,6 +16,10 @@
     <axiz.module.name>pe.axiz.adapter.inbox.jdbc</axiz.module.name>
   </properties>
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-messaging</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kit-sql</artifactId><version>${project.version}</version></dependency>
+
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-schema</artifactId><version>${project.version}</version></dependency>
 
     <dependency>

@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * The access policies of an application: runs the ones matching a request and reports request types
- * that nothing protects.
+ * Políticas de acceso de una aplicación: ejecuta las que coinciden con una petición e informa los
+ * tipos de petición que nada protege.
  */
 public final class AccessPolicies {
 
@@ -18,7 +18,7 @@ public final class AccessPolicies {
     this.policies = List.copyOf(Objects.requireNonNull(policies));
   }
 
-  /** Whether no imperative policies are configured (reactive buses reject them). */
+  /** Indica si no hay políticas imperativas configuradas (los buses reactivos las rechazan). */
   public boolean isEmpty() {
     return policies.isEmpty();
   }
@@ -27,7 +27,7 @@ public final class AccessPolicies {
     return new AccessPolicies(List.of());
   }
 
-  /** Runs every policy whose request type matches; the first denial propagates. */
+  /** Ejecuta cada política cuyo tipo de petición coincide; se propaga la primera denegación. */
   @SuppressWarnings({"unchecked", "rawtypes"})
   public void check(Object request, Caller caller) {
     for (AccessPolicy policy : policies) {
@@ -42,8 +42,8 @@ public final class AccessPolicies {
   }
 
   /**
-   * Request types protected by nothing: no {@link RequiresAuthority}, no {@link OpenAccess} and no
-   * matching policy. Sorted by name.
+   * Tipos de petición que nada protege: sin {@link RequiresAuthority}, sin {@link OpenAccess} y sin
+   * política coincidente. Ordenados por nombre.
    */
   public List<Class<?>> unprotected(Collection<Class<?>> requestTypes) {
     List<Class<?>> out = new ArrayList<>();

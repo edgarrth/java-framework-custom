@@ -109,51 +109,127 @@
       "extra-files": [
         {
           "type": "generic",
-          "path": "workflows/native-nightly.yaml"
+          "path": "/axiz-framework/codegen/axiz-codegen-templates/src/main/resources/axiz/templates/service/github/ci.yaml.mustache"
         },
         {
           "type": "generic",
-          "path": "workflows/native.yaml"
+          "path": "/axiz-framework/codegen/axiz-codegen-templates/src/main/resources/axiz/templates/service/github/deploy.yaml.mustache"
         },
         {
           "type": "generic",
-          "path": "workflows/pr.yaml"
+          "path": "/axiz-framework/codegen/axiz-codegen-templates/src/main/resources/axiz/templates/library/ci.yaml.mustache"
         },
         {
           "type": "generic",
-          "path": "workflows/lib-build.yaml"
+          "path": "/axiz-framework/codegen/axiz-codegen-templates/src/main/resources/axiz/templates/shared/release/release.yaml"
         },
         {
           "type": "generic",
-          "path": "workflows/lib-deploy.yaml"
+          "path": "/axiz-demo/services/banking-core/.github/workflows/ci.yaml"
         },
         {
           "type": "generic",
-          "path": "workflows/service-build.yaml"
+          "path": "/axiz-demo/services/banking-core/.github/workflows/deploy.yaml"
         },
         {
           "type": "generic",
-          "path": "workflows/service-deploy.yaml"
+          "path": "/axiz-demo/services/banking-core/.github/workflows/release.yaml"
         },
         {
           "type": "generic",
-          "path": "actions/build-inputs/action.yaml"
+          "path": "/axiz-demo/services/beneficiaries/.github/workflows/ci.yaml"
         },
         {
           "type": "generic",
-          "path": "actions/consume-build/action.yaml"
+          "path": "/axiz-demo/services/beneficiaries/.github/workflows/deploy.yaml"
         },
         {
           "type": "generic",
-          "path": "gitops/policies/verify-images.yaml.template"
+          "path": "/axiz-demo/services/beneficiaries/.github/workflows/release.yaml"
         },
         {
           "type": "generic",
-          "path": "actions/resolve-service-build/action.yaml"
+          "path": "/axiz-demo/services/notifications-processor/.github/workflows/ci.yaml"
         },
         {
           "type": "generic",
-          "path": "actions/build-manifest/sign_product.py"
+          "path": "/axiz-demo/services/notifications-processor/.github/workflows/deploy.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "/axiz-demo/services/notifications-processor/.github/workflows/release.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "/axiz-demo/services/payment-network-gateway/.github/workflows/ci.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "/axiz-demo/services/payment-network-gateway/.github/workflows/deploy.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "/axiz-demo/services/payment-network-gateway/.github/workflows/release.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "/axiz-demo/services/payment-orders/.github/workflows/ci.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "/axiz-demo/services/payment-orders/.github/workflows/deploy.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "/axiz-demo/services/payment-orders/.github/workflows/release.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "/axiz-demo/services/payment-process/.github/workflows/ci.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "/axiz-demo/services/payment-process/.github/workflows/deploy.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "/axiz-demo/services/payment-process/.github/workflows/release.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "/axiz-demo/services/payments-history/.github/workflows/ci.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "/axiz-demo/services/payments-history/.github/workflows/deploy.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "/axiz-demo/services/payments-history/.github/workflows/release.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "/axiz-demo/services/payments-ux/.github/workflows/ci.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "/axiz-demo/services/payments-ux/.github/workflows/deploy.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "/axiz-demo/services/payments-ux/.github/workflows/release.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "/axiz-demo/services/settlement-batch/.github/workflows/ci.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "/axiz-demo/services/settlement-batch/.github/workflows/deploy.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "/axiz-demo/services/settlement-batch/.github/workflows/release.yaml"
         }
       ],
       "component": "axiz-workflows",

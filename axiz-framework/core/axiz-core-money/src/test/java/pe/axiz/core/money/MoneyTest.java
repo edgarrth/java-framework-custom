@@ -28,6 +28,17 @@ class MoneyTest {
   private static final Currency USD = Currency.getInstance("USD");
 
   @Test
+  void zeroDivisorsUseThePublicInvalidAmountError() {
+    for (String zero : List.of("0", "0.00", "-0.000")) {
+      var failure =
+          assertThrows(
+              BusinessException.class,
+              () -> Money.of("10.00", "PEN").divide(new BigDecimal(zero), RoundingMode.HALF_EVEN));
+      assertEquals(MoneyErrors.INVALID_AMOUNT.code(), failure.code());
+    }
+  }
+
+  @Test
   void textFactoriesRejectExcessiveLexicalLengthEvenForAnOtherwiseValidAmount() {
     String padded = "0".repeat(4096) + "1.00";
     assertThrows(BusinessException.class, () -> Money.of(padded, "PEN"));
@@ -67,7 +78,8 @@ class MoneyTest {
       assertThrows(
           BusinessException.class,
           () -> max.percentage(new BigDecimal("200"), RoundingMode.HALF_EVEN));
-      // Every successful operation still round-trips, including allocations and negative values.
+      // Toda operación exitosa sigue haciendo el viaje de ida y vuelta, incluidas las asignaciones
+      // y los valores negativos.
       for (Money value :
           List.of(
               max,
@@ -195,10 +207,10 @@ class MoneyTest {
     assertThrows(IllegalArgumentException.class, () -> Money.of("1", "PEN").allocate(-1, 2));
   }
 
-  /** Regression: {@code minor * ratio} overflowed a long and produced wrong parts. */
+  /** Regresión: {@code minor * ratio} desbordaba un long y producía partes incorrectas. */
   @Test
   void allocationOfLargeAmountsWithLargeRatiosDoesNotOverflow() {
-    Money big = Money.of("90000000000000000.00", "PEN"); // 9e18 minor units
+    Money big = Money.of("90000000000000000.00", "PEN"); // 9e18 unidades menores
     List<Money> parts = big.allocate(Integer.MAX_VALUE, Integer.MAX_VALUE, 1);
     Money sum = Money.zero("PEN");
     for (Money m : parts) {
@@ -210,7 +222,10 @@ class MoneyTest {
     assertTrue(parts.get(0).minorUnits() > 4_000_000_000_000_000_000L);
   }
 
-  /** Property: parts add up exactly and each is within one minor unit of its exact share. */
+  /**
+   * Propiedad: las partes suman exactamente y cada una está a menos de una unidad menor de su parte
+   * exacta.
+   */
   @Test
   void allocationPropertiesHoldForRandomInputs() {
     Random random = new Random(20261012L);
@@ -297,7 +312,7 @@ class MoneyTest {
     assertThrows(BusinessException.class, () -> Money.of("1000.5", "JPY"));
     assertThrows(BusinessException.class, () -> Money.parse("PEN 150.005"));
     assertEquals(Money.of("150.50", "PEN"), Money.parse("PEN 150.5"));
-    // rounding stays available for computed amounts
+    // el redondeo sigue disponible para montos calculados
     assertEquals(
         "PEN 150.00",
         Money.rounded(new BigDecimal("150.005"), PEN, RoundingMode.HALF_EVEN).toString());
@@ -320,7 +335,7 @@ class MoneyTest {
     assertEquals(
         Money.MAX_INTEGER_DIGITS,
         Money.of("9".repeat(Money.MAX_INTEGER_DIGITS), "PEN").amount().precision() - 2);
-    // intermediate results with many decimals are still rounded
+    // los resultados intermedios con muchos decimales siguen redondeándose
     assertEquals(
         "PEN 33.33",
         Money.rounded(

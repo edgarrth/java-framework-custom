@@ -2,7 +2,9 @@ package pe.axiz.payments.orders.adapter.out.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 
+import jakarta.persistence.EntityManager;
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
@@ -23,8 +25,8 @@ import org.postgresql.util.ServerErrorMessage;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import pe.axiz.core.commons.Page;
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.Page;
+import pe.axiz.core.api.PageRequest;
 import pe.axiz.core.crypto.BlindIndex;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.money.Money;
@@ -33,16 +35,17 @@ import pe.axiz.payments.orders.domain.PaymentOrder;
 import pe.axiz.payments.orders.domain.PaymentStatus;
 
 /**
- * The JPA adapter over an in-memory Spring Data repository: what it stores (blind index instead of
- * the account for lookups, status and request key), how it maps rows back and how it tells a
- * concurrent request with the same key from any other integrity error.
+ * El adaptador JPA sobre un repositorio de Spring Data en memoria: qué almacena (índice ciego en
+ * lugar de la cuenta para las búsquedas, estado y clave de solicitud), cómo convierte las filas de
+ * vuelta y cómo distingue una solicitud concurrente con la misma clave de cualquier otro error de
+ * integridad.
  */
 class PaymentOrderPersistenceAdapterTest {
 
   static final LocalDate DAY = LocalDate.of(2026, 10, 9);
   static final String CCI = "00219100123456789053";
 
-  /** In-memory repository answering the methods the adapter calls; records the rest. */
+  /** Repositorio en memoria que responde los métodos que invoca el adaptador; registra el resto. */
   static final class Rows {
     final Map<UUID, PaymentOrderEntity> rows = new LinkedHashMap<>();
     final List<String> calls = new ArrayList<>();
@@ -113,9 +116,10 @@ class PaymentOrderPersistenceAdapterTest {
   }
 
   final Rows rows = new Rows();
-  final BlindIndex blindIndex = new BlindIndex("k".repeat(32).getBytes(StandardCharsets.UTF_8), 16);
+  final BlindIndex blindIndex =
+      new BlindIndex(Map.of("i1", "k".repeat(32).getBytes(StandardCharsets.UTF_8)), "i1");
   final PaymentOrderPersistenceAdapter adapter =
-      new PaymentOrderPersistenceAdapter(rows.repository(), blindIndex);
+      new PaymentOrderPersistenceAdapter(rows.repository(), blindIndex, mock(EntityManager.class));
 
   static PaymentOrder order(UUID id, String customer) {
     return PaymentOrder.register(
@@ -235,7 +239,7 @@ class PaymentOrderPersistenceAdapterTest {
 
   @Test
   void pagesAreNewestFirstWithTheStoreTotal() {
-    // the store reports 10 more rows than this page holds
+    // el almacén informa 10 filas más de las que contiene esta página
     adapter.create(order(UUID.randomUUID(), "C-1"), null);
     adapter.create(order(UUID.randomUUID(), "C-2"), null);
 
@@ -261,7 +265,7 @@ class PaymentOrderPersistenceAdapterTest {
 
     rows.exists = true;
     assertThat(adapter.exists("C-1", CCI, amount, DAY)).isTrue();
-    String index = blindIndex.index(CCI, PaymentOrderPersistenceAdapter.CCI_CONTEXT);
+    String index = blindIndex.index(CCI, PaymentOrderPersistenceAdapter.cciScope("C-1")).encoded();
     assertThat(rows.calls).contains("release", "exists:" + index + ":REJECTED");
     assertThat(index).doesNotContain(CCI);
   }

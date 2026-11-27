@@ -10,5 +10,8 @@
     <module>axiz-kit-dynamodb</module>
     <module>axiz-kit-jpa</module>
     <module>axiz-kit-r2dbc</module>
+    <module>axiz-kit-sql</module>
+    <module>axiz-kit-outbox-reactor</module>
+    <module>axiz-kit-audit-reactor</module>
   </modules>
 </project>

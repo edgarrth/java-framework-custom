@@ -4,14 +4,17 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.errors.ErrorType;
 
-/** Tells expected business rejections (logged at WARN) from failures (logged at ERROR). */
+/**
+ * Distingue los rechazos de negocio esperados (registrados en WARN) de los fallos (registrados en
+ * ERROR).
+ */
 public interface FailureKind {
 
   boolean isExpected(Throwable error);
 
   @Nullable String code(Throwable error);
 
-  /** Business, validation and security errors are expected; the rest are failures. */
+  /** Los errores de negocio, de validación y de seguridad son esperados; el resto son fallos. */
   static FailureKind axiz() {
     return new FailureKind() {
       @Override

@@ -51,15 +51,16 @@ class SnsEventPublisherTest {
             public void close() {}
           };
       EventEnvelope e =
-          new EventEnvelope(
-              "e-1",
-              "urn:s",
-              "t.v1",
-              Instant.EPOCH,
-              null,
-              "application/json",
-              "{}".getBytes(StandardCharsets.UTF_8),
-              Map.of());
+          EventEnvelope.builder()
+              .id("e-1")
+              .source("urn:s")
+              .type("t.v1")
+              .time(Instant.EPOCH)
+              .subject(null)
+              .dataContentType("application/json")
+              .data("{}".getBytes(StandardCharsets.UTF_8))
+              .extensions(Map.of())
+              .build();
       EventPublisher p =
           nativeAsync
               ? new AsyncPublisherProbe(
@@ -99,15 +100,16 @@ class SnsEventPublisherTest {
             public void close() {}
           };
       EventEnvelope withSubject =
-          new EventEnvelope(
-              "e-2",
-              "urn:s",
-              "t.v1",
-              Instant.EPOCH,
-              "order-7",
-              "application/json",
-              "{}".getBytes(StandardCharsets.UTF_8),
-              Map.of());
+          EventEnvelope.builder()
+              .id("e-2")
+              .source("urn:s")
+              .type("t.v1")
+              .time(Instant.EPOCH)
+              .subject("order-7")
+              .dataContentType("application/json")
+              .data("{}".getBytes(StandardCharsets.UTF_8))
+              .extensions(Map.of())
+              .build();
       EventPublisher p =
           nativeAsync
               ? new AsyncPublisherProbe(
@@ -122,7 +124,7 @@ class SnsEventPublisherTest {
       p.publish("arn:aws:sns:us-east-1:123:payments.fifo", withSubject);
       assertEquals("order-7", sent.get(1).messageGroupId(), "events of one subject stay in order");
 
-      // an ARN of another service is not an SNS destination
+      // un ARN de otro servicio no es un destino SNS
       assertFalse(p.supports("arn:aws:sqs:us-east-1:123:payments"));
       assertFalse(p.supports("payments"));
     }

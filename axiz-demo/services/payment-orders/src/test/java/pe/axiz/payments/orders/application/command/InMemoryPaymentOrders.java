@@ -6,24 +6,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.Page;
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.Page;
+import pe.axiz.core.api.PageRequest;
 import pe.axiz.core.money.Money;
 import pe.axiz.payments.orders.application.port.out.PaymentOrders;
 import pe.axiz.payments.orders.domain.PaymentOrder;
 
-/** In-memory {@link PaymentOrders}: orders, request keys and daily reservations. */
+/** {@link PaymentOrders} en memoria: órdenes, claves de solicitud y reservas diarias. */
 public final class InMemoryPaymentOrders implements PaymentOrders {
   public final Map<String, PaymentOrder> rows = new HashMap<>();
   public final Map<String, String> requestKeys = new HashMap<>();
   public final Map<String, Money> reserved = new HashMap<>();
 
   @Override
-  public void create(PaymentOrder order, @Nullable String requestKey) {
+  public PaymentOrder create(PaymentOrder order, @Nullable String requestKey) {
     rows.put(order.id(), order);
     if (requestKey != null) {
       requestKeys.put(order.customerId() + "|" + requestKey, order.id());
     }
+    return order;
   }
 
   @Override

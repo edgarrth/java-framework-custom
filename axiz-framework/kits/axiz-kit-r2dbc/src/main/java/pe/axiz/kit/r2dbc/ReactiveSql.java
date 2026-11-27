@@ -5,25 +5,33 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * Non-blocking SQL with named parameters ({@code :name}). Implementations take part in the caller's
- * transaction: the Spring starter uses the transaction-aware {@code DatabaseClient}; {@link
- * R2dbcSql} uses the connection bound by {@link R2dbcSql#inTransaction} or by {@link
- * R2dbcTransactionRunner}.
+ * SQL no bloqueante con parámetros con nombre ({@code :name}). Las implementaciones participan en
+ * la transacción de quien llama: el starter de Spring usa el {@code DatabaseClient} consciente de
+ * la transacción; {@link R2dbcSql} usa la conexión ligada por {@link R2dbcSql#inTransaction} o por
+ * {@link R2dbcTransactionRunner}.
  */
 public interface ReactiveSql {
 
-  /** Identity of the transaction-aware connection factory; unknown integrations return null. */
+  /**
+   * Identidad de la fábrica de conexiones consciente de la transacción; las integraciones
+   * desconocidas devuelven null.
+   */
   default @Nullable Object transactionResource() {
     return null;
   }
 
-  /** Runs an INSERT, UPDATE or DELETE and emits the number of affected rows. */
+  /** Indica si este recurso SQL participa en la transacción activa del suscriptor. */
+  default Mono<Boolean> isTransactionActive() {
+    return Mono.just(false);
+  }
+
+  /** Ejecuta un INSERT, UPDATE o DELETE y emite la cantidad de filas afectadas. */
   Mono<Long> update(String sql, SqlParams params);
 
-  /** Runs a query and emits the mapped rows. */
+  /** Ejecuta una consulta y emite las filas mapeadas. */
   <T> Flux<T> query(String sql, SqlParams params, RowMapper<T> mapper);
 
-  /** The first row of a query, or empty. */
+  /** Primera fila de una consulta, o vacío. */
   default <T> Mono<T> queryOne(String sql, SqlParams params, RowMapper<T> mapper) {
     return query(sql, params, mapper).next();
   }

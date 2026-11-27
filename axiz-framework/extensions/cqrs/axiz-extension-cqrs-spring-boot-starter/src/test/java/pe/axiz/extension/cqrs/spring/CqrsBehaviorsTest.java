@@ -61,7 +61,7 @@ import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 import tools.jackson.databind.json.JsonMapper;
 
-/** Each behaviour of the pipeline on its own, on both programming models. */
+/** Cada behavior del pipeline por separado, en ambos modelos de programación. */
 class CqrsBehaviorsTest {
 
   private static final Duration T = Duration.ofSeconds(5);
@@ -108,7 +108,7 @@ class CqrsBehaviorsTest {
           IdGenerator.uuidV7(),
           Clock.fixed(Instant.parse("2026-10-23T10:00:00Z"), ZoneOffset.UTC));
 
-  // --- audit -----------------------------------------------------------------------------------
+  // --- auditoría -------------------------------------------------------------------------------
 
   @Test
   void auditedCommandsLeaveARecordOfSuccessOrFailure() {
@@ -189,10 +189,10 @@ class CqrsBehaviorsTest {
     assertEquals("IllegalStateException", audited.get(3).errorCode());
   }
 
-  // --- metrics ---------------------------------------------------------------------------------
+  // --- métricas --------------------------------------------------------------------------------
 
   private static double count(SimpleMeterRegistry registry, String event, String outcome) {
-    // one counter per reason: add them up
+    // un contador por motivo: se suman
     return registry
         .get(MetricNames.COUNT)
         .tag("event", event)
@@ -249,9 +249,9 @@ class CqrsBehaviorsTest {
     assertEquals(1.0, count(registry, "balance", "error"));
   }
 
-  // --- observation -----------------------------------------------------------------------------
+  // --- observación -----------------------------------------------------------------------------
 
-  /** Records each stopped observation as "name:error-or-ok". */
+  /** Registra cada observación detenida como "name:error-or-ok". */
   private static ObservationRegistry recording(List<String> stopped) {
     ObservationRegistry registry = ObservationRegistry.create();
     registry
@@ -318,9 +318,9 @@ class CqrsBehaviorsTest {
             "block-card:CancellationException");
   }
 
-  // --- transactions ----------------------------------------------------------------------------
+  // --- transacciones ---------------------------------------------------------------------------
 
-  /** Records whether each transaction was read-only and how it ended. */
+  /** Registra si cada transacción fue de solo lectura y cómo terminó. */
   static final class RecordingTransactions implements PlatformTransactionManager {
     final List<String> events = new CopyOnWriteArrayList<>();
 
@@ -384,9 +384,9 @@ class CqrsBehaviorsTest {
     assertThat(db.events()).anyMatch(e -> e.startsWith("rollback:"));
   }
 
-  // --- validation ------------------------------------------------------------------------------
+  // --- validación ------------------------------------------------------------------------------
 
-  /** Source of a real constraint annotation for the fake violation. */
+  /** Origen de una anotación de restricción real para la violación simulada. */
   static final class Annotated {
     @NotBlank String cardId = "";
   }
@@ -405,7 +405,7 @@ class CqrsBehaviorsTest {
                 });
   }
 
-  /** A validator that rejects every request whose text is blank. */
+  /** Validador que rechaza toda petición cuyo texto está en blanco. */
   private static Validator validator() throws NoSuchFieldException {
     Annotation notBlank = Annotated.class.getDeclaredField("cardId").getAnnotation(NotBlank.class);
     ConstraintDescriptor<?> descriptor =
@@ -478,7 +478,7 @@ class CqrsBehaviorsTest {
     assertEquals(2, handled.get(), "only the valid requests reached the handler");
   }
 
-  // --- reactive idempotency --------------------------------------------------------------------
+  // --- idempotencia reactiva -------------------------------------------------------------------
 
   @Test
   void aRepeatedKeyGetsTheStoredResultAndAFailureCanBeRetried() {

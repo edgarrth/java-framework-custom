@@ -4,8 +4,8 @@ import pe.axiz.extension.cqrs.Query;
 import pe.axiz.payments.orders.domain.PaymentOrder;
 
 /**
- * One payment order.
+ * Una orden de pago.
  *
- * @param orderId order id
+ * @param orderId id de la orden
  */
 public record GetPaymentOrderQuery(String orderId) implements Query<PaymentOrder> {}

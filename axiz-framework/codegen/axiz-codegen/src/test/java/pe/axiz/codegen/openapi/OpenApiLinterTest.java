@@ -62,7 +62,7 @@ class OpenApiLinterTest {
             .resolve(
                 "quality/axiz-code-standards/src/main/resources/axiz/spectral/axiz-openapi.yaml");
     if (!Files.exists(ruleset)) {
-      return; // outside the repository
+      return; // fuera del repositorio
     }
     String spectral = Files.readString(ruleset);
     for (String rule :

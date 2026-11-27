@@ -9,15 +9,15 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.PageRequest;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.core.errors.ValidationException;
 import pe.axiz.core.money.Money;
 import pe.axiz.extension.cqrs.Query;
 import pe.axiz.extension.cqrs.spring.ReactiveQueryBus;
-import pe.axiz.payments.history.api.model.PaymentHistoryItem;
-import pe.axiz.payments.history.api.model.PaymentHistoryPage;
-import pe.axiz.payments.history.api.model.PaymentStatus;
+import pe.axiz.payments.history.adapter.in.rest.model.PaymentHistoryItem;
+import pe.axiz.payments.history.adapter.in.rest.model.PaymentHistoryPage;
+import pe.axiz.payments.history.adapter.in.rest.model.PaymentStatus;
 import pe.axiz.payments.history.application.InMemoryPaymentHistories;
 import pe.axiz.payments.history.application.query.GetPaymentHandler;
 import pe.axiz.payments.history.application.query.GetPaymentQuery;
@@ -27,7 +27,10 @@ import pe.axiz.payments.history.domain.PaymentHistory;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Mono;
 
-/** The REST adapter over the real query handlers: filters, masking and missing data. */
+/**
+ * El adaptador REST sobre los handlers de consulta reales: filtros, enmascaramiento y datos
+ * faltantes.
+ */
 @ExtendWith(BlockHoundExtension.class)
 class PaymentHistoryControllerTest {
 

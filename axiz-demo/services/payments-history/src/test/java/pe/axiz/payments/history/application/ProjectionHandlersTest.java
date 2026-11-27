@@ -9,8 +9,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import pe.axiz.core.commons.Page;
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.Page;
+import pe.axiz.core.api.PageRequest;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.payments.history.application.command.RecordPaymentRegisteredCommand;
 import pe.axiz.payments.history.application.command.RecordPaymentRegisteredHandler;
@@ -54,7 +54,7 @@ class ProjectionHandlersTest {
   @Test
   void eventsBuildTheReadModelIdempotently() {
     register("p-1", "C-1001", T0);
-    register("p-1", "C-1001", T0); // redelivery
+    register("p-1", "C-1001", T0); // reentrega
     changed
         .handle(
             new RecordPaymentStatusChangedCommand(

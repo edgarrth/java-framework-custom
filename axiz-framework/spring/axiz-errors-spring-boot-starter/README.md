@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-errors-spring-boot-starter
 
-RFC 9457 error responses with the externalized error catalog for servlet and reactive stacks.
+Respuestas de error RFC 9457 con el catálogo de errores externalizado para las pilas servlet y reactiva.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,4 +12,4 @@ RFC 9457 error responses with the externalized error catalog for servlet and rea
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).

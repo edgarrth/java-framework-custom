@@ -1,9 +1,9 @@
 # axiz-parent-service
 
-Parent of every microservice: Spring Boot repackage, Jib image (non-root, immutable tag; the
-`native` profile adds the GraalVM image `<tag>-native`), contract-first model generation from
-`src/main/openapi/openapi.yaml`, the `quality` profile (SpotBugs/FindSecBugs, JaCoCo thresholds),
-integration tests with Failsafe and the code standards of `axiz-code-standards`.
+Parent de todos los microservicios: repackage de Spring Boot, imagen Jib (sin root, etiqueta inmutable;
+el perfil `native` añade la imagen GraalVM `<tag>-native`), generación de modelos contract-first desde
+`src/main/openapi/openapi.yaml`, el perfil `quality` (SpotBugs/FindSecBugs, umbrales de JaCoCo),
+pruebas de integración con Failsafe y los estándares de código de `axiz-code-standards`.
 
 ```xml
 <parent>
@@ -14,12 +14,13 @@ integration tests with Failsafe and the code standards of `axiz-code-standards`.
 </parent>
 ```
 
-Properties a service may override: `axiz.image.registry`, `axiz.image.base`,
+Propiedades que un servicio puede sobrescribir: `axiz.image.registry`, `axiz.image.base`,
 `axiz.image.native-base`, `axiz.image.tag`.
 
-## Native compilation
+## Compilación nativa
 
-With GraalVM JDK 25 selected, run `./mvnw -Pnative package native:compile`.
-The native compiler reads the AOT classes from `target/classes`, while Spring Boot keeps the
-executable JAR layout for JVM execution. The profile selects the JDK DRBG during image analysis;
-reactive infrastructure checks that default and warms it at application startup.
+Con GraalVM JDK 25 seleccionado, se ejecuta `./mvnw -Pnative package native:compile`.
+El compilador nativo lee las clases AOT desde `target/classes`, mientras Spring Boot conserva la
+estructura del JAR ejecutable para la ejecución en la JVM. El perfil selecciona el DRBG del JDK durante
+el análisis de la imagen; la infraestructura reactiva comprueba ese valor por defecto y lo precalienta
+al arrancar la aplicación.

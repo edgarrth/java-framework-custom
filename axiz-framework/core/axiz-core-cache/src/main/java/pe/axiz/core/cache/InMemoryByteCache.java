@@ -9,8 +9,8 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Local cache tier with TTL and a size bound (oldest entries are dropped first when full). Used as
- * L1 when Caffeine is not on the classpath and in tests.
+ * Nivel de caché local con TTL y límite de tamaño (al llenarse se descartan primero las entradas
+ * más antiguas). Se usa como L1 cuando Caffeine no está en el classpath y en pruebas.
  */
 public final class InMemoryByteCache implements LocalByteCache {
 
@@ -53,7 +53,7 @@ public final class InMemoryByteCache implements LocalByteCache {
     return Optional.of(CachedValue.expiringIn(e.value, Duration.between(now, e.expiresAt)));
   }
 
-  /** The clock that expires the entries, in nanoseconds. */
+  /** Reloj que expira las entradas, en nanosegundos. */
   @Override
   public long ticks() {
     Instant now = clock.instant();
@@ -104,7 +104,7 @@ public final class InMemoryByteCache implements LocalByteCache {
     return map.size();
   }
 
-  /** Internal holder; a class rather than a record because it holds an array. */
+  /** Contenedor interno; es una clase y no un record porque contiene un array. */
   private static final class Entry {
     private final byte[] value;
     private final Instant expiresAt;

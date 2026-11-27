@@ -8,8 +8,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 /**
- * The container, not a {@code new} in a test, builds the service: a second constructor once made
- * the production jar fail at startup while every unit test kept passing.
+ * El contenedor, y no un {@code new} en una prueba, construye el servicio: un segundo constructor
+ * haría fallar el jar de producción al arrancar mientras todas las pruebas unitarias siguen
+ * pasando.
  */
 class GenerationServiceWiringTest {
 

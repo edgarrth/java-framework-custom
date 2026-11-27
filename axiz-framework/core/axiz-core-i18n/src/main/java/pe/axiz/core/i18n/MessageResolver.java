@@ -4,12 +4,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
-/** Resolves localized messages with named parameters ({@code {name}}). */
+/** Resuelve mensajes localizados con parámetros con nombre ({@code {name}}). */
 public interface MessageResolver {
 
   Optional<String> find(String key, Locale locale, Map<String, ?> parameters);
 
-  /** Returns the message or the key itself when it is not defined. */
+  /** Devuelve el mensaje, o la propia clave cuando no está definida. */
   default String get(String key, Locale locale, Map<String, ?> parameters) {
     return find(key, locale, parameters).orElse(key);
   }

@@ -10,9 +10,9 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.id.UuidV7;
 
 /**
- * Base JPA entity: application-assigned time-ordered UUIDv7 id (index friendly, known before
- * insert) and optimistic locking. A null version means "new", which lets Spring Data decide between
- * persist and merge without an extra SELECT.
+ * Entidad JPA base: id UUIDv7 ordenado por tiempo y asignado por la aplicación (apto para índices,
+ * conocido antes del insert) y bloqueo optimista. Una versión null significa "nuevo", lo que
+ * permite a Spring Data decidir entre persist y merge sin un SELECT adicional.
  */
 @MappedSuperclass
 public abstract class BaseEntity {
@@ -57,7 +57,7 @@ public abstract class BaseEntity {
     return id.hashCode();
   }
 
-  /** Real class behind a lazy proxy (proxies extend the entity class). */
+  /** Clase real detrás de un proxy lazy (los proxies extienden la clase de la entidad). */
   private static Class<?> effectiveClass(Object o) {
     Class<?> c = o.getClass();
     while (c.getSuperclass() != null

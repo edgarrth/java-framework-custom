@@ -16,12 +16,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.AbstractOAuth2TokenAuthenticationToken;
 import org.springframework.util.ClassUtils;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.adapter.http.jdk.ClientCredentialsTokenProvider;
+import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.http.AsyncAccessTokenProvider;
 import pe.axiz.core.http.AuthSettings;
 import pe.axiz.core.http.AuthType;
 import pe.axiz.core.http.ClientCredentialsAsyncTokenProvider;
-import pe.axiz.core.http.ClientCredentialsTokenProvider;
 import pe.axiz.core.http.ClientSettings;
 import pe.axiz.core.secrets.AsyncSecretResolver;
 import pe.axiz.core.secrets.SecretNotFoundException;
@@ -31,9 +31,9 @@ import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.foundation.ReactiveStages;
 
 /**
- * Adds the outbound credentials of a client: OAuth2 client credentials (cached, renewed early),
- * token relay of the inbound bearer token, or an API key from the secret store. Mutual TLS is
- * configured on the transport through an SSL bundle.
+ * Añade las credenciales salientes de un cliente: client credentials de OAuth2 (cacheadas y
+ * renovadas con antelación), token relay del token bearer entrante o una API key del almacén de
+ * secretos. El TLS mutuo se configura en el transporte mediante un bundle SSL.
  */
 public final class OutboundAuth implements AutoCloseable {
 
@@ -82,17 +82,24 @@ public final class OutboundAuth implements AutoCloseable {
         ownedHttp = http;
         try {
           tokens =
-              new ClientCredentialsTokenProvider(
-                  http,
-                  Objects.requireNonNull(a.tokenUri()),
-                  Objects.requireNonNull(a.clientId()),
-                  () -> s.resolve(ref).orElseThrow(() -> new SecretNotFoundException(ref)).reveal(),
-                  a.scopes(),
-                  a.audience(),
-                  renewBefore,
-                  client.timeouts().read(),
-                  clock,
-                  client.transportSecurity());
+              ClientCredentialsTokenProvider.builder()
+                  .http(http)
+                  .tokenUri(Objects.requireNonNull(a.tokenUri()))
+                  .clientId(Objects.requireNonNull(a.clientId()))
+                  .clientSecret(
+                      () -> {
+                        try (var secret =
+                            s.resolve(ref).orElseThrow(() -> new SecretNotFoundException(ref))) {
+                          return secret.reveal();
+                        }
+                      })
+                  .scopes(a.scopes())
+                  .audience(a.audience())
+                  .renewBefore(renewBefore)
+                  .timeout(client.timeouts().read())
+                  .clock(clock)
+                  .transportSecurity(client.transportSecurity())
+                  .build();
         } catch (RuntimeException | Error failure) {
           try {
             http.close();
@@ -104,13 +111,16 @@ public final class OutboundAuth implements AutoCloseable {
       }
       case API_KEY -> requireSecrets(client, secrets);
       default -> {
-        // NONE, TOKEN_RELAY and MTLS need no state
+        // NONE, TOKEN_RELAY y MTLS no necesitan estado
       }
     }
     return new OutboundAuth(a, tokens, secrets, null, null, ownedHttp, null);
   }
 
-  /** Builds native credentials at startup; close this owner with its application context. */
+  /**
+   * Construye las credenciales nativas en el arranque; este propietario se cierra con su contexto
+   * de aplicación.
+   */
   public static OutboundAuth createAsync(
       ClientSettings client,
       @Nullable AsyncSecretResolver secrets,
@@ -146,7 +156,8 @@ public final class OutboundAuth implements AutoCloseable {
         throw new IllegalStateException(
             "Native HTTP client "
                 + client.name()
-                + " requires AsyncSecretResolver; configure native secrets or provide that core port");
+                + " requires AsyncSecretResolver; configure native secrets or provide that core"
+                + " port");
       if (a.type() == AuthType.CLIENT_CREDENTIALS) {
         ReactiveInfrastructureBootstrap.initialize();
         var source = secrets;
@@ -154,20 +165,24 @@ public final class OutboundAuth implements AutoCloseable {
         nativeHttp = http;
         try {
           tokens =
-              new ClientCredentialsAsyncTokenProvider(
-                  http,
-                  Objects.requireNonNull(a.tokenUri()),
-                  Objects.requireNonNull(a.clientId()),
-                  () ->
-                      Stages.map(
-                          source.require(Objects.requireNonNull(a.clientSecretRef())),
-                          value -> value.reveal()),
-                  a.scopes(),
-                  a.audience(),
-                  renewBefore,
-                  client.timeouts().read(),
-                  clock,
-                  client.transportSecurity());
+              ClientCredentialsAsyncTokenProvider.builder()
+                  .http(http)
+                  .tokenUri(Objects.requireNonNull(a.tokenUri()))
+                  .clientId(Objects.requireNonNull(a.clientId()))
+                  .clientSecret(
+                      () ->
+                          Stages.consume(
+                              source.require(Objects.requireNonNull(a.clientSecretRef())),
+                              SecretValue::reveal,
+                              SecretValue::close,
+                              ignored -> {}))
+                  .scopes(a.scopes())
+                  .audience(a.audience())
+                  .renewBefore(renewBefore)
+                  .timeout(client.timeouts().read())
+                  .clock(clock)
+                  .transportSecurity(client.transportSecurity())
+                  .build();
         } catch (RuntimeException | Error failure) {
           try {
             http.close();
@@ -181,7 +196,7 @@ public final class OutboundAuth implements AutoCloseable {
     return new OutboundAuth(a, null, null, tokens, secrets, null, nativeHttp);
   }
 
-  /** Native headers; never falls back to the synchronous resolver or token provider. */
+  /** Cabeceras nativas; nunca recurre al resolvedor síncrono ni al proveedor de tokens. */
   public CompletionStage<Map<String, SecretValue>> headers() {
     return Stages.call(
         () -> {
@@ -191,17 +206,24 @@ public final class OutboundAuth implements AutoCloseable {
               if (asyncTokens == null)
                 throw new IllegalStateException(
                     "Reactive OAuth credentials require OutboundAuth.createAsync");
-              yield Stages.map(
+              yield Stages.consume(
                   asyncTokens.token(),
-                  token -> Map.of("Authorization", SecretValue.of("Bearer " + token.value())));
+                  token -> Map.of("Authorization", SecretValue.of("Bearer " + token.value())),
+                  ignored -> {},
+                  OutboundAuth::closeHeaders);
             }
             case API_KEY -> {
               if (asyncSecrets == null)
                 throw new IllegalStateException(
                     "Reactive API key credentials require AsyncSecretResolver");
-              yield Stages.map(
+              yield Stages.consume(
                   asyncSecrets.require(Objects.requireNonNull(settings.apiKeyRef())),
-                  value -> Map.of(Objects.requireNonNull(settings.apiKeyHeader()), value));
+                  value ->
+                      Map.of(
+                          Objects.requireNonNull(settings.apiKeyHeader()),
+                          value.use(SecretValue::of)),
+                  SecretValue::close,
+                  OutboundAuth::closeHeaders);
             }
             default -> CompletableFuture.completedFuture(Map.of());
           };
@@ -221,7 +243,14 @@ public final class OutboundAuth implements AutoCloseable {
     }
   }
 
-  /** The secret resolver an authenticated client needs, or an error naming the client. */
+  private static void closeHeaders(Map<String, SecretValue> headers) {
+    headers.values().forEach(SecretValue::close);
+  }
+
+  /**
+   * El resolvedor de secretos que necesita un cliente autenticado, o un error que nombra al
+   * cliente.
+   */
   private static SecretResolver requireSecrets(
       ClientSettings client, @Nullable SecretResolver secrets) {
     if (secrets == null) {
@@ -236,7 +265,9 @@ public final class OutboundAuth implements AutoCloseable {
     return secrets;
   }
 
-  /** Synchronous credentials for servlet clients; reactive clients use {@link #headers()}. */
+  /**
+   * Credenciales síncronas para clientes servlet; los clientes reactivos usan {@link #headers()}.
+   */
   public void apply(BiConsumer<String, String> header) {
     if (closed.get()) throw new IllegalStateException("Outbound authentication is closed");
     switch (settings.type()) {
@@ -249,9 +280,10 @@ public final class OutboundAuth implements AutoCloseable {
         if (secrets == null)
           throw new IllegalStateException("Native API key credentials must use headers()");
         String ref = Objects.requireNonNull(settings.apiKeyRef());
-        header.accept(
-            Objects.requireNonNull(settings.apiKeyHeader()),
-            secrets.resolve(ref).orElseThrow(() -> new SecretNotFoundException(ref)).reveal());
+        try (var secret =
+            secrets.resolve(ref).orElseThrow(() -> new SecretNotFoundException(ref))) {
+          header.accept(Objects.requireNonNull(settings.apiKeyHeader()), secret.reveal());
+        }
       }
       case TOKEN_RELAY -> {
         String token = SECURITY ? Relay.current() : null;
@@ -260,7 +292,7 @@ public final class OutboundAuth implements AutoCloseable {
         }
       }
       default -> {
-        // nothing to add
+        // nada que añadir
       }
     }
   }
@@ -269,7 +301,7 @@ public final class OutboundAuth implements AutoCloseable {
     return settings.type() == AuthType.TOKEN_RELAY;
   }
 
-  /** Spring Security access, isolated so the dependency stays optional. */
+  /** Acceso a Spring Security, aislado para que la dependencia siga siendo opcional. */
   static final class Relay {
     private Relay() {}
 

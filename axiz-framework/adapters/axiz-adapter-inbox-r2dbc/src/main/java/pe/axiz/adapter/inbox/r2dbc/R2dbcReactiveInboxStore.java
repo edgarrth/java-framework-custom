@@ -4,14 +4,18 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.SqlIdentifiers;
 import pe.axiz.core.inbox.InboxException;
+import pe.axiz.core.inbox.InboxStore;
 import pe.axiz.core.inbox.InboxStore.Acquisition;
 import pe.axiz.kit.r2dbc.ReactiveSql;
 import pe.axiz.kit.r2dbc.SqlParams;
+import pe.axiz.kit.sql.SqlIdentifiers;
 import reactor.core.publisher.Mono;
 
-/** Nonblocking PostgreSQL inbox with atomic owner-checked updates and cancellable R2DBC I/O. */
+/**
+ * Inbox PostgreSQL no bloqueante con actualizaciones atómicas verificadas por propietario y E/S
+ * R2DBC cancelable.
+ */
 public final class R2dbcReactiveInboxStore implements ReactiveInboxStore {
   private final ReactiveSql sql;
   private final String table;
@@ -28,6 +32,20 @@ public final class R2dbcReactiveInboxStore implements ReactiveInboxStore {
 
   @Override
   public Mono<Acquisition> tryAcquire(
+      String consumer,
+      String messageId,
+      String owner,
+      Instant now,
+      Instant leaseUntil,
+      Instant expiresAt) {
+    return Mono.defer(
+        () -> {
+          InboxStore.validateWindow(now, leaseUntil, expiresAt);
+          return acquire(consumer, messageId, owner, now, leaseUntil, expiresAt);
+        });
+  }
+
+  private Mono<Acquisition> acquire(
       String consumer,
       String messageId,
       String owner,
@@ -56,13 +74,14 @@ public final class R2dbcReactiveInboxStore implements ReactiveInboxStore {
                               "UPDATE "
                                   + table
                                   + " SET owner = :owner, lease_until = :leaseUntil, received_at "
-                                  + "= :now WHERE consumer = "
+                                  + "= :now, expires_at = :expiresAt WHERE consumer = "
                                   + ":consumer AND message_id = :messageId AND status = "
                                   + "'IN_PROGRESS' AND lease_until < "
                                   + ":now",
                               SqlParams.of()
                                   .bind("owner", owner)
                                   .bind("leaseUntil", leaseUntil)
+                                  .bind("expiresAt", expiresAt)
                                   .bind("now", now)
                                   .bind("consumer", consumer)
                                   .bind("messageId", messageId))
@@ -97,7 +116,7 @@ public final class R2dbcReactiveInboxStore implements ReactiveInboxStore {
                         + table
                         + " SET status = 'PROCESSED', processed_at = :at WHERE consumer = :consumer"
                         + " AND message_id = :messageId AND owner = :owner AND status ="
-                        + " 'IN_PROGRESS'",
+                        + " 'IN_PROGRESS' AND lease_until > :at AND expires_at > :at",
                     SqlParams.of()
                         .bind("at", at)
                         .bind("consumer", consumer)
@@ -127,7 +146,7 @@ public final class R2dbcReactiveInboxStore implements ReactiveInboxStore {
     return statement(
         () ->
             sql.update(
-                    "DELETE FROM " + table + " WHERE expires_at < :now",
+                    "DELETE FROM " + table + " WHERE expires_at < :now AND status <> 'IN_PROGRESS'",
                     SqlParams.of().bind("now", now))
                 .map(Math::toIntExact));
   }

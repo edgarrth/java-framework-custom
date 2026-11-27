@@ -1,0 +1,26 @@
+# axiz-scheduling-r2dbc-spring-boot-starter
+
+Scheduling opcional con R2DBC.
+
+Este módulo es dueño de la API `pe.axiz.spring.scheduling.r2dbc.starter`.
+
+## Selección
+
+Las versiones las gestiona `axiz-bom`; las aplicaciones heredan `axiz-parent-service`.
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-scheduling-r2dbc-spring-boot-starter</artifactId>
+</dependency>
+```
+
+Este artefacto compone dependencias; su configuración y su contrato operativo se documentan en
+[`axiz-scheduling-r2dbc-spring-boot-autoconfigure`](../axiz-scheduling-r2dbc-spring-boot-autoconfigure/README.md).
+
+## Operación
+
+El esquema de la capacidad se aprovisiona con migraciones y se configura un pool de conexiones
+acotado con TLS verificado. La composición transaccional requiere la misma identidad efectiva del
+recurso, no solo dos clientes que apunten a la misma base de datos. Para flujos reactivos se
+selecciona el proveedor R2DBC nativo; JDBC se ejecuta en la ruta imperativa.

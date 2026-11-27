@@ -10,13 +10,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.json.JsonReader;
-import pe.axiz.core.commons.json.JsonWriter;
+import pe.axiz.core.json.JsonReader;
+import pe.axiz.core.json.JsonWriter;
 
 /**
- * CloudEvents JSON format (structured mode), used where transport attributes are limited (SQS, SNS)
- * and for outbox storage. JSON data is embedded as {@code data}; other content types as {@code
- * data_base64}.
+ * Formato JSON de CloudEvents (modo estructurado), usado donde los atributos de transporte son
+ * limitados (SQS, SNS) y para el almacenamiento en el outbox. EventEnvelope contiene bytes binarios
+ * codificados: la serialización estructurada usa data_base64 y conserva su media type declarado,
+ * preservando firmas y bytes numéricos.
  */
 public final class CloudEventJson {
 
@@ -46,12 +47,7 @@ public final class CloudEventJson {
     }
     m.put("datacontenttype", e.dataContentType());
     m.putAll(e.extensions());
-    if (isJson(e.dataContentType())) {
-      String text = new String(e.data(), StandardCharsets.UTF_8);
-      m.put("data", text.isBlank() ? null : JsonReader.parse(text));
-    } else {
-      m.put("data_base64", Base64.getEncoder().encodeToString(e.data()));
-    }
+    m.put("data_base64", Base64.getEncoder().encodeToString(e.data()));
     return JsonWriter.write(m);
   }
 
@@ -63,6 +59,10 @@ public final class CloudEventJson {
       throw new PayloadException("Message is not a CloudEvents JSON document", ex);
     }
     String contentType = string(m, "datacontenttype", "application/json");
+    if (m.containsKey("data") && m.containsKey("data_base64"))
+      throw new PayloadException(
+          "CloudEvents data and data_base64 are mutually exclusive",
+          new IllegalArgumentException("Ambiguous payload"));
     byte[] data;
     if (m.containsKey("data_base64")) {
       data = Base64.getDecoder().decode(string(m, "data_base64", ""));
@@ -90,15 +90,16 @@ public final class CloudEventJson {
       throw new PayloadException("Invalid time", ex);
     }
     Object subject = m.get("subject");
-    return new EventEnvelope(
-        required(m, "id"),
-        required(m, "source"),
-        required(m, "type"),
-        time,
-        subject == null ? null : subject.toString(),
-        contentType,
-        data,
-        ext);
+    return EventEnvelope.builder()
+        .id(required(m, "id"))
+        .source(required(m, "source"))
+        .type(required(m, "type"))
+        .time(time)
+        .subject(subject == null ? null : subject.toString())
+        .dataContentType(contentType)
+        .data(data)
+        .extensions(ext)
+        .build();
   }
 
   private static boolean isJson(String contentType) {

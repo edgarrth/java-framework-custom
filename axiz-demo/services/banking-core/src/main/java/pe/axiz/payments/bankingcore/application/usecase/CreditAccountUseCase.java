@@ -9,16 +9,16 @@ import pe.axiz.payments.bankingcore.domain.Movement;
 import pe.axiz.payments.bankingcore.domain.MovementOrder;
 import pe.axiz.structure.hexagonal.annotation.UseCase;
 
-/** Credits an account of the core (the core exposes credits only through SOAP). */
+/** Abona a una cuenta del core (el core expone los abonos solo mediante SOAP). */
 @UseCase
 public class CreditAccountUseCase
     implements pe.axiz.structure.hexagonal.UseCase<CreditAccountUseCase.Input, Movement> {
 
   /**
-   * Input of the use case.
+   * Entrada del caso de uso.
    *
-   * @param order what to credit
-   * @param idempotencyKey caller key, forwarded to the core
+   * @param order qué se abona
+   * @param idempotencyKey clave del invocador, reenviada al core
    */
   public record Input(MovementOrder order, String idempotencyKey) {}
 

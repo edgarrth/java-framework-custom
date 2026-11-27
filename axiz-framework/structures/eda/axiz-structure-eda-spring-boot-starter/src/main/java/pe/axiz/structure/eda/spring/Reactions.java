@@ -8,8 +8,9 @@ import pe.axiz.core.messaging.EventRoutes;
 import pe.axiz.spring.outbox.TransactionalEvents;
 
 /**
- * Emits events in reaction to a consumed one (choreography) through the outbox, inside the handler
- * transaction. The correlation id of the request context is propagated automatically.
+ * Emite eventos en reacción a uno consumido (coreografía) mediante el outbox, dentro de la
+ * transacción del handler. El id de correlación del contexto de la petición se propaga de forma
+ * automática.
  */
 public final class Reactions {
 
@@ -28,15 +29,15 @@ public final class Reactions {
   }
 
   /**
-   * Enqueues a reaction.
+   * Encola una reacción.
    *
-   * @param type event type without prefix, e.g. {@code ledger-entry-posted.v1}
-   * @param aggregateType aggregate type
-   * @param aggregateId aggregate id
+   * @param type tipo de evento sin prefijo, por ejemplo {@code ledger-entry-posted.v1}
+   * @param aggregateType tipo de agregado
+   * @param aggregateId id del agregado
    * @param payload payload
-   * @param eventId deterministic id (e.g. derived from the consumed event) so redeliveries do not
-   *     duplicate the reaction downstream
-   * @return the stored envelope
+   * @param eventId id determinista (por ejemplo, derivado del evento consumido) para que las
+   *     reentregas no dupliquen la reacción aguas abajo
+   * @return el envelope almacenado
    */
   public EventEnvelope emit(
       String type,

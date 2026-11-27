@@ -3,7 +3,7 @@ package pe.axiz.payments.process;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-/** Payment Process: Payment saga. */
+/** Payment Process: saga de pagos. */
 @SpringBootApplication
 @SuppressWarnings("checkstyle:hideutilityclassconstructor")
 public class PaymentProcessApplication {

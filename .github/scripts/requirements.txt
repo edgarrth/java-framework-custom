@@ -1,0 +1,4 @@
+# Dependencias de los scripts de .github/scripts, fijadas por hash; se instalan con
+# pip install --require-hashes -r .github/scripts/requirements.txt
+defusedxml==0.7.1 \
+    --hash=sha256:a352e7e428770286cc899e2542b6cdaedb2b4953ff269a210103ec58f6198a61

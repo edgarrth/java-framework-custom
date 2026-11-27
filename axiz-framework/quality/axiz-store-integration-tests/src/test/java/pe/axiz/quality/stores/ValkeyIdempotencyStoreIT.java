@@ -19,24 +19,27 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.idempotency.redis.RedisAsyncIdempotencyStore;
 import pe.axiz.adapter.idempotency.redis.RedisIdempotencyStore;
 import pe.axiz.core.idempotency.IdempotencyRecord;
 import pe.axiz.core.idempotency.IdempotencyRecord.Status;
 import pe.axiz.core.idempotency.IdempotencyStore;
 import pe.axiz.core.idempotency.StoredResponse;
+import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.test.contracts.IdempotencyStoreContract;
 import pe.axiz.test.support.MutableClock;
 
-/** Idempotency store contract on a real Valkey (ElastiCache): Lua scripts and server TTL. */
+/**
+ * Contrato del almacén de idempotencia sobre un Valkey real (ElastiCache): scripts Lua y TTL del
+ * servidor.
+ */
 class ValkeyIdempotencyStoreIT {
 
   private static final String PREFIX = "axiz:it:idem:";
 
   @SuppressWarnings("resource")
   private static final GenericContainer<?> VALKEY =
-      new GenericContainer<>(DockerImageName.parse(Docker.VALKEY)).withExposedPorts(6379);
+      TestContainerImages.valkey().withExposedPorts(6379);
 
   private static RedisClient client;
   private static StatefulRedisConnection<String, String> connection;
@@ -64,13 +67,18 @@ class ValkeyIdempotencyStoreIT {
     String uri = "redis://" + VALKEY.getHost() + ":" + VALKEY.getMappedPort(6379);
     var now = Instant.now();
     var record =
-        new IdempotencyRecord(
-            key, "request-hash", Status.IN_PROGRESS, "original-owner", null, now.plusSeconds(300));
+        IdempotencyRecord.builder(key, "request-hash", now.plusSeconds(300), now.plusSeconds(300))
+            .status(Status.IN_PROGRESS)
+            .owner("original-owner")
+            .response(null)
+            .resolutionVersion(0)
+            .failure(null)
+            .build();
     try (var before = client.connect()) {
       var store = new RedisIdempotencyStore(before.sync(), PREFIX);
       Assertions.assertTrue(store.tryStart(record));
     }
-    // New transport/client and async implementation reopen the same external state.
+    // Un transporte y cliente nuevos y la implementación asíncrona reabren el mismo estado externo.
     var restartedClient = RedisClient.create(uri);
     try (var after = restartedClient.connect()) {
       var store = new RedisAsyncIdempotencyStore(after.async(), PREFIX, Clock.systemUTC());
@@ -98,6 +106,14 @@ class ValkeyIdempotencyStoreIT {
     }
   }
 
+  @Test
+  void protectedReplayAndConcurrentCasKeepTheSameCiphertext() {
+    ProtectedReplayChecks.verify(
+        new RedisIdempotencyStore(connection.sync(), PREFIX),
+        new RedisAsyncIdempotencyStore(connection.async(), PREFIX, Clock.systemUTC()),
+        key -> connection.sync().get(PREFIX + key));
+  }
+
   @TestFactory
   Stream<DynamicTest> contract() {
     RedisCommands<String, String> redis = connection.sync();
@@ -111,7 +127,7 @@ class ValkeyIdempotencyStoreIT {
           @Override
           public void expire(IdempotencyStore store, String key, MutableClock clock)
               throws InterruptedException {
-            // the server expires the key by itself: wait for it
+            // el servidor expira la clave por sí mismo: se espera a que ocurra
             Awaitility.await()
                 .atMost(Duration.ofSeconds(10))
                 .until(() -> redis.exists(PREFIX + key) == 0);

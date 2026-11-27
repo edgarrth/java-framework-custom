@@ -1,5 +1,7 @@
 package pe.axiz.spring.storage;
 
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -15,8 +17,10 @@ import pe.axiz.core.storage.InMemoryObjectStorage;
 import pe.axiz.core.storage.ObjectStorage;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 
-/** In-memory storage for tests and local runs ({@code axiz.storage.type=memory}). */
-@AutoConfiguration(afterName = "pe.axiz.spring.storage.AxizStorageS3AutoConfiguration")
+/**
+ * Almacenamiento en memoria para pruebas y ejecuciones locales ({@code axiz.storage.type=memory}).
+ */
+@AutoConfiguration
 @EnableConfigurationProperties(AxizStorageProperties.class)
 public class AxizStorageAutoConfiguration {
 
@@ -31,6 +35,19 @@ public class AxizStorageAutoConfiguration {
         "s3",
         "objects kept in memory are lost on restart and invisible to other replicas");
     return new InMemoryObjectStorage();
+  }
+
+  @Configuration(proxyBeanMethods = false)
+  @ConditionalOnImperativeApplication
+  static class ProviderValidation {
+    @Bean
+    SmartInitializingSingleton axizStorageProviderCheck(ObjectProvider<ObjectStorage> providers) {
+      return () -> {
+        if (providers.getIfAvailable() == null)
+          throw new IllegalStateException(
+              "Storage requires its selected integration or an ObjectStorage bean");
+      };
+    }
   }
 
   @Configuration(proxyBeanMethods = false)

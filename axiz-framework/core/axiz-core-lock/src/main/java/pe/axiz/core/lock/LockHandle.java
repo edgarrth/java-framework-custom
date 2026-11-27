@@ -2,15 +2,15 @@ package pe.axiz.core.lock;
 
 import java.time.Duration;
 
-/** An acquired lock. Close it (try-with-resources) to release. */
+/** Lock adquirido. Se cierra (try-with-resources) para liberarlo. */
 public interface LockHandle extends AutoCloseable {
 
   String resource();
 
-  /** Unique token of this owner; only the owner can renew or release. */
+  /** Token único de este propietario; solo el propietario puede renovar o liberar. */
   String token();
 
-  /** Extends a live lease; returns false when it expired or belongs to another owner. */
+  /** Extiende un lease vivo; devuelve false cuando expiró o pertenece a otro propietario. */
   boolean renew(Duration lease);
 
   void release();

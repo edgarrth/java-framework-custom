@@ -5,7 +5,7 @@ import pe.axiz.payments.history.application.port.out.PaymentHistories;
 import pe.axiz.payments.history.domain.PaymentHistory;
 import reactor.core.publisher.Mono;
 
-/** Projects a status change (stale changes are ignored by the domain). */
+/** Proyecta un cambio de estado (el dominio ignora los cambios desactualizados). */
 public class RecordPaymentStatusChangedHandler
     implements ReactiveCommandHandler<RecordPaymentStatusChangedCommand, Void> {
 

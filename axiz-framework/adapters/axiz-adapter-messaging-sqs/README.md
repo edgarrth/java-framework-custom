@@ -1,9 +1,9 @@
 <!-- generated -->
 # axiz-adapter-messaging-sqs
 
-Amazon SQS publisher and consumer adapter (standard and FIFO).
+Adaptador publicador y consumidor de Amazon SQS (estándar y FIFO).
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,25 +12,26 @@ Amazon SQS publisher and consumer adapter (standard and FIFO).
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `SqsEnvelopes` | Maps SQS messages (including SNS-delivered raw messages) to envelopes. |
-| `SqsEventPublisher` | Publishes CloudEvents (structured JSON) to Amazon SQS. |
+| `SqsEnvelopes` | Convierte los mensajes SQS (incluidos los mensajes crudos entregados por SNS) en sobres. |
+| `SqsEventPublisher` | Publica CloudEvents (JSON estructurado) en Amazon SQS. |
 
-## Native publication
+## Publicación nativa
 
-`SqsAsyncEventPublisher` uses the SDK asynchronous client, sharing request construction with the imperative
-adapter. Successful completion is the broker acknowledgement. Cancellation reaches the exact SDK
-future; submission errors are returned as failed stages, and cancellation/fatal failures preserve
-their meaning. FIFO group and deduplication identities remain unchanged.
+`SqsAsyncEventPublisher` usa el cliente asíncrono del SDK y comparte la construcción de
+peticiones con el adaptador imperativo. Completar con éxito equivale a la confirmación del broker.
+La cancelación llega al futuro exacto del SDK; los errores de envío se devuelven como etapas
+fallidas, y las cancelaciones y fallos fatales conservan su significado. Las identidades FIFO de
+grupo y de deduplicación son las mismas.
 
-SQS routing recognizes AWS URLs and HTTP emulator queue URLs, and rejects malformed addresses,
-URL credentials, query parameters and fragments.
+El enrutamiento SQS reconoce las URLs de AWS y las URLs HTTP de colas de emuladores, y rechaza
+direcciones mal formadas, credenciales en la URL, parámetros de consulta y fragmentos.
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl adapters/axiz-adapter-messaging-sqs verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl adapters/axiz-adapter-messaging-sqs verify`.

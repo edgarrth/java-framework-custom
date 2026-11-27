@@ -26,7 +26,10 @@ import org.springframework.web.reactive.config.EnableWebFlux;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import pe.axiz.spring.errors.AxizErrorsAutoConfiguration;
 
-/** Real chains, method advisors and error handlers; no target invocation through a bare mock. */
+/**
+ * Cadenas, advisors de métodos y manejadores de errores reales; ninguna invocación del objetivo
+ * mediante un mock simple.
+ */
 class AuthenticatedAccessHttpTest {
   @Configuration(proxyBeanMethods = false)
   @EnableWebMvc

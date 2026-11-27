@@ -1,19 +1,20 @@
 package pe.axiz.core.messaging;
 
 import java.time.Duration;
+import java.util.IdentityHashMap;
 import java.util.Objects;
 import java.util.function.Predicate;
 import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.resilience.Backoff;
-import pe.axiz.core.resilience.RetryDecider;
 
 /**
- * Consumer retry policy: transient failures are retried with backoff up to {@code maxAttempts};
- * permanent failures (business rejections, malformed payloads) go to the DLQ immediately.
+ * Política de reintentos del consumidor: los fallos transitorios se reintentan con backoff hasta
+ * {@code maxAttempts}; los fallos permanentes (rechazos de negocio, payloads mal formados) van a la
+ * DLQ de inmediato.
  *
- * @param maxAttempts deliveries before dead-lettering
- * @param backoff delay between redeliveries
- * @param transientFailure classifier of transient failures
+ * @param maxAttempts entregas antes de enviar a dead-letter
+ * @param backoff retraso entre reentregas
+ * @param transientFailure clasificador de fallos transitorios
  */
 public record ConsumerRetryPolicy(
     int maxAttempts, Backoff backoff, Predicate<Throwable> transientFailure) {
@@ -34,16 +35,19 @@ public record ConsumerRetryPolicy(
   }
 
   static boolean isTransientDefault(Throwable t) {
-    if (t instanceof PayloadException) {
-      return false;
+    var seen = new IdentityHashMap<Throwable, Boolean>();
+    for (Throwable cause = t; cause != null; cause = cause.getCause()) {
+      if (seen.size() >= 64 || seen.put(cause, Boolean.TRUE) != null) return false;
+      if (cause instanceof PayloadException || cause instanceof IllegalArgumentException)
+        return false;
+      if (cause instanceof AxizException ax && !ax.category().retryable()) return false;
     }
-    if (t instanceof AxizException ax) {
-      return ax.category().retryable();
-    }
-    return RetryDecider.isTransient(t) || !(t instanceof IllegalArgumentException);
+    // Los fallos desconocidos mantienen la política de entrega acotada. Envolver un fallo conocido
+    // permanente o incierto nunca debe convertirlo en un reintento automático.
+    return true;
   }
 
-  /** Decision after a failed delivery number {@code attempt} (1-based). */
+  /** Decisión tras la entrega fallida número {@code attempt} (desde 1). */
   public DeliveryDecision onFailure(Throwable failure, int attempt) {
     if (!transientFailure.test(failure)) {
       return DeliveryDecision.DEAD_LETTER;

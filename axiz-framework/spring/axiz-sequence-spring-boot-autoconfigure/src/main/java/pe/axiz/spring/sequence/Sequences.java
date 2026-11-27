@@ -8,7 +8,7 @@ import pe.axiz.core.sequence.SequenceFormat;
 import pe.axiz.core.sequence.SequenceGenerator;
 import pe.axiz.core.sequence.SequenceStore;
 
-/** Generators for the configured sequences; unknown names fail fast. */
+/** Generadores para las secuencias configuradas; los nombres desconocidos fallan de inmediato. */
 public final class Sequences {
 
   private final AxizSequenceProperties properties;
@@ -41,7 +41,7 @@ public final class Sequences {
         });
   }
 
-  /** Next formatted value of a sequence. */
+  /** Devuelve el siguiente valor formateado de una secuencia. */
   public String next(String name) {
     return generator(name).next();
   }

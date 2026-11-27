@@ -22,8 +22,8 @@ import org.springframework.http.server.reactive.observation.ServerRequestObserva
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.http.server.reactive.MockServerHttpResponse;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.errors.AccessException;
 import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.errors.CoreErrors;
@@ -33,14 +33,14 @@ import pe.axiz.core.observability.AttributeSanitizer;
 import pe.axiz.core.observability.AxizAttributes;
 import pe.axiz.core.observability.StructuredEventEmitter;
 
-/** Defaults for export and probes, and what every observation carries or skips. */
+/** Valores por defecto de exportación y sondas, y lo que cada observación lleva u omite. */
 class ObservabilityConventionsTest {
 
   private final ApplicationContextRunner runner =
       new ApplicationContextRunner()
           .withConfiguration(AutoConfigurations.of(AxizObservabilityAutoConfiguration.class));
 
-  /** Records the observations that actually start. */
+  /** Registra las observaciones que realmente se inician. */
   static final class Recorder implements ObservationHandler<Observation.Context> {
     final List<Observation.Context> started = new ArrayList<>();
 

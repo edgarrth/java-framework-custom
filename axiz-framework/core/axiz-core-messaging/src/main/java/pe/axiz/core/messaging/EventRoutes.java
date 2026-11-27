@@ -4,11 +4,11 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Choreography routes: the logical destination of each event type a service emits in reaction to
- * the events it consumes. Unknown types go to the default destination.
+ * Rutas de coreografía: el destino lógico de cada tipo de evento que un servicio emite en reacción
+ * a los eventos que consume. Los tipos desconocidos van al destino por defecto.
  *
- * @param defaultDestination destination of unrouted types
- * @param routes destination by event type
+ * @param defaultDestination destino de los tipos sin ruta
+ * @param routes destino por tipo de evento
  */
 public record EventRoutes(String defaultDestination, Map<String, String> routes) {
 

@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.Environment;
 
-/** Startup validation of the externalized configuration. */
+/** Validación en el arranque de la configuración externalizada. */
 @AutoConfiguration
 @AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE)
 @ConditionalOnBooleanProperty(name = "axiz.config.enabled", matchIfMissing = true)

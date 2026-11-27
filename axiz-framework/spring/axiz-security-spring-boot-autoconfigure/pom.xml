@@ -14,15 +14,19 @@
   <name>axiz :: spring :: security :: autoconfigure</name>
   <description>OAuth2 resource server with issuer allow-list, claim mapping, method security, headers and rate limit (auto-configuration)</description>
 
-  <properties>
+  <properties><axiz.provider.boundaries.skip>false</axiz.provider.boundaries.skip>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
     <axiz.module.name>pe.axiz.spring.security</axiz.module.name>
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-test-spring-boot-starter</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>io.projectreactor.tools</groupId><artifactId>blockhound</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-json</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-context</artifactId><version>${project.version}</version></dependency>
+
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-tenancy-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>test</scope></dependency>
-    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-redis-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
     <dependency>
       <groupId>jakarta.annotation</groupId>
       <artifactId>jakarta.annotation-api</artifactId>
@@ -54,12 +58,6 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-adapter-security-redis</artifactId>
-      <version>${project.version}</version>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
       <artifactId>axiz-core-errors</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -67,11 +65,6 @@
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-core-commons</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-data-redis</artifactId>
-      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.springframework.security</groupId>
@@ -93,11 +86,6 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-security</artifactId>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>io.lettuce</groupId>
-      <artifactId>lettuce-core</artifactId>
       <optional>true</optional>
     </dependency>
     <dependency>

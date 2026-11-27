@@ -1,26 +1,35 @@
 package pe.axiz.kit.dynamodb;
 
 import java.util.Objects;
-import pe.axiz.core.crypto.EncryptionRegistry;
+import pe.axiz.core.crypto.EncryptionContext;
+import pe.axiz.core.crypto.FieldEncryptor;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeConverter;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
 import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
- * Encrypts String attributes with the registered field encryptor:
- * {@code @DynamoDbConvertedBy(EncryptedAttributeConverter.class)}.
+ * Conversor por campo inyectado. La instancia se instala con un esquema de tabla explícito del
+ * Enhanced Client.
  */
-public class EncryptedAttributeConverter implements AttributeConverter<String> {
+public abstract class EncryptedAttributeConverter implements AttributeConverter<String> {
 
-  protected String context() {
-    return "axiz.dynamodb.field";
+  private final FieldEncryptor encryptor;
+
+  protected EncryptedAttributeConverter(FieldEncryptor encryptor) {
+    // Se valida antes de construir el Object, para que las subclases inválidas nunca lleguen a ser
+    // finalizables.
+    Objects.requireNonNull(encryptor);
+    super();
+    this.encryptor = encryptor;
   }
+
+  protected abstract String context();
 
   @Override
   public AttributeValue transformFrom(String input) {
     return AttributeValue.builder()
-        .s(EncryptionRegistry.encryptor().encrypt(input, context()))
+        .s(encryptor.encrypt(input, EncryptionContext.require(context())))
         .build();
   }
 
@@ -28,12 +37,13 @@ public class EncryptedAttributeConverter implements AttributeConverter<String> {
   public String transformTo(AttributeValue input) {
     String encrypted = input.s();
     if (encrypted == null) {
-      // the attribute was not written by this converter (another type): never return a null
+      // el atributo no lo escribió este conversor (otro tipo): nunca se devuelve null
       throw new IllegalArgumentException(
           "Encrypted attribute expected as a string, found " + input.type());
     }
-    // decrypt only answers null for a null input
-    return Objects.requireNonNull(EncryptionRegistry.encryptor().decrypt(encrypted, context()));
+    // decrypt solo responde null para una entrada null
+    return Objects.requireNonNull(
+        encryptor.decrypt(encrypted, EncryptionContext.require(context())));
   }
 
   @Override

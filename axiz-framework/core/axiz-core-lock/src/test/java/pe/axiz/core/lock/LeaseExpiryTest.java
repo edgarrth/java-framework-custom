@@ -38,5 +38,6 @@ class LeaseExpiryTest {
     expired.release().toCompletableFuture().join();
     assertTrue(locks.tryAcquire("account", lease).toCompletableFuture().join().isEmpty());
     current.release().toCompletableFuture().join();
+    assertTrue(locks.tryAcquire("account", lease).toCompletableFuture().join().isPresent());
   }
 }

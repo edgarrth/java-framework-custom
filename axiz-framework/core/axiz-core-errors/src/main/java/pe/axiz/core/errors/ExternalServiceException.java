@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import org.jspecify.annotations.Nullable;
 
-/** A dependency failed or rejected the call. */
+/** Una dependencia falló o rechazó la llamada. */
 public class ExternalServiceException extends AxizException {
 
   private static final long serialVersionUID = 1L;
@@ -18,23 +18,25 @@ public class ExternalServiceException extends AxizException {
   }
 
   /**
-   * Builds the exception from the dependency response, choosing the category from its status.
+   * Construye la excepción a partir de la respuesta de la dependencia y elige la categoría según su
+   * estado.
    *
-   * @param detail what the dependency answered
-   * @return the exception
+   * @param detail lo que respondió la dependencia
+   * @return la excepción
    */
   public static ExternalServiceException from(ExternalErrorDetail detail) {
     return from(detail, null);
   }
 
   /**
-   * Builds the exception from the dependency response or transport failure, keeping the cause. A
-   * transport failure is a timeout (504) when the cause is one, otherwise the dependency is
-   * unavailable (503: refused or reset connection, open circuit, full bulkhead).
+   * Construye la excepción a partir de la respuesta de la dependencia o del fallo de transporte,
+   * conservando la causa. Un fallo de transporte es un timeout (504) cuando la causa lo es; en otro
+   * caso la dependencia no está disponible (503: conexión rechazada o reiniciada, circuito abierto,
+   * bulkhead lleno).
    *
-   * @param detail what the dependency answered (status -1 when it did not answer)
-   * @param cause the transport failure, if any
-   * @return the exception
+   * @param detail lo que respondió la dependencia (estado -1 cuando no respondió)
+   * @param cause el fallo de transporte, si existe
+   * @return la excepción
    */
   public static ExternalServiceException from(
       ExternalErrorDetail detail, @Nullable Throwable cause) {
@@ -60,9 +62,9 @@ public class ExternalServiceException extends AxizException {
   }
 
   /**
-   * {@code true} when the failure, or one of its causes, is a timeout: the JDK ones and those of
-   * HTTP client libraries this module does not depend on (Netty's {@code ReadTimeoutException}, for
-   * example), recognized by the {@code TimeoutException} suffix of their type.
+   * {@code true} cuando el fallo, o una de sus causas, es un timeout: los del JDK y los de
+   * librerías de cliente HTTP de las que este módulo no depende (por ejemplo, {@code
+   * ReadTimeoutException} de Netty), reconocidos por el sufijo {@code TimeoutException} de su tipo.
    */
   static boolean isTimeout(@Nullable Throwable failure) {
     for (Throwable t = failure; t != null; t = t.getCause() == t ? null : t.getCause()) {
@@ -76,7 +78,8 @@ public class ExternalServiceException extends AxizException {
     return false;
   }
 
-  // a transport failure has no status to show: "failed with status -1" said nothing
+  // un fallo de transporte no tiene estado que mostrar: "failed with status -1" no aportaría
+  // información
   private static String message(ExternalErrorDetail detail) {
     if (!detail.transportError()) {
       return "Call to " + detail.system() + " failed with status " + detail.status();

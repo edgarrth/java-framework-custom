@@ -12,14 +12,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.messaging.DeliveryDecision;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventHandler;
 import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.messaging.PublishResult;
-import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 
 class MessagingTest {
 
@@ -66,7 +65,6 @@ class MessagingTest {
     Recorder recorder = new Recorder();
     OrderHandler handler = new OrderHandler();
     new ApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizMessagingAutoConfiguration.class))
         .withPropertyValues(
             "spring.application.name=orders",
@@ -98,21 +96,21 @@ class MessagingTest {
   @Test
   void missingHandlerForSubscriptionFailsStartup() {
     new ApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizMessagingAutoConfiguration.class))
         .withPropertyValues("axiz.messaging.consumer.subscriptions=pe.axiz.other.v1")
         .run(ctx -> assertTrue(ctx.getStartupFailure() != null));
     assertThrows(
         IllegalArgumentException.class,
         () ->
-            new EventEnvelope(
-                "1",
-                "s",
-                "t",
-                Instant.EPOCH,
-                null,
-                "application/json",
-                new byte[0],
-                Map.of("Bad-Name", "x")));
+            EventEnvelope.builder()
+                .id("1")
+                .source("s")
+                .type("t")
+                .time(Instant.EPOCH)
+                .subject(null)
+                .dataContentType("application/json")
+                .data(new byte[0])
+                .extensions(Map.of("Bad-Name", "x"))
+                .build());
   }
 }

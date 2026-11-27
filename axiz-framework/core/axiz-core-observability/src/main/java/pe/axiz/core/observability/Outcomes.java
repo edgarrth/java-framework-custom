@@ -5,7 +5,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
-/** Classifies the result of an operation into the standard outcome values. */
+/** Clasifica el resultado de una operación en los valores de resultado estándar. */
 public final class Outcomes {
 
   public static final String SUCCESS = "success";
@@ -17,12 +17,12 @@ public final class Outcomes {
   private Outcomes() {}
 
   /**
-   * Outcome for a failure. Business rejections are recognized through the given classifier (the
-   * errors capability recognizes business, validation and security errors).
+   * Resultado para un fallo. Los rechazos de negocio se reconocen mediante el clasificador indicado
+   * (la capacidad de errores reconoce errores de negocio, de validación y de seguridad).
    *
-   * @param error the failure, null meaning success
-   * @param isRejection whether the failure is an expected business rejection
-   * @return outcome value
+   * @param error el fallo; null significa éxito
+   * @param isRejection indica si el fallo es un rechazo de negocio esperado
+   * @return valor de resultado
    */
   public static String of(@Nullable Throwable error, Function<Throwable, Boolean> isRejection) {
     if (error == null) {

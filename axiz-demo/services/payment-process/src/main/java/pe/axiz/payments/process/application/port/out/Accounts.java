@@ -2,12 +2,12 @@ package pe.axiz.payments.process.application.port.out;
 
 import pe.axiz.payments.process.domain.PaymentInstruction;
 
-/** Customer accounts (banking-core). */
+/** Cuentas de clientes (banking-core). */
 public interface Accounts {
 
-  /** Debits the debtor account and returns the movement id. */
+  /** Debita la cuenta deudora y devuelve el id del movimiento. */
   String debit(PaymentInstruction instruction, String idempotencyKey);
 
-  /** Reverses a debit (compensation). */
+  /** Revierte un débito (compensación). */
   void reverse(String movementId, String idempotencyKey);
 }

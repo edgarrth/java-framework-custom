@@ -1,4 +1,4 @@
-/** Compositions of downstream calls, one per API tag. */
+/** Composiciones de llamadas aguas abajo, una por etiqueta de la API. */
 @NullMarked
 package pe.axiz.payments.ux.composition;
 

@@ -1,5 +1,5 @@
-# axiz project manifest: read by the axiz CLI (generate, add, contract sync, upgrade, doctor).
-# Keep it in version control; the CLI updates it when it changes the project.
+# Manifiesto del proyecto axiz: lo lee la CLI axiz (generate, add, contract sync, upgrade, doctor).
+# Se versiona en el repositorio; la CLI lo actualiza cuando cambia el proyecto.
 schema: 2
 kind: service
 name: payment-process
@@ -15,6 +15,11 @@ contract:
   openapi: src/main/openapi/openapi.yaml
   asyncapi: src/main/asyncapi/asyncapi.yaml
 capabilities:
+  - config-aws
+  - secrets-file
+  - secrets-aws
+  - jpa-aws
+  - messaging-msk
   - foundation
   - web
   - errors

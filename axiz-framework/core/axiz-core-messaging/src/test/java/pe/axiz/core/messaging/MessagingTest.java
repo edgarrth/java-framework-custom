@@ -18,15 +18,40 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletionException;
 import org.junit.jupiter.api.Test;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.CoreErrors;
 import pe.axiz.core.id.IdGenerator;
 
 class MessagingTest {
 
-  /** Test codec: payloads are strings. */
+  @Test
+  void wrappedUncertainOrPermanentFailuresDoNotBecomeConsumerRetries() {
+    var policy = ConsumerRetryPolicy.defaults();
+    var uncertain =
+        new CompletionException(new BusinessException(CoreErrors.OUTCOME_UNKNOWN, "synthetic"));
+    assertEquals(DeliveryDecision.DEAD_LETTER, policy.onFailure(uncertain, 1));
+    assertEquals(
+        DeliveryDecision.DEAD_LETTER,
+        policy.onFailure(
+            new CompletionException(
+                new PayloadException("synthetic", new IllegalArgumentException())),
+            1));
+    assertEquals(
+        DeliveryDecision.RETRY,
+        policy.onFailure(
+            new CompletionException(new BusinessException(CoreErrors.UNAVAILABLE, "synthetic")),
+            1));
+    var first = new RuntimeException();
+    var second = new RuntimeException();
+    first.initCause(second);
+    second.initCause(first);
+    assertEquals(DeliveryDecision.DEAD_LETTER, policy.onFailure(first, 1));
+  }
+
+  /** Codec de prueba: los payloads son cadenas. */
   static final class StringCodec implements PayloadCodec {
     @Override
     public String contentType() {
@@ -213,13 +238,13 @@ class MessagingTest {
             ConsumerRetryPolicy.defaults(),
             false);
     EventEnvelope e = event("held");
-    // delivery A claimed the message and died before finishing
+    // la entrega A reclamó el mensaje y murió antes de terminar
     dedup.inProgress.put(MessageKeys.of(e), "token-of-a");
     EventDispatcher.Outcome outcome = dispatcher.dispatchWithDelay(e, 1);
     assertEquals(DeliveryDecision.DEFER, outcome.decision());
     assertEquals(Duration.ofSeconds(30), outcome.retryAfter());
     assertTrue(handler.handled.isEmpty(), "the handler did not run");
-    // once A's lease is over the redelivery processes it
+    // cuando termina el lease de A, la reentrega lo procesa
     dedup.inProgress.clear();
     assertEquals(DeliveryDecision.ACK, dispatcher.dispatch(e, 2));
     assertEquals(List.of("held"), handler.handled);
@@ -243,8 +268,8 @@ class MessagingTest {
   }
 
   /**
-   * Regression: two producers may use the same id; only source + id identifies an event, so both
-   * are processed, while a redelivery of the same one is not.
+   * Regresión: dos productores pueden usar el mismo id; solo source + id identifica un evento, así
+   * que ambos se procesan, mientras que una reentrega del mismo no.
    */
   @Test
   void deduplicationUsesSourceAndId() {
@@ -260,25 +285,27 @@ class MessagingTest {
             false);
     EventEnvelope base = event("from-a");
     EventEnvelope fromA =
-        new EventEnvelope(
-            "same-id",
-            "urn:source:A",
-            base.type(),
-            base.time(),
-            base.subject(),
-            base.dataContentType(),
-            "from-a".getBytes(StandardCharsets.UTF_8),
-            base.extensions());
+        EventEnvelope.builder()
+            .id("same-id")
+            .source("urn:source:A")
+            .type(base.type())
+            .time(base.time())
+            .subject(base.subject())
+            .dataContentType(base.dataContentType())
+            .data("from-a".getBytes(StandardCharsets.UTF_8))
+            .extensions(base.extensions())
+            .build();
     EventEnvelope fromB =
-        new EventEnvelope(
-            "same-id",
-            "urn:source:B",
-            base.type(),
-            base.time(),
-            base.subject(),
-            base.dataContentType(),
-            "from-b".getBytes(StandardCharsets.UTF_8),
-            base.extensions());
+        EventEnvelope.builder()
+            .id("same-id")
+            .source("urn:source:B")
+            .type(base.type())
+            .time(base.time())
+            .subject(base.subject())
+            .dataContentType(base.dataContentType())
+            .data("from-b".getBytes(StandardCharsets.UTF_8))
+            .extensions(base.extensions())
+            .build();
     assertEquals(DeliveryDecision.ACK, dispatcher.dispatch(fromA, 1));
     assertEquals(DeliveryDecision.ACK, dispatcher.dispatch(fromB, 1));
     assertEquals(DeliveryDecision.ACK, dispatcher.dispatch(fromA, 1));
@@ -300,7 +327,7 @@ class MessagingTest {
   void aLateCompletionCannotOverwriteTheNewOwner() {
     MemoryDedup dedup = new MemoryDedup();
     Deduplicator.Claim a = dedup.claim("c", "e-1");
-    dedup.inProgress.put("e-1", "token-of-b"); // A's lease expired and B took it over
+    dedup.inProgress.put("e-1", "token-of-b"); // el lease de A expiró y B lo tomó
     assertEquals(false, dedup.completed("c", "e-1", a.token()));
     assertEquals(false, dedup.failed("c", "e-1", a.token()));
     assertEquals("token-of-b", dedup.inProgress.get("e-1"));

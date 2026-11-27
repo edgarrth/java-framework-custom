@@ -13,7 +13,7 @@ import pe.axiz.adapter.inbox.jdbc.JdbcInboxStore;
 import pe.axiz.core.inbox.InboxStore;
 import pe.axiz.kit.jdbc.JdbcTransactions;
 
-/** The JDBC inbox lives in the API module, so its contract runs here (on H2). */
+/** El inbox JDBC reside en el módulo de API, por lo que su contrato se ejecuta aquí (sobre H2). */
 class JdbcInboxStoreContractTest {
 
   static InboxStore h2() {

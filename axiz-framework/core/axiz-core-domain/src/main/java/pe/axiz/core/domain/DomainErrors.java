@@ -3,7 +3,7 @@ package pe.axiz.core.domain;
 import pe.axiz.core.errors.ErrorCategory;
 import pe.axiz.core.errors.ErrorDefinition;
 
-/** Errors raised by the domain building blocks. */
+/** Errores lanzados por los bloques de construcción del dominio. */
 public final class DomainErrors {
 
   public static final ErrorDefinition INVALID_VALUE =

@@ -1,7 +1,7 @@
 nameOverride: ''
 environment: ""
 image:
-  repository: nexus-docker.axiz.internal/axiz/settlement-batch
+  repository: ghcr.io/edgarrth/java-framework-custom/settlement-batch
   tag: ''
   digest: ''
   pullPolicy: IfNotPresent
@@ -14,7 +14,7 @@ serviceAccount:
 sharedConfigMap: axiz-common-2-0-0
 javaOpts: -XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError
 env: []
-# Select imports before application.yaml and mounted ConfigMaps are loaded.
+# Las importaciones se seleccionan antes de cargar application.yaml y los ConfigMaps montados.
 configBootstrap:
   parameterStore:
     enabled: false
@@ -39,6 +39,7 @@ securityContext:
   capabilities:
     drop:
     - ALL
+terminationGracePeriodSeconds: 90
 cronjob:
   schedule: 0 2 * * *
   timeZone: America/Lima
@@ -60,4 +61,5 @@ externalSecret:
   storeName: aws-secrets-manager
   refreshInterval: 1h
   remotePrefix: dev/settlement-batch
-  keys: []
+  keys:
+  - audit-hmac-key

@@ -9,8 +9,8 @@ import pe.axiz.core.saga.SagaListener;
 import pe.axiz.core.saga.SagaStatus;
 
 /**
- * Saga metrics: completed steps, compensations, steps left in doubt (alert on {@code
- * axiz.saga.in_doubt}) and finished sagas by status.
+ * Métricas de sagas: pasos completados, compensaciones, pasos que quedan en duda (alertar sobre
+ * {@code axiz.saga.in_doubt}) y sagas terminadas por estado.
  */
 public final class MeteredSagaListener implements SagaListener {
 

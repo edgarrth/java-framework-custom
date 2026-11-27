@@ -7,7 +7,7 @@ import pe.axiz.extension.cqrs.AuditedCommand;
 import pe.axiz.extension.cqrs.Invocation;
 import pe.axiz.extension.cqrs.PipelineBehavior;
 
-/** Records {@link AuditedCommand} executions with their outcome (details are sanitized). */
+/** Registra las ejecuciones de {@link AuditedCommand} con su resultado (los detalles se sanean). */
 public final class AuditBehavior implements PipelineBehavior {
 
   private final AuditTrail trail;

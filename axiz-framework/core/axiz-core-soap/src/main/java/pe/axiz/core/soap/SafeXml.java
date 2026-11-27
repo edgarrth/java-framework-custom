@@ -16,7 +16,9 @@ import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
-/** XML parsing hardened against XXE and entity expansion, plus serialization helpers. */
+/**
+ * Parseo de XML endurecido contra XXE y expansión de entidades, más utilidades de serialización.
+ */
 public final class SafeXml {
 
   private SafeXml() {}

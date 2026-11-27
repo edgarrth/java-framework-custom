@@ -1,8 +1,9 @@
 /**
- * Contract checks for store implementations, written in plain Java so they run under any test
- * engine: each check is a named {@link pe.axiz.test.contracts.ContractCheck}; a JUnit test turns
- * them into dynamic tests. The same checks run against in-memory fakes in unit tests and against
- * real backends (PostgreSQL, Valkey, DynamoDB) in integration tests.
+ * Verificaciones de contrato para implementaciones de almacenes, escritas en Java plano para que se
+ * ejecuten en cualquier motor de pruebas: cada verificación es un {@link
+ * pe.axiz.test.contracts.ContractCheck} con nombre; una prueba JUnit las convierte en pruebas
+ * dinámicas. Las mismas verificaciones se ejecutan contra fakes en memoria en las pruebas unitarias
+ * y contra backends reales (PostgreSQL, Valkey, DynamoDB) en las pruebas de integración.
  */
 @NullMarked
 package pe.axiz.test.contracts;

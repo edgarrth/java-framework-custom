@@ -5,12 +5,12 @@ import pe.axiz.core.sensitive.Sensitive;
 import pe.axiz.core.sensitive.SensitivityLevel;
 
 /**
- * Data of a beneficiary to register (already validated in format by the contract).
+ * Datos de un beneficiario por registrar (con formato ya validado por el contrato).
  *
- * @param alias name the customer gives it
- * @param holderName account holder
- * @param cci inter-bank account code (20 digits)
- * @param currency PEN or USD
+ * @param alias nombre que le asigna el cliente
+ * @param holderName titular de la cuenta
+ * @param cci código de cuenta interbancario (20 dígitos)
+ * @param currency PEN o USD
  */
 public record NewBeneficiary(
     String alias,

@@ -9,19 +9,22 @@ import software.amazon.awssdk.profiles.ProfileFile;
 import software.amazon.awssdk.profiles.ProfileFileSystemSetting;
 
 /**
- * Credential policy for framework-owned AWS clients. Each returned source belongs to its caller.
+ * Política de credenciales para los clientes AWS propiedad del framework. Cada fuente devuelta
+ * pertenece a quien la solicita.
  */
 public final class AwsCredentialSources {
   private AwsCredentialSources() {}
 
   /**
-   * With an IRSA declaration, use web identity exclusively. Static system/environment credentials
-   * cannot override it, and a failed web identity cannot fall through to profiles, containers or
-   * IMDS. Without IRSA, retain the SDK default chain, including EKS Pod Identity. Close the source
-   * with its owning client; closing more than once is harmless.
+   * Con una declaración IRSA se usa exclusivamente web identity. Las credenciales estáticas de
+   * sistema o entorno no pueden reemplazarla, y una web identity fallida no puede derivar a
+   * perfiles, contenedores ni IMDS. Sin IRSA se conserva la cadena por defecto del SDK, incluida
+   * EKS Pod Identity. La fuente se cierra con su cliente propietario; cerrarla más de una vez es
+   * inocuo.
    */
   public static AwsCredentialSource create(TransportSecurityPolicy transportSecurity) {
-    // The SDK owns IMDS/Pod Identity protocols. Configurable STS exchange endpoints must use TLS.
+    // El SDK es dueño de los protocolos IMDS/Pod Identity. Los endpoints configurables de
+    // intercambio STS deben usar TLS.
     AwsClientEndpointProvider.builder()
         .serviceEndpointOverrideEnvironmentVariable("AWS_ENDPOINT_URL_STS")
         .serviceEndpointOverrideSystemProperty("aws.endpointUrl.sts")
@@ -48,7 +51,7 @@ public final class AwsCredentialSources {
     return AwsCredentialSource.owned(source, source::close);
   }
 
-  /** Whether the process declares a role or web identity token file. */
+  /** Indica si el proceso declara un rol o un archivo de token de web identity. */
   public static boolean irsaDeclared() {
     return SdkSystemSetting.AWS_ROLE_ARN.getStringValue().isPresent()
         || SdkSystemSetting.AWS_WEB_IDENTITY_TOKEN_FILE.getStringValue().isPresent();

@@ -4,17 +4,17 @@ import java.util.Map;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.ErrorDefinition;
 
-/** Guard clauses for aggregates that raise business errors from the catalog. */
+/** Cláusulas de guarda para agregados que lanzan errores de negocio del catálogo. */
 public final class Rules {
 
   private Rules() {}
 
   /**
-   * Fails with the given business error when the condition is false.
+   * Falla con el error de negocio indicado cuando la condición es falsa.
    *
-   * @param condition rule that must hold
-   * @param error catalog definition to raise
-   * @param logMessage message for logs (never shown to clients)
+   * @param condition regla que debe cumplirse
+   * @param error definición del catálogo a lanzar
+   * @param logMessage mensaje para logs (nunca se muestra a los clientes)
    */
   public static void check(boolean condition, ErrorDefinition error, String logMessage) {
     if (!condition) {

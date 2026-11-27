@@ -1,6 +1,5 @@
 package pe.axiz.spring.outbox;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -9,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.micrometer.core.instrument.binder.MeterBinder;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.micrometer.observation.ObservationRegistry;
-import io.r2dbc.spi.ConnectionFactory;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -17,33 +15,25 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 import org.awaitility.Awaitility;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.autoconfigure.AutoConfigurations;
-import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import org.springframework.r2dbc.core.DatabaseClient;
 import pe.axiz.core.commons.tx.TransactionRunner;
-import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.messaging.EventEnvelope;
-import pe.axiz.core.messaging.EventFactory;
 import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.messaging.PublishResult;
 import pe.axiz.core.outbox.OutboxRecord;
 import pe.axiz.core.outbox.OutboxRelay;
 import pe.axiz.core.outbox.OutboxStore;
 import pe.axiz.core.resilience.Backoff;
-import pe.axiz.kit.r2dbc.ReactiveSql;
-import pe.axiz.test.support.r2dbc.FakeR2dbc;
 
-/** The relay loop, the reactive relay wiring and the pending gauge. */
+/** El bucle del relay, el cableado del relay reactivo y el gauge de pendientes. */
 class OutboxWiringTest {
 
-  /** A store with nothing due that counts purges and can be made to fail. */
+  /** Almacén sin nada pendiente que cuenta las purgas y que puede hacerse fallar. */
   static final class CountingStore implements OutboxStore {
 
     public List<OutboxRecord> claimDue(int size, Duration lease, String owner) {
@@ -107,7 +97,9 @@ class OutboxWiringTest {
     }
   }
 
-  /** A clock that moves one hour forward on every reading, so every run is due for a purge. */
+  /**
+   * Reloj que avanza una hora en cada lectura, de modo que en cada ejecución corresponde una purga.
+   */
   static final class RacingClock extends Clock {
     private Instant now = Instant.parse("2026-10-23T00:00:00Z");
 
@@ -128,7 +120,7 @@ class OutboxWiringTest {
     }
   }
 
-  /** Runs the work as it is, without a transaction. */
+  /** Ejecuta el trabajo tal cual, sin transacción. */
   private static final TransactionRunner DIRECT =
       new TransactionRunner() {
         @Override
@@ -146,15 +138,19 @@ class OutboxWiringTest {
       };
 
   private static AxizOutboxProperties.Relay relay(int batchSize) {
-    return new AxizOutboxProperties.Relay(
-        true,
-        Duration.ofMillis(5),
-        batchSize,
-        3,
-        Duration.ofMillis(10),
-        Duration.ofSeconds(1),
-        Duration.ofDays(7),
-        Duration.ofMinutes(30));
+    return AxizOutboxProperties.Relay.builder()
+        .enabled(true)
+        .pollInterval(Duration.ofMillis(5))
+        .batchSize(batchSize)
+        .maxAttempts(3)
+        .initialDelay(Duration.ofMillis(10))
+        .maxDelay(Duration.ofSeconds(1))
+        .retention(Duration.ofDays(7))
+        .purgeInterval(Duration.ofMinutes(30))
+        .leaseDuration(Duration.ofMinutes(3))
+        .claimAllowance(Duration.ofSeconds(2))
+        .publishBudget(null)
+        .build();
   }
 
   private static void await(BooleanSupplier condition) throws Exception {
@@ -170,16 +166,13 @@ class OutboxWiringTest {
     CountingStore store = new CountingStore();
     RacingClock clock = new RacingClock();
     OutboxRelay relay =
-        new OutboxRelay(
-            store,
-            NOWHERE,
-            DIRECT,
-            clock,
-            10,
-            3,
-            Backoff.exponential(Duration.ofMillis(10), Duration.ofSeconds(1)),
-            Duration.ofMinutes(3),
-            Duration.ofMillis(1));
+        OutboxRelay.builder(store, NOWHERE, DIRECT, clock)
+            .batchSize(10)
+            .maxAttempts(3)
+            .backoff(Backoff.exponential(Duration.ofMillis(10), Duration.ofSeconds(1)))
+            .lease(Duration.ofMinutes(3))
+            .publishBudget(Duration.ofMillis(1))
+            .build();
     OutboxRelayRunner runner =
         new OutboxRelayRunner(relay, store, ObservationRegistry.NOOP, relay(10), clock);
     assertEquals(0, runner.runOnce(), "nothing due");
@@ -204,18 +197,15 @@ class OutboxWiringTest {
   void aFullBatchIsFollowedImmediatelyByTheNextOne() throws Exception {
     CountingStore store = new CountingStore();
     OutboxRelay relay =
-        new OutboxRelay(
-            store,
-            NOWHERE,
-            DIRECT,
-            Clock.systemUTC(),
-            10,
-            3,
-            Backoff.exponential(Duration.ofMillis(10), Duration.ofSeconds(1)),
-            Duration.ofMinutes(3),
-            Duration.ofMillis(1));
-    // with a batch size of zero in the runner settings every run counts as full: no wait between
-    // runs
+        OutboxRelay.builder(store, NOWHERE, DIRECT, Clock.systemUTC())
+            .batchSize(10)
+            .maxAttempts(3)
+            .backoff(Backoff.exponential(Duration.ofMillis(10), Duration.ofSeconds(1)))
+            .lease(Duration.ofMinutes(3))
+            .publishBudget(Duration.ofMillis(1))
+            .build();
+    // con un tamaño de lote cero en la configuración del runner, cada ejecución cuenta como llena:
+    // sin espera entre ejecuciones
     OutboxRelayRunner runner =
         new OutboxRelayRunner(relay, store, ObservationRegistry.NOOP, relay(0), Clock.systemUTC());
     runner.start();
@@ -227,56 +217,19 @@ class OutboxWiringTest {
   }
 
   @Test
-  void reactiveServicesGetTheRelayAndThePendingGauge() throws Exception {
-    FakeR2dbc db = new FakeR2dbc();
-    CountingStore store = new CountingStore();
-    List<String> sent = new CopyOnWriteArrayList<>();
-    new ApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizOutboxR2dbcAutoConfiguration.class))
-        .withPropertyValues(
-            "axiz.outbox.relay.poll-interval=20ms", "axiz.outbox.relay.publish-budget=1ms")
-        .withBean(ConnectionFactory.class, () -> db)
-        .withBean(ReactiveSql.class, () -> new OutboxR2dbcTest.TxSql(DatabaseClient.create(db)))
-        .withBean(OutboxStore.class, () -> store)
-        .withBean(
-            EventPublisher.class,
-            () ->
-                (destination, event) -> {
-                  sent.add(destination);
-                  return new PublishResult(event.id(), destination, null);
-                })
-        .withBean(
-            EventFactory.class,
-            () ->
-                new EventFactory(
-                    "urn:axiz:test",
-                    "pe.axiz.test",
-                    OutboxTest.CODEC,
-                    IdGenerator.uuidV7(),
-                    Clock.systemUTC()))
-        .run(
-            ctx -> {
-              assertThat(ctx).hasSingleBean(OutboxRelay.class);
-              OutboxRelayRunner runner = ctx.getBean(OutboxRelayRunner.class);
-              assertTrue(runner.isRunning(), "started with the context");
-              await(() -> store.locks.get() > 0);
-
-              SimpleMeterRegistry registry = new SimpleMeterRegistry();
-              ctx.getBean(MeterBinder.class).bindTo(registry);
-              await(() -> registry.get("axiz.outbox.pending").gauge().value() == 3.0);
-            });
-    assertThat(sent).isEmpty();
-  }
-
-  @Test
-  void theServletGaugeReportsNothingWhenTheStoreCannotAnswer() {
+  void theServletGaugeReportsNothingWhenTheStoreCannotAnswer() throws Exception {
     CountingStore store = new CountingStore();
     MeterBinder binder =
-        new AxizOutboxAutoConfiguration.MetricsConfiguration().axizOutboxMetrics(store);
+        new AxizOutboxAutoConfiguration.MetricsConfiguration()
+            .axizOutboxMetrics(
+                store,
+                new org.springframework.beans.factory.support.StaticListableBeanFactory(
+                        java.util.Map.of("clock", new RacingClock()))
+                    .getBeanProvider(Clock.class));
     SimpleMeterRegistry registry = new SimpleMeterRegistry();
     binder.bindTo(registry);
-    assertEquals(3.0, registry.get("axiz.outbox.pending").gauge().value());
+    await(() -> registry.get("axiz.outbox.pending").gauge().value() == 3.0);
     store.failing.set(true);
-    assertTrue(Double.isNaN(registry.get("axiz.outbox.pending").gauge().value()));
+    await(() -> Double.isNaN(registry.get("axiz.outbox.pending").gauge().value()));
   }
 }

@@ -3,7 +3,7 @@ package pe.axiz.core.id;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
-/** Correlation and request ids: generation and validation of inbound values. */
+/** Ids de correlación y de petición: generación y validación de los valores entrantes. */
 public final class CorrelationIds {
 
   private static final Pattern SAFE = Pattern.compile("^[A-Za-z0-9._:-]{8,128}$");
@@ -14,14 +14,17 @@ public final class CorrelationIds {
     return UuidV7.generate().toString();
   }
 
-  /** Whether an inbound value is safe to reuse (no spaces, CR/LF or log-injection characters). */
+  /**
+   * Indica si un valor entrante es seguro de reutilizar (sin espacios, CR/LF ni caracteres de
+   * inyección en logs).
+   */
   public static boolean isValid(@Nullable String value) {
     return value != null && SAFE.matcher(value).matches();
   }
 
-  /** Reuses the inbound id when valid, otherwise generates a new one. */
+  /** Reutiliza el id entrante cuando es válido; en otro caso genera uno nuevo. */
   public static String reuseOrCreate(@Nullable String inbound) {
-    // the null check is explicit so the null analysis (NullAway) sees it
+    // la verificación de null es explícita para que el análisis de nulos (NullAway) la vea
     return inbound != null && isValid(inbound) ? inbound : newId();
   }
 }

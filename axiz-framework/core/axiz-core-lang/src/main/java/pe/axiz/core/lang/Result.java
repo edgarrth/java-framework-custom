@@ -7,24 +7,24 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Outcome of an operation that either succeeds with a value or fails with a business error.
+ * Resultado de una operación que tiene éxito con un valor o falla con un error de negocio.
  *
- * <p>Use cases return {@code Result} instead of throwing exceptions for expected business outcomes;
- * exceptions remain for technical failures.
+ * <p>Los casos de uso devuelven {@code Result} en lugar de lanzar excepciones para los resultados
+ * de negocio esperados; las excepciones quedan para los fallos técnicos.
  *
- * @param <T> success value type
- * @param <E> error type
+ * @param <T> tipo del valor de éxito
+ * @param <E> tipo del error
  */
 public sealed interface Result<T, E> permits Result.Ok, Result.Err {
 
-  /** Successful result. */
+  /** Resultado exitoso. */
   record Ok<T, E>(T value) implements Result<T, E> {
     public Ok {
       Objects.requireNonNull(value, "value");
     }
   }
 
-  /** Failed result. */
+  /** Resultado fallido. */
   record Err<T, E>(E error) implements Result<T, E> {
     public Err {
       Objects.requireNonNull(error, "error");
@@ -40,11 +40,11 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
   }
 
   /**
-   * Runs a supplier and converts any exception into an error with the given mapper.
+   * Ejecuta un supplier y convierte cualquier excepción en un error con el mapper indicado.
    *
-   * @param supplier code to run
-   * @param errorMapper converts the exception into the error type
-   * @return ok with the value or err with the mapped exception
+   * @param supplier código a ejecutar
+   * @param errorMapper convierte la excepción en el tipo de error
+   * @return ok con el valor o err con la excepción convertida
    */
   static <T, E> Result<T, E> catching(
       Supplier<? extends T> supplier, Function<? super Exception, ? extends E> errorMapper) {
@@ -112,12 +112,12 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
   }
 
   /**
-   * Returns the value or throws the exception produced from the error.
+   * Devuelve el valor o lanza la excepción producida a partir del error.
    *
-   * @param exceptionMapper builds the exception to throw
-   * @param <X> exception type
-   * @return the success value
-   * @throws X when the result is an error
+   * @param exceptionMapper construye la excepción a lanzar
+   * @param <X> tipo de la excepción
+   * @return el valor de éxito
+   * @throws X cuando el resultado es un error
    */
   default <X extends Exception> T orElseThrow(Function<? super E, X> exceptionMapper) throws X {
     return switch (this) {

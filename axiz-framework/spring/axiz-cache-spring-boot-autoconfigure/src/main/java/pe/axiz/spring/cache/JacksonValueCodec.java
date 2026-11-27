@@ -5,7 +5,7 @@ import java.util.Objects;
 import pe.axiz.core.cache.ValueCodec;
 import tools.jackson.databind.json.JsonMapper;
 
-/** JSON values with the application mapper. */
+/** Valores JSON con el mapper de la aplicación. */
 public final class JacksonValueCodec implements ValueCodec {
 
   @SuppressFBWarnings(

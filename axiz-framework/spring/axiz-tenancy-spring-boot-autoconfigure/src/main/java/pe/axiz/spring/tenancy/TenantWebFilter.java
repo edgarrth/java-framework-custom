@@ -6,13 +6,16 @@ import java.util.Optional;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.errors.FieldViolation;
 import pe.axiz.core.errors.ValidationException;
 import reactor.core.publisher.Mono;
 
-/** Reactive tenant binding through the Reactor context ({@link TenantContextAccessor#KEY}). */
+/**
+ * Vinculación reactiva del tenant mediante el contexto de Reactor ({@link
+ * TenantContextAccessor#KEY}).
+ */
 public final class TenantWebFilter implements WebFilter {
 
   private final TenantFilterSupport support;

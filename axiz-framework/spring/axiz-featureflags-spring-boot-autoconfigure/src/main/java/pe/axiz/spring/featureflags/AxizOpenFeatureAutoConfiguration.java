@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 import pe.axiz.core.featureflags.FeatureFlags;
 
-/** Registers the axiz provider with OpenFeature and exposes a {@link Client}. */
+/** Registra el proveedor de axiz en OpenFeature y expone un {@link Client}. */
 @AutoConfiguration(after = AxizFeatureFlagsAutoConfiguration.class)
 @ConditionalOnClass(name = "dev.openfeature.sdk.OpenFeatureAPI")
 public class AxizOpenFeatureAutoConfiguration {

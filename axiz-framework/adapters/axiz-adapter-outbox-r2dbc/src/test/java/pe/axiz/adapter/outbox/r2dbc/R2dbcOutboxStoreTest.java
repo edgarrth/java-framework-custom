@@ -23,6 +23,7 @@ import pe.axiz.core.outbox.OutboxRelay;
 import pe.axiz.core.resilience.Backoff;
 import pe.axiz.kit.r2dbc.R2dbcSql;
 import pe.axiz.kit.r2dbc.R2dbcTransactionRunner;
+import pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter;
 import pe.axiz.test.support.MutableClock;
 import pe.axiz.test.support.RecordingEventPublisher;
 import pe.axiz.test.support.r2dbc.FakeR2dbc;
@@ -33,15 +34,16 @@ class R2dbcOutboxStoreTest {
   private final MutableClock clock = MutableClock.at("2026-10-11T12:00:00Z");
 
   private static EventEnvelope event(String id) {
-    return new EventEnvelope(
-        id,
-        "urn:axiz:payments-business",
-        "pe.axiz.payments.payment-order.created.v1",
-        Instant.parse("2026-10-11T12:00:00Z"),
-        "order-1",
-        "application/json",
-        "{\"orderId\":\"order-1\"}".getBytes(StandardCharsets.UTF_8),
-        Map.of());
+    return EventEnvelope.builder()
+        .id(id)
+        .source("urn:axiz:payments-business")
+        .type("pe.axiz.payments.payment-order.created.v1")
+        .time(Instant.parse("2026-10-11T12:00:00Z"))
+        .subject("order-1")
+        .dataContentType("application/json")
+        .data("{\"orderId\":\"order-1\"}".getBytes(StandardCharsets.UTF_8))
+        .extensions(Map.of())
+        .build();
   }
 
   @Test
@@ -52,7 +54,7 @@ class R2dbcOutboxStoreTest {
             .onUpdate("^INSERT INTO axiz_outbox", b -> 1L);
     R2dbcSql sql = new R2dbcSql(db);
     ReactiveOutboxWriter writer =
-        new ReactiveOutboxWriter(new R2dbcOutboxStore(sql, "axiz_outbox", TIMEOUT), clock);
+        new R2dbcOutboxWriter(new R2dbcOutboxStore(sql, "axiz_outbox", TIMEOUT), clock);
 
     sql.inTransaction(tx -> writer.write("payments", event("e-1"), "payment-order")).block();
 
@@ -88,16 +90,17 @@ class R2dbcOutboxStoreTest {
     R2dbcSql sql = new R2dbcSql(db);
     RecordingEventPublisher publisher = new RecordingEventPublisher();
     OutboxRelay relay =
-        new OutboxRelay(
-            new R2dbcOutboxStore(sql, "axiz_outbox", TIMEOUT),
-            publisher,
-            new R2dbcTransactionRunner(db, TIMEOUT),
-            clock,
-            10,
-            3,
-            Backoff.fixed(Duration.ofSeconds(5)),
-            Duration.ofMinutes(3),
-            Duration.ofMillis(1));
+        OutboxRelay.builder(
+                new R2dbcOutboxStore(sql, "axiz_outbox", TIMEOUT),
+                publisher,
+                new R2dbcTransactionRunner(db, TIMEOUT),
+                clock)
+            .batchSize(10)
+            .maxAttempts(3)
+            .backoff(Backoff.fixed(Duration.ofSeconds(5)))
+            .lease(Duration.ofMinutes(3))
+            .publishBudget(Duration.ofMillis(1))
+            .build();
 
     OutboxRelay.RunResult result = relay.relayOnce();
 
@@ -129,16 +132,17 @@ class R2dbcOutboxStoreTest {
     RecordingEventPublisher publisher = new RecordingEventPublisher();
     publisher.failing(true);
     OutboxRelay relay =
-        new OutboxRelay(
-            new R2dbcOutboxStore(new R2dbcSql(db), "axiz_outbox", TIMEOUT),
-            publisher,
-            new R2dbcTransactionRunner(db, TIMEOUT),
-            clock,
-            10,
-            3,
-            Backoff.fixed(Duration.ofSeconds(30)),
-            Duration.ofMinutes(3),
-            Duration.ofMillis(1));
+        OutboxRelay.builder(
+                new R2dbcOutboxStore(new R2dbcSql(db), "axiz_outbox", TIMEOUT),
+                publisher,
+                new R2dbcTransactionRunner(db, TIMEOUT),
+                clock)
+            .batchSize(10)
+            .maxAttempts(3)
+            .backoff(Backoff.fixed(Duration.ofSeconds(30)))
+            .lease(Duration.ofMinutes(3))
+            .publishBudget(Duration.ofMillis(1))
+            .build();
 
     assertEquals(1, relay.relayOnce().retried());
     Map<Integer, Object> b = failed.get(0);
@@ -150,8 +154,8 @@ class R2dbcOutboxStoreTest {
   }
 
   /**
-   * Regression: the blocking {@code append} (used by the imperative outbox writer) waited on a
-   * {@code Mono<Void>} and failed with "returned nothing" after the row had been inserted.
+   * Regresión: el {@code append} bloqueante (usado por el escritor imperativo del outbox) esperaba
+   * un {@code Mono<Void>} y fallaba con "returned nothing" después de insertar la fila.
    */
   @Test
   void blockingAppendCompletesForAStatementWithoutValue() {
@@ -161,29 +165,42 @@ class R2dbcOutboxStoreTest {
             .onUpdate("^INSERT INTO axiz_outbox", b -> 1L);
     R2dbcOutboxStore store = new R2dbcOutboxStore(new R2dbcSql(db), "axiz_outbox", TIMEOUT);
     store.append(
-        new OutboxRecord(
-            "e-2",
-            "payments",
-            "payment-order",
-            "order-1",
-            "pe.axiz.payments.payment-order.created.v1",
-            CloudEventJson.write(event("e-2")),
-            OutboxRecord.Status.PENDING,
-            0,
-            Instant.parse("2026-10-11T12:00:00Z"),
-            Instant.parse("2026-10-11T12:00:00Z"),
-            null));
+        OutboxRecord.builder(
+                "e-2",
+                "payments",
+                "pe.axiz.payments.payment-order.created.v1",
+                CloudEventJson.write(event("e-2")),
+                Instant.parse("2026-10-11T12:00:00Z"))
+            .aggregate("payment-order", "order-1")
+            .status(OutboxRecord.Status.PENDING)
+            .attempts(0)
+            .nextAttemptAt(Instant.parse("2026-10-11T12:00:00Z"))
+            .lastError(null)
+            .aggregateSequence(0)
+            .lease(null, null)
+            .build());
     assertEquals("e-2", db.last("INSERT INTO axiz_outbox").binds().get(0));
   }
 
   @Test
   void aFailingStatementIsAnOutboxException() {
-    FakeR2dbc db = new FakeR2dbc().failOn("close");
-    db.onUpdate("^UPDATE", b -> 1L);
+    FakeR2dbc db = new FakeR2dbc();
+    db.onUpdate(
+        "^UPDATE",
+        b -> {
+          throw new IllegalStateException("Statement failed");
+        });
     R2dbcOutboxStore store = new R2dbcOutboxStore(new R2dbcSql(db), "axiz_outbox", TIMEOUT);
     Assertions.assertThrows(
         OutboxException.class,
         () -> store.markPublished("e-1", "owner", Instant.parse("2026-10-11T12:00:00Z")));
+  }
+
+  @Test
+  void closeFailureDoesNotReplaceAConfirmedPublication() {
+    FakeR2dbc db = new FakeR2dbc().failOn("close").onUpdate("^UPDATE", b -> 1L);
+    var store = new R2dbcOutboxStore(new R2dbcSql(db), "axiz_outbox", TIMEOUT);
+    assertTrue(store.markPublished("e-1", "owner", Instant.parse("2026-10-11T12:00:00Z")));
   }
 
   @Test

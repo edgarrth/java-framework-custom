@@ -9,10 +9,13 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.errors.BusinessException;
 
-/** Non-blocking idempotency with the same scoped keys, replay decisions, leases and fencing. */
+/**
+ * Idempotencia no bloqueante con las mismas claves con alcance, decisiones de replay, leases y
+ * fencing.
+ */
 public final class AsyncIdempotencyService {
   private final AsyncIdempotencyStore store;
   private final Duration inProgressTtl;
@@ -36,8 +39,8 @@ public final class AsyncIdempotencyService {
     this.retention = Objects.requireNonNull(retention);
     this.clock = Objects.requireNonNull(clock);
     this.resolver = resolver;
-    if (!inProgressTtl.isPositive())
-      throw new IllegalArgumentException("inProgressTtl must be positive");
+    if (inProgressTtl.compareTo(Duration.ofMillis(3)) < 0)
+      throw new IllegalArgumentException("inProgressTtl must be at least 3 milliseconds");
     if (retention.compareTo(inProgressTtl) <= 0)
       throw new IllegalArgumentException("retention must exceed the execution lease");
   }
@@ -101,16 +104,14 @@ public final class AsyncIdempotencyService {
     String owner = UUID.randomUUID().toString();
     return Stages.map(
         store.tryStart(
-            new IdempotencyRecord(
-                key,
-                fingerprint,
-                IdempotencyRecord.Status.IN_PROGRESS,
-                owner,
-                null,
-                now.plus(inProgressTtl),
-                now.plus(retention),
-                0,
-                null)),
+            IdempotencyRecord.builder(
+                    key, fingerprint, now.plus(inProgressTtl), now.plus(retention))
+                .status(IdempotencyRecord.Status.IN_PROGRESS)
+                .owner(owner)
+                .response(null)
+                .resolutionVersion(0)
+                .failure(null)
+                .build()),
         started ->
             started ? Optional.of(new IdempotencyService.Proceed(key, owner)) : Optional.empty());
   }

@@ -7,7 +7,7 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Emits structured events to the {@code axiz.event} logger and to the current observation. */
+/** Emite eventos estructurados al logger {@code axiz.event} y a la observación actual. */
 public final class LoggingStructuredEventEmitter implements StructuredEventEmitter {
 
   private static final Logger LOG = LoggerFactory.getLogger("axiz.event");

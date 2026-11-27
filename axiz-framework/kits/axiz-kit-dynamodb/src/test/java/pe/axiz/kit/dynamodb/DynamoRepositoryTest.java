@@ -15,8 +15,9 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import pe.axiz.core.commons.Page;
+import pe.axiz.core.api.Page;
 import pe.axiz.core.crypto.AesGcm;
+import pe.axiz.core.crypto.FieldEncryptor;
 import pe.axiz.core.crypto.StaticKeyProvider;
 import pe.axiz.core.money.Money;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
@@ -41,14 +42,18 @@ import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse;
 
 /**
- * The repository over the real Enhanced Client and a scripted low-level client: which requests it
- * sends (keys, consistency, conditions, limits, start keys, indexes) and how it pages.
+ * El repositorio sobre el Enhanced Client real y un cliente de bajo nivel guionizado: qué
+ * peticiones envía (claves, consistencia, condiciones, límites, claves de inicio, índices) y cómo
+ * pagina.
  */
 class DynamoRepositoryTest {
   private final CursorCodec cursors =
       new CursorCodec(new StaticKeyProvider("k", Map.of("k", AesGcm.newKey())), false);
 
-  /** A beneficiary of a customer: partition = customer, sort = beneficiary, index by status. */
+  /**
+   * Beneficiario de un cliente: partición = cliente, ordenamiento = beneficiario, índice por
+   * estado.
+   */
   public static final class Beneficiary {
     private String customer;
     private String id;
@@ -120,7 +125,7 @@ class DynamoRepositoryTest {
         "status", AttributeValue.fromS(status));
   }
 
-  /** Low-level client that records requests and answers from a script. */
+  /** Cliente de bajo nivel que registra las peticiones y responde según un guion. */
   static final class Scripted implements DynamoDbClient {
     final List<Object> requests = new ArrayList<>();
     Map<String, AttributeValue> item = Map.of();
@@ -269,7 +274,7 @@ class DynamoRepositoryTest {
     assertTrue(q.exclusiveStartKey().isEmpty());
     assertTrue(first.nextCursor() != null);
 
-    // the cursor of a page is the start of the next one
+    // el cursor de una página es el inicio de la siguiente
     dynamo.lastKey = Map.of();
     Page<Beneficiary> second = repository.query("C-1", 2, first.nextCursor());
     assertEquals(
@@ -330,7 +335,13 @@ class DynamoRepositoryTest {
 
   @Test
   void anEncryptedAttributeOfAnotherTypeIsRejected() {
-    EncryptedAttributeConverter converter = new EncryptedAttributeConverter();
+    EncryptedAttributeConverter converter =
+        new EncryptedAttributeConverter(
+            new FieldEncryptor(new StaticKeyProvider("k", Map.of("k", AesGcm.newKey())))) {
+          protected String context() {
+            return "card.pan";
+          }
+        };
     assertThrows(
         IllegalArgumentException.class, () -> converter.transformTo(AttributeValue.fromN("1")));
     assertEquals(String.class, converter.type().rawClass());

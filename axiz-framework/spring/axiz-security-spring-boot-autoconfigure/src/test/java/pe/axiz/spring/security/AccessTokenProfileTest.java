@@ -38,8 +38,8 @@ import pe.axiz.core.security.IssuerPolicy;
 import pe.axiz.core.security.TrustedIssuer;
 
 /**
- * Real signed tokens against a JWKS on loopback, on both stacks: what an access token needs to be
- * accepted (RFC 9068: an expiration among them).
+ * Tokens firmados reales contra un JWKS en loopback, en ambas pilas: lo que necesita un token de
+ * acceso para ser aceptado (RFC 9068: entre otras cosas, una expiración).
  */
 class AccessTokenProfileTest {
 
@@ -70,11 +70,14 @@ class AccessTokenProfileTest {
         new TrustedIssuerDecoders(
             new IssuerPolicy(List.of(new TrustedIssuer(ISSUER, certs, List.of("payments-api")))),
             List.of("RS256"),
-            Duration.ofSeconds(30));
+            Duration.ofSeconds(30),
+            new AxizSecurityProperties.Jwks(Duration.ofSeconds(2), Duration.ofSeconds(3)),
+            true);
   }
 
   @AfterAll
   static void stop() {
+    decoders.close();
     jwks.stop(0);
   }
 
@@ -153,8 +156,8 @@ class AccessTokenProfileTest {
     for (String clientJson :
         List.of(
             "[\"app\"]", "{\"id\":\"app\"}", "123", "true", "\"app\\ud800\"", "\"app\\udc00\"")) {
-      // Construct JSON directly: serializing a Java String could replace an unpaired surrogate
-      // before signing it and would not exercise the signed malformed claim.
+      // Se construye el JSON directamente: serializar un String de Java podría reemplazar un
+      // surrogate sin pareja antes de firmarlo y no ejercitaría el claim malformado firmado.
       String claims =
           "{\"iss\":\""
               + ISSUER

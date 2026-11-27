@@ -1,9 +1,9 @@
 package pe.axiz.core.metrics;
 
 /**
- * Implemented by results (or commands) that contribute to the metric recorded by {@link Metered}:
- * amount, value and tags. A plain interface instead of expressions, so it works the same in a
- * native image.
+ * Lo implementan los resultados (o comandos) que aportan a la métrica registrada por {@link
+ * Metered}: monto, valor y tags. Una interfaz simple en lugar de expresiones, de modo que funciona
+ * igual en una imagen nativa.
  */
 @FunctionalInterface
 public interface MetricSource {

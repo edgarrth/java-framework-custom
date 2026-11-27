@@ -18,22 +18,26 @@ import pe.axiz.core.commons.TransactionOutcome;
 @Timeout(10)
 class AuditShutdownTest {
   private AuditEvent event() {
-    return new AuditEvent(
-        "e",
-        Instant.EPOCH,
-        "service",
-        "operation",
-        "account",
-        null,
-        new AuditEvent.Actor(null, null, null),
-        AuditEvent.Outcome.SUCCESS,
-        null,
-        null,
-        null,
-        null,
-        Map.of(),
-        TransactionOutcome.UNKNOWN,
-        TransactionOutcome.UNKNOWN);
+    return AuditEvent.builder()
+        .id("e")
+        .occurredAt(Instant.EPOCH)
+        .service("service")
+        .action("operation")
+        .resourceType("account")
+        .resourceId(null)
+        .actor(new AuditEvent.Actor(null, null, null))
+        .outcome(AuditEvent.Outcome.SUCCESS)
+        .errorCode(null)
+        .correlationId(null)
+        .channel(null)
+        .tenant(null)
+        .details(Map.of())
+        .transactionOutcome(TransactionOutcome.UNKNOWN)
+        .operationOutcome(TransactionOutcome.UNKNOWN)
+        .persistence(null)
+        .integrity(null)
+        .detailsSanitized(0)
+        .build();
   }
 
   @Test
@@ -88,7 +92,7 @@ class AuditShutdownTest {
                 try {
                   release.await();
                 } catch (InterruptedException ignored) {
-                  /* deliberately uncooperative test callback */
+                  /* callback de prueba deliberadamente no cooperativo */
                 }
               }
               throw new IllegalStateException("late failure");
@@ -142,7 +146,7 @@ class AuditShutdownTest {
                   try {
                     release.await();
                   } catch (InterruptedException ignored) {
-                    /* deliberately uncooperative */
+                    /* deliberadamente no cooperativo */
                   }
                 }
                 throw new IllegalStateException("late fallback failure");

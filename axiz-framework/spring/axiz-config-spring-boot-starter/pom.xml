@@ -12,26 +12,19 @@
 
   <artifactId>axiz-config-spring-boot-starter</artifactId>
   <name>axiz :: spring :: config :: starter</name>
-  <description>ConfigMaps mounted as files and Parameter Store conventions with fail-fast validation</description>
+  <description>ConfigMaps mounted as files with fail-fast validation</description>
 
   <properties>
-    <!-- dependencies only: the jar holds just the manifest, by design (no "JAR will be empty" warning) -->
+    <!-- solo dependencias: el jar contiene únicamente el manifiesto, por diseño (sin la advertencia "JAR will be empty") -->
     <maven.jar.forceCreation>true</maven.jar.forceCreation>
     <axiz.module.name>pe.axiz.spring.config.starter</axiz.module.name>
   </properties>
 
   <dependencies>
-    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-aws</artifactId><version>${project.version}</version><scope>runtime</scope></dependency>
-    <!-- Parameter Store bootstrap uses web identity even without other AWS capabilities. -->
-    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>sts</artifactId></dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-config-spring-boot-autoconfigure</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.awspring.cloud</groupId>
-      <artifactId>spring-cloud-aws-starter-parameter-store</artifactId>
     </dependency>
   </dependencies>
 </project>

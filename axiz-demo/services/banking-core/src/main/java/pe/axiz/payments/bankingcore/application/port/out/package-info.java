@@ -1,4 +1,4 @@
-/** Outbound ports: what the use cases need from the core and the payment network. */
+/** Puertos de salida: lo que los casos de uso necesitan del core y de la red de pagos. */
 @NullMarked
 package pe.axiz.payments.bankingcore.application.port.out;
 

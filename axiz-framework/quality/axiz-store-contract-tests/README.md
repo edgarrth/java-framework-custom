@@ -1,8 +1,8 @@
 # axiz-store-contract-tests
 
-Contract checks every idempotency and inbox store must pass (ownership, expiry, takeover), run against fakes in unit tests and real backends in integration tests.
+Comprobaciones de contrato que todo almacén de idempotencia y de inbox debe superar (propiedad, expiración, toma de control); se ejecutan contra fakes en las pruebas unitarias y contra backends reales en las de integración.
 
-## Dependency
+## Dependencia
 
 ```xml
 <dependency>
@@ -12,20 +12,20 @@ Contract checks every idempotency and inbox store must pass (ownership, expiry, 
 </dependency>
 ```
 
-The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+La versión la gestiona `axiz-bom` (los servicios heredan `axiz-parent-service`).
 
-## Main types
+## Tipos principales
 
-| Type | Purpose |
+| Tipo | Propósito |
 |---|---|
-| `AsyncInboxStoreContract` | Reuses the owner/lease/retention contract, submitting native I/O on a supplied nonblocking executor with a bounded JUnit driver. |
-| `ContractCheck` | One named property a store must satisfy. |
-| `IdempotencyStoreContract` | Properties of every `IdempotencyStore`: exclusive start while the lock lives, completion and release fenced by the owner token, takeover after expiry without interference from the previous owner, and retention. |
-| `InboxStoreContract` | Properties of every `InboxStore`: one delivery processes a message at a time, completion and release are fenced by the owner token, an expired lease is taken over without interference from the previous owner, and processed messages are recognized. |
+| `AsyncInboxStoreContract` | Reutiliza el contrato de propietario, lease y retención, y envía la I/O nativa a un ejecutor no bloqueante entregado, con un driver JUnit acotado. |
+| `ContractCheck` | Una propiedad con nombre que un almacén debe cumplir. |
+| `IdempotencyStoreContract` | Propiedades de todo `IdempotencyStore`: inicio exclusivo mientras el lock está vigente, finalización y liberación protegidas por el token del propietario, toma de control tras la expiración sin interferencia del propietario anterior, y retención. |
+| `InboxStoreContract` | Propiedades de todo `InboxStore`: una sola entrega procesa un mensaje a la vez, la finalización y la liberación están protegidas por el token del propietario, un lease expirado se toma sin interferencia del propietario anterior y los mensajes procesados se reconocen. |
 
-## Use
+## Uso
 
-A custom store passes the same checks as the framework stores:
+Un almacén propio supera las mismas comprobaciones que los almacenes del framework:
 
 ```java
 @TestFactory
@@ -35,6 +35,6 @@ Stream<DynamicTest> contract() {
 }
 ```
 
-## Tests
+## Pruebas
 
-Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl quality/axiz-store-contract-tests verify`.
+Las pruebas unitarias están en `src/test/java` y documentan el comportamiento esperado; se ejecutan con `./mvnw -pl quality/axiz-store-contract-tests verify`.

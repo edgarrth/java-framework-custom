@@ -32,27 +32,27 @@ import pe.axiz.core.messaging.CompletesInTransaction;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventHandler;
 import pe.axiz.core.messaging.HandlesEvent;
-import pe.axiz.spring.foundation.InboxCompletion;
-import pe.axiz.spring.foundation.ReactiveInboxCompletion;
 import pe.axiz.spring.test.BlockHoundExtension;
 import pe.axiz.test.support.r2dbc.FakeR2dbc;
 import reactor.core.publisher.Mono;
 
 /**
- * Tests selection, failure and ownership boundaries; PostgreSQL proves the actual data atomicity.
+ * Prueba los límites de selección, fallo y propiedad; PostgreSQL demuestra la atomicidad real de
+ * los datos.
  */
 @ExtendWith(BlockHoundExtension.class)
 class TransactionalHandlerResourceTest {
   private static final EventEnvelope EVENT =
-      new EventEnvelope(
-          "event",
-          "urn:test",
-          "test.created",
-          Instant.EPOCH,
-          null,
-          "application/json",
-          new byte[0],
-          Map.of());
+      EventEnvelope.builder()
+          .id("event")
+          .source("urn:test")
+          .type("test.created")
+          .time(Instant.EPOCH)
+          .subject(null)
+          .dataContentType("application/json")
+          .data(new byte[0])
+          .extensions(Map.of())
+          .build();
 
   private static <T> ObjectProvider<T> provider(Class<T> type, T value) {
     var beans = new StaticListableBeanFactory();

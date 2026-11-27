@@ -4,7 +4,7 @@ import org.springframework.batch.core.job.AbstractJob;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 
-/** Registers {@link ObservedJobListener} on every job bean. */
+/** Registra {@link ObservedJobListener} en cada bean de job. */
 public class ObservedJobListenerPostProcessor implements BeanPostProcessor {
 
   private final ObjectProvider<ObservedJobListener> listener;

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-spring</artifactId><version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-spring/pom.xml</relativePath></parent>
+  <artifactId>axiz-outbox-jdbc-spring-boot-autoconfigure</artifactId>
+  <name>axiz :: outbox :: jdbc :: spring :: boot :: autoconfigure</name>
+  <description>JDBC transactional outbox persistence</description>
+  <properties><axiz.module.name>pe.axiz.spring.outbox.jdbc</axiz.module.name><axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity></properties>
+  <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-jdbc-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>org.testcontainers</groupId><artifactId>testcontainers-postgresql</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-test-containers</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-audit</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-crypto</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-outbox</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-id</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-messaging</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+
+<dependency><groupId>com.h2database</groupId><artifactId>h2</artifactId><scope>test</scope></dependency>
+<dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-jdbc</artifactId></dependency>
+<dependency><groupId>org.springframework</groupId><artifactId>spring-tx</artifactId></dependency>
+<dependency><groupId>org.springframework</groupId><artifactId>spring-jdbc</artifactId></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-outbox-jdbc</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-outbox-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
+</dependencies>
+</project>

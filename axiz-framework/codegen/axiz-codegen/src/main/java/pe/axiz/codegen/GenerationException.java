@@ -3,7 +3,7 @@ package pe.axiz.codegen;
 import java.util.List;
 import pe.axiz.codegen.openapi.LintFinding;
 
-/** The request cannot be generated; carries every problem found, not only the first one. */
+/** La solicitud no se puede generar; lleva todos los problemas encontrados, no solo el primero. */
 public class GenerationException extends IllegalArgumentException {
 
   private static final long serialVersionUID = 1L;

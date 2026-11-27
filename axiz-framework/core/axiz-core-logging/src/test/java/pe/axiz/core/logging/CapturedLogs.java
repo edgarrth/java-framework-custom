@@ -17,12 +17,13 @@ import org.slf4j.spi.MDCAdapter;
 import org.slf4j.spi.SLF4JServiceProvider;
 
 /**
- * SLF4J provider of the tests of this module: keeps every event in memory, with the MDC of the
- * moment, so tests check what is written (and what is not) instead of only calling the API.
+ * Proveedor SLF4J de las pruebas de este módulo: conserva cada evento en memoria, con el MDC del
+ * momento, para que las pruebas verifiquen lo que se escribe (y lo que no) en lugar de solo llamar
+ * a la API.
  */
 public final class CapturedLogs implements SLF4JServiceProvider {
 
-  /** One logged event. */
+  /** Evento registrado. */
   public record Event(
       Level level, String message, Map<String, String> mdc, @Nullable Throwable error) {}
 
@@ -33,13 +34,13 @@ public final class CapturedLogs implements SLF4JServiceProvider {
   private final MDCAdapter mdc = new BasicMDCAdapter();
   private final ILoggerFactory loggers = Captured::new;
 
-  /** Starts a test: drops previous events and sets the lowest level that is written. */
+  /** Inicia una prueba: descarta los eventos previos y fija el nivel más bajo que se escribe. */
   public static void reset(Level lowest) {
     EVENTS.clear();
     threshold = lowest;
   }
 
-  /** Events written since the last {@link #reset}. */
+  /** Eventos escritos desde el último {@link #reset}. */
   public static List<Event> events() {
     return List.copyOf(EVENTS);
   }
@@ -66,7 +67,7 @@ public final class CapturedLogs implements SLF4JServiceProvider {
 
   @Override
   public void initialize() {
-    // nothing to set up
+    // nada que preparar
   }
 
   private static final class Captured extends LegacyAbstractLogger {

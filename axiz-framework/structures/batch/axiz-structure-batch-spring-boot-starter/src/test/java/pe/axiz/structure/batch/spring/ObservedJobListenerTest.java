@@ -36,7 +36,7 @@ import pe.axiz.core.metrics.MetricsSettings;
 import pe.axiz.core.sensitive.ObjectMasker;
 import pe.axiz.structure.batch.JobOutcome;
 
-/** What a finished job leaves in the log, the metrics and the audit trail. */
+/** Lo que deja un job terminado en el log, las métricas y el rastro de auditoría. */
 class ObservedJobListenerTest {
 
   private static JobExecution execution(BatchStatus status, boolean timed) {
@@ -119,7 +119,7 @@ class ObservedJobListenerTest {
     new ObservedJobListener(null, null).afterJob(execution(BatchStatus.COMPLETED, false));
   }
 
-  /** A job that shows which listeners it received. */
+  /** Job que muestra qué listeners recibió. */
   static final class RecordingJob extends SimpleJob {
     final List<JobExecutionListener> listeners = new CopyOnWriteArrayList<>();
 

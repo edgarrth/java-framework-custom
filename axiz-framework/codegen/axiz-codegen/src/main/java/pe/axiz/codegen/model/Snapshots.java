@@ -11,11 +11,17 @@ import java.util.Map;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
-/** Defensive snapshots of YAML property trees and generated file contents, preserving order. */
+/**
+ * Snapshots defensivos de árboles de propiedades YAML y del contenido de archivos generados,
+ * preservando el orden.
+ */
 public final class Snapshots {
   private Snapshots() {}
 
-  /** Copies nested containers, including null YAML values and mutable binary/date scalars. */
+  /**
+   * Copia los contenedores anidados, incluidos los valores YAML null y los escalares mutables
+   * binarios o de fecha.
+   */
   public static Map<String, Object> properties(Map<String, Object> source) {
     Map<String, Object> copy = new LinkedHashMap<>();
     IdentityHashMap<Object, Object> copies = new IdentityHashMap<>();
@@ -24,13 +30,14 @@ public final class Snapshots {
   }
 
   @SuppressWarnings(
-      "JavaUtilDate") // SnakeYAML date scalars are mutable; copying preserves the YAML value.
+      "JavaUtilDate") // las fechas de SnakeYAML son mutables; la copia preserva el valor YAML.
   private static @Nullable Object value(
       @Nullable Object source, int depth, IdentityHashMap<Object, Object> copies) {
     if (depth > 64) {
       throw new IllegalArgumentException("Property tree is cyclic or exceeds 64 levels");
     }
-    // YAML aliases may share large subtrees: copy each object once, not once per alias path.
+    // Los alias YAML pueden compartir subárboles grandes: cada objeto se copia una vez, no una vez
+    // por ruta de alias.
     Object previous = copies.get(source);
     if (previous != null) {
       return previous;
@@ -60,7 +67,10 @@ public final class Snapshots {
     return snapshot;
   }
 
-  /** Each byte array is copied; callers may edit their copy without altering stored output. */
+  /**
+   * Cada arreglo de bytes se copia; los invocadores pueden editar su copia sin alterar la salida
+   * almacenada.
+   */
   public static Map<String, byte[]> files(Map<String, byte[]> source) {
     Map<String, byte[]> copy = new LinkedHashMap<>();
     source.forEach((path, bytes) -> copy.put(path, bytes.clone()));

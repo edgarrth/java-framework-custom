@@ -10,9 +10,9 @@ import pe.axiz.core.security.RateLimitUnavailableException;
 import pe.axiz.core.security.RateLimiter;
 
 /**
- * Distributed fixed-window rate limiter on Redis. One atomic Lua script increments the counter and
- * sets the expiration on the same key on its first use. If Redis is unavailable the fail-open
- * policy decides: the one of the call, or else the one given at construction.
+ * Limitador de tasa distribuido de ventana fija sobre Redis. Un único script Lua atómico incrementa
+ * el contador y fija la expiración en la misma clave en su primer uso. Si Redis no está disponible
+ * decide la política fail-open: la de la llamada o, en su defecto, la indicada en la construcción.
  */
 public final class RedisRateLimiter implements RateLimiter {
 

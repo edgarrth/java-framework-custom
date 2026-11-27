@@ -11,11 +11,12 @@ import org.springframework.core.env.MapPropertySource;
 import pe.axiz.kit.r2dbc.R2dbcUrls;
 
 /**
- * R2DBC defaults (lowest precedence) suited to Aurora: connections are validated against the server
- * when borrowed and renewed every 10 minutes, so a failover or an expired IAM token never leaves
- * dead connections in the pool; acquiring a connection is bounded so an exhausted pool fails fast
- * instead of queueing requests forever. Flyway, which migrates over JDBC, gets its URL and
- * credentials from {@code spring.r2dbc.*} unless they are set explicitly.
+ * Valores por defecto de R2DBC (precedencia más baja) adecuados para Aurora: las conexiones se
+ * validan contra el servidor al tomarlas prestadas y se renuevan cada 10 minutos, de modo que un
+ * failover o un token IAM expirado nunca dejan conexiones muertas en el pool; la adquisición de una
+ * conexión está acotada para que un pool agotado falle de inmediato en lugar de encolar solicitudes
+ * indefinidamente. Flyway, que migra sobre JDBC, obtiene su URL y sus credenciales de {@code
+ * spring.r2dbc.*} salvo que se configuren explícitamente.
  */
 public class AxizR2dbcEnvironmentPostProcessor implements EnvironmentPostProcessor, Ordered {
 
@@ -54,7 +55,7 @@ public class AxizR2dbcEnvironmentPostProcessor implements EnvironmentPostProcess
       String rootCert = env.getProperty("spring.r2dbc.properties.sslRootCert");
       if (rootCert != null) d.put("spring.flyway.jdbc-properties.sslrootcert", rootCert);
       d.put("spring.flyway.user", "${spring.r2dbc.username:}");
-      if (!env.getProperty("axiz.r2dbc.iam.enabled", Boolean.class, false)) {
+      if (!"dynamic".equals(env.getProperty("axiz.r2dbc.password-mode", "static"))) {
         d.put("spring.flyway.password", "${spring.r2dbc.password:}");
       }
     }

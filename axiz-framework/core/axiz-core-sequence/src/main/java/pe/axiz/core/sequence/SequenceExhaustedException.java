@@ -1,6 +1,6 @@
 package pe.axiz.core.sequence;
 
-/** The sequence exceeded the digits of its format within the period. */
+/** La secuencia superó los dígitos de su formato dentro del periodo. */
 public class SequenceExhaustedException extends IllegalStateException {
 
   private static final long serialVersionUID = 1L;

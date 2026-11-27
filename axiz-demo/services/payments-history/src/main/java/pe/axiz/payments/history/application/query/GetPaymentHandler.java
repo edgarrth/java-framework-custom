@@ -6,7 +6,10 @@ import pe.axiz.payments.history.application.port.out.PaymentHistories;
 import pe.axiz.payments.history.domain.PaymentHistory;
 import reactor.core.publisher.Mono;
 
-/** Reads one payment (read-only reactive transaction); 404 until its first event is projected. */
+/**
+ * Lee un pago (transacción reactiva de solo lectura); responde 404 hasta que se proyecta su primer
+ * evento.
+ */
 public class GetPaymentHandler implements ReactiveQueryHandler<GetPaymentQuery, PaymentHistory> {
 
   private final PaymentHistories histories;

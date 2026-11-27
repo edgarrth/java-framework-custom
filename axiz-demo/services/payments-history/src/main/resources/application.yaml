@@ -24,6 +24,7 @@ axiz:
   messaging:
     type-prefix: pe.axiz.payments.
     kafka:
+      authentication: ${AXIZ_KAFKA_AUTHENTICATION:msk}
       iam: ${AXIZ_KAFKA_IAM:true}
       topics:
       - payments
@@ -77,7 +78,9 @@ axiz:
       current-key-id: v1
       key-ids:
       - v1
-      blind-index-secret: blind-index-key
+      index-current-key-id: v1
+      index-secrets:
+        v1: blind-index-key
 management:
   opentelemetry:
     tracing:

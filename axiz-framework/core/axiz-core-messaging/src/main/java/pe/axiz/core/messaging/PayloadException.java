@@ -1,6 +1,6 @@
 package pe.axiz.core.messaging;
 
-/** The payload could not be decoded: retrying will not help. */
+/** No se pudo decodificar el payload: reintentar no ayudará. */
 public class PayloadException extends RuntimeException {
 
   private static final long serialVersionUID = 1L;

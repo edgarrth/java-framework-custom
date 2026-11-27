@@ -1,0 +1,22 @@
+package pe.axiz.spring.aws;
+
+import java.time.Duration;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.DefaultValue;
+import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
+
+/**
+ * Configuración del transporte HTTP nativo, independiente de la configuración del ejecutor de
+ * callbacks.
+ */
+@ConfigurationProperties("axiz.aws.async")
+public record AxizAwsAsyncTransportProperties(
+    @DefaultValue("5m") Duration connectionTtl, @DefaultValue("30s") Duration maxIdleTime) {
+  public AxizAwsAsyncTransportProperties {
+    new AsyncAwsTransportSettings(connectionTtl, maxIdleTime);
+  }
+
+  public AsyncAwsTransportSettings toSettings() {
+    return new AsyncAwsTransportSettings(connectionTtl, maxIdleTime);
+  }
+}

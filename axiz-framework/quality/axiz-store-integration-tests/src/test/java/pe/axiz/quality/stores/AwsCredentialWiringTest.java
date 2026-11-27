@@ -10,13 +10,13 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import pe.axiz.spring.audit.AxizAuditSqsAutoConfiguration;
-import pe.axiz.spring.foundation.aws.AwsCapability;
-import pe.axiz.spring.foundation.aws.AwsIdentityFor;
-import pe.axiz.spring.foundation.aws.AwsService;
-import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
-import pe.axiz.spring.messaging.AxizMessagingAwsAutoConfiguration;
-import pe.axiz.spring.messaging.AxizNativeMessagingAwsAutoConfiguration;
+import pe.axiz.spring.audit.sqs.AxizAuditSqsAutoConfiguration;
+import pe.axiz.spring.aws.AwsCapability;
+import pe.axiz.spring.aws.AwsIdentityFor;
+import pe.axiz.spring.aws.AwsService;
+import pe.axiz.spring.aws.AxizAwsIdentityAutoConfiguration;
+import pe.axiz.spring.messaging.sqs.AxizMessagingSqsAutoConfiguration;
+import pe.axiz.spring.messaging.sqs.AxizNativeMessagingSqsAutoConfiguration;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
@@ -37,7 +37,7 @@ class AwsCredentialWiringTest {
         .withUserConfiguration(Identities.class)
         .withConfiguration(
             AutoConfigurations.of(
-                AxizAuditSqsAutoConfiguration.class, AxizMessagingAwsAutoConfiguration.class))
+                AxizAuditSqsAutoConfiguration.class, AxizMessagingSqsAutoConfiguration.class))
         .withPropertyValues(SETTINGS)
         .run(
             ctx -> {
@@ -71,7 +71,7 @@ class AwsCredentialWiringTest {
         .withUserConfiguration(Identities.class)
         .withConfiguration(
             AutoConfigurations.of(
-                AxizAuditSqsAutoConfiguration.class, AxizNativeMessagingAwsAutoConfiguration.class))
+                AxizAuditSqsAutoConfiguration.class, AxizNativeMessagingSqsAutoConfiguration.class))
         .withPropertyValues(SETTINGS)
         .run(
             ctx -> {

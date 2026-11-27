@@ -16,7 +16,7 @@ import pe.axiz.core.audit.AuditTrail;
 import pe.axiz.core.errors.AxizException;
 import reactor.core.publisher.Mono;
 
-/** Reactive counterpart of {@link HttpAuditFilter}. */
+/** Contraparte reactiva de {@link HttpAuditFilter}. */
 public final class HttpAuditWebFilter implements WebFilter, Ordered {
 
   private final @Nullable AuditTrail trail;
@@ -33,7 +33,10 @@ public final class HttpAuditWebFilter implements WebFilter, Ordered {
         new HttpAuditRules(http));
   }
 
-  /** Native variant; audit completion participates in the request's reactive lifecycle. */
+  /**
+   * Variante nativa; la finalización de la auditoría participa en el ciclo de vida reactivo de la
+   * solicitud.
+   */
   public HttpAuditWebFilter(
       ReactiveAuditTrail trail, AuditContextResolver context, AxizAuditProperties.Http http) {
     this(

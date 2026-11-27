@@ -23,13 +23,13 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.crypto.DataKeyProvider.DataKey;
 
 class AsyncEnvelopeEncryptorTest {
   private static final byte[] PLAIN = "statement".getBytes(StandardCharsets.UTF_8);
 
-  /** CPU-only key emulator; no synchronous remote operation is adapted here. */
+  /** Emulador de claves solo de CPU; aquí no se adapta ninguna operación remota síncrona. */
   private static AsyncDataKeyProvider immediate(EnvelopeKeyCacheTest.FakeKms fake) {
     return new AsyncDataKeyProvider() {
       public CompletionStage<DataKey> generate(String context) {
@@ -138,7 +138,7 @@ class AsyncEnvelopeEncryptorTest {
     assertEquals(2, keys.generated.get());
     assertEquals(2, keys.decrypted.get());
     byte[] wrappedA = {0, 31};
-    byte[] wrappedB = {1, 0}; // same Arrays.hashCode, different key bytes
+    byte[] wrappedB = {1, 0}; // mismo Arrays.hashCode, distintos bytes de clave
     byte[] keyA = AesGcm.newKey().getEncoded();
     byte[] keyB = AesGcm.newKey().getEncoded();
     keys.register(wrappedA, keyA);
@@ -146,13 +146,13 @@ class AsyncEnvelopeEncryptorTest {
     assertArrayEquals(
         PLAIN,
         envelope
-            .decrypt(EnvelopePayload.seal(PLAIN, keyA, wrappedA, "account"), "account")
+            .decrypt(EnvelopePayload.seal(PLAIN, keyA.clone(), wrappedA, "account"), "account")
             .toCompletableFuture()
             .join());
     assertArrayEquals(
         PLAIN,
         envelope
-            .decrypt(EnvelopePayload.seal(PLAIN, keyB, wrappedB, "account"), "account")
+            .decrypt(EnvelopePayload.seal(PLAIN, keyB.clone(), wrappedB, "account"), "account")
             .toCompletableFuture()
             .join());
   }

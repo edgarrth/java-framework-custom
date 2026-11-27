@@ -1,0 +1,181 @@
+package {{project.basePackage}};
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.time.Clock;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.context.ConfigurableApplicationContext;
+{{#caps.web}}
+import org.springframework.http.MediaType;
+{{#stack.servlet}}
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.mock.http.MockHttpOutputMessage;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
+{{/stack.servlet}}
+{{#stack.reactive}}
+import org.springframework.core.ResolvableType;
+import org.springframework.http.codec.HttpMessageWriter;
+import org.springframework.http.codec.ServerCodecConfigurer;
+import org.springframework.mock.http.server.reactive.MockServerHttpResponse;
+import reactor.core.publisher.Mono;
+{{/stack.reactive}}
+{{/caps.web}}
+{{#caps.jpa}}
+import jakarta.persistence.EntityManagerFactory;
+{{/caps.jpa}}
+import pe.axiz.core.audit.AuditEvent;
+import pe.axiz.core.audit.AuditEventJson;
+import pe.axiz.core.audit.AuditTrail;
+import pe.axiz.core.audit.LoggingAuditPublisher;
+import pe.axiz.core.commons.TransactionOutcome;
+import pe.axiz.core.errors.ProblemFactory;
+import pe.axiz.core.id.IdGenerator;
+import pe.axiz.core.logging.LogOperation;
+import pe.axiz.core.logging.OperationLogger;
+import pe.axiz.core.sensitive.ObjectMasker;
+import pe.axiz.core.sensitive.OutputChannel;
+import pe.axiz.core.sensitive.Sensitive;
+import pe.axiz.core.sensitive.SensitiveField;
+import pe.axiz.core.sensitive.SensitivityLevel;
+
+/**
+ * Solo valores sintéticos. Usa la configuración de enmascaramiento, logging y respuestas del
+ * servicio en ejecución.
+ */
+@ExtendWith(OutputCaptureExtension.class)
+class SensitiveDataCanaryTest extends {{project.className}}ApplicationTestSupport {
+  private static final String PAN = "4111111111111111";
+  private static final String CVV = "986";
+  private static final String PASSWORD = "synthetic-canary-" + UUID.randomUUID();
+
+  @Autowired ConfigurableApplicationContext context;
+  @Autowired ObjectMasker masker;
+  @Autowired OperationLogger operations;
+  @Autowired ProblemFactory problems;
+
+  record Payload(
+      @Sensitive(level = SensitivityLevel.CRITICAL) String pan,
+      @Sensitive(level = SensitivityLevel.CRITICAL) String cvv,
+      @Sensitive(level = SensitivityLevel.CRITICAL) String password) {}
+
+  @Test
+  void sensitiveValuesStayOutOfEveryOutput(CapturedOutput output) throws Exception {
+    var payload = new Payload(PAN, CVV, PASSWORD);
+    var events = new ArrayList<AuditEvent>();
+    var auditLog = new LoggingAuditPublisher();
+    var audit = new AuditTrail("canary", event -> {
+      events.add(event);
+      auditLog.publish(event);
+    }, masker, IdGenerator.uuidV7(), Clock.systemUTC());
+    for (String phase : List.of("success", "error", "timeout", "rollback")) {
+      String operation = "canary." + phase;
+      operations.entry(operation, List.of("payload"), new Object[] {payload},
+          new boolean[] {false}, new SensitiveField[0], LogOperation.Level.INFO);
+      var record = audit.record(operation, "synthetic")
+          .detail("payload", payload)
+          .outcomes(phase.equals("rollback") ? TransactionOutcome.ROLLED_BACK : TransactionOutcome.UNKNOWN,
+              TransactionOutcome.UNKNOWN);
+      if (phase.equals("success")) {
+        operations.success(operation, Duration.ZERO, payload, true, LogOperation.Level.INFO);
+        record.success();
+      } else {
+        Throwable failure = new IllegalArgumentException("pan=" + PAN + " cvv=" + CVV + " password=" + PASSWORD);
+        if (phase.equals("timeout")) {
+          var timed = new CompletableFuture<Void>().orTimeout(10, TimeUnit.MILLISECONDS);
+          failure = assertThrows(ExecutionException.class, () -> timed.get(5, TimeUnit.SECONDS)).getCause();
+          assertThat(failure).isInstanceOf(TimeoutException.class);
+          failure.addSuppressed(new IllegalArgumentException(PASSWORD + PAN));
+        }
+        operations.failure(operation, Duration.ZERO, failure, false, "CANARY");
+        assertClean(problems.create(failure, Locale.ROOT, "/canary", "canary-correlation").toString());
+        record.failure("CANARY");
+      }
+      assertClean(response(payload));
+    }
+    assertThat(events).hasSize(4);
+    events.forEach(event -> assertClean(AuditEventJson.write(event)));
+    assertThat(events.getLast().transactionOutcome()).isEqualTo(TransactionOutcome.ROLLED_BACK);
+    Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() ->
+        assertThat(output.getAll()).contains("operation=canary.rollback phase=end"));
+    assertClean(output.getAll());
+  }
+
+{{#caps.jpa}}
+  @Test
+  void hibernateConstraintFailureDoesNotPrintTheRejectedValue(CapturedOutput output) {
+    String value = "pan=" + PAN + " cvv=" + CVV + " password=" + PASSWORD;
+    try (var em = context.getBean(EntityManagerFactory.class).createEntityManager()) {
+      em.getTransaction().begin();
+      try {
+        em.createNativeQuery("CREATE TEMP TABLE axiz_sensitive_canary (value text UNIQUE) ON COMMIT DROP")
+            .executeUpdate();
+        em.createNativeQuery("INSERT INTO axiz_sensitive_canary VALUES (:value)")
+            .setParameter("value", value).executeUpdate();
+        var error = assertThrows(RuntimeException.class, () ->
+            em.createNativeQuery("INSERT INTO axiz_sensitive_canary VALUES (:value)")
+                .setParameter("value", value).executeUpdate());
+        // PostgreSQL devolvió realmente el valor rechazado: no es una llamada sintética al logger.
+        assertThat(error).hasStackTraceContaining(PASSWORD);
+        operations.failure("canary.constraint", Duration.ZERO, error, false, "CONFLICT");
+        assertClean(problems.create(error, Locale.ROOT, "/canary", "canary-correlation").toString());
+      } finally {
+        em.getTransaction().rollback();
+      }
+    }
+    Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() ->
+        assertThat(output.getAll()).contains("operation=canary.constraint phase=end"));
+    assertClean(output.getAll());
+  }
+{{/caps.jpa}}
+
+  private static void assertClean(String value) {
+    assertThat(value).doesNotContain(PAN, PASSWORD);
+    // Se busca el CVV etiquetado, no una marca de tiempo ni un tiempo transcurrido de tres dígitos
+    // sin relación.
+    assertThat(value).doesNotContainPattern("(?i)(?:cvv|cvc)[^\\r\\n0-9]{0,16}" + CVV + "(?![0-9])");
+  }
+
+  @SuppressWarnings("unchecked")
+  private String response(Object value) throws Exception {
+{{#caps.web}}
+{{#stack.servlet}}
+    var converters = context.getBean(RequestMappingHandlerAdapter.class).getMessageConverters();
+    var converter = (HttpMessageConverter<Object>) converters.stream()
+        .filter(candidate -> candidate.canWrite(value.getClass(), MediaType.APPLICATION_JSON))
+        .findFirst().orElseThrow();
+    var response = new MockHttpOutputMessage();
+    converter.write(value, MediaType.APPLICATION_JSON, response);
+    return response.getBodyAsString();
+{{/stack.servlet}}
+{{#stack.reactive}}
+    var type = ResolvableType.forClass(value.getClass());
+    var writer = (HttpMessageWriter<Object>) context.getBean(ServerCodecConfigurer.class).getWriters().stream()
+        .filter(candidate -> candidate.canWrite(type, MediaType.APPLICATION_JSON)).findFirst().orElseThrow();
+    var response = new MockServerHttpResponse();
+    writer.write(Mono.just(value), type, MediaType.APPLICATION_JSON, response, Map.of()).block(Duration.ofSeconds(5));
+    return response.getBodyAsString().block(Duration.ofSeconds(5));
+{{/stack.reactive}}
+{{/caps.web}}
+{{^caps.web}}
+    // Los workers no tienen conversor de respuestas HTTP; nunca se enmascara el serializador de
+    // eventos de la aplicación.
+    return masker.describe(value, OutputChannel.RESPONSE).toString();
+{{/caps.web}}
+  }
+}

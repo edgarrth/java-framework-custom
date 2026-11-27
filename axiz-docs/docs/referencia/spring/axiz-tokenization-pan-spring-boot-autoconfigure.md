@@ -1,0 +1,16 @@
+<!-- GENERADO por scripts/sync_reference.py desde axiz-framework: no editar -->
+# axiz-tokenization-pan-spring-boot-autoconfigure
+
+Registra `PanTokenProfile`, perfil `pan.luhn` versión 1, en el motor genérico de la bóveda.
+Valida y canonicaliza mediante los tipos de tarjeta existentes. No incorpora otro motor,
+almacén ni SDK; una bóveda que solo procesa DNI no necesita este artefacto.
+
+El operador debe declarar un tipo que seleccione exactamente ese perfil/versión y definir
+dominios, propósitos, retención y keyset en `axiz.tokenization.vault.types`. Si se utiliza la
+metainformación `last4` del perfil, debe figurar explícitamente en `metadata-keys`. El perfil
+no entrega PAN completo como metadato. Instalarlo no concede permisos de revelación.
+
+`PanProfileWiringTest` comprueba registro único, validación/canonicalización y metadatos mínimos.
+El control Maven transitivo impide SDK de proveedor en este módulo. Las pruebas HTTP y de
+autorización pertenecen al servicio genérico; este módulo no registra un serializer revelador
+global ni una API HTTP paralela.

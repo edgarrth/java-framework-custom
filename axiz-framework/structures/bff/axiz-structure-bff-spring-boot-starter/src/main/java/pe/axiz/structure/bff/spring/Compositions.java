@@ -8,8 +8,8 @@ import java.util.Objects;
 import pe.axiz.structure.bff.Composer;
 
 /**
- * Creates {@link Composer}s whose parallel tasks carry the caller's context (request metadata,
- * tenant, MDC, trace) through Micrometer context-propagation.
+ * Crea {@link Composer} cuyas tareas en paralelo llevan el contexto de quien llama (metadatos de la
+ * petición, tenant, MDC, traza) mediante context-propagation de Micrometer.
  */
 public final class Compositions {
 

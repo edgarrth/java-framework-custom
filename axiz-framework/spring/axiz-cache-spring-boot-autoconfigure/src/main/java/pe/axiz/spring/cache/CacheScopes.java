@@ -8,16 +8,16 @@ import pe.axiz.core.cache.CacheScope;
 import pe.axiz.core.tenancy.TenantContext;
 
 /**
- * The part of a method key that says who shares the entry: the scope, the tenant and the caller,
- * always three encoded parts so a key never reads as another one. The tenant comes from {@link
- * TenantContext} (blocking calls, or reactive calls with automatic context propagation) or from the
- * Reactor context under {@link #TENANT_KEY} (written by the tenancy starter). The caller is the
- * identity a {@link CacheCallerResolver} gives the authenticated Spring Security principal (issuer,
- * subject and client of a token by default).
+ * Parte de la clave de un método que indica quién comparte la entrada: el ámbito, el tenant y el
+ * invocante, siempre tres partes codificadas para que una clave nunca se lea como otra. El tenant
+ * proviene de {@link TenantContext} (llamadas bloqueantes o llamadas reactivas con propagación
+ * automática del contexto) o del contexto de Reactor bajo {@link #TENANT_KEY} (escrito por el
+ * starter de tenancy). El invocante es la identidad que un {@link CacheCallerResolver} asigna al
+ * principal autenticado de Spring Security (emisor, subject y cliente de un token por defecto).
  */
 final class CacheScopes {
 
-  /** Reactor context key of the tenant, the same as {@code TenantContextAccessor.KEY}. */
+  /** Clave del tenant en el contexto de Reactor, la misma que {@code TenantContextAccessor.KEY}. */
   static final String TENANT_KEY = "axiz.tenant";
 
   private static final ClassLoader LOADER = CacheScopes.class.getClassLoader();
@@ -34,9 +34,9 @@ final class CacheScopes {
   private CacheScopes() {}
 
   /**
-   * Scope part for a blocking call.
+   * Parte del ámbito para una llamada bloqueante.
    *
-   * @return the part, or empty when the scope needs a caller and there is none (do not cache)
+   * @return la parte, o vacío cuando el ámbito necesita un invocante y no lo hay (no se cachea)
    */
   static Optional<String> blocking(CacheScope scope, @Nullable CacheCallerResolver callers) {
     String tenant = scope == CacheScope.GLOBAL ? null : threadTenant();
@@ -51,7 +51,9 @@ final class CacheScopes {
     return CacheKeys.of(scope.name(), tenant, caller);
   }
 
-  /** The default resolver, or null without Spring Security (no caller can be told apart). */
+  /**
+   * El resolvedor por defecto, o null sin Spring Security (no puede distinguirse ningún invocante).
+   */
   static @Nullable CacheCallerResolver defaultCallers() {
     return SECURITY ? SecurityCallers.defaults() : null;
   }

@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.lock.InMemoryDistributedLock;
+import pe.axiz.core.lock.LockObserver;
 import pe.axiz.core.lock.LockTemplate;
 import pe.axiz.core.metrics.EventMetrics;
 import pe.axiz.core.metrics.MetricsSettings;
@@ -25,7 +26,9 @@ import pe.axiz.payments.bankingcore.domain.MovementStatus;
 
 class UseCasesTest {
 
-  /** Core fake that records calls and detects overlapping debits on the same account. */
+  /**
+   * Fake del core que registra las llamadas y detecta débitos superpuestos sobre una misma cuenta.
+   */
   static final class FakeCore implements CoreAccounts {
     final List<String> calls = new ArrayList<>();
     final AtomicInteger inFlight = new AtomicInteger();
@@ -72,7 +75,8 @@ class UseCasesTest {
             core.attempts.countDown();
             return acquired;
           },
-          Duration.ofMillis(5));
+          Duration.ofMillis(5),
+          LockObserver.NONE);
 
   static MovementOrder order(String account) {
     return new MovementOrder(account, Money.of("150.75", "PEN"), "OP-1");

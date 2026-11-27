@@ -16,8 +16,9 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 
 /**
- * The encryptor and the blind index are shared singletons in a service: under concurrent use every
- * ciphertext gets its own IV, every value decrypts back, and the index stays deterministic.
+ * El cifrador y el índice ciego son singletons compartidos en un servicio: bajo uso concurrente
+ * cada texto cifrado recibe su propio IV, cada valor se descifra de vuelta y el índice sigue siendo
+ * determinista.
  */
 class CryptoConcurrencyTest {
 
@@ -28,7 +29,7 @@ class CryptoConcurrencyTest {
   void concurrentEncryptionNeverReusesAnIvAndAlwaysDecrypts() throws Exception {
     FieldEncryptor encryptor =
         new FieldEncryptor(new StaticKeyProvider("k1", Map.of("k1", AesGcm.newKey())));
-    BlindIndex index = new BlindIndex(AesGcm.newKey().getEncoded(), 16);
+    BlindIndex index = new BlindIndex(Map.of("i1", AesGcm.newKey().getEncoded()), "i1");
     Set<String> ciphertexts = ConcurrentHashMap.newKeySet();
     Set<String> indexes = ConcurrentHashMap.newKeySet();
     CountDownLatch start = new CountDownLatch(1);
@@ -41,7 +42,12 @@ class CryptoConcurrencyTest {
                   assertTrue(start.await(10, TimeUnit.SECONDS));
                   String cipher = encryptor.encrypt(ACCOUNT, "account.number");
                   ciphertexts.add(cipher);
-                  indexes.add(index.index(ACCOUNT, "account.number"));
+                  indexes.add(
+                      index
+                          .index(
+                              ACCOUNT,
+                              new IndexScope("search", "CCI", "tenant", "domain", "identity", 1))
+                          .encoded());
                   return encryptor.decrypt(cipher, "account.number");
                 }));
       }
@@ -51,6 +57,8 @@ class CryptoConcurrencyTest {
       }
     }
     assertEquals(OPERATIONS, ciphertexts.size(), "an IV was reused");
+    assertEquals(
+        OPERATIONS, encryptor.encryptions("k1"), "usage accounting must not lose increments");
     assertEquals(1, indexes.size(), "the blind index must be deterministic");
   }
 }

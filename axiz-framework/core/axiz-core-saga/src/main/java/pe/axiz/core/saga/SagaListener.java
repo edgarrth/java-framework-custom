@@ -2,14 +2,16 @@ package pe.axiz.core.saga;
 
 import org.jspecify.annotations.Nullable;
 
-/** Observes saga progress (metrics, traces, alerts). */
+/** Observa el progreso de la saga (métricas, trazas, alertas). */
 public interface SagaListener {
 
   default void stepCompleted(String sagaName, String sagaId, String step) {}
 
   default void compensated(String sagaName, String sagaId, String step) {}
 
-  /** A step's outcome is uncertain; the saga waits for verification (alert after a while). */
+  /**
+   * El resultado de un paso es incierto; la saga espera la verificación (alerta pasado un tiempo).
+   */
   default void inDoubt(String sagaName, String sagaId, String step) {}
 
   default void finished(

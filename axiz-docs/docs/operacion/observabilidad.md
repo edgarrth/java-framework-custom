@@ -19,9 +19,9 @@ contenedor `otel-lgtm` (Grafana, Prometheus, Tempo y Loki).
 | Handlers de eventos | `axiz.event.handler` | `axiz.event.type` |
 | Publicación de eventos | `axiz.event.publish` | `axiz.destination`, `axiz.event.type` |
 | Escritura en el outbox | `axiz.outbox.write` | `axiz.destination`, `axiz.event.type` |
-| Relay del outbox (lote) | `axiz.outbox.relay` | – |
+| Relay del outbox (lote) | `axiz.outbox.relay` | Ninguno |
 | Publicación de un evento del outbox | `axiz.outbox.dispatch` | `axiz.destination`, `axiz.event.type` |
-| Pasos de batch | `axiz.batch.step` | – |
+| Pasos de batch | `axiz.batch.step` | Ninguno |
 
 Además: `axiz.outbox.pending` (registros esperando), `axiz.saga.steps`, `axiz.saga.compensations`
 y `axiz.saga.finished`, las [métricas por evento](../guias/metricas.md) y las de Spring Boot (JVM,
@@ -43,8 +43,8 @@ Un evento que pasa por el outbox se publica después de la request, en el hilo d
 la traza no se corte, `OutboxWriter` registra la escritura en una observación `axiz.outbox.write`
 (hija de la request) y guarda su contexto con el evento, en la extensión `outboxtraceparent`. Al
 publicarlo, el relay abre `axiz.outbox.dispatch`, que continúa ese contexto, y quita la extensión
-antes de enviarlo al broker. El resultado es una sola traza: request → `outbox write` → `outbox
-dispatch` → `publish` → handler del consumidor → sus llamadas. Vale para todo lo que usa el outbox
+antes de enviarlo al broker. El resultado es una sola traza: request -> `outbox write` -> `outbox
+dispatch` -> `publish` -> handler del consumidor -> sus llamadas. Vale para todo lo que usa el outbox
 (eventos de dominio, reacciones de EDA, auditoría durable). Requiere propagación W3C, la que Spring
 Boot usa por defecto; con B3 la traza se corta en el outbox como antes.
 
@@ -72,7 +72,7 @@ En Spring Boot 4 la propiedad del endpoint de trazas es
 La exportación de métricas OTLP (`micrometer-registry-otlp`) usa `protobuf-java`. Hasta la 4.35 su
 runtime llama a métodos de `sun.misc.Unsafe` marcados para eliminación (Java 24+ avisa al
 arrancar); `axiz-dependencies` fija la 4.36.2, la primera cuyo runtime completo (el que usa el
-código generado de OpenTelemetry) ya no los usa.
+código generado de OpenTelemetry) no los usa.
 
 ## Dashboards base
 

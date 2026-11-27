@@ -9,18 +9,18 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * Plain-Java command and query buses. Handlers are registered with their request type (resolved by
- * the Spring starter from generics); duplicates fail at construction, unknown requests fail with
- * {@link HandlerNotFoundException}.
+ * Buses de comandos y consultas en Java simple. Los handlers se registran con su tipo de petición
+ * (que el starter de Spring resuelve a partir de los genéricos); los duplicados fallan en la
+ * construcción y las peticiones desconocidas fallan con {@link HandlerNotFoundException}.
  */
 public final class Buses implements CommandBus, QueryBus {
 
   /**
-   * A handler and the types it serves.
+   * Handler y los tipos que atiende.
    *
-   * @param requestType request class
-   * @param resultType result class
-   * @param handler handler function
+   * @param requestType clase de la petición
+   * @param resultType clase del resultado
+   * @param handler función del handler
    */
   public record Registration(
       Class<?> requestType, Class<?> resultType, Function<Object, Object> handler) {}
@@ -40,14 +40,14 @@ public final class Buses implements CommandBus, QueryBus {
         behaviors.stream().sorted(Comparator.comparingInt(PipelineBehavior::order)).toList();
   }
 
-  /** Typed registration helper for commands. */
+  /** Utilidad de registro tipado para comandos. */
   @SuppressWarnings("unchecked")
   public static <C extends Command<R>, R> Registration command(
       Class<C> type, Class<R> result, CommandHandler<C, R> handler) {
     return new Registration(type, result, req -> handler.handle((C) req));
   }
 
-  /** Typed registration helper for queries. */
+  /** Utilidad de registro tipado para consultas. */
   @SuppressWarnings("unchecked")
   public static <Q extends Query<R>, R> Registration query(
       Class<Q> type, Class<R> result, QueryHandler<Q, R> handler) {
@@ -88,9 +88,9 @@ public final class Buses implements CommandBus, QueryBus {
   }
 
   /**
-   * Operation name of a request type used in spans, metrics, audit and idempotency keys: the class
-   * name without the {@code Command}/{@code Query} suffix in kebab-case ({@code
-   * CreatePaymentCommand} is {@code create-payment}).
+   * Nombre de operación de un tipo de petición usado en spans, métricas, auditoría y claves de
+   * idempotencia: el nombre de la clase sin el sufijo {@code Command}/{@code Query} en kebab-case
+   * ({@code CreatePaymentCommand} es {@code create-payment}).
    */
   public static String operationName(Class<?> requestType) {
     return kebab(requestType.getSimpleName());

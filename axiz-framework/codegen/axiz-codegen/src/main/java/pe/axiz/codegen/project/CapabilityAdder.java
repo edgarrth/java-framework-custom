@@ -13,7 +13,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import pe.axiz.codegen.model.ArchitectureScopes;
 import pe.axiz.codegen.model.Capability;
 import pe.axiz.codegen.model.Catalog;
 import pe.axiz.codegen.model.Stack;
@@ -23,20 +25,21 @@ import pe.axiz.codegen.render.TemplateSet;
 import pe.axiz.codegen.render.YamlProperties;
 
 /**
- * {@code axiz add <capability>}: adds the starter and its adapters to the pom, its properties to
- * {@code application.yaml} (and the local profile), the ConfigMap keys to the Helm values of every
- * environment, its secrets to the ExternalSecret, the tables it needs as a new Flyway migration and
- * the capability to the manifest. Required capabilities are added too.
+ * {@code axiz add <capability>}: agrega el starter y sus adaptadores al pom, sus propiedades a
+ * {@code application.yaml} (y al perfil local), las claves de ConfigMap a los valores de Helm de
+ * cada entorno, sus secretos al ExternalSecret, las tablas que necesita como una nueva migración de
+ * Flyway y la capacidad al manifiesto. También se agregan las capacidades requeridas.
  */
 public final class CapabilityAdder {
 
   /**
-   * What was done.
+   * Lo que se hizo.
    *
-   * @param added capabilities added (requirements included), empty when already present
-   * @param changed files changed or created, relative to the project
-   * @param configMapKeys ConfigMap keys each environment must now define
-   * @param example usage example of the requested capability
+   * @param added capacidades agregadas (incluidos los requisitos), vacío cuando ya estaban
+   *     presentes
+   * @param changed archivos modificados o creados, relativos al proyecto
+   * @param configMapKeys claves de ConfigMap que cada entorno debe definir
+   * @param example ejemplo de uso de la capacidad solicitada
    */
   public record Result(
       List<String> added, List<String> changed, List<String> configMapKeys, String example) {
@@ -72,37 +75,49 @@ public final class CapabilityAdder {
   }
 
   /**
-   * Adds a capability to the project in {@code dir}.
+   * Agrega una capacidad al proyecto de {@code dir}.
    *
-   * @throws IllegalArgumentException when the capability is unknown or incompatible with the
-   *     project
+   * @throws IllegalArgumentException cuando la capacidad es desconocida o incompatible con el
+   *     proyecto
    */
   public Result add(Path dir, String capability) throws IOException {
+    return add(dir, List.of(capability));
+  }
+
+  /**
+   * Valida una composición completa de capacidades previo a modificar cualquier archivo del
+   * proyecto.
+   */
+  public Result add(Path dir, List<String> capabilities) throws IOException {
+    if (capabilities.isEmpty())
+      throw new IllegalArgumentException("At least one capability is required");
+    List<Capability> requested =
+        capabilities.stream()
+            .map(
+                name ->
+                    catalog
+                        .capability(name)
+                        .orElseThrow(
+                            () -> new IllegalArgumentException("Unknown capability " + name)))
+            .toList();
+    String capability = String.join("-", capabilities);
+    String example = String.join("\n", requested.stream().map(Capability::example).toList());
     dir = dir.toAbsolutePath().normalize();
     ProjectManifest manifest = ProjectManifest.read(dir);
     if (!manifest.isService()) {
       throw new IllegalArgumentException("Capabilities apply to services only");
     }
-    Capability requested =
-        catalog
-            .capability(capability)
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        "Unknown capability "
-                            + capability
-                            + "; available: "
-                            + String.join(
-                                ", ",
-                                catalog.capabilities().stream().map(Capability::name).toList())));
     String persistence = manifest.persistence();
     String store = Catalog.store(persistence, manifest.stack());
+    Set<String> requestedNames = new LinkedHashSet<>(manifest.capabilities());
+    requestedNames.addAll(capabilities);
+    List<Capability> resolved = catalog.resolve(requestedNames, store);
+    List<String> incomplete = catalog.missingAlternatives(resolved);
+    if (!incomplete.isEmpty()) throw new IllegalArgumentException(String.join("; ", incomplete));
     List<Capability> missing =
-        catalog.resolve(List.of(capability), store).stream()
-            .filter(c -> !manifest.capabilities().contains(c.name()))
-            .toList();
+        resolved.stream().filter(c -> !manifest.capabilities().contains(c.name())).toList();
     if (missing.isEmpty()) {
-      return new Result(List.of(), List.of(), List.of(), requested.example());
+      return new Result(List.of(), List.of(), List.of(), example);
     }
     for (Capability c : missing) {
       if (!c.supports(manifest.stack()))
@@ -143,6 +158,21 @@ public final class CapabilityAdder {
       try (Stream<Path> entries = Files.list(chart)) {
         for (Path file : entries.toList()) SafePaths.target(dir, dir.relativize(file).toString());
       }
+    }
+    Path architecture =
+        layout.target(
+            "src/test/java/" + manifest.basePackage().replace('.', '/') + "/ArchitectureTest.java");
+    String architectureText = null;
+    if (capabilities.stream()
+        .anyMatch(name -> name.equals("carddata") || name.startsWith("tokenization"))) {
+      if (!Files.isRegularFile(architecture))
+        throw new IllegalArgumentException(
+            "ArchitectureTest is required before adding sensitive-data capabilities");
+      ArchitectureScopes scopes = ArchitectureScopes.of(resolved);
+      architectureText =
+          scope(Files.readString(architecture), "cardData", "CardDataScope", scopes.cardData());
+      architectureText =
+          scope(architectureText, "tokenization", "TokenizationScope", scopes.tokenization());
     }
     List<String> changed = new ArrayList<>();
 
@@ -227,7 +257,7 @@ public final class CapabilityAdder {
         Files.createDirectories(SafePaths.parentOf(migration));
         Files.writeString(
             migration,
-            "-- Tables of the " + capability + " capability (added by axiz add)\n" + sql,
+            "-- Tablas de la capacidad " + capability + " (agregadas por axiz add)\n" + sql,
             StandardCharsets.UTF_8);
         changed.add(dir.relativize(migration).toString());
       }
@@ -235,13 +265,25 @@ public final class CapabilityAdder {
 
     List<String> all = new ArrayList<>(manifest.capabilities());
     missing.forEach(c -> all.add(c.name()));
+    if (architectureText != null) {
+      Files.writeString(architecture, architectureText, StandardCharsets.UTF_8);
+      changed.add(dir.relativize(architecture).toString());
+    }
     manifest.withCapabilities(all).write(dir);
     changed.add(ProjectManifest.PATH);
     return new Result(
-        missing.stream().map(Capability::name).toList(),
-        changed,
-        List.copyOf(keys),
-        requested.example());
+        missing.stream().map(Capability::name).toList(), changed, List.copyOf(keys), example);
+  }
+
+  private static String scope(String source, String method, String type, String value) {
+    var pattern = Pattern.compile("\\." + method + "\\(" + type + "\\.[A-Z]+\\)");
+    var matches = pattern.matcher(source);
+    if (matches.results().count() != 1)
+      throw new IllegalArgumentException(
+          "ArchitectureTest must declare one explicit "
+              + type
+              + " before adding this capability; migrate its configuration first");
+    return pattern.matcher(source).replaceFirst("." + method + "(" + type + "." + value + ")");
   }
 
   private static boolean applicationFile(Path file) {
@@ -291,13 +333,17 @@ public final class CapabilityAdder {
   }
 
   /**
-   * Merges properties into a YAML file, keeping its leading comment block; true when it changed.
+   * Combina propiedades en un archivo YAML y conserva su bloque de comentarios inicial; true cuando
+   * cambió.
    */
   public static boolean mergeYaml(Path file, Map<String, Object> properties) throws IOException {
     return mergeYaml(file, properties, List.of());
   }
 
-  /** Like {@link #mergeYaml(Path, Map)}, dropping existing keys under {@code removePrefixes}. */
+  /**
+   * Igual que {@link #mergeYaml(Path, Map)}, descartando las claves existentes bajo {@code
+   * removePrefixes}.
+   */
   public static boolean mergeYaml(
       Path file, Map<String, Object> properties, List<String> removePrefixes) throws IOException {
     if (properties.isEmpty()) {
@@ -332,7 +378,7 @@ public final class CapabilityAdder {
     Files.writeString(values, b.toString(), StandardCharsets.UTF_8);
   }
 
-  /** Adds keys to {@code externalSecret.keys} of the chart values. */
+  /** Agrega claves a {@code externalSecret.keys} de los valores del chart. */
   static boolean addSecrets(Path values, Set<String> secrets) throws IOException {
     if (!Files.isRegularFile(values)) {
       return false;
