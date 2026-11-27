@@ -34,6 +34,11 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: none
           queries: security-extended
+          # Se analiza el código que se distribuye: las pruebas ejecutan procesos locales, SQL de
+          # fixtures y configuraciones de seguridad de prueba que solo generan falsos positivos.
+          config: |
+            paths-ignore:
+              - '**/src/test/**'
       - uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           category: codeql-${{ matrix.language }}

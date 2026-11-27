@@ -189,17 +189,17 @@ public final class IdempotencyFilter extends OncePerRequestFilter {
         service.fail(execution);
         return;
       }
-      BoundedCapture capture = response.capture();
+      byte[] body = response.capture().body();
       if (!service.complete(
           execution,
           IdempotencyPayloads.store(
               status,
-              capture.overflowed()
+              body == null
                   ? StoredResponse.withoutBody(
                           status, IdempotencySupport.replayedHeaders(response::getHeader))
                       .headers()
                   : IdempotencySupport.replayedHeaders(response::getHeader),
-              capture.overflowed() ? new byte[0] : capture.bytes(),
+              body == null ? new byte[0] : body,
               (IdempotencyPayloads.Binding)
                   Objects.requireNonNull(
                       request.getAttribute(IdempotencyPayloads.BINDING_ATTRIBUTE),

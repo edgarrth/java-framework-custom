@@ -203,18 +203,20 @@ public final class IdempotencyWebFilter implements WebFilter, Ordered {
     }
     Mono<StoredResponse> stored =
         ReactiveStages.from(
-            () ->
-                IdempotencyPayloads.store(
-                    code,
-                    captured.overflowed()
-                        ? StoredResponse.withoutBody(
-                                code,
-                                IdempotencySupport.replayedHeaders(response.getHeaders()::getFirst))
-                            .headers()
-                        : IdempotencySupport.replayedHeaders(response.getHeaders()::getFirst),
-                    captured.overflowed() ? new byte[0] : captured.bytes(),
-                    Objects.requireNonNull(state.binding, "Missing idempotency record binding"),
-                    protection));
+            () -> {
+              byte[] body = captured.body();
+              return IdempotencyPayloads.store(
+                  code,
+                  body == null
+                      ? StoredResponse.withoutBody(
+                              code,
+                              IdempotencySupport.replayedHeaders(response.getHeaders()::getFirst))
+                          .headers()
+                      : IdempotencySupport.replayedHeaders(response.getHeaders()::getFirst),
+                  body == null ? new byte[0] : body,
+                  Objects.requireNonNull(state.binding, "Missing idempotency record binding"),
+                  protection);
+            });
     return stored
         .flatMap(value -> ReactiveStages.from(() -> service.complete(execution, value)))
         .doOnNext(

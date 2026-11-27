@@ -321,7 +321,7 @@ class IdempotencyTest {
     for (int i = 0; i < 1024; i++) {
       capturing.getOutputStream().write(new byte[1024]);
     }
-    assertTrue(capturing.capture().overflowed());
+    assertNull(capturing.capture().body());
     assertEquals(0, capturing.capture().buffered(), "memory does not grow with the response");
   }
 
@@ -330,9 +330,9 @@ class IdempotencyTest {
     BoundedCapture capture = new BoundedCapture(4);
     capture.write(new byte[] {1, 2});
     capture.write(new byte[] {3, 4});
-    assertArrayEquals(new byte[] {1, 2, 3, 4}, capture.bytes());
+    assertArrayEquals(new byte[] {1, 2, 3, 4}, capture.body());
     capture.write(new byte[] {5});
-    assertTrue(capture.overflowed());
+    assertNull(capture.body());
     assertEquals(
         Map.of("Location", "/x", StoredResponse.BODY_OMITTED_HEADER, "true"),
         IdempotencySupport.stored(201, Map.of("Location", "/x"), new byte[8], 4).headers());

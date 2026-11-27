@@ -2,6 +2,7 @@ package pe.axiz.spring.idempotency;
 
 import java.util.Arrays;
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Copia propia y acotada de la respuesta; los búferes descartados se borran al crecer, al
@@ -47,12 +48,13 @@ final class BoundedCapture implements AutoCloseable {
     size = 0;
   }
 
-  synchronized boolean overflowed() {
-    return overflowed;
-  }
-
-  synchronized byte[] bytes() {
-    return Arrays.copyOf(bytes, size);
+  /**
+   * Copia del cuerpo capturado, o {@code null} si se desbordó. Es una sola lectura atómica: quien
+   * decide entre guardar el cuerpo u omitirlo no puede observar dos estados distintos de la
+   * captura.
+   */
+  synchronized byte @Nullable [] body() {
+    return overflowed ? null : Arrays.copyOf(bytes, size);
   }
 
   synchronized int buffered() {

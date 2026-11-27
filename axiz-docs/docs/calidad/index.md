@@ -23,7 +23,7 @@ las referencian: un servicio no copia archivos de configuración.
 | Calidad de pruebas | PIT en la capa 1 | al menos 81 % de mutantes eliminados |
 | Integración | Failsafe + Testcontainers + LocalStack; BlockHound en reactivo | obligatorio por starter |
 | Nativo | compilación y pruebas nativas del demo y de un servicio por arquetipo | nocturno en verde |
-| SAST | CodeQL (`security-extended`) y las reglas Semgrep de axiz | sin alertas abiertas |
+| SAST | CodeQL (`security-extended`, sobre el código que se distribuye: excluye `src/test`) y las reglas Semgrep de axiz | sin alertas abiertas |
 | Vulnerabilidades | Trivy sobre dependencias (SBOM), filesystem e imagen | bloquea siempre MEDIUM/HIGH/CRITICAL, incluidas dependencias de desarrollo |
 | SBOM y procedencia | CycloneDX por artefacto; procedencia SLSA y SBOM como atestaciones de GitHub | en cada imagen y artefacto publicado |
 | Secretos | secret scanning de GitHub con push protection y gitleaks en pre-commit (`.pre-commit-config.yaml`) | cero detecciones |
