@@ -10,7 +10,7 @@ reporte en `target/site/jacoco-aggregate`). No se publica.
 - Los módulos solo de pruebas de arquitectura y de integración de almacenes son dependencias `test`,
   para que sus datos de ejecución cuenten para los módulos de producción que ejercitan, sin contar los
   fixtures de prueba como producción.
-- `.github/scripts/check-coverage-aggregate.py .` (CI del framework) falla cuando falta un módulo con
-  código o tiene otro scope, o cuando se omite un módulo solo de pruebas; con `-Pquality` el build falla
-  cuando el reporte no contiene clases. `-DskipTests` omite esa comprobación, porque nada se ejecutó
-  bajo el agente.
+- Con `-Pquality` el build falla cuando el reporte no contiene clases. `-DskipTests` omite esa
+  comprobación, porque nada se ejecutó bajo el agente.
+- El reporte se genera en los builds locales completos. En CI el framework se verifica por capas en
+  jobs paralelos, sin este módulo, y el umbral de cobertura se exige en cada módulo.

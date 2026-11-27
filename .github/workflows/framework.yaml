@@ -57,9 +57,13 @@ jobs:
             scan: false
     name: build (${{ matrix.group }})
     uses: ./.github/workflows/lib-build.yaml
+    # Techo de permisos que GitHub valida para todos los jobs del workflow reutilizable, incluido el de
+    # publicación, que aquí no corre; el job de verificación declara sus propios permisos de lectura.
     permissions:
       contents: read
-      packages: read
+      packages: write
+      id-token: write
+      attestations: write
     with:
       working-directory: axiz-framework
       bootstrap: true
